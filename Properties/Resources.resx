@@ -1,0 +1,1177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="IndexerName" xml:space="preserve">
+    <value>Item</value>
+    <comment>The standard constant name used by indexers</comment>
+  </data>
+  <data name="CSharpKeyWord_02_As" xml:space="preserve">
+    <value>as</value>
+    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "as".</comment>
+  </data>
+  <data name="CSharpKeyWord_02_Do" xml:space="preserve">
+    <value>do</value>
+    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "do".</comment>
+  </data>
+  <data name="CSharpKeyWord_02_If" xml:space="preserve">
+    <value>if</value>
+    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "if".</comment>
+  </data>
+  <data name="CSharpKeyWord_02_In" xml:space="preserve">
+    <value>in</value>
+    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "in".</comment>
+  </data>
+  <data name="CSharpKeyWord_02_Is" xml:space="preserve">
+    <value>is</value>
+    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "is".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_For" xml:space="preserve">
+    <value>for</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "for".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_Int" xml:space="preserve">
+    <value>int</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "int".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_New" xml:space="preserve">
+    <value>new</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "new".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_Out" xml:space="preserve">
+    <value>out</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "out".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_Ref" xml:space="preserve">
+    <value>ref</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "ref".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_Try" xml:space="preserve">
+    <value>try</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "try".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Base" xml:space="preserve">
+    <value>base</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "base".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Bool" xml:space="preserve">
+    <value>bool</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "bool".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Byte" xml:space="preserve">
+    <value>byte</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "byte".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Case" xml:space="preserve">
+    <value>case</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "case".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Char" xml:space="preserve">
+    <value>char</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "char".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Else" xml:space="preserve">
+    <value>else</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "else".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Enum" xml:space="preserve">
+    <value>enum</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "enum".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Goto" xml:space="preserve">
+    <value>goto</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "goto".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Lock" xml:space="preserve">
+    <value>lock</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "lock".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Long" xml:space="preserve">
+    <value>long</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "long".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Null" xml:space="preserve">
+    <value>null</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "null".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_This" xml:space="preserve">
+    <value>this</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "this".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_True" xml:space="preserve">
+    <value>true</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "true".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Uint" xml:space="preserve">
+    <value>uint</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "uint".</comment>
+  </data>
+  <data name="CSharpKeyWord_04_Void" xml:space="preserve">
+    <value>void</value>
+    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "void".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Break" xml:space="preserve">
+    <value>break</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "break".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Catch" xml:space="preserve">
+    <value>catch</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "catch".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Class" xml:space="preserve">
+    <value>class</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "class".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Const" xml:space="preserve">
+    <value>const</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "const".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Event" xml:space="preserve">
+    <value>event</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "event".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_False" xml:space="preserve">
+    <value>false</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "false".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Fixed" xml:space="preserve">
+    <value>fixed</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "fixed".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Float" xml:space="preserve">
+    <value>float</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "float".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Sbyte" xml:space="preserve">
+    <value>sbyte</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "sbyte".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Short" xml:space="preserve">
+    <value>short</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "short".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Throw" xml:space="preserve">
+    <value>throw</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "throw".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Ulong" xml:space="preserve">
+    <value>ulong</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "ulong".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Using" xml:space="preserve">
+    <value>using</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "using".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Where" xml:space="preserve">
+    <value>where</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "where".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_While" xml:space="preserve">
+    <value>while</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "while".</comment>
+  </data>
+  <data name="CSharpKeyWord_05_Yield" xml:space="preserve">
+    <value>yield</value>
+    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "yield".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Double" xml:space="preserve">
+    <value>double</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "double".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Extern" xml:space="preserve">
+    <value>extern</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "extern".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Object" xml:space="preserve">
+    <value>object</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "object".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Params" xml:space="preserve">
+    <value>params</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "params".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Public" xml:space="preserve">
+    <value>public</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "public".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Sealed" xml:space="preserve">
+    <value>sealed</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "sealed".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Sizeof" xml:space="preserve">
+    <value>sizeof</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "sizeof".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Static" xml:space="preserve">
+    <value>static</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "static".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_String" xml:space="preserve">
+    <value>string</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "string".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Struct" xml:space="preserve">
+    <value>struct</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "struct".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Return" xml:space="preserve">
+    <value>return</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "return".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Switch" xml:space="preserve">
+    <value>switch</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "switch".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Typeof" xml:space="preserve">
+    <value>typeof</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "typeof".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Unsafe" xml:space="preserve">
+    <value>unsafe</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "unsafe".</comment>
+  </data>
+  <data name="CSharpKeyWord_06_Ushort" xml:space="preserve">
+    <value>ushort</value>
+    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "ushort".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Checked" xml:space="preserve">
+    <value>checked</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "checked".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Default" xml:space="preserve">
+    <value>default</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "default".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Finally" xml:space="preserve">
+    <value>finally</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "finally".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Private" xml:space="preserve">
+    <value>private</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "private".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Foreach" xml:space="preserve">
+    <value>foreach</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "foreach".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Decimal" xml:space="preserve">
+    <value>decimal</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "decimal".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Partial" xml:space="preserve">
+    <value>partial</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "partial".</comment>
+  </data>
+  <data name="CSharpKeyWord_07_Virtual" xml:space="preserve">
+    <value>virtual</value>
+    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "virtual".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Continue" xml:space="preserve">
+    <value>continue</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "continue".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Delegate" xml:space="preserve">
+    <value>delegate</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "delegate".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Operator" xml:space="preserve">
+    <value>operator</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "operator".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Explicit" xml:space="preserve">
+    <value>explicit</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "explicit".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Abstract" xml:space="preserve">
+    <value>abstract</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "abstract".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Implicit" xml:space="preserve">
+    <value>implicit</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "implicit".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Internal" xml:space="preserve">
+    <value>internal</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "internal".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Override" xml:space="preserve">
+    <value>override</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "override".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Readonly" xml:space="preserve">
+    <value>readonly</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "readonly".</comment>
+  </data>
+  <data name="CSharpKeyWord_08_Volatile" xml:space="preserve">
+    <value>volatile</value>
+    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "volatile".</comment>
+  </data>
+  <data name="CSharpKeyWord_09___makeref" xml:space="preserve">
+    <value>__makeref</value>
+    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "__makeref".</comment>
+  </data>
+  <data name="CSharpKeyWord_09___reftype" xml:space="preserve">
+    <value>__reftype</value>
+    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "__reftype".</comment>
+  </data>
+  <data name="CSharpKeyWord_09___arglist" xml:space="preserve">
+    <value>__arglist</value>
+    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "__arglist".</comment>
+  </data>
+  <data name="CSharpKeyWord_09_Interface" xml:space="preserve">
+    <value>interface</value>
+    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "interface".</comment>
+  </data>
+  <data name="CSharpKeyWord_09_Protected" xml:space="preserve">
+    <value>protected</value>
+    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "protected".</comment>
+  </data>
+  <data name="CSharpKeyWord_09_Namespace" xml:space="preserve">
+    <value>namespace</value>
+    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "namespace".</comment>
+  </data>
+  <data name="CSharpKeyWord_09_Unchecked" xml:space="preserve">
+    <value>unchecked</value>
+    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "unchecked".</comment>
+  </data>
+  <data name="CSharpKeyWord_10___refvalue" xml:space="preserve">
+    <value>__refvalue</value>
+    <comment>A keyword for the CSharp Language 10 characters long. Expressed as "__refvalue".</comment>
+  </data>
+  <data name="CSharpKeyWord_10_Stackalloc" xml:space="preserve">
+    <value>stackalloc</value>
+    <comment>A keyword for the CSharp Language 10 characters long. Expressed as "stackalloc".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_Get" xml:space="preserve">
+    <value>get</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "get".</comment>
+  </data>
+  <data name="CSharpKeyWord_03_Set" xml:space="preserve">
+    <value>set</value>
+    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "set".</comment>
+  </data>
+  <data name="VBKeyWord_02_As" xml:space="preserve">
+    <value>As</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "As".</comment>
+  </data>
+  <data name="VBKeyWord_02_Do" xml:space="preserve">
+    <value>Do</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "Do".</comment>
+  </data>
+  <data name="VBKeyWord_02_If" xml:space="preserve">
+    <value>If</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "If".</comment>
+  </data>
+  <data name="VBKeyWord_02_In" xml:space="preserve">
+    <value>In</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "In".</comment>
+  </data>
+  <data name="VBKeyWord_02_Is" xml:space="preserve">
+    <value>Is</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "Is".</comment>
+  </data>
+  <data name="VBKeyWord_02_Me" xml:space="preserve">
+    <value>Me</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "Me".</comment>
+  </data>
+  <data name="VBKeyWord_02_Of" xml:space="preserve">
+    <value>Of</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "Of".</comment>
+  </data>
+  <data name="VBKeyWord_02_On" xml:space="preserve">
+    <value>On</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "On".</comment>
+  </data>
+  <data name="VBKeyWord_02_Or" xml:space="preserve">
+    <value>Or</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "Or".</comment>
+  </data>
+  <data name="VBKeyWord_02_To" xml:space="preserve">
+    <value>To</value>
+    <comment>A keyword for the VB Language 2 characters long. Expressed as "To".</comment>
+  </data>
+  <data name="VBKeyWord_03_And" xml:space="preserve">
+    <value>And</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "And".</comment>
+  </data>
+  <data name="VBKeyWord_03_Dim" xml:space="preserve">
+    <value>Dim</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Dim".</comment>
+  </data>
+  <data name="VBKeyWord_03_End" xml:space="preserve">
+    <value>End</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "End".</comment>
+  </data>
+  <data name="VBKeyWord_03_For" xml:space="preserve">
+    <value>For</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "For".</comment>
+  </data>
+  <data name="VBKeyWord_03_Get" xml:space="preserve">
+    <value>Get</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Get".</comment>
+  </data>
+  <data name="VBKeyWord_03_Let" xml:space="preserve">
+    <value>Let</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Let".</comment>
+  </data>
+  <data name="VBKeyWord_03_Lib" xml:space="preserve">
+    <value>Lib</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Lib".</comment>
+  </data>
+  <data name="VBKeyWord_03_Mod" xml:space="preserve">
+    <value>Mod</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Mod".</comment>
+  </data>
+  <data name="VBKeyWord_03_New" xml:space="preserve">
+    <value>New</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "New".</comment>
+  </data>
+  <data name="VBKeyWord_03_Not" xml:space="preserve">
+    <value>Not</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Not".</comment>
+  </data>
+  <data name="VBKeyWord_03_Rem" xml:space="preserve">
+    <value>Rem</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Rem".</comment>
+  </data>
+  <data name="VBKeyWord_03_Set" xml:space="preserve">
+    <value>Set</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Set".</comment>
+  </data>
+  <data name="VBKeyWord_03_Sub" xml:space="preserve">
+    <value>Sub</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Sub".</comment>
+  </data>
+  <data name="VBKeyWord_03_Try" xml:space="preserve">
+    <value>Try</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "Try".</comment>
+  </data>
+  <data name="VBKeyWord_03_XOr" xml:space="preserve">
+    <value>XOr</value>
+    <comment>A keyword for the VB Language 3 characters long. Expressed as "XOr".</comment>
+  </data>
+  <data name="VBKeyWord_04_Ansi" xml:space="preserve">
+    <value>Ansi</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Ansi".</comment>
+  </data>
+  <data name="VBKeyWord_04_Auto" xml:space="preserve">
+    <value>Auto</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Auto".</comment>
+  </data>
+  <data name="VBKeyWord_04_Byte" xml:space="preserve">
+    <value>Byte</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Byte".</comment>
+  </data>
+  <data name="VBKeyWord_04_Call" xml:space="preserve">
+    <value>Call</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Call".</comment>
+  </data>
+  <data name="VBKeyWord_04_Case" xml:space="preserve">
+    <value>Case</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Case".</comment>
+  </data>
+  <data name="VBKeyWord_04_CDbl" xml:space="preserve">
+    <value>CDbl</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "CDbl".</comment>
+  </data>
+  <data name="VBKeyWord_04_CDec" xml:space="preserve">
+    <value>CDec</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "CDec".</comment>
+  </data>
+  <data name="VBKeyWord_04_Char" xml:space="preserve">
+    <value>Char</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Char".</comment>
+  </data>
+  <data name="VBKeyWord_04_CInt" xml:space="preserve">
+    <value>CInt</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "CInt".</comment>
+  </data>
+  <data name="VBKeyWord_04_CLng" xml:space="preserve">
+    <value>CLng</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "CLng".</comment>
+  </data>
+  <data name="VBKeyWord_04_CObj" xml:space="preserve">
+    <value>CObj</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "CObj".</comment>
+  </data>
+  <data name="VBKeyWord_04_CSng" xml:space="preserve">
+    <value>CSng</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "CSng".</comment>
+  </data>
+  <data name="VBKeyWord_04_CStr" xml:space="preserve">
+    <value>CStr</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "CStr".</comment>
+  </data>
+  <data name="VBKeyWord_04_Date" xml:space="preserve">
+    <value>Date</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Date".</comment>
+  </data>
+  <data name="VBKeyWord_04_Each" xml:space="preserve">
+    <value>Each</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Each".</comment>
+  </data>
+  <data name="VBKeyWord_04_Else" xml:space="preserve">
+    <value>Else</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Else".</comment>
+  </data>
+  <data name="VBKeyWord_04_Enum" xml:space="preserve">
+    <value>Enum</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Enum".</comment>
+  </data>
+  <data name="VBKeyWord_04_Exit" xml:space="preserve">
+    <value>Exit</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Exit".</comment>
+  </data>
+  <data name="VBKeyWord_04_GoTo" xml:space="preserve">
+    <value>GoTo</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Goto".</comment>
+  </data>
+  <data name="VBKeyWord_04_Like" xml:space="preserve">
+    <value>Like</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Like".</comment>
+  </data>
+  <data name="VBKeyWord_04_Long" xml:space="preserve">
+    <value>Long</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Long".</comment>
+  </data>
+  <data name="VBKeyWord_04_Loop" xml:space="preserve">
+    <value>Loop</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Loop".</comment>
+  </data>
+  <data name="VBKeyWord_04_Next" xml:space="preserve">
+    <value>Next</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Next".</comment>
+  </data>
+  <data name="VBKeyWord_04_Step" xml:space="preserve">
+    <value>Step</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Step".</comment>
+  </data>
+  <data name="VBKeyWord_04_Stop" xml:space="preserve">
+    <value>Stop</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Stop".</comment>
+  </data>
+  <data name="VBKeyWord_04_Then" xml:space="preserve">
+    <value>Then</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Then".</comment>
+  </data>
+  <data name="VBKeyWord_04_True" xml:space="preserve">
+    <value>True</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "True".</comment>
+  </data>
+  <data name="VBKeyWord_04_Wend" xml:space="preserve">
+    <value>Wend</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "Wend".</comment>
+  </data>
+  <data name="VBKeyWord_04_When" xml:space="preserve">
+    <value>When</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "When".</comment>
+  </data>
+  <data name="VBKeyWord_04_With" xml:space="preserve">
+    <value>With</value>
+    <comment>A keyword for the VB Language 4 characters long. Expressed as "With".</comment>
+  </data>
+  <data name="VBKeyWord_05_Alias" xml:space="preserve">
+    <value>Alias</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Alias".</comment>
+  </data>
+  <data name="VBKeyWord_05_ByRef" xml:space="preserve">
+    <value>ByRef</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "ByRef".</comment>
+  </data>
+  <data name="VBKeyWord_05_ByVal" xml:space="preserve">
+    <value>ByVal</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "ByVal".</comment>
+  </data>
+  <data name="VBKeyWord_05_Catch" xml:space="preserve">
+    <value>Catch</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Catch".</comment>
+  </data>
+  <data name="VBKeyWord_05_CBool" xml:space="preserve">
+    <value>CBool</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "CBool".</comment>
+  </data>
+  <data name="VBKeyWord_05_CByte" xml:space="preserve">
+    <value>CByte</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "CByte".</comment>
+  </data>
+  <data name="VBKeyWord_05_CChar" xml:space="preserve">
+    <value>CChar</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "CChar".</comment>
+  </data>
+  <data name="VBKeyWord_05_CDate" xml:space="preserve">
+    <value>CDate</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "CDate".</comment>
+  </data>
+  <data name="VBKeyWord_05_Class" xml:space="preserve">
+    <value>Class</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Class".</comment>
+  </data>
+  <data name="VBKeyWord_05_Const" xml:space="preserve">
+    <value>Const</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Const".</comment>
+  </data>
+  <data name="VBKeyWord_05_CType" xml:space="preserve">
+    <value>CType</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "CType".</comment>
+  </data>
+  <data name="VBKeyWord_05_CUInt" xml:space="preserve">
+    <value>CUInt</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "CUInt".</comment>
+  </data>
+  <data name="VBKeyWord_05_CULng" xml:space="preserve">
+    <value>CULng</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "CULng".</comment>
+  </data>
+  <data name="VBKeyWord_05_EndIf" xml:space="preserve">
+    <value>EndIf</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "EndIf".</comment>
+  </data>
+  <data name="VBKeyWord_05_Erase" xml:space="preserve">
+    <value>Erase</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Erase".</comment>
+  </data>
+  <data name="VBKeyWord_05_Error" xml:space="preserve">
+    <value>Error</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Error".</comment>
+  </data>
+  <data name="VBKeyWord_05_Event" xml:space="preserve">
+    <value>Event</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Event".</comment>
+  </data>
+  <data name="VBKeyWord_05_False" xml:space="preserve">
+    <value>False</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "False".</comment>
+  </data>
+  <data name="VBKeyWord_05_GoSub" xml:space="preserve">
+    <value>GoSub</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "GoSub".</comment>
+  </data>
+  <data name="VBKeyWord_05_IsNot" xml:space="preserve">
+    <value>IsNot</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "IsNot".</comment>
+  </data>
+  <data name="VBKeyWord_05_ReDim" xml:space="preserve">
+    <value>ReDim</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "ReDim".</comment>
+  </data>
+  <data name="VBKeyWord_05_SByte" xml:space="preserve">
+    <value>SByte</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "SByte".</comment>
+  </data>
+  <data name="VBKeyWord_05_Short" xml:space="preserve">
+    <value>Short</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Short".</comment>
+  </data>
+  <data name="VBKeyWord_05_Throw" xml:space="preserve">
+    <value>Throw</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Throw".</comment>
+  </data>
+  <data name="VBKeyWord_05_ULong" xml:space="preserve">
+    <value>ULong</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "ULong".</comment>
+  </data>
+  <data name="VBKeyWord_05_Until" xml:space="preserve">
+    <value>Until</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Until".</comment>
+  </data>
+  <data name="VBKeyWord_05_Using" xml:space="preserve">
+    <value>Using</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "Using".</comment>
+  </data>
+  <data name="VBKeyWord_05_While" xml:space="preserve">
+    <value>While</value>
+    <comment>A keyword for the VB Language 5 characters long. Expressed as "While".</comment>
+  </data>
+  <data name="VBKeyWord_06_CSByte" xml:space="preserve">
+    <value>CSByte</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "CSByte".</comment>
+  </data>
+  <data name="VBKeyWord_06_CShort" xml:space="preserve">
+    <value>CShort</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "CShort".</comment>
+  </data>
+  <data name="VBKeyWord_06_Double" xml:space="preserve">
+    <value>Double</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Double".</comment>
+  </data>
+  <data name="VBKeyWord_06_ElseIf" xml:space="preserve">
+    <value>ElseIf</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "ElseIf".</comment>
+  </data>
+  <data name="VBKeyWord_06_Friend" xml:space="preserve">
+    <value>Friend</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Friend".</comment>
+  </data>
+  <data name="VBKeyWord_06_Global" xml:space="preserve">
+    <value>Global</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Global".</comment>
+  </data>
+  <data name="VBKeyWord_06_Module" xml:space="preserve">
+    <value>Module</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Module".</comment>
+  </data>
+  <data name="VBKeyWord_06_MyBase" xml:space="preserve">
+    <value>MyBase</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "MyBase".</comment>
+  </data>
+  <data name="VBKeyWord_06_Object" xml:space="preserve">
+    <value>Object</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Object".</comment>
+  </data>
+  <data name="VBKeyWord_06_Option" xml:space="preserve">
+    <value>Option</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Option".</comment>
+  </data>
+  <data name="VBKeyWord_06_OrElse" xml:space="preserve">
+    <value>OrElse</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "OrElse".</comment>
+  </data>
+  <data name="VBKeyWord_06_Public" xml:space="preserve">
+    <value>Public</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Public".</comment>
+  </data>
+  <data name="VBKeyWord_06_Resume" xml:space="preserve">
+    <value>Resume</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Resume".</comment>
+  </data>
+  <data name="VBKeyWord_06_Return" xml:space="preserve">
+    <value>Return</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Return".</comment>
+  </data>
+  <data name="VBKeyWord_06_Select" xml:space="preserve">
+    <value>Select</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Select".</comment>
+  </data>
+  <data name="VBKeyWord_06_Shared" xml:space="preserve">
+    <value>Shared</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Shared".</comment>
+  </data>
+  <data name="VBKeyWord_06_Single" xml:space="preserve">
+    <value>Single</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Single".</comment>
+  </data>
+  <data name="VBKeyWord_06_Static" xml:space="preserve">
+    <value>Static</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "Static".</comment>
+  </data>
+  <data name="VBKeyWord_06_String" xml:space="preserve">
+    <value>String</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "String".</comment>
+  </data>
+  <data name="VBKeyWord_06_TypeOf" xml:space="preserve">
+    <value>TypeOf</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "TypeOf".</comment>
+  </data>
+  <data name="VBKeyWord_06_UShort" xml:space="preserve">
+    <value>UShort</value>
+    <comment>A keyword for the VB Language 6 characters long. Expressed as "UShort".</comment>
+  </data>
+  <data name="VBKeyWord_07_AndAlso" xml:space="preserve">
+    <value>AndAlso</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "AndAlso".</comment>
+  </data>
+  <data name="VBKeyWord_07_Boolean" xml:space="preserve">
+    <value>Boolean</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Boolean".</comment>
+  </data>
+  <data name="VBKeyWord_07_CUShort" xml:space="preserve">
+    <value>CUShort</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "CUShort".</comment>
+  </data>
+  <data name="VBKeyWord_07_Decimal" xml:space="preserve">
+    <value>Decimal</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Decimal".</comment>
+  </data>
+  <data name="VBKeyWord_07_Declare" xml:space="preserve">
+    <value>Declare</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Declare".</comment>
+  </data>
+  <data name="VBKeyWord_07_Default" xml:space="preserve">
+    <value>Default</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Default".</comment>
+  </data>
+  <data name="VBKeyWord_07_Finally" xml:space="preserve">
+    <value>Finally</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Finally".</comment>
+  </data>
+  <data name="VBKeyWord_07_GetType" xml:space="preserve">
+    <value>GetType</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "GetType".</comment>
+  </data>
+  <data name="VBKeyWord_07_Handles" xml:space="preserve">
+    <value>Handles</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Handles".</comment>
+  </data>
+  <data name="VBKeyWord_07_Imports" xml:space="preserve">
+    <value>Imports</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Imports".</comment>
+  </data>
+  <data name="VBKeyWord_07_Integer" xml:space="preserve">
+    <value>Integer</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Integer".</comment>
+  </data>
+  <data name="VBKeyWord_07_MyClass" xml:space="preserve">
+    <value>MyClass</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "MyClass".</comment>
+  </data>
+  <data name="VBKeyWord_07_Nothing" xml:space="preserve">
+    <value>Nothing</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Nothing".</comment>
+  </data>
+  <data name="VBKeyWord_07_Partial" xml:space="preserve">
+    <value>Partial</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Partial".</comment>
+  </data>
+  <data name="VBKeyWord_07_Private" xml:space="preserve">
+    <value>Private</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Private".</comment>
+  </data>
+  <data name="VBKeyWord_07_Shadows" xml:space="preserve">
+    <value>Shadows</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Shadows".</comment>
+  </data>
+  <data name="VBKeyWord_07_TryCast" xml:space="preserve">
+    <value>TryCast</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "TryCast".</comment>
+  </data>
+  <data name="VBKeyWord_07_Unicode" xml:space="preserve">
+    <value>Unicode</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Unicode".</comment>
+  </data>
+  <data name="VBKeyWord_07_Variant" xml:space="preserve">
+    <value>Variant</value>
+    <comment>A keyword for the VB Language 7 characters long. Expressed as "Variant".</comment>
+  </data>
+  <data name="VBKeyWord_08_Assembly" xml:space="preserve">
+    <value>Assembly</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Assembly".</comment>
+  </data>
+  <data name="VBKeyWord_08_Continue" xml:space="preserve">
+    <value>Continue</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Continue".</comment>
+  </data>
+  <data name="VBKeyWord_08_Delegate" xml:space="preserve">
+    <value>Delegate</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Delegate".</comment>
+  </data>
+  <data name="VBKeyWord_08_Function" xml:space="preserve">
+    <value>Function</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Function".</comment>
+  </data>
+  <data name="VBKeyWord_08_Inherits" xml:space="preserve">
+    <value>Inherits</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Inherits".</comment>
+  </data>
+  <data name="VBKeyWord_08_Operator" xml:space="preserve">
+    <value>Operator</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Operator".</comment>
+  </data>
+  <data name="VBKeyWord_08_Optional" xml:space="preserve">
+    <value>Optional</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Optional".</comment>
+  </data>
+  <data name="VBKeyWord_08_Preserve" xml:space="preserve">
+    <value>Preserve</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Preserve".</comment>
+  </data>
+  <data name="VBKeyWord_08_Property" xml:space="preserve">
+    <value>Property</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Property".</comment>
+  </data>
+  <data name="VBKeyWord_08_ReadOnly" xml:space="preserve">
+    <value>ReadOnly</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "ReadOnly".</comment>
+  </data>
+  <data name="VBKeyWord_08_SyncLock" xml:space="preserve">
+    <value>SyncLock</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "SyncLock".</comment>
+  </data>
+  <data name="VBKeyWord_08_UInteger" xml:space="preserve">
+    <value>UInteger</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "UInteger".</comment>
+  </data>
+  <data name="VBKeyWord_08_Widening" xml:space="preserve">
+    <value>Widening</value>
+    <comment>A keyword for the VB Language 8 characters long. Expressed as "Widening".</comment>
+  </data>
+  <data name="VBKeyWord_09_AddressOf" xml:space="preserve">
+    <value>AddressOf</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "AddressOf".</comment>
+  </data>
+  <data name="VBKeyWord_09_Interface" xml:space="preserve">
+    <value>Interface</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "Interface".</comment>
+  </data>
+  <data name="VBKeyWord_09_Namespace" xml:space="preserve">
+    <value>Namespace</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "Namespace".</comment>
+  </data>
+  <data name="VBKeyWord_09_Narrowing" xml:space="preserve">
+    <value>Narrowing</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "Narrowing".</comment>
+  </data>
+  <data name="VBKeyWord_09_Overloads" xml:space="preserve">
+    <value>Overloads</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "Overloads".</comment>
+  </data>
+  <data name="VBKeyWord_09_Overrides" xml:space="preserve">
+    <value>Overrides</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "Overrides".</comment>
+  </data>
+  <data name="VBKeyWord_09_Protected" xml:space="preserve">
+    <value>Protected</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "Protected".</comment>
+  </data>
+  <data name="VBKeyWord_09_Structure" xml:space="preserve">
+    <value>Structure</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "Structure".</comment>
+  </data>
+  <data name="VBKeyWord_09_WriteOnly" xml:space="preserve">
+    <value>WriteOnly</value>
+    <comment>A keyword for the VB Language 9 characters long. Expressed as "WriteOnly".</comment>
+  </data>
+  <data name="VBKeyWord_10_AddHandler" xml:space="preserve">
+    <value>AddHandler</value>
+    <comment>A keyword for the VB Language 10 characters long. Expressed as "AddHandler".</comment>
+  </data>
+  <data name="VBKeyWord_10_DirectCast" xml:space="preserve">
+    <value>DirectCast</value>
+    <comment>A keyword for the VB Language 10 characters long. Expressed as "DirectCast".</comment>
+  </data>
+  <data name="VBKeyWord_10_Implements" xml:space="preserve">
+    <value>Implements</value>
+    <comment>A keyword for the VB Language 10 characters long. Expressed as "Implements".</comment>
+  </data>
+  <data name="VBKeyWord_10_ParamArray" xml:space="preserve">
+    <value>ParamArray</value>
+    <comment>A keyword for the VB Language 10 characters long. Expressed as "ParamArray".</comment>
+  </data>
+  <data name="VBKeyWord_10_RaiseEvent" xml:space="preserve">
+    <value>RaiseEvent</value>
+    <comment>A keyword for the VB Language 10 characters long. Expressed as "RaiseEvent".</comment>
+  </data>
+  <data name="VBKeyWord_10_WithEvents" xml:space="preserve">
+    <value>WithEvents</value>
+    <comment>A keyword for the VB Language 10 characters long. Expressed as "WithEvents".</comment>
+  </data>
+  <data name="VBKeyWord_11_MustInherit" xml:space="preserve">
+    <value>MustInherit</value>
+    <comment>A keyword for the VB Language 11 characters long. Expressed as "MustInherit".</comment>
+  </data>
+  <data name="VBKeyWord_11_Overridable" xml:space="preserve">
+    <value>Overridable</value>
+    <comment>A keyword for the VB Language 11 characters long. Expressed as "Overridable".</comment>
+  </data>
+  <data name="VBKeyWord_13_RemoveHandler" xml:space="preserve">
+    <value>RemoveHandler</value>
+    <comment>A keyword for the VB Language 13 characters long. Expressed as "RemoveHandler".</comment>
+  </data>
+  <data name="VBKeyWord_14_Class_Finalize" xml:space="preserve">
+    <value>Class_Finalize</value>
+    <comment>A keyword for the VB Language 14 characters long. Expressed as "Class_Finalize".</comment>
+  </data>
+  <data name="VBKeyWord_14_NotInheritable" xml:space="preserve">
+    <value>NotInheritable</value>
+    <comment>A keyword for the VB Language 14 characters long. Expressed as "NotInheritable".</comment>
+  </data>
+  <data name="VBKeyWord_14_NotOverridable" xml:space="preserve">
+    <value>NotOverridable</value>
+    <comment>A keyword for the VB Language 14 characters long. Expressed as "NotOverridable".</comment>
+  </data>
+  <data name="VBKeyWord_16_Class_Initialize" xml:space="preserve">
+    <value>Class_Initialize</value>
+    <comment>A keyword for the VB Language 16 characters long. Expressed as "Class_Initialize".</comment>
+  </data>
+  <data name="ResourcesAutoClassName" xml:space="preserve">
+    <value>__Resources__</value>
+    <comment>The name of the resources auto-class.</comment>
+  </data>
+  <data name="DefaultAssemblyName" xml:space="preserve">
+    <value>OILParserAssembly</value>
+  </data>
+  <data name="DefaultGrammarName" xml:space="preserve">
+    <value>UnnamedGrammar</value>
+  </data>
+  <data name="DefaultLexerName" xml:space="preserve">
+    <value>OiLexer</value>
+  </data>
+  <data name="DefaultParserName" xml:space="preserve">
+    <value>OilexerParser</value>
+  </data>
+  <data name="GrammarErrors_DynamicArgumentCountError" xml:space="preserve">
+    <value>The number of dynamic arguments given did not group properly.</value>
+  </data>
+  <data name="GrammarParserErrors_Expected" xml:space="preserve">
+    <value>Expected: '{0}'.</value>
+  </data>
+  <data name="GrammarParserErrors_ExpectedEndOfFile" xml:space="preserve">
+    <value>Expected end of file.</value>
+  </data>
+  <data name="GrammarParserErrors_ExpectedEndOfLine" xml:space="preserve">
+    <value>Expected end of line.</value>
+  </data>
+  <data name="GrammarParserErrors_FixedArgumentCountError" xml:space="preserve">
+    <value>The number of supplied arguments for temlate {0}.</value>
+  </data>
+  <data name="GrammarParserErrors_IncludeFileNotFound" xml:space="preserve">
+    <value>Include '{0}' was not found.</value>
+  </data>
+  <data name="GrammarParserErrors_InvalidEscape" xml:space="preserve">
+    <value>Invalid escape sequence.</value>
+  </data>
+  <data name="GrammarParserErrors_InvalidRepeatOptions" xml:space="preserve">
+    <value>must also be dynamic in length ('+').</value>
+  </data>
+  <data name="GrammarParserErrors_InvalidStartDefined" xml:space="preserve">
+    <value>The grammar '{0}' has an invalid start point defined.</value>
+  </data>
+  <data name="GrammarParserErrors_NoStartDefined" xml:space="preserve">
+    <value>The grammar '{0}' has no start point defined.</value>
+  </data>
+  <data name="GrammarParserErrors_RuleIsTemplate" xml:space="preserve">
+    <value>The rule '{0}' is a template and requires expression arguments to reference properly.</value>
+  </data>
+  <data name="GrammarParserErrors_RuleNeverUsed" xml:space="preserve">
+    <value>Rule '{0}' is never used.</value>
+  </data>
+  <data name="GrammarParserErrors_RuleNotTemplate" xml:space="preserve">
+    <value>The rule '{0}' is not a template rule.  Parametered usage is not needed or allowed.</value>
+  </data>
+  <data name="GrammarParserErrors_UndefinedRuleReference" xml:space="preserve">
+    <value>Undefined token or rule reference '{0}'.</value>
+  </data>
+  <data name="GrammarParserErrors_UndefinedTokenReference" xml:space="preserve">
+    <value>Undefined reference '{0}'.</value>
+  </data>
+  <data name="GrammarParserErrors_Unexpected" xml:space="preserve">
+    <value>Unexpected: '{0}'.</value>
+  </data>
+  <data name="GrammarParserErrors_UnexpectedEndOfFile" xml:space="preserve">
+    <value>Unexpected end of file.</value>
+  </data>
+  <data name="GrammarParserErrors_UnexpectedEndOfLine" xml:space="preserve">
+    <value>Unexpected end of line.</value>
+  </data>
+  <data name="GrammarParserErrors_UnknownSymbol" xml:space="preserve">
+    <value>Unknown symbol '{0}'.</value>
+  </data>
+  <data name="ResourcesAutoClassName1" xml:space="preserve">
+    <value>__Resources__</value>
+    <comment>The name of the resources auto-class.</comment>
+  </data>
+</root>

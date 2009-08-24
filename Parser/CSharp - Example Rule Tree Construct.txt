@@ -1,0 +1,2 @@
+﻿Each rule has a 'transition' data element, which is an instance of a 
+GrammarNameTransition which contains fields related 
