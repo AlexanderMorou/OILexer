@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Oilexer.Parser.GDFileData.TokenExpression;
+using System.Linq;
+using Oilexer.FiniteAutomata.Tokens;
 using Oilexer.Parser.GDFileData;
+using Oilexer.Parser.GDFileData.TokenExpression;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -13,6 +15,7 @@ namespace Oilexer._Internal.Inlining
         TokenGroupItem,
         IInlinedTokenItem
     {
+        private RegularLanguageNFAState state;
         public InlinedTokenGroupItem(ITokenGroupItem source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
             : base(source.FileName, InliningCore.Inline(source.ToArray(), sourceRoot, root, oldNewLookup), source.Column, source.Line, source.Position)
         {
@@ -41,6 +44,35 @@ namespace Oilexer._Internal.Inlining
         ITokenItem IInlinedTokenItem.Source
         {
             get { return this.Source; }
+        }
+
+        public RegularLanguageNFAState State
+        {
+            get {
+                if (this.state == null)
+                {
+                    this.state = this.BuildNFAState();
+                    this.state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, InliningCore.TokenRootStateClonerCache, InliningCore.TokenStateClonerCache);
+                }
+                return this.state;}
+        }
+
+        private RegularLanguageNFAState BuildNFAState()
+        {
+            RegularLanguageNFAState state = null;
+            foreach (var expression in this.Cast<InlinedTokenExpression>())
+                if (state == null)
+                    state = expression.NFAState;
+                else
+                    state.Union(expression.NFAState);
+            List<RegularLanguageNFAState> flatline = new List<RegularLanguageNFAState>();
+            RegularLanguageNFAState.FlatlineState(state, flatline);
+            foreach (var fState in flatline)
+                fState.SetIntermediate(this);
+            state.SetInitial(this);
+            foreach (var edge in state.ObtainEdges())
+                edge.SetFinal(this);
+            return state;
         }
 
         #endregion

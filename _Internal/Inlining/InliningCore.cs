@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser.GDFileData;
 using System.Collections.ObjectModel;
 using Oilexer.Utilities.Collections;
+using Oilexer.FiniteAutomata.Tokens;
+using Oilexer.FiniteAutomata;
+using Oilexer.FiniteAutomata.Rules;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -13,6 +17,11 @@ namespace Oilexer._Internal.Inlining
 {
     internal static class InliningCore
     {
+
+        internal static Func<RegularLanguageNFARootState, RegularLanguageNFARootState> TokenRootStateClonerCache = new Func<RegularLanguageNFARootState, RegularLanguageNFARootState>(CloneState);
+        internal static Func<RegularLanguageNFAState> TokenStateClonerCache = new Func<RegularLanguageNFAState>(CloneState);
+        internal static Func<SyntacticalNFARootState, SyntacticalNFARootState> ProductionRuleRootStateClonerCache = new Func<SyntacticalNFARootState, SyntacticalNFARootState>(CloneState);
+
         public static InlinedTokenEntry Inline(ITokenEntry entry)
         {
             if (entry is ITokenEofEntry)
@@ -56,7 +65,7 @@ namespace Oilexer._Internal.Inlining
                 for (int i = 0; i < currentSet.Count; i++)
                 {
                     var subItem = currentSet[i];
-                    if (subItem is ITokenGroupItem && subItem.RepeatOptions == ScannableEntryItemRepeatOptions.None && string.IsNullOrEmpty(subItem.Name) &&
+                    if (subItem is ITokenGroupItem && subItem.RepeatOptions == ScannableEntryItemRepeatInfo.None && string.IsNullOrEmpty(subItem.Name) &&
                         ((ITokenGroupItem)(subItem)).Count == 1)
                     {
                         int j = i;
@@ -83,13 +92,13 @@ namespace Oilexer._Internal.Inlining
                 if (kSource.Count == 1 && kSource[0].Count == 1)
                 {
                     var lSource = kSource[0][0];
-                    if (lSource.RepeatOptions == ScannableEntryItemRepeatOptions.None ||
-                        kSource.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                    if (lSource.RepeatOptions == ScannableEntryItemRepeatInfo.None ||
+                        kSource.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                     {
                         var result = Inline(lSource, sourceRoot, root, oldNewLookup);
-                        if (lSource.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                        if (lSource.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                             result.RepeatOptions = kSource.RepeatOptions;
-                        else if (kSource.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                        else if (kSource.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                             result.RepeatOptions = lSource.RepeatOptions;
                         if (string.IsNullOrEmpty(kSource.Name))
                             result.Name = lSource.Name;
@@ -104,8 +113,8 @@ namespace Oilexer._Internal.Inlining
                 return Inline((ILiteralCharTokenItem)source, sourceRoot, root, oldNewLookup);
             else if (source is ILiteralStringTokenItem)
                 return Inline((ILiteralStringTokenItem)source, sourceRoot, root, oldNewLookup);
-            else if (source is IScanCommandTokenItem)
-                return Inline((IScanCommandTokenItem)source, sourceRoot, root, oldNewLookup);
+            else if (source is ICommandTokenItem)
+                return Inline((ICommandTokenItem)source, sourceRoot, root, oldNewLookup);
             else if (source is ITokenReferenceTokenItem)
             {
                 var kSource = (ITokenReferenceTokenItem)source;
@@ -113,13 +122,13 @@ namespace Oilexer._Internal.Inlining
                 if (rSource.Branches.Count == 1 && rSource.Branches[0].Count == 1)
                 {
                     var lSource = rSource.Branches[0][0];
-                    if (lSource.RepeatOptions == ScannableEntryItemRepeatOptions.None ||
-                        kSource.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                    if (lSource.RepeatOptions == ScannableEntryItemRepeatInfo.None ||
+                        kSource.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                     {
                         var result = Inline(lSource, sourceRoot, root, oldNewLookup);
-                        if (lSource.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                        if (lSource.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                             result.RepeatOptions = kSource.RepeatOptions;
-                        else if (kSource.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                        else if (kSource.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                             result.RepeatOptions = lSource.RepeatOptions;
                         if (string.IsNullOrEmpty(kSource.Name))
                             result.Name = lSource.Name;
@@ -195,12 +204,216 @@ namespace Oilexer._Internal.Inlining
             return result;
         }
 
-        public static IInlinedTokenItem Inline(IScanCommandTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
+        public static IInlinedTokenItem Inline(ICommandTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
         {
-            var result = new InlinedScanCommandTokenItem(source, sourceRoot, root);
+            if (source is IScanCommandTokenItem)
+                return Inline((IScanCommandTokenItem)(source), sourceRoot, root, oldNewLookup);
+            else if (source is ISubtractionCommandTokenItem)
+                return Inline((ISubtractionCommandTokenItem)(source), sourceRoot, root, oldNewLookup);
+            return null;
+        }
+
+        private static IInlinedTokenItem Inline(ISubtractionCommandTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
+        {
+            var result = new InlinedSubtractionCommandTokenItem(source, sourceRoot, root, oldNewLookup);
             if (!oldNewLookup.ContainsKey(source))
                 oldNewLookup.Add(source, result);
             return result;
+        }
+
+        public static IInlinedTokenItem Inline(IScanCommandTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
+        {
+            var result = new InlinedScanCommandTokenItem(source, sourceRoot, root, oldNewLookup);
+            if (!oldNewLookup.ContainsKey(source))
+                oldNewLookup.Add(source, result);
+            return result;
+        }
+
+        public static TState CloneState<TCheck, TState, TDFA, TSourceElement, TRootState>(TState state, Func<TRootState, TRootState> rootCtor, Func<TState> cCtor)
+            where TCheck :
+                IFiniteAutomataSet<TCheck>,
+                new()
+            where TState :
+                NFAState<TCheck, TState, TDFA, TSourceElement>
+            where TDFA :
+                FiniteAutomataState<TCheck, TDFA, TDFA, TSourceElement>,
+                IDFAState<TCheck, TDFA, TSourceElement>,
+                new()
+            where TSourceElement :
+                IFiniteAutomataSource
+            where TRootState :
+                TState
+        {
+            Dictionary<TState, TState> cloneSet = new Dictionary<TState, TState>();
+            return CloneState<TCheck, TState, TDFA, TSourceElement, TRootState>(cloneSet, state, rootCtor, cCtor);
+        }
+
+        private static TState CloneState<TCheck, TState, TDFA, TSourceElement, TRootState>(Dictionary<TState, TState> cloneSet, TState state, Func<TRootState, TRootState> rootCtor, Func<TState> cCtor)
+            where TCheck :
+                IFiniteAutomataSet<TCheck>,
+                new()
+            where TState :
+                NFAState<TCheck, TState, TDFA, TSourceElement>
+            where TDFA :
+                FiniteAutomataState<TCheck, TDFA, TDFA, TSourceElement>,
+                IDFAState<TCheck, TDFA, TSourceElement>,
+                new()
+            where TSourceElement :
+                IFiniteAutomataSource
+            where TRootState :
+                TState
+        {
+            if (!cloneSet.ContainsKey(state))
+            {
+                TState newState = state is TRootState ? rootCtor((TRootState)state) : cCtor();
+                if (state.IsMarked)
+                    state.IsEdge = true;
+                cloneSet.Add(state, newState);
+                foreach (var transition in state.OutTransitions.Keys)
+                    foreach (var transitionTarget in state.OutTransitions[transition])
+                        newState.MoveTo(transition, CloneState<TCheck, TState, TDFA, TSourceElement, TRootState>(cloneSet, transitionTarget, rootCtor, cCtor));
+            }
+            return cloneSet[state];
+        }
+
+        public static RegularLanguageNFARootState CloneState(RegularLanguageNFARootState root)
+        {
+            return new RegularLanguageNFARootState(root.Source);
+        }
+
+        public static RegularLanguageNFAState CloneState()
+        {
+            return new RegularLanguageNFAState();
+        }
+
+        public static SyntacticalNFARootState CloneState(SyntacticalNFARootState root)
+        {
+            return new SyntacticalNFARootState(root.Source, root.builder);
+        }
+
+        public static void HandleRepeatCycle<TCheck, TState, TDFA, TSourceElement, TRootState, TSubSourceElement>(this TState state, TSubSourceElement item, Func<TRootState, TRootState> rootCtor, Func<TState> cCtor)
+            where TCheck :
+                IFiniteAutomataSet<TCheck>,
+                new()
+            where TState :
+                NFAState<TCheck, TState, TDFA, TSourceElement>
+            where TDFA :
+                FiniteAutomataState<TCheck, TDFA, TDFA, TSourceElement>,
+                IDFAState<TCheck, TDFA, TSourceElement>,
+                new()
+            where TSourceElement :
+                IFiniteAutomataSource
+            where TRootState :
+                TState
+            where TSubSourceElement :
+                TSourceElement,
+                IScannableEntryItem
+        {
+            switch (item.RepeatOptions.Options)
+            {
+                case ScannableEntryItemRepeatOptions.None:
+                    return;
+                case ScannableEntryItemRepeatOptions.ZeroOrOne:
+                    state.IsEdge = true;
+                    break;
+                case ScannableEntryItemRepeatOptions.ZeroOrMore:
+                    {
+                        var edges = state.ObtainEdges().ToArray();
+                        state.IsEdge = true;
+                        foreach (var edge in edges)
+                        {
+                            edge.SetRepeat(item);
+                            foreach (var transition in state.OutTransitions.Keys)
+                                foreach (var transitionTarget in state.OutTransitions[transition])
+                                {
+                                    edge.IsEdge = true;
+                                    edge.MoveTo(transition, transitionTarget);
+                                }
+                        }
+                    }
+                    break;
+                case ScannableEntryItemRepeatOptions.OneOrMore:
+                    {
+                        var edges = state.ObtainEdges().ToArray();
+                        foreach (var edge in edges)
+                        {
+                            edge.SetRepeat(item);
+                            foreach (var transition in state.OutTransitions.Keys)
+                            {
+                                var currentTargets = state.OutTransitions[transition];
+                                foreach (var transitionTarget in currentTargets)
+                                {
+                                    edge.IsEdge = true;
+                                    edge.MoveTo(transition, transitionTarget);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case ScannableEntryItemRepeatOptions.Specific:
+                    TState[] set = null;
+                    int count = 0;
+                    int edgeItem;
+                    state.SetInitial(item);
+                    if (item.RepeatOptions.Min == null)
+                    {
+                        state.IsEdge = true;
+                        count = item.RepeatOptions.Max.Value;
+                        edgeItem = 0;
+                    }
+                    else
+                    {
+                        if (item.RepeatOptions.Max == null)
+                            count = item.RepeatOptions.Min.Value + 1;
+                        else
+                            count = item.RepeatOptions.Max.Value;
+                        edgeItem = item.RepeatOptions.Min.Value;
+                    }
+                    set = new TState[count];
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (i == 0)
+                            set[0] = state;
+                        else
+                            set[i] = CloneState<TCheck, TState, TDFA, TSourceElement, TRootState>(state, rootCtor, cCtor);
+                    }
+                    for (int i = edgeItem; i < count; i++)
+                    {
+                        var setEdges = set[i].ObtainEdges().ToArray();
+                        foreach (var edge in setEdges)
+                        {
+                            edge.IsEdge = true;
+                            edge.SetFinal(item);
+                        }
+                        set[i].IsEdge = true;
+                    }
+                    for (int i = count - 1; i > 0; i--)
+                        set[i - 1].Concat(set[i]);
+
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public static RegularLanguageNFAState BuildStringState(this IInlinedTokenItem target, bool caseInsensitive, string value)
+        {
+            RegularLanguageNFAState root = new RegularLanguageNFAState();
+            RegularLanguageNFAState current = root;
+
+            foreach (var c in value)
+            {
+                RegularLanguageNFAState nextState = new RegularLanguageNFAState();
+                current.MoveTo(new RegularLanguageSet(!caseInsensitive, c), nextState);
+                current = nextState;
+            }
+            List<RegularLanguageNFAState> flatline = new List<RegularLanguageNFAState>();
+            RegularLanguageNFAState.FlatlineState(root, flatline);
+            foreach (var fState in flatline)
+                fState.SetIntermediate(target);
+            root.SetInitial(target);
+            current.SetFinal(target);
+            return root;
         }
     }
 }

@@ -6,6 +6,10 @@ using Oilexer.Translation;
 
 namespace Oilexer.Expression
 {
+    /// <summary>
+    /// Provides an expression which represents a primitive type instance
+    /// used for literals.
+    /// </summary>
     [Serializable]
     public class PrimitiveExpression :
         MemberParentExpression<CodePrimitiveExpression>,
@@ -31,9 +35,17 @@ namespace Oilexer.Expression
         /// </summary>
         public static readonly PrimitiveExpression EmptyString = new PrimitiveExpression(string.Empty);
         /// <summary>
+        /// Represents a common primitive <see cref="System.Int32"/> expression of '-1'.
+        /// </summary>
+        public static readonly PrimitiveExpression NumberMinusOne = new PrimitiveExpression(-1);
+        /// <summary>
         /// Represents a common primitive <see cref="System.Int32"/> expression of '0'.
         /// </summary>
         public static readonly PrimitiveExpression NumberZero = new PrimitiveExpression(0);
+        /// <summary>
+        /// Represents a common primitive <see cref="System.Int32"/> expression of '1'.
+        /// </summary>
+        public static readonly PrimitiveExpression NumberOne = new PrimitiveExpression(1);
         /// <summary>
         /// Represents a common primitive boolean expression of 'true'.
         /// </summary>

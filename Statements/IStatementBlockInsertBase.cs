@@ -11,6 +11,11 @@ namespace Oilexer.Statements
     public interface IStatementBlockInsertBase
     {
         /// <summary>
+        /// Adds the <see cref="IStatement"/> to the <see cref="IStatementBlockInsertBase"/>.
+        /// </summary>
+        /// <param name="statement"></param>
+        void Add(IStatement statement);
+        /// <summary>
         /// Inserts and returns a new <see cref="IBlockStatement"/> used to
         /// create a new operating scope.
         /// </summary>

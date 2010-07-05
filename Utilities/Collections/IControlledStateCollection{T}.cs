@@ -74,5 +74,7 @@ namespace Oilexer.Utilities.Collections
         /// </summary>
         /// <returns>A new <see cref="System.Array"/> of <typeparamref name="T"/> instances.</returns>
         T[] ToArray();
+
+        int IndexOf(T element);
     }
 }

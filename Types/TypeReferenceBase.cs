@@ -141,8 +141,6 @@ namespace Oilexer.Types
 
         #region ITypeReference Members
 
-
-
         public int PointerRank
         {
             get
@@ -199,19 +197,6 @@ namespace Oilexer.Types
             }
         }
 
-        #endregion
-        public static TypeReferenceBase MakeArray(ITypeReference typeRef, int arrayRank)
-        {
-            if (typeRef == null)
-                throw new ArgumentNullException("typeRef");
-            else if (arrayRank <= 0)
-                throw new ArgumentOutOfRangeException("arrayRank");
-            return new TypeReferenceBase(typeRef, arrayRank);
-        }
-
-        #region ITypeReference Members
-
-
         /// <summary>
         /// Returns the <see cref="ITypeReference"/> list containing data about the TypeParameters for the
         /// <see cref="TypeReferenceBase"/>.
@@ -228,9 +213,6 @@ namespace Oilexer.Types
             }
         }
 
-        #endregion
-
-        #region ITypeReference Members
         public ICreateNewObjectExpression GetNewExpression(IExpressionCollection arguments)
         {
             return new CreateNewObjectExpression(this, arguments);
@@ -238,12 +220,12 @@ namespace Oilexer.Types
 
         public IMemberParentExpression GetMemberExpression(bool isStatic)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException();
         }
 
         public IMemberParentExpression GetMemberExpression(IDeclaration link)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -267,6 +249,8 @@ namespace Oilexer.Types
                 this.resolutionOptions = value;
             }
         }
+
+        public bool ByRef { get; set; }
 
         #endregion
 
@@ -316,6 +300,7 @@ namespace Oilexer.Types
                 arrayData += ",";
             return String.Format("[{0}]", arrayData);
         }
+
         public ITypeReferenceExpression GetTypeExpression()
         {
             return new TypeReferenceExpression(this);
@@ -359,12 +344,14 @@ namespace Oilexer.Types
             return result;
         }
 
+        public static TypeReferenceBase MakeArray(ITypeReference typeRef, int arrayRank)
+        {
+            if (typeRef == null)
+                throw new ArgumentNullException("typeRef");
+            else if (arrayRank <= 0)
+                throw new ArgumentOutOfRangeException("arrayRank");
+            return new TypeReferenceBase(typeRef, arrayRank);
+        }
 
-
-        #region ITypeReference Members
-
-        public bool ByRef { get; set; }
-
-        #endregion
     }
 }

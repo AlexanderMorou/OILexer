@@ -52,20 +52,23 @@ namespace Oilexer._Internal
 
         internal static void ExpandTemplates(this IProductionRuleEntry entry, GDFile file, CompilerErrorCollection errors)
         {
-            //Avoid un-necessary rebuilding work.
             if (!entry.NeedsExpansion())
                 return;
+            reexpand:
+            //Avoid un-necessary rebuilding work.
             ProductionRuleEntry e = ((ProductionRuleEntry)(entry));
             IProductionRuleSeries iprs = entry.ExpandTemplates(entry, file, errors);
             e.Clear();
             foreach (IProductionRule ipr in iprs)
                 e.Add(ipr);
+            if (entry.NeedsExpansion())
+                goto reexpand;
         }
 
         internal static IProductionRuleSeries ExpandTemplates(this IProductionRuleSeries series, IProductionRuleEntry entry, GDFile file, CompilerErrorCollection errors)
         {
             List<IProductionRule> result = new List<IProductionRule>();
-            foreach (IProductionRule rule in series)
+            foreach (IProductionRule rule in series.ToArray())
             {
                 if (!series.NeedsExpansion(entry))
                     result.Add(rule);
@@ -105,7 +108,7 @@ namespace Oilexer._Internal
         rebuildResult:
             List<IProductionRuleItem> rebuiltResult = new List<IProductionRuleItem>();
             foreach (IProductionRuleItem ipri in result)
-                if (ipri is IProductionRuleGroupItem && ((IProductionRuleGroupItem)(ipri)).Count == 1 && (ipri.Name == null || ipri.Name == string.Empty) && ipri.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                if (ipri is IProductionRuleGroupItem && ((IProductionRuleGroupItem)(ipri)).Count == 1 && (ipri.Name == null || ipri.Name == string.Empty) && ipri.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                     foreach (IProductionRuleItem iprii in ((IProductionRuleGroupItem)(ipri))[0])
                         rebuiltResult.Add(iprii);
                 else
@@ -165,14 +168,12 @@ namespace Oilexer._Internal
                     continue;
                 if (item.Count == 1 && item[0] == null)
                     continue;
-                else if (item == null)
-                    continue;
                 else if (item.Count == 1 && item[0].Count == 1 && item[0][0] == null)
                     continue;
                 result.Add(item);
             }
 
-            if (dataSource.RepeatOptions == ScannableEntryItemRepeatOptions.None && (dataSource.Name == null || dataSource.Name == string.Empty))
+            if (dataSource.RepeatOptions == ScannableEntryItemRepeatInfo.None && (dataSource.Name == null || dataSource.Name == string.Empty))
                 return new ProductionRuleSeries(result);
             else
             {
@@ -221,7 +222,7 @@ namespace Oilexer._Internal
             rebuildResult:
                 List<IProductionRuleItem> rebuiltResult = new List<IProductionRuleItem>();
                 foreach (IProductionRuleItem ipri in result)
-                    if (ipri is IProductionRuleGroupItem && ((IProductionRuleGroupItem)(ipri)).Count == 1 && (ipri.Name == null || ipri.Name == string.Empty) && ipri.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                    if (ipri is IProductionRuleGroupItem && ((IProductionRuleGroupItem)(ipri)).Count == 1 && (ipri.Name == null || ipri.Name == string.Empty) && ipri.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                         foreach (IProductionRuleItem iprii in ((IProductionRuleGroupItem)(ipri))[0])
                             rebuiltResult.Add(iprii);
                     else
@@ -421,7 +422,7 @@ namespace Oilexer._Internal
                                     ISoftReferenceProductionRuleItem sre = ((ISoftReferenceProductionRuleItem)e);
                                     if (((sre.SecondaryName == null || sre.SecondaryName == string.Empty)) && sre.PrimaryName != null)
                                     {
-                                        secondHalf = (ILiteralTokenItem)lookup.FindTokenItemByValue(sre.PrimaryName, file);
+                                        secondHalf = (ILiteralTokenItem)lookup.FindTokenItemByValue(sre.PrimaryName, file, true);
                                     }
                                 }
                                 //If they used the fully qualified name...
@@ -537,8 +538,8 @@ namespace Oilexer._Internal
                 case EntryPreprocessorType.ElseIfDefined:
                 case EntryPreprocessorType.Else:
                     return ((IPreprocessorIfDirective)directive).Expand(argumentLookup, entry, file, errors);
-                case EntryPreprocessorType.Define:
-                    ((IPreprocessorDefineDirective)(directive)).Expand(argumentLookup, entry, file, errors);
+                case EntryPreprocessorType.DefineRule:
+                    ((IPreprocessorDefineRuleDirective)(directive)).Expand(argumentLookup, entry, file, errors);
                     break;
                 case EntryPreprocessorType.AddRule:
                     ((IPreprocessorAddRuleDirective)(directive)).Expand(argumentLookup, entry, file, errors);
@@ -638,7 +639,7 @@ namespace Oilexer._Internal
                     foundItem.Add(ipr.Expand(argumentLookup, entry, file, errors));
             }
         }
-        internal static void Expand(this IPreprocessorDefineDirective directive, ProductionRuleTemplateArgumentSeries argumentLookup, IProductionRuleTemplateEntry entry, GDFile file, CompilerErrorCollection errors)
+        internal static void Expand(this IPreprocessorDefineRuleDirective directive, ProductionRuleTemplateArgumentSeries argumentLookup, IProductionRuleTemplateEntry entry, GDFile file, CompilerErrorCollection errors)
         {
             string search = directive.DeclareTarget;
             if (search != null && search != string.Empty)

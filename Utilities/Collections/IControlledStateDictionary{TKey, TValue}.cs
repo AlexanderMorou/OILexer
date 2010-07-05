@@ -12,9 +12,7 @@ namespace Oilexer.Utilities.Collections
     /// <typeparam name="TKey">The type of element used as a key.</typeparam>
     /// <typeparam name="TValue">The type of element used as the values associated to the keys.</typeparam>
     public interface IControlledStateDictionary<TKey, TValue> :
-        IControlledStateCollection<KeyValuePair<TKey, TValue>>, 
-        IEnumerable<KeyValuePair<TKey, TValue>>, 
-        IEnumerable
+        IControlledStateCollection<KeyValuePair<TKey, TValue>>
     {
         /// <summary>
         /// Gets a <see cref="IControlledStateCollection{T}"/> containing the 

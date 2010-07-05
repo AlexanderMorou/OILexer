@@ -80,7 +80,7 @@ namespace Oilexer
             if (attrC[typeof(AssemblyFileVersionAttribute)] != null)
                 this.fileVersion = new Version(((AssemblyFileVersionAttribute)attrC[typeof(AssemblyFileVersionAttribute)]).Version);
             this.assemblyVersion = assembly.GetName().Version;
-            this.culture = CultureIdentifier.GetIdentifierByID(assembly.GetName().CultureInfo.LCID);
+            this.culture = CultureIdentifiers.GetIdentifierById(assembly.GetName().CultureInfo.LCID);
             /*
             if (attrC[typeof(NeutralResourcesLanguageAttribute)] != null)
                 this.culture = CultureIdentifier.defaultCultureIDByCultureName[((NeutralResourcesLanguageAttribute)attrC[typeof(NeutralResourcesLanguageAttribute)]).CultureName];

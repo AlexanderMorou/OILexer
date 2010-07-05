@@ -1,0 +1,32 @@
+#include                      "Root.oilexer";
+
+SelectionStatement ::=
+    IfStatement |
+    SwitchStatement;
+
+IfStatement                               ::=
+    "if" '(' BooleanExpression:Condition; ')'
+        EmbeddedStatement:TruePart;
+    ("else" 
+        EmbeddedStatement:FalsePart;)?      ;
+
+SwitchStatement                           ::=
+    "switch" '('Expression:CaseSelector; ')'
+    '{'
+        SwitchSection:Sections;*
+    '}';
+
+SwitchSection ::=
+    SwitchLabel:Labels;+
+    Statement:Statements;;
+
+SwitchLabel ::=
+    SwitchDefaultLabel |
+    SwitchCaseLabel;
+
+SwitchDefaultLabel ::=
+    "default" ':';
+
+SwitchCaseLabel ::=
+    "case" ConstantExpression:Case; ':';
+

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Oilexer.Utilities.Collections;
+using Oilexer.FiniteAutomata.Rules;
 
 namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 {
@@ -9,7 +11,8 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
     /// in a <see cref="IProductionRuleEntry"/>.
     /// </summary>
     public interface IProductionRuleItem :
-        IScannableEntryItem
+        IScannableEntryItem,
+        IProductionRuleSource
     {
         /// <summary>
         /// Creates a copy of the current <see cref="IProductionRuleItem"/>.
@@ -17,5 +20,6 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         /// <returns>A new <see cref="IProductionRuleItem"/> with the data
         /// members of the current <see cref="IProductionRuleItem"/>.</returns>
         new IProductionRuleItem Clone();
+        IReadOnlyDictionary<string, string> ConditionalConstraints { get; }
     }
 }

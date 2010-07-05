@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,16 +10,35 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Oilexer</RootNamespace>
     <AssemblyName>Oilexer</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <NoWin32Manifest>true</NoWin32Manifest>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;WIN32</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;WINDOWS, x86</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -27,11 +46,56 @@
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>WIN32</DefineConstants>
+    <DefineConstants>WINDOWS, x86</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <WarningsAsErrors>67,162,168,219</WarningsAsErrors>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;WINDOWS, x64</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>WINDOWS, x64</DefineConstants>
+    <Optimize>true</Optimize>
+    <PlatformTarget>x64</PlatformTarget>
+    <WarningsAsErrors>67,162,168,219</WarningsAsErrors>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;WINDOWS, x86, PROCESS_STATES</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>WINDOWS, x86</DefineConstants>
+    <Optimize>true</Optimize>
+    <PlatformTarget>x86</PlatformTarget>
+    <WarningsAsErrors>67,162,168,219</WarningsAsErrors>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Oilexer.Program</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -91,6 +155,10 @@
     <Compile Include="Compiler\IntermediateCompilerOptions.cs" />
     <Compile Include="Compiler\IntermediateCompilerResults.cs" />
     <Compile Include="CultureIdentifier.cs" />
+    <Compile Include="CultureIdentifiers+CountryRegions.cs" />
+    <Compile Include="CultureIdentifiers+CultureCodes.cs" />
+    <Compile Include="CultureIdentifiers+IDs.cs" />
+    <Compile Include="CultureIdentifiers+LocalizedNames.cs" />
     <Compile Include="CultureIdentifiers.cs" />
     <Compile Include="CultureIdentifierTypeConverter.cs" />
     <Compile Include="DebugSupport.cs" />
@@ -157,6 +225,90 @@
     <Compile Include="FileModel\TemporaryDirectory.Files.cs" />
     <Compile Include="FileModel\TemporaryFile.cs" />
     <Compile Include="FileModel\TemporaryFileHelper.cs" />
+    <Compile Include="FiniteAutomata\DFAState.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataBitSet+RangeData.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataMultiTargetTransitionTable{2}.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataSection.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataSingleTargetTransitionTable.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataState{4}.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataTransitionNode{TCheck, TTarget}.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataTransitionTable+KeysCollection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FiniteAutomata\FiniteAutomataTransitionTable+ValuesCollection.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataTransitionTable{3}.cs" />
+    <Compile Include="FiniteAutomata\IDFAState.cs" />
+    <Compile Include="FiniteAutomata\IFiniteAutomataMultiTargetTransitionTable.cs" />
+    <Compile Include="FiniteAutomata\IFiniteAutomataSingleTargetTransitionTable.cs" />
+    <Compile Include="FiniteAutomata\IFiniteAutomataState.cs" />
+    <Compile Include="FiniteAutomata\IFiniteAutomataTransitionNode.cs" />
+    <Compile Include="FiniteAutomata\IFiniteAutomataTransitionTable.cs" />
+    <Compile Include="FiniteAutomata\IFiniteAutomataSource.cs" />
+    <Compile Include="FiniteAutomata\INFAState.cs" />
+    <Compile Include="FiniteAutomata\NFAState+DFAEntry.cs" />
+    <Compile Include="FiniteAutomata\NFAState+DFAEntrySet.cs" />
+    <Compile Include="FiniteAutomata\NFAState+DFAEntryTable.cs" />
+    <Compile Include="FiniteAutomata\NFAState{4}.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomationSourceKind.cs" />
+    <Compile Include="FiniteAutomata\Rules\ForwardNodeType.cs" />
+    <Compile Include="FiniteAutomata\Rules\ISyntacticalForwardFollowerNode.cs" />
+    <Compile Include="FiniteAutomata\Rules\ISyntacticalForwardNode.cs" />
+    <Compile Include="FiniteAutomata\Rules\ISyntacticalForwardRootNode.cs" />
+    <Compile Include="FiniteAutomata\Rules\ISyntacticalRuleNode.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalFollowTable.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalFollowInfo.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalForwardNode.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalParser.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarBreakdown.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarConstantItemSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarConstantSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarConstantEntrySymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalDFAStateTransitionTable.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarRuleSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarSymbolComparer.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarSymbolSet.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarTokenSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarVariableSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\GrammarVocabulary.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarConstantSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarConstantEntrySymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarConstantItemSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarRuleSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarSymbolSet.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarTokenSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\IGrammarVariableSymbol.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalDFARootState.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalNFARootState.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData+CaptureEntry.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData+Entry.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData.cs" />
+    <Compile Include="FiniteAutomata\Tokens\IRegularLanguageStateMachine.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageDFATransitionTable.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageLexer.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageRecognizerStateMachine.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageToken.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageTokenTable+Target.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageTokenTable.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageTransducerStateMachine.cs" />
+    <Compile Include="Parser\Builder\IUnicodeCollectiveTargetGraph.cs" />
+    <Compile Include="Parser\Builder\IUnicodeTargetCategory.cs" />
+    <Compile Include="Parser\Builder\IUnicodeTargetGraph.cs" />
+    <Compile Include="Parser\Builder\IUnicodeTargetPartialCategory.cs" />
+    <Compile Include="Parser\Builder\IUnicodeTarget.cs" />
+    <Compile Include="Parser\Builder\UnicodeCollectiveTargetGraph.cs" />
+    <Compile Include="Parser\Builder\UnicodeTarget.cs" />
+    <Compile Include="Parser\Builder\UnicodeTargetCategory.cs" />
+    <Compile Include="Parser\Builder\UnicodeTargetGraph.cs" />
+    <Compile Include="Parser\Builder\UnicodeTargetPartialCategory.cs" />
+    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleSource.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalDFAState.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalNFAState.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularCaptureType.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageDFARootState.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageDFAState.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageNFARootState.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageNFAState.cs" />
     <Compile Include="IAssemblyInformation.cs" />
     <Compile Include="ICultureIdentifier.cs" />
     <Compile Include="IIntermediateModule.cs" />
@@ -170,6 +322,24 @@
     <Compile Include="IntermediateProject.cs" />
     <Compile Include="IntermediateProjectInformation.cs" />
     <Compile Include="IntermediateProjectPartials.cs" />
+    <Compile Include="Parser\Builder\ParserBuilderPhase.cs" />
+    <Compile Include="Parser\Builder\ParserBuilderResults.cs" />
+    <Compile Include="Parser\GDFileData\DefineSymbolDirective.cs" />
+    <Compile Include="Parser\GDFileData\EntryPreprocessorType.cs" />
+    <Compile Include="Parser\GDFileData\IPreprocessorDefineSymbolDirective.cs" />
+    <Compile Include="Parser\GDFileData\IPreprocessorIncludeDirective.cs" />
+    <Compile Include="Parser\GDFileData\IPreprocessorEntryContainer.cs" />
+    <Compile Include="Parser\GDFileData\PreprocessorEntryContainer.cs" />
+    <Compile Include="Parser\GDFileData\PreprocessorIncludeDirective.cs" />
+    <Compile Include="Parser\GDFileData\PreprocessorProductionRuleSeries.cs" />
+    <Compile Include="Parser\GDFileData\ScannableEntryItemRepeatOptions.cs" />
+    <Compile Include="Parser\GDFileData\StringTerminalKind.cs" />
+    <Compile Include="Parser\GDFileData\TokenExpression\IScanCommandTokenItem.cs" />
+    <Compile Include="Parser\GDFileData\TokenExpression\ISubtractionCommand.cs" />
+    <Compile Include="Parser\GDFileData\TokenExpression\ITokenSource.cs" />
+    <Compile Include="Parser\GDFileData\TokenExpression\ScanCommandTokenItem.cs" />
+    <Compile Include="Parser\GDFileData\TokenExpression\SubtractionCommandTokenItem.cs" />
+    <Compile Include="Parser\GDParser+PreprocessorContainer.cs" />
     <Compile Include="Parser\IParser.cs" />
     <Compile Include="Parser\IParserResults.cs" />
     <Compile Include="Parser\IParserResults{T}.cs" />
@@ -535,17 +705,6 @@
     <Compile Include="Types\TypeReferenceBase.cs" />
     <Compile Include="Types\TypeReferenceCollection.cs" />
     <Compile Include="Types\TypeReferenceResolveOptions.cs" />
-    <Compile Include="Parser\Builder\GDBuilder.cs" />
-    <Compile Include="Parser\Builder\GDLinker.cs" />
-    <Compile Include="Parser\Builder\IGDBuilder.cs" />
-    <Compile Include="Parser\Builder\IGDLinker.cs" />
-    <Compile Include="Parser\Builder\IProductionRuleDefinition.cs" />
-    <Compile Include="Parser\Builder\IProductionRuleRootDefinition.cs" />
-    <Compile Include="Parser\Builder\IProductionSubRuleDefinition.cs" />
-    <Compile Include="Parser\Builder\ITokenDefinition.cs" />
-    <Compile Include="Parser\Builder\ProductionRuleDefinition.cs" />
-    <Compile Include="Parser\Builder\ProductionRuleRootDefinition.cs" />
-    <Compile Include="Parser\Builder\TokenDefinition.cs" />
     <Compile Include="Parser\GDFile+MyOptions.cs" />
     <Compile Include="Parser\GDFile.cs" />
     <Compile Include="Parser\GDFileData\CommentEntry.cs" />
@@ -563,7 +722,7 @@
     <Compile Include="Parser\GDFileData\IPreprocessorCLogicalAndConditionExp.cs" />
     <Compile Include="Parser\GDFileData\IPreprocessorCLogicalOrConditionExp.cs" />
     <Compile Include="Parser\GDFileData\IPreprocessorCPrimary.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorDefineDirective.cs" />
+    <Compile Include="Parser\GDFileData\IPreprocessorDefineRuleDirective.cs" />
     <Compile Include="Parser\GDFileData\IPreprocessorDirective.cs" />
     <Compile Include="Parser\GDFileData\IPreprocessorDirectives.cs" />
     <Compile Include="Parser\GDFileData\IPreprocessorIfDirective.cs" />
@@ -582,7 +741,7 @@
     <Compile Include="Parser\GDFileData\PreprocessorCLogicalOrConditionExp.cs" />
     <Compile Include="Parser\GDFileData\PreprocessorConditionalReturnDirective.cs" />
     <Compile Include="Parser\GDFileData\PreprocessorCPrimary.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorDefineDirective.cs" />
+    <Compile Include="Parser\GDFileData\PreprocessorDefineRuleDirective.cs" />
     <Compile Include="Parser\GDFileData\PreprocessorDirectiveBase.cs" />
     <Compile Include="Parser\GDFileData\PreprocessorIfDirective.cs" />
     <Compile Include="Parser\GDFileData\PreprocessorThrowDirective.cs" />
@@ -600,7 +759,6 @@
     <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleGroupItem.cs" />
     <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleItem.cs" />
     <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRulePreprocessor.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleSpecialItem.cs" />
     <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleTemplatePart.cs" />
     <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleTemplateParts.cs" />
     <Compile Include="Parser\GDFileData\ProductionRuleExpression\IRuleReferenceProductionRuleItem.cs" />
@@ -629,7 +787,7 @@
     <Compile Include="Parser\GDFileData\ProductionRuleExpression\TokenReferenceProductionRuleItem.cs" />
     <Compile Include="Parser\GDFileData\ProductionRuleTemplateEntry.cs" />
     <Compile Include="Parser\GDFileData\ScannableEntryItem.cs" />
-    <Compile Include="Parser\GDFileData\ScannableEntryItemRepeatOptions.cs" />
+    <Compile Include="Parser\GDFileData\ScannableEntryItemRepeatInfo.cs" />
     <Compile Include="Parser\GDFileData\TokenEntry.cs" />
     <Compile Include="Parser\GDFileData\TokenEOFEntry.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\CharRangeTokenItem.cs" />
@@ -642,7 +800,7 @@
     <Compile Include="Parser\GDFileData\TokenExpression\ILiteralStringTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\ILiteralTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\ILiteralTokenItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\IScanCommandTokenItem.cs" />
+    <Compile Include="Parser\GDFileData\TokenExpression\ICommandTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\ISoftReferenceTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\ITokenExpression.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\ITokenExpressionSeries.cs" />
@@ -655,7 +813,7 @@
     <Compile Include="Parser\GDFileData\TokenExpression\LiteralStringReferenceTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\LiteralStringTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\LiteralTokenItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ScanCommandTokenItem.cs" />
+    <Compile Include="Parser\GDFileData\TokenExpression\CommandTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\SoftReferenceTokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\TokenExpression.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\TokenExpressionSeries.cs" />
@@ -690,60 +848,14 @@
     </Compile>
     <Compile Include="Utilities\Common\EventHandler{T}.cs" />
     <Compile Include="Utilities\Common\IterationLogic.cs" />
+    <Compile Include="FiniteAutomata\FiniteAutomataBitSet.cs" />
+    <Compile Include="FiniteAutomata\IFiniteAutomataSet.cs" />
+    <Compile Include="Parser\Builder\ParserBuilder.cs" />
+    <Compile Include="Parser\Builder\ParserCompilerExtensions.cs" />
+    <Compile Include="FiniteAutomata\Tokens\RegularLanguageSet.cs" />
+    <Compile Include="Parser\Builder\TokenEqualityLevel.cs" />
+    <Compile Include="Parser\Builder\TokenPrecedenceTable.cs" />
     <Compile Include="_Internal\BitStreamCreator.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleCharLiteralReferenceItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleEntry.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleExpression.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleExpressionSeries.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleGroupItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleReferenceItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleStringLiteralReferenceItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\FlattenedRuleTokenReferenceItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IFlattenedRuleItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IRuleDataCaptureItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IRuleDataEnumItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IRuleDataItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IRuleDataNamedItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IRuleDataRuleReferenceItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IRuleDataSetSource.cs" />
-    <Compile Include="_Internal\Flatform\Rules\IRuleDataTokenItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataCaptureItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataEnumItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataNamedCaptureItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataNamedEnumItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataNamedRuleReferenceItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataRuleReferenceItem.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataSet+NamedSet.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataSet.cs" />
-    <Compile Include="_Internal\Flatform\Rules\RuleDataTokenItemBase.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageBitArray.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageRuleState.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageState+Merger+NFALookup.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageState+Merger+NFALookupTable.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageState+Merger.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageState+TransitionTable.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageState.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageTransitionNode+SourceElement.cs" />
-    <Compile Include="_Internal\Flatform\Rules\StateSystem\SimpleLanguageTransitionNode.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\FlattenedScanTokenCommandItem.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\FlattenedTokenCharRangeItem.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\FlattenedTokenEntry.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\FlattenedTokenExpression.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\FlattenedTokenExpressionSeries.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\FlattenedTokenGroupItem.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\FlattenedTokenLiteralItem.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\IFlattenedTokenItem.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageBitArray.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageState+ForkCode.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageState+Merger+NFALookup.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageState+Merger+NFALookupTable.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageState+Merger.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageState+TransitionTable.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageState.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageTransitionNode+SourceElement.cs" />
-    <Compile Include="_Internal\Flatform\Tokens\StateSystem\RegularLanguageTransitionNode.cs" />
     <Compile Include="_Internal\GrammarCore.cs" />
     <Compile Include="_Internal\Inlining\IInlinedTokenItem.cs" />
     <Compile Include="_Internal\Inlining\InlinedCharRangeTokenItem.cs" />
@@ -752,6 +864,7 @@
     <Compile Include="_Internal\Inlining\InlinedLiteralStringReferenceTokenItem.cs" />
     <Compile Include="_Internal\Inlining\InlinedLiteralStringTokenItem.cs" />
     <Compile Include="_Internal\Inlining\InlinedScanTokenItem.cs" />
+    <Compile Include="_Internal\Inlining\InlinedSubtractionCommandTokenItem.cs" />
     <Compile Include="_Internal\Inlining\InlinedTokenEntry.cs" />
     <Compile Include="_Internal\Inlining\InlinedTokenEOFEntry.cs" />
     <Compile Include="_Internal\Inlining\InlinedTokenExpression.cs" />
@@ -759,35 +872,10 @@
     <Compile Include="_Internal\Inlining\InlinedTokenGroupItem.cs" />
     <Compile Include="_Internal\Inlining\InlinedTokenReferenceTokenItem.cs" />
     <Compile Include="_Internal\Inlining\InliningCore.cs" />
-    <Compile Include="_Internal\ISyntaxActivationItem.cs" />
-    <Compile Include="_Internal\ITokenItemData.cs" />
-    <Compile Include="_Internal\LargeFootprintEnum.cs" />
-    <Compile Include="_Internal\LargeFootprintEnumBuildResults.cs" />
-    <Compile Include="_Internal\LargeFootprintEnumGroup.cs" />
-    <Compile Include="_Internal\LargeFootprintEnumGroupItem.cs" />
     <Compile Include="_Internal\LinkerCore %28Stage 1%29.cs" />
     <Compile Include="_Internal\LinkerCore %28Stage 2%29.cs" />
     <Compile Include="_Internal\LinkerCore %28Stage 3%29.cs" />
     <Compile Include="_Internal\LinkerCore+ProductionRuleTemplateArgumentSeries.cs" />
-    <Compile Include="_Internal\ProjectConstructor.cs" />
-    <Compile Include="_Internal\PropertyBuilder.cs" />
-    <Compile Include="_Internal\Recursor.cs" />
-    <Compile Include="_Internal\SelfAmbiguousTokenItemData.cs" />
-    <Compile Include="_Internal\SetCommon.cs" />
-    <Compile Include="_Internal\SyntaxActivationEnumItem.cs" />
-    <Compile Include="_Internal\SyntaxActivationInfo.cs" />
-    <Compile Include="_Internal\SyntaxActivationItem.cs" />
-    <Compile Include="_Internal\SyntaxActivationItemType.cs" />
-    <Compile Include="_Internal\SyntaxActivationScope.cs" />
-    <Compile Include="_Internal\SyntaxActivationTokenItem.cs" />
-    <Compile Include="_Internal\TokenBitArray.cs" />
-    <Compile Include="_Internal\TokenFinalData.cs" />
-    <Compile Include="_Internal\TokenItemData.cs" />
-    <Compile Include="_Internal\TokenOrderingComparer.cs" />
-    <Compile Include="_Internal\TokenPrecedence.cs" />
-    <Compile Include="_Internal\Tuple{T1, T2, T3, T4}.cs" />
-    <Compile Include="_Internal\Tuple{T1, T2, T3}.cs" />
-    <Compile Include="_Internal\Tuple{T1, T2}.cs" />
     <Compile Include="_Internal\Tuple{T1}.cs" />
     <Compile Include="Utilities\Arrays\Tweaks.cs" />
     <Compile Include="Utilities\Collections\ControlledStateCollection{T}.cs" />
@@ -816,6 +904,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Parser\CSharp - Example Rule Tree Construct.txt" />
+    <Content Include="_Internal\Inlining\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -827,7 +916,147 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Parser\AllenCopeland.pfx" />
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Samples\CSharp\Attributes.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Expressions\AnonymousExpressions.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Expressions\Array.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Expressions\LINQ.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Expressions\Math.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Expressions\Root.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Expressions\Templates.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\GeneralTemplates.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Lexical Grammar\Keywords.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Lexical Grammar\Operators.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Lexical Grammar\OtherTokens.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Lexical Grammar\Preprocessor.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Lexical Grammar\Root.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Constructors.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Events.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Fields.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Indexers.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Locals.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Methods.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Operators.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Parameters.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Properties.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Members\Root.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Namespace.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Root.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Statements\Root.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Statements\Selection.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Statements\Templates.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\ClassDeclaration.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\DelegateDeclaration.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\EnumDeclaration.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\Generics.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\InterfaceDeclaration.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\Root.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\StructDeclaration.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\CSharp\Types\Templates.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -837,4 +1066,8 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
 </Project>

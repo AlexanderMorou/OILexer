@@ -1,0 +1,24 @@
+#include                      "Root.oilexer";
+
+/* --------------------------------------- *\
+|*              B.2.11: Enums              *|
+\* --------------------------------------- */
+
+EnumDeclaration                           ::=
+    Attributes:Attributes;?
+    (
+        "new" |
+        "public" |
+        "protected" |
+        "internal" |
+        "private"
+    ):Modifiers;*
+    "enum" Identifier:Name;
+    (':' IntegralType:BaseType;)?
+    '{'
+        (
+            DelimitedList<EnumMemberDeclaration:Members;, ','>
+            ','?
+        )?
+    '}' ';'?                                ;
+

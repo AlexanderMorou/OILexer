@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Oilexer._Internal;
 
 namespace Oilexer.Parser.GDFileData
 {
@@ -142,18 +143,19 @@ namespace Oilexer.Parser.GDFileData
             switch (rule)
             {
                 case 1:
-                    return string.Format("\"{0}\"",this.String);
+                    return this.String.Encode();
                 case 2:
                     if (this.Char.HasValue)
                         return string.Format("'{0}'", this.Char.Value.ToString());
-                    else
-                        return "<null>";
+                    break;
                 case 3:
                     return string.Format("({0})", this.preCLogicalOrExp.ToString());
                 case 4:
                     return this.identifier.Name;
                 case 5 :
-                    return this.Number.ToString();
+                    if (this.Number.HasValue)
+                        return this.Number.ToString();
+                    break;
             }
             return "<null>";
         }

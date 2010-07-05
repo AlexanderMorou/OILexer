@@ -259,7 +259,7 @@ namespace Oilexer
                 {
                     culture = ExtractByAttribute<string>(typeof(NeutralResourcesLanguageAttribute), new TranslateArgument<string, IAttributeDeclaration>(StandardExtractAttribute<string>));
                     if (culture != null && culture != string.Empty)
-                        this.culture = CultureIdentifier.defaultCultureIDByCultureName[culture];
+                        this.culture = CultureIdentifiers.GetIdentifierByName(culture);
                 }
 
                 return this.culture;

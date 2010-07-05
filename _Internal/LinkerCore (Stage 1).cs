@@ -7,6 +7,7 @@ using Oilexer.Parser.GDFileData;
 using Oilexer.Parser.GDFileData.ProductionRuleExpression;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser;
+using Oilexer.Parser.Builder;
 namespace Oilexer._Internal
 {
     internal static partial class LinkerCore
@@ -18,24 +19,29 @@ namespace Oilexer._Internal
         internal static IEnumerable<IProductionRuleEntry> ruleEntries;
         internal static IEnumerable<IProductionRuleTemplateEntry> ruleTemplEntries;
         internal static IEnumerable<IErrorEntry> errorEntries;
+        
         private static void ResolveToken(this ITokenEntry entry, GDFile file, CompilerErrorCollection errors)
         {
             List<ITokenEntry> lowerTokens = new List<ITokenEntry>();
-            foreach (string s in entry.LowerPrecedenceNames)
+            var fileTokens = file.GetTokenEnumerator();
+            if (entry.LowerPrecedenceTokens == null)
             {
-                var match = (from e in file
-                             where e is ITokenEntry
-                             let t = (ITokenEntry)e
-                             where t.Name == s
-                             select t).FirstOrDefault();
-                if (match == null)
+                foreach (string s in entry.LowerPrecedenceNames)
                 {
-                    GrammarCore.GetParserError(entry.FileName, entry.Line, entry.Column, GDParserErrors.UndefinedTokenReference, string.Format("Lower precedence token {0}", s));
-                    break;
+                    var match = (from generalEntry in fileTokens
+                                 let tokenEntry = generalEntry as ITokenEntry
+                                 where tokenEntry != null &&
+                                        tokenEntry.Name == s
+                                 select tokenEntry).FirstOrDefault();
+                    if (match == null)
+                    {
+                        GrammarCore.GetParserError(entry.FileName, entry.Line, entry.Column, GDParserErrors.UndefinedTokenReference, string.Format("Lower precedence token {0}", s));
+                        break;
+                    }
+                    lowerTokens.Add(match);
                 }
-                lowerTokens.Add(match);
+                ((TokenEntry)entry).LowerPrecedenceTokens = lowerTokens.ToArray();
             }
-            ((TokenEntry)entry).LowerPrecedenceTokens = lowerTokens.ToArray();
             entry.Branches.ResolveTokenExpressionSeries(entry, file, errors);
         }
 
@@ -68,7 +74,11 @@ namespace Oilexer._Internal
             {
                 return ((ISoftReferenceTokenItem)(item)).ResolveSoftReference(entry, file, errors);
             }
-            //*//
+            else if (item is ICommandTokenItem)
+            {
+                ((ICommandTokenItem)(item)).ResolveSoftReference(entry, file, errors);
+                return item;
+            }
             else if (item is ILiteralStringTokenItem)
             {
                 ILiteralStringTokenItem ilsti = ((ILiteralStringTokenItem)item);
@@ -80,6 +90,21 @@ namespace Oilexer._Internal
                 }
             }//*/
             return item;
+        }
+
+        private static void ResolveSoftReference(this ICommandTokenItem source, ITokenEntry entry, GDFile file, System.CodeDom.Compiler.CompilerErrorCollection errors)
+        {
+            if (source is IScanCommandTokenItem)
+            {
+                var scanSource = source as ScanCommandTokenItem;
+                scanSource.SearchTarget.ResolveTokenExpressionSeries(entry, file, errors);
+            }
+            else if (source is ISubtractionCommandTokenItem)
+            {
+                var subtractSource = source as SubtractionCommandTokenItem;
+                subtractSource.Left.ResolveTokenExpressionSeries(entry, file, errors);
+                subtractSource.Right.ResolveTokenExpressionSeries(entry, file, errors);
+            }
         }
 
         private static ITokenItem ResolveSoftReference(this ISoftReferenceTokenItem item, ITokenEntry entry, GDFile file, CompilerErrorCollection errors)
@@ -168,8 +193,7 @@ namespace Oilexer._Internal
              * it only enumerates the source when requested.  If we tamper with the source,
              * before enumerating the transitionFirst time, the results are distorted.
              * */
-            IList<IProductionRuleItem> rCopy = new List<IProductionRuleItem>(from item in rule
-                                                                             select item);
+            IList<IProductionRuleItem> rCopy = new List<IProductionRuleItem>(rule);
 
             ProductionRule pr = rule as ProductionRule;
             IEnumerable<IProductionRuleItem> finalVersion = from item in rCopy
@@ -218,21 +242,21 @@ namespace Oilexer._Internal
                 case EntryPreprocessorType.ElseIfDefined:
                 case EntryPreprocessorType.Else:
                     IPreprocessorIfDirective ipid = ((IPreprocessorIfDirective)(item));
-                    PreprocessorIfDirective pid = new PreprocessorIfDirective(item.Type, ((IPreprocessorIfDirective)item).Condition, item.Column, item.Line, item.Position);
+                    PreprocessorIfDirective pid = new PreprocessorIfDirective(item.Type, ((IPreprocessorIfDirective)item).Condition, entry.FileName, item.Column, item.Line, item.Position);
                     foreach (IPreprocessorDirective ipd in ipid.Body)
                         ((PreprocessorIfDirective.DirectiveBody)(pid.Body)).Add(ipd.ResolveProductionRuleItem(entry, file, errors));
                     if (ipid.Next != null)
                         pid.Next = (IPreprocessorIfDirective)ipid.Next.ResolveProductionRuleItem(entry, file, errors);
                     return pid;
-                case EntryPreprocessorType.Define:
-                    IPreprocessorDefineDirective ipdd = ((IPreprocessorDefineDirective)(item));
+                case EntryPreprocessorType.DefineRule:
+                    IPreprocessorDefineRuleDirective ipdd = ((IPreprocessorDefineRuleDirective)(item));
                     IProductionRule[] dr = new IProductionRule[ipdd.DefinedRules.Length];
                     for (int i = 0; i < ipdd.DefinedRules.Length; i++)
                     {
                         dr[i] = ipdd.DefinedRules[i].Clone();
                         dr[i].ResolveProductionRule(entry, file, errors);
                     }
-                    return new PreprocessorDefineDirective(ipdd.DeclareTarget, dr, ipdd.Column, ipdd.Line, ipdd.Position);
+                    return new PreprocessorDefineRuleDirective(ipdd.DeclareTarget, dr, ipdd.Column, ipdd.Line, ipdd.Position);
                 case EntryPreprocessorType.AddRule:
                     IPreprocessorAddRuleDirective ipard = ((IPreprocessorAddRuleDirective)(item));
                     IProductionRule[] ar = new IProductionRule[ipard.Rules.Length];
@@ -310,7 +334,7 @@ namespace Oilexer._Internal
                 foreach (IProductionRuleSeries iprs in item.Parts)
                     iprs.ResolveProductionRuleSeries(entry, file, errors);
                 TemplateReferenceProductionRuleItem rResult = new TemplateReferenceProductionRuleItem(iprte, new List<IProductionRuleSeries>(item.Parts.ToArray()), item.Column, item.Line, item.Position);
-                if (item.RepeatOptions != ScannableEntryItemRepeatOptions.None)
+                if (item.RepeatOptions != ScannableEntryItemRepeatInfo.None)
                     rResult.RepeatOptions = item.RepeatOptions;
                 if (item.Name != null && item.Name != string.Empty)
                     rResult.Name = item.Name;
@@ -334,7 +358,7 @@ namespace Oilexer._Internal
                         if (iprtp.Name == item.PrimaryName)
                         {
                             TemplateParamReferenceProductionRuleItem result = new TemplateParamReferenceProductionRuleItem(((IProductionRuleTemplateEntry)(entry)), iprtp, item.Column, item.Line, item.Position);
-                            if (item.RepeatOptions != ScannableEntryItemRepeatOptions.None)
+                            if (item.RepeatOptions != ScannableEntryItemRepeatInfo.None)
                                 result.RepeatOptions = item.RepeatOptions;
                             if (item.Name != null && result.Name == null)
                                 result.Name = item.Name;
@@ -353,40 +377,38 @@ namespace Oilexer._Internal
             else
             {
                 ITokenEntry tokenE = tokenEntries.FindScannableEntry(item.PrimaryName);
-                if (item.SecondaryName != null)
-                {
-                    ITokenItem iti = tokenE.FindTokenItem(item.SecondaryName);
-                    if (iti != null)
+                if (tokenE != null)
+                    if (item.SecondaryName != null)
                     {
-                        IProductionRuleItem result = null;
-                        if (iti is ILiteralCharTokenItem)
-                            result = new LiteralCharReferenceProductionRuleItem(((ILiteralCharTokenItem)(iti)), tokenE, item.Column, item.Line, item.Position, item.IsFlag, item.Counter);
-                        else if (iti is ILiteralStringTokenItem)
-                            result = new LiteralStringReferenceProductionRuleItem(((ILiteralStringTokenItem)(iti)), tokenE, item.Column, item.Line, item.Position, item.IsFlag, item.Counter);
-                        else
+                        ITokenItem iti = tokenE.FindTokenItem(item.SecondaryName);
+                        if (iti != null)
                         {
-                            /* *
-                             * ToDo: Throw an error here for referencing the wrong type of token
-                             * */
-                        }
-                        if (result != null)
-                        {
-                            result.Name = item.Name;
-                            result.RepeatOptions = item.RepeatOptions;
-                            return result;
+                            IProductionRuleItem result = null;
+                            if (iti is ILiteralCharTokenItem)
+                                result = new LiteralCharReferenceProductionRuleItem(((ILiteralCharTokenItem)(iti)), tokenE, item.Column, item.Line, item.Position, item.IsFlag, item.Counter);
+                            else if (iti is ILiteralStringTokenItem)
+                                result = new LiteralStringReferenceProductionRuleItem(((ILiteralStringTokenItem)(iti)), tokenE, item.Column, item.Line, item.Position, item.IsFlag, item.Counter);
+                            else
+                            {
+                                /* *
+                                 * ToDo: Throw an error here for referencing the wrong type of token
+                                 * */
+                            }
+                            if (result != null)
+                            {
+                                result.Name = item.Name;
+                                result.RepeatOptions = item.RepeatOptions;
+                                return result;
+                            }
                         }
                     }
-                }
-                else if (tokenE != null)
-                {
-                    TokenReferenceProductionRuleItem result = new TokenReferenceProductionRuleItem(tokenE, item.Column, item.Line, item.Position);
-                    if (!string.IsNullOrEmpty(item.Name))
+                    else
                     {
-                        result.Name = item.Name;
-                        result.RepeatOptions = item.RepeatOptions;
+                        TokenReferenceProductionRuleItem result = new TokenReferenceProductionRuleItem(tokenE, item.Column, item.Line, item.Position);
+                        var softee = item as SoftReferenceProductionRuleItem;
+                        softee.CloneData(result);
+                        return result;
                     }
-                    return result;
-                }
             }
             return item;
         }

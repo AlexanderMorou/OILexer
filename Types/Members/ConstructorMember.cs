@@ -62,7 +62,11 @@ namespace Oilexer.Types.Members
             if (options.BuildTrail != null)
                 options.BuildTrail.Push(this);
             CodeConstructor result = new CodeConstructor();
-            //Insert the parameters into the result.
+            /* *
+             * Most collections in the OIL framework have Generate Code Dom
+             * functionality; as such, simply add the custom attributes,
+             * parameters, and statements of the constructor member.
+             * */
             result.CustomAttributes = this.Attributes.GenerateCodeDom(options);
             result.Parameters.AddRange(this.Parameters.GenerateCodeDom(options));
             result.Statements.AddRange(this.Statements.GenerateCodeDom(options));
@@ -92,7 +96,6 @@ namespace Oilexer.Types.Members
                     break;
             }
             result.Attributes = AccessLevelAttributes(this.AccessLevel);
-            /* ToDo: insert code here to translate CodeBlock. */
             if (options.BuildTrail != null)
                 options.BuildTrail.Pop();
             return result;

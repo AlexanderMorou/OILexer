@@ -117,6 +117,26 @@ namespace Oilexer.Types.Members
             }
 
             #endregion
+
+            #region IControlledStateCollection<IMethodMember> Members
+
+
+            public int IndexOf(IMethodMember element)
+            {
+                int index = -1;
+                int i = 0;
+                foreach (var currentElement in this.baseCollection)
+                    if (currentElement.Equals(element))
+                    {
+                        index = i;
+                        break;
+                    }
+                    else
+                        i++;
+                return index;
+            }
+
+            #endregion
         }
 	}
 }

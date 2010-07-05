@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Oilexer.Parser.GDFileData.TokenExpression;
+using Oilexer._Internal;
 
 namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 {
@@ -57,6 +58,15 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         }
 
         #endregion
+
+
+        public override string ToString()
+        {
+            if (this.Name != null)
+                return string.Format("{0}{3}{4}:{1};{2}{5}", GrammarCore.EncodePrim(this.Literal.Value), this.Name, this.ToStringFurtherOptions(), this.Counter ? "#" : string.Empty, this.IsFlag ? "!" : string.Empty, this.RepeatOptions);
+            else
+                return string.Format("{0}{2}{3}{1}{4}", GrammarCore.EncodePrim(this.Literal.Value), this.ToStringFurtherOptions(), this.Counter ? "#" : string.Empty, this.IsFlag ? "!" : string.Empty, this.RepeatOptions);
+        }
 
     }
 }

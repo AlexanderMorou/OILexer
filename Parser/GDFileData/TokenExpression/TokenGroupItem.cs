@@ -33,7 +33,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// <summary>
         /// Data member for <see cref="RepeatOptions"/>.
         /// </summary>
-        private ScannableEntryItemRepeatOptions repeatOptions;
+        private ScannableEntryItemRepeatInfo repeatOptions;
 
         public TokenGroupItem(string fileName, ITokenExpression[] items, int column, int line, long position)
         {
@@ -96,7 +96,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// <summary>
         /// Returns the repeat options of the <see cref="ScannableEntryItem"/>
         /// </summary>
-        public ScannableEntryItemRepeatOptions RepeatOptions
+        public ScannableEntryItemRepeatInfo RepeatOptions
         {
             get { return this.repeatOptions; }
             set
@@ -182,18 +182,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         ExitPoint:
             if (this.name != null && this.name != string.Empty)
                 sb.Append(string.Format(":{0};{1}", this.Name, this.ToStringFurtherOptions()));
-            switch (repeatOptions)
-            {
-                case ScannableEntryItemRepeatOptions.ZeroOrOne:
-                    sb.Append("?");
-                    break;
-                case ScannableEntryItemRepeatOptions.ZeroOrMore:
-                    sb.Append("*");
-                    break;
-                case ScannableEntryItemRepeatOptions.OneOrMore:
-                    sb.Append("+");
-                    break;
-            }
+            sb.Append(repeatOptions.ToString());
             string result = sb.ToString();
             sb.Remove(0, sb.Length);
             string[] lines = result.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
@@ -213,7 +202,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
                 return result.ToString();
         }
 
-        private string ToStringFurtherOptions()
+        internal string ToStringFurtherOptions()
         {
             if (this.DefaultSoftRefOrValue != null)
             {

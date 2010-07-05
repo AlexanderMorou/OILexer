@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser.GDFileData;
+using Oilexer.FiniteAutomata.Tokens;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -15,7 +16,7 @@ namespace Oilexer._Internal.Inlining
     {
 
         public InlinedLiteralStringReferenceTokenItem(ILiteralStringReferenceTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root)
-            : base(source.Literal.Value, source.Literal.CaseInsensitive, source.Column, source.Line, source.Position)
+            : base(source.Literal.Value, source.Literal.CaseInsensitive, source.Column, source.Line, source.Position, source.Literal.SiblingAmbiguity)
         {
             this.Source = source;
             this.SourceRoot = sourceRoot;
@@ -40,12 +41,19 @@ namespace Oilexer._Internal.Inlining
             get { return this.Source; }
         }
 
+        public RegularLanguageNFAState State
+        {
+            get {
+                return this.BuildStringState(this.CaseInsensitive, this.Value);
+            }
+        }
         #endregion
 
         public override string ToString()
         {
             return this.Source.ToString();
         }
+
 
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser.GDFileData;
+using Oilexer.FiniteAutomata.Tokens;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -37,11 +38,17 @@ namespace Oilexer._Internal.Inlining
             get { return this.Source; }
         }
 
+        public RegularLanguageNFAState State
+        {
+            get { throw new NotImplementedException(); }
+        }
+
         #endregion
 
         public override string ToString()
         {
             return this.Source.ToString();
         }
+
     }
 }

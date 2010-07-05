@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 using System.Linq;
+using Oilexer.Parser.Builder;
 using Oilexer._Internal;
+using System.Globalization;
+using Oilexer.FiniteAutomata.Tokens;
 
 namespace Oilexer.Parser
 {
@@ -12,11 +15,11 @@ namespace Oilexer.Parser
         public class CharacterRangeToken :
             GDToken
         {
-            private BitArray ranges;
+            private RegularLanguageSet ranges;
             bool inverted;
             private int length;
 
-            internal BitArray Ranges
+            internal RegularLanguageSet Ranges
             {
                 get
                 {
@@ -24,17 +27,11 @@ namespace Oilexer.Parser
                 }
             }
 
-            public CharacterRangeToken(bool inverted, char[] range, int length, int line, int column, long position)
+            internal CharacterRangeToken(bool inverted, char[] singleTons, Tuple<char, char>[] rangeSet, UnicodeCategory[] letterCategories, int length, int line, int column, long position)
                 : base(line, column, position)
             {
+                this.ranges = RegularLanguageSet.GetRegularLanguageSet(inverted, singleTons, rangeSet, letterCategories);
                 this.length = length;
-                //if (inverted)
-                //    ranges = new BitArray(ushort.MaxValue + 1);
-                //else
-                ranges = new BitArray((int)range.Max() + 1, false);
-                for (int i = 0; i < range.Length; i++)
-                    ranges[range[i]] = true;
-
                 this.inverted = inverted;
             }
 
@@ -48,7 +45,7 @@ namespace Oilexer.Parser
 
             public override string ToString()
             {
-                return ProjectConstructor.BitArrayToString(this.ranges, this.inverted);
+                return this.ranges.ToString();
             }
 
             public override GDTokenType TokenType

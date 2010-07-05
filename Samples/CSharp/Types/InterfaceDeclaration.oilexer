@@ -1,0 +1,23 @@
+#include                      "Root.oilexer";
+
+/* --------------------------------------- *\
+|*            B.2.10: Interfaces           *|
+\* --------------------------------------- */
+
+InterfaceDeclaration                      ::=
+    Attributes:Attributes;? 
+    (
+        "new" |
+        "public" |
+        "protected" |
+        "internal" |
+        "private"
+    ):Modifiers;*
+    "partial"!:IsPartial;?
+    "interface"
+    Identifier:Name; 
+    GenericHeader<(':' 
+    DelimitedList<InterfaceOrDelegateType:ImplementedInterfaces;, ','>)?>
+    '{'
+        InterfaceMemberDeclaration:Members;*
+    '}' ';'?                                ;

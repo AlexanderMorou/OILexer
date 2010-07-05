@@ -1848,6 +1848,9 @@ namespace Oilexer.Translation
                         case '\t':
                             base.Write("\\t", TranslatorFormatterTokenType.String);
                             break;
+                        case '\x85':
+                            base.Write("\\x85", TranslatorFormatterTokenType.String);
+                            break;
                         default:
                             if (((char)(primitiveExpression.Value)) > 255)
                             {

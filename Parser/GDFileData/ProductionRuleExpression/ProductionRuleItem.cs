@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Oilexer.Utilities.Collections;
 
 namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 {
@@ -11,7 +12,6 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         ScannableEntryItem,
         IProductionRuleItem
     {
-        
         /// <summary>
         /// Creates a new <see cref="ProductionRuleItem"/> with the 
         /// <paramref name="column"/>, <paramref name="line"/>, and <paramref name="position"/>.
@@ -26,12 +26,23 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 
         }
 
-        #region ITokenItem Members
+        protected ProductionRuleItem(Dictionary<string, string> constraints, int column, int line, long position)
+            : base(column, line, position)
+        {
+            this.ConditionalConstraints = new ReadOnlyDictionary<string, string>(constraints);
+        }
+
+        #region IProductionRuleItem Members
 
         public new IProductionRuleItem Clone()
         {
-            return ((IProductionRuleItem)(base.Clone()));
+            var result = ((ProductionRuleItem)(base.Clone()));
+            if (this.ConditionalConstraints != null)
+                result.ConditionalConstraints = this.ConditionalConstraints;
+            return result;
         }
+
+        public IReadOnlyDictionary<string, string> ConditionalConstraints { get; private set; }
 
         #endregion
 
@@ -39,5 +50,6 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         {
             return string.Empty;
         }
+
     }
 }

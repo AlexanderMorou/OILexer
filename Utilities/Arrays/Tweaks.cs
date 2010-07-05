@@ -123,5 +123,21 @@ namespace Oilexer.Utilities.Arrays
                 series[i].CopyTo(result, offset);
             return result;
         }
+
+        public static int[] SelectTo(this int start, int end)
+        {
+            int[] result = new int[(Math.Max(start, end) - Math.Min(start, end)) + 1];
+            if (start > end)
+            {
+                for (int i = start, j = 0; i >= end;)
+                    result[j++] = i--;
+            }
+            else
+            {
+                for (int i = start; i <= end; i++)
+                    result[i] = i;
+            }
+            return result;
+        }
     }
 }

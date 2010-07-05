@@ -32,6 +32,7 @@ namespace Oilexer.Expression
         protected abstract CodeExpression OnGenerateCodeDom(ICodeDOMTranslationOptions options);
 
         #endregion
+
         #region Expression + Expression Operators
         public static BinaryOperationExpression operator ==(Expression exp1, Expression exp2)
         {

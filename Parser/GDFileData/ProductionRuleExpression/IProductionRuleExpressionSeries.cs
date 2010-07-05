@@ -6,7 +6,8 @@ using Oilexer.Utilities.Collections;
 namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 {
     public interface IProductionRuleSeries :
-        IReadOnlyCollection<IProductionRule>
+        IReadOnlyCollection<IProductionRule>,
+        IProductionRuleSource
     {
     }
 }

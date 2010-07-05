@@ -14,7 +14,6 @@ using Oilexer.Types;
 using Oilexer.Utilities.Collections;
 using Oilexer.Types.Members;
 using Oilexer.Translation;
-
 namespace Oilexer._Internal
 {
     partial class _OIL
@@ -35,10 +34,10 @@ namespace Oilexer._Internal
             }
 
             internal static readonly ReadOnlyCollection<Type> AutoFormTypes = new ReadOnlyCollection<Type>
+            (
+                new List<Type>
                 (
-                    new List<Type>
-                    (
-                        new Type[]
+                    new Type[]
                     {
                         typeof(byte),
                         typeof(sbyte),
@@ -57,8 +56,9 @@ namespace Oilexer._Internal
                         typeof(object),
                         typeof(string)
                     }
-                    )
-                );
+                )
+            );
+
             internal static string GetRuntimeDirectory()
             {
                 if (_OIL._Core.runtimeDirectory == null)
@@ -601,5 +601,7 @@ namespace Oilexer._Internal
                 return string.Format(_CommentConstants.SeeCrefTag, string.Format("{0}.{1}", parentCref, member.Name));
             }
         }
+
+
     }
 }

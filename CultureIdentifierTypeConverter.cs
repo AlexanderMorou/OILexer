@@ -2,13 +2,29 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.ComponentModel;
+using System.Linq;
 using Oilexer.Utilities.Arrays;
+using System.Globalization;
+ /*---------------------------------------------------------------------\
+ | Copyright © 2009 Allen Copeland Jr.                                  |
+ |----------------------------------------------------------------------|
+ | The Abstraction Project's code is provided under a contract-release  |
+ | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
+ \-------------------------------------------------------------------- */
+
 
 namespace Oilexer
 {
+    /// <summary>
+    /// Provides a string->culture identifier type converter.
+    /// </summary>
     public class CultureIdentifierTypeConverter :
         TypeConverter
     {
+        /// <summary>
+        /// Creates a new <see cref="CultureIdentifierTypeConverter"/>
+        /// initialized to a default state.
+        /// </summary>
         public CultureIdentifierTypeConverter()
             : base()
         {
@@ -16,7 +32,7 @@ namespace Oilexer
 
         /// <summary>
         /// Returns whether <see cref="CultureIdentifierTypeConverter"/> can convert an object of 
-        /// the <see cref="sourceType"/> to the type of this converter (<see cref="ICultureIdentifier"/>), 
+        /// the <paramref name="sourceType"/> to the type of this converter (<see cref="ICultureIdentifier"/>), 
         /// using the specified <paramref name="context"/>.
         /// </summary>
         /// <param name="context">
@@ -35,7 +51,7 @@ namespace Oilexer
 
 
         /// <summary>
-        /// Converts the given <see cref="value"/> to the type of this converter (<see cref="ICultureIdentifier"/>), 
+        /// Converts the given <paramref name="value"/> to the type of this converter (<see cref="ICultureIdentifier"/>), 
         /// using the specified <paramref name="context"/> and <paramref name="culture"/> information.
         /// </summary>
         /// <param name="context">
@@ -50,7 +66,7 @@ namespace Oilexer
         {
             if (value.GetType() == typeof(System.String) && context.PropertyDescriptor != null && context.PropertyDescriptor.PropertyType.IsAssignableFrom(typeof(ICultureIdentifier)))
             {
-                foreach (CultureIdentifier c in CultureIdentifier.defaultCultureIDByCultureNumber.Values)
+                foreach (CultureIdentifier c in CultureIdentifiers.defaultCultureIDByCultureNumber.Values)
                 {
                     if (c.CountryRegion == value.ToString())
                         return c;
@@ -102,16 +118,14 @@ namespace Oilexer
         /// This parameter or properties of this parameter can be null.
         /// </param>
         /// <returns>
-        /// A <see cref="StandardValuesCollection"/> that holds
+        /// A <see cref="TypeConverter.StandardValuesCollection"/> that holds
         /// a standard set of valid values, or null if the data type does not support
         /// a standard set of values.
         /// </returns>
         public override TypeConverter.StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
         {
             if (context != null && context.PropertyDescriptor != null && context.PropertyDescriptor.PropertyType.IsAssignableFrom(typeof(ICultureIdentifier)))
-            {
-                return new StandardValuesCollection(new List<ICultureIdentifier>(Tweaks.CastArray<ICultureIdentifier, CultureIdentifier>(CultureIdentifier.defaultCultureIDByCultureNumber.Values.ToArray())));
-            }
+                return new StandardValuesCollection(new List<ICultureIdentifier>(CultureIdentifiers.defaultCultureIDByCultureNumber.Values.ToArray().Cast<ICultureIdentifier>()));
             return base.GetStandardValues(context);
         }
 
@@ -121,7 +135,7 @@ namespace Oilexer
         /// </summary>
         /// <param name="context">An <see cref="ITypeDescriptorContext"/> that provides a format context.</param>
         /// <returns>
-        /// true if <see cref="CultureIdentifierTypeConverter.GetStandardValues()"/> should be called to find a common set 
+        /// true if <see cref="TypeConverter.GetStandardValues()"/> should be called to find a common set 
         /// of values the object supports; otherwise, false.
         /// </returns>
         public override bool GetStandardValuesSupported(ITypeDescriptorContext context)

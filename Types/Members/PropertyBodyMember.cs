@@ -106,6 +106,10 @@ namespace Oilexer.Types.Members
         #endregion
 
         #region IStatementBlockInsertBase Members
+        public void Add(IStatement statement)
+        {
+            this.Statements.Add(statement);
+        }
 
         public IBlockStatement NewBlock()
         {

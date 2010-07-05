@@ -60,13 +60,13 @@ namespace Oilexer.Parser.GDFileData
             int dynamic = 0;
             foreach (IProductionRuleTemplatePart iprtp in this.parts)
             {
-                if (iprtp.RepeatOptions == ScannableEntryItemRepeatOptions.OneOrMore)
+                if (iprtp.RepeatOptions == ScannableEntryItemRepeatInfo.OneOrMore)
                 {
                     if (isFixed)
                         isFixed = false;
                     dynamic++;
                 }
-                else if (iprtp.RepeatOptions == ScannableEntryItemRepeatOptions.None)
+                else if (iprtp.RepeatOptions == ScannableEntryItemRepeatInfo.None)
                 {
                     if (!isFixed)
                         invalid++;

@@ -9,7 +9,8 @@ namespace Oilexer._Internal
     /// A singleton tuple
     /// </summary>
     /// <typeparam name="T">The type of the singleton value.</typeparam>
-    internal class Tuple<T>
+    internal class Tuple<T> :
+        IEquatable<Tuple<T>>
     {
         private T item;
         /// <summary>
@@ -39,6 +40,23 @@ namespace Oilexer._Internal
         public static implicit operator Tuple<T>(T expr)
         {
             return new Tuple<T>(expr);
+        }
+
+
+        #region IEquatable<Tuple<T>> Members
+
+        public virtual bool Equals(Tuple<T> other)
+        {
+            if (other == null)
+                return false;
+            return other.Item.Equals(this.Item);
+        }
+
+        #endregion
+
+        public override int GetHashCode()
+        {
+            return this.Item.GetHashCode();
         }
 
     }

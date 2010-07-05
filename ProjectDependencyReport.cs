@@ -25,6 +25,15 @@ namespace Oilexer
             this.sourceData = sourceData;
         }
 
+        /// <summary>
+        /// Creates a new <see cref="ProjectDependencyReport"/>
+        /// with the <paramref name="target"/> element to
+        /// begin profiling upon.
+        /// </summary>
+        /// <param name="target">The <see cref="ITypeReferenceable"/>
+        /// object to start the profiling operation upon.</param>
+        /// <param name="options">The <see cref="ICodeTranslationOptions"/>
+        /// which determines the depth of scope of the profiling.</param>
         public ProjectDependencyReport(ITypeReferenceable target, ICodeTranslationOptions options) 
             : this()
         {

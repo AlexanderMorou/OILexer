@@ -11,6 +11,7 @@ using System.Reflection;
 using Oilexer.Types.Members;
 using Oilexer.Expression;
 using Oilexer.Translation;
+using System.Runtime.CompilerServices;
 
 namespace Oilexer.Compiler
 {
@@ -171,10 +172,13 @@ namespace Oilexer.Compiler
                 if (entryPoint != null && ((IDeclaredType)entryPoint.ParentTarget).Module != Project.RootModule)
                 {
                     IClassType entryPointCover = Project.Partials.AddNew().DefaultNameSpace.Classes.AddNew(Project.Classes.GetUniqueName("_cover"));
+
+                    entryPointCover.Attributes.AddNew(typeof(CompilerGeneratedAttribute));
                     entryPointCover.IsStatic = true;
                     entryPointCover.AccessLevel = DeclarationAccessLevel.Internal;
                     entryPointCover.Module = Project.RootModule;
                     IMethodMember coverPoint = entryPointCover.Methods.AddNew(new TypedName(entryPoint.Name, entryPoint.ReturnType));
+                    coverPoint.Attributes.AddNew(typeof(CompilerGeneratedAttribute));
                     foreach (IMethodParameterMember impm in entryPoint.Parameters.Values)
                         coverPoint.Parameters.AddNew(new TypedName(impm.Name, impm.ParameterType));
 
@@ -231,7 +235,7 @@ namespace Oilexer.Compiler
                 commandSequences.Add(module.GetDebugCommand(this.Options.DebugSupport, this.Options));
             if (module.Supports(CompilerModuleSupportFlags.XMLDocumentation))
                 commandSequences.Add(module.GetXMLDocumentationCommand(this.Options.GenerateXMLDocs, this.Options));
-            commandSequences.AddRange(module.GetReferencesCommand(Tweaks.TranslateArray<Assembly, string>(pdr.CompiledAssemblyReferences.ToArray(), delegate(Assembly a)
+            commandSequences.AddRange(module.GetReferencesCommand(Tweaks.TranslateArray(pdr.CompiledAssemblyReferences.ToArray(), a =>
             {
                 return a.Location;
             }), this.Options));
@@ -262,34 +266,38 @@ namespace Oilexer.Compiler
             files = new List<string>();
             partialCompletions = new Stack<IIntermediateProject>();
             moduleFiles = new Dictionary<IIntermediateModule, List<string>>();
-            foreach (IIntermediateModule iim in this.Project.Modules.Values)
-            {
-                moduleFiles.Add(iim, new List<string>());
-                foreach (IDeclaredType idt in iim.DeclaredTypes)
+            bool attributesOverride = !this.Translator.Options.AllowPartials;
+            if (!attributesOverride)
+                foreach (IIntermediateModule iim in this.Project.Modules.Values)
                 {
-                    string currentFile = string.Empty;
-                    IDeclaredType target = (idt is ISegmentableDeclaredType) ? ((ISegmentableDeclaredType)idt).GetRootDeclaration() : idt;
-                    currentFile = WriteFile(td, tfc, partialCompletions, target);
-                    if (currentFile != null)
+                    moduleFiles.Add(iim, new List<string>());
+                    foreach (IDeclaredType idt in iim.DeclaredTypes)
                     {
-                        files.Add(currentFile);
-                        moduleFiles[iim].Add(currentFile);
-                    }
-                    //Don't forget to include the partials...
-                    if (target is ISegmentableDeclaredType)
-                        foreach (IDeclaredType partial in ((ISegmentableDeclaredType)idt).Partials)
+                        string currentFile = string.Empty;
+                        IDeclaredType target = (idt is ISegmentableDeclaredType) ? ((ISegmentableDeclaredType)idt).GetRootDeclaration() : idt;
+                        currentFile = WriteFile(td, tfc, partialCompletions, target);
+                        if (currentFile != null)
                         {
-                            currentFile = WriteFile(td, tfc, partialCompletions, partial);
-                            if (currentFile != null)
-                            {
-                                files.Add(currentFile);
-                                moduleFiles[iim].Add(currentFile);
-                            }
+                            files.Add(currentFile);
+                            moduleFiles[iim].Add(currentFile);
                         }
+                        //Don't forget to include the partials...
+                        if (target is ISegmentableDeclaredType)
+                            foreach (IDeclaredType partial in ((ISegmentableDeclaredType)idt).Partials)
+                            {
+                                currentFile = WriteFile(td, tfc, partialCompletions, partial);
+                                if (currentFile != null)
+                                {
+                                    files.Add(currentFile);
+                                    moduleFiles[iim].Add(currentFile);
+                                }
+                            }
+                    }
                 }
-            }
-            if (this.Project.Attributes.Count > 0)
+            if (this.Project.Attributes.Count > 0 || attributesOverride)
             {
+                if (attributesOverride)
+                    moduleFiles.Add(project.RootModule, new List<string>());
                 string attrFile = null;
                 /* *
                  * Only add it if there are no types in the 
@@ -299,12 +307,11 @@ namespace Oilexer.Compiler
                 if (!p.IsRoot)
                     p = p.GetRootDeclaration();
                 if (!partialCompletions.Contains(this.Project))
-                    if (this.Translator.Options.AllowPartials)
-                    {
-                        attrFile = WriteAttributeFile(td, tfc, partialCompletions);
-                        if (attrFile != null)
-                            moduleFiles[project.RootModule].Add(attrFile);
-                    }
+                {
+                    attrFile = WriteAttributeFile(td, tfc, partialCompletions);
+                    if (attrFile != null)
+                        moduleFiles[project.RootModule].Add(attrFile);
+                }
             }
 
         }
@@ -425,6 +432,10 @@ namespace Oilexer.Compiler
             }
         }
 
+        /// <summary>
+        /// Returns the compiler module used to interact with the
+        /// compiler regardless of the kind of compiler.
+        /// </summary>
         public IIntermediateCompilerModule Module
         {
             get { return this.module; }

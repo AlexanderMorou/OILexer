@@ -1,0 +1,160 @@
+#include                      "Root.oilexer";
+
+/* *
+ * Referenced from C# Language Specification
+ * Appendix B.1: Lexical Grammar
+ * *
+ * Modified slightly to clean up grammar.
+ * */
+Input ::=>
+    InputSection*;
+
+InputSection ::=>
+    InputElements                           |
+    PreprocessorDirective                   ;
+
+InputElements ::=
+    InputElement:Elements;* NewLine;
+
+InputElement                             ::=>
+    Whitespace                              | 
+    Comment                                 | 
+    Token                                   ; 
+
+PreprocessorDirective                    ::=>
+    PreprocessorDeclaration                 |
+    PreprocessorConditional                 |
+    PreprocessorLine                        |
+    PreprocessorDiagnostic                  |
+    PreprocessorRegion                      |
+    PreprocessorPragma                      ;
+
+ConditionalSymbol :=
+    Subtract(IdentifierOrKeyword, BooleanLiteral);
+
+PadLeft<T> ::=
+    Whitespace? T;
+
+PadRight<T> ::=
+    T Whitespace?;
+
+Pad<T> ::= PadLeft<PadRight<T>>;
+
+PreprocessorExpression ::=
+    Pad<PreprocessorOrExpression>;
+
+PreprocessorOrExpression ::= 
+    (PreprocessorOrExpression:Next; Pad<PreprocessorOperator.Or>)? PreprocessorAndExpression:Term;;
+
+PreprocessorAndExpression ::=
+    (PreprocessorAndExpression:Next; Pad<PreprocessorOperator.And>)? PreprocessorEqualityExpression:Term;;
+
+PreprocessorEqualityExpression ::=
+    (PreprocessorEqualityExpression:Next; Pad<(PreprocessorOperator.Equal | PreprocessorOperator.NotEqual):Operator;>) PreprocessorUnaryExpression:Term;;
+
+PreprocessorUnaryExpression ::=
+    PadRight<PreprocessorOperator.Negate:Negations;>* PreprocessorPrimaryExpression:Term;;
+
+PreprocessorPrimaryExpression            ::=>
+    BooleanLiteral                          |
+    ConditionalSymbol                       |
+    ParenthesisPreprocessorExpression       ;
+
+/* *
+ * Cleanup: Removed whitespace inside '('
+ * and ')' because PreprocessorExpression
+ * specifies that already.
+ * */
+ParenthesisPreprocessorExpression ::=
+    PreprocessorOperator.LeftParenthesis PreprocessorExpression PreprocessorOperator.RightParenthesis ;
+
+PaddedPound<_> ::=
+    Pad<'#'>;
+
+PreprocessorDeclaration                  ::=>
+    PreprocessorDefineDeclaration           |
+    PreprocessorUndefineDeclaration         ;
+
+PreprocessorDefineDeclaration ::= 
+    PaddedPound<> "define" Whitespace ConditionalSymbol:Symbol; PreprocessorNewLine;
+
+PreprocessorUndefineDeclaration ::= 
+    PaddedPound<> "undefine" Whitespace ConditionalSymbol:Symbol; PreprocessorNewLine;
+
+PreprocessorNewLine :=
+    Whitespace? SingleLineComment? NewLine;
+
+PreprocessorConditional ::=
+    PreprocessorIfSection:InitialCondition; 
+    PreprocessorElifSection:SecondaryConditions;*
+    PreprocessorElseSection:FallbackCondition;
+    PreprocessorEndIfSection:TerminalPoint;;
+
+PreprocessorIfSection ::=
+    PaddedPound<> PreprocessorSymbol.If Whitespace PreprocessorExpression:Condition; PreprocessorNewLine ConditionalSection:Body;?;
+
+PreprocessorElifSection ::= 
+    PaddedPound<> "elif" Whitespace PreprocessorExpression:Condition; PreprocessorNewLine ConditionalSection:Body;?;
+
+PreprocessorElseSection ::= 
+    PaddedPound<> PreprocessorSymbol.Else PreprocessorNewLine ConditionalSection:Body;?;
+
+PreprocessorEndIfSection ::= 
+    PaddedPound<> "endif" PreprocessorNewLine;
+
+ConditionalSection ::=
+    InputSection:Input; 
+    IgnoredSection:Ignored;;
+
+IgnoredSection                           ::=>
+    IgnoredSectionPart                      |
+    PreprocessorDirective                   ;
+
+IgnoredSectionPart :=
+    Whitespace? [^#] NotNewLineCharacter*;
+
+PreprocessorDiagnostic ::=
+    PaddedPound<> ("error" | "warning"):Kind; PreprocessorMessage:Message;;
+
+PreprocessorMessage :=
+    (Whitespace NotNewLineCharacter* )? NewLine;
+
+PreprocessorRegion ::=
+    PreprocessorStartRegion:StartPart;
+    ConditionalSection:Body;
+    PreprocessorEndRegion:EndPart;;
+
+PreprocessorStartRegion ::=
+    PaddedPound<> "region" PreprocessorMessage;
+
+PreprocessorEndRegion ::= 
+    PaddedPound<> "endregion" PreprocessorMessage;
+
+PreprocessorLine ::=
+    PaddedPound<> "line" Whitespace LineIndicator:Indicator; PreprocessorNewLine;
+
+LineIndicator ::=>
+    DefaultOrDefaultLine |
+    SpecificLine;
+
+SpecificLine ::=
+    DecimalNumber (Whitespace FileName:File;)?;
+
+DefaultOrDefaultLine :=
+    "hidden":Hidden; | "default":Default;;
+
+FileName :=
+    '"' [^"]* '"';
+
+PreprocessorPragma ::=
+    PaddedPound<> "pragma" Whitespace PragmaBody:Body; PreprocessorNewLine;
+
+PragmaBody ::=>
+    PragmaWarningBody;
+
+PragmaWarningBody ::=
+    "warning" Whitespace WarningAction:Action; (Whitespace DecimalNumber:WarningNumbers; (Pad<PreprocessorOperator.Comma> DecimalNumber:WarningNumbers;)*)?;
+
+WarningAction                              :=
+    "disable":Disable;                      |
+    "restore":Restore;                      ;

@@ -60,10 +60,10 @@ namespace Oilexer.Utilities.Collections
         }
         public static T[] InlineInsert<T>(T[] a, params T[] b)
         {
-            List<T> result = new List<T>();
-            result.AddRange(a);
-            result.AddRange(b);
-            return result.ToArray();
+            T[] result = new T[a.Length + b.Length];
+            a.CopyTo(result, 0);
+            b.CopyTo(result, a.Length);
+            return result;
         }
         public static ICollection<T> CollectionMerge<T>(ICollection<T> a, ICollection<T> b)
         {

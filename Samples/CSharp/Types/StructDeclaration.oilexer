@@ -1,0 +1,17 @@
+#include                      "Root.oilexer";
+
+StructDeclaration                         ::=
+    Attributes:Attributes;?
+    (
+        "new"? "public" |
+        "new"? "protected" "internal"? |
+        "new"? "internal" "protected"? |
+        "new"? "private"
+    ):Modifiers;?
+    "partial"!:IsPartial;?
+    "struct"
+    Identifier:Name;
+    ClassOrStructHeader<>
+    '{'
+        StructMemberDeclaration:Members;*
+    '}';

@@ -296,6 +296,11 @@ namespace Oilexer.Types.Members
         #endregion
 
         #region IStatementBlockInsertBase Members
+        public void Add(IStatement statement)
+        {
+            this.Statements.Add(statement);
+        }
+
         public IBlockStatement NewBlock()
         {
             return this.Statements.NewBlock();
@@ -346,6 +351,16 @@ namespace Oilexer.Types.Members
             return this.Statements.Decrement(target, crementType);
         }
 
+        public IConditionStatement IfThen(IExpression condition, params IStatement[] trueStatements)
+        {
+            return this.Statements.IfThen(condition, trueStatements);
+        }
+
+        public IConditionStatement IfThen(IExpression condition, IStatement[] trueStatements, IStatement[] falseStatements)
+        {
+            return this.Statements.IfThen(condition, trueStatements, falseStatements);
+        }
+
         public IIterationStatement Iterate(IStatement init, IStatement increment, IExpression test)
         {
             return this.Statements.Iterate(init, increment, test);
@@ -387,7 +402,8 @@ namespace Oilexer.Types.Members
 
         public IStatementBlockLocalMembers Locals
         {
-            get {
+            get
+            {
                 return this.Statements.Locals;
             }
         }
@@ -401,18 +417,8 @@ namespace Oilexer.Types.Members
             return this.Statements.Return();
         }
 
-        public IConditionStatement IfThen(IExpression condition, params IStatement[] trueStatements)
-        {
-            return this.Statements.IfThen(condition, trueStatements);
-        }
-
-        public IConditionStatement IfThen(IExpression condition, IStatement[] trueStatements, IStatement[] falseStatements)
-        {
-            return this.Statements.IfThen(condition, trueStatements, falseStatements);
-        }
 
         #endregion
-
 
         #region IImplementedMember Members
 
