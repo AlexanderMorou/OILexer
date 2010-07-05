@@ -1,0 +1,18 @@
+#include                      "Root.oilexer";
+
+DelimitedList<Term, Delimiter>            ::=
+    Term (Delimiter Term)*;
+
+Parametered<T>                            ::=
+    '(' T ')'                               ;
+
+LeftOrRightDelimited<Left, Delimiter, Right>::=
+    Left (Delimiter Right)?                 |
+    Right                                   ;
+    
+LeftOrRight<Left, Right>                  ::=
+    Left Right?                             |
+    Right Left?                             ;
+
+SetInject<Set, Element>                   ::=
+    Set* Element Set*                       ;

@@ -1,0 +1,23 @@
+#include                      "Root.oilexer";
+
+/* --------------------------------------- *\
+|*            B.2.12: Delegates            *|
+\* --------------------------------------- */
+
+DelegateDeclaration                       ::=
+    Attributes:Attributes;? 
+    (
+        "new"                               |
+        "public"                            |
+        "protected"                         |
+        "internal"                          |
+        "private"
+    ):Modifiers;*
+    "delegate"
+    ReturnType:ReturnType;
+    Identifier:Name; 
+    GenericHeader<
+        '(' 
+            FormalParameterList:Parameters;? 
+        ')'> 
+    ';'                                     ;

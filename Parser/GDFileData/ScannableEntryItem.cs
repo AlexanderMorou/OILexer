@@ -27,7 +27,7 @@ namespace Oilexer.Parser.GDFileData
         /// <summary>
         /// Data member for <see cref="RepeatOptions"/>.
         /// </summary>
-        private ScannableEntryItemRepeatOptions repeatOptions;
+        private ScannableEntryItemRepeatInfo repeatOptions;
 
         /// <summary>
         /// Creates a new <see cref="ScannableEntryItem"/> with the 
@@ -90,7 +90,7 @@ namespace Oilexer.Parser.GDFileData
         /// <summary>
         /// Returns the repeat options of the <see cref="ScannableEntryItem"/>
         /// </summary>
-        public ScannableEntryItemRepeatOptions RepeatOptions
+        public ScannableEntryItemRepeatInfo RepeatOptions
         {
             get { return this.repeatOptions; }
             set
@@ -125,7 +125,7 @@ namespace Oilexer.Parser.GDFileData
         /// <remarks>Supplement to <see cref="OnClone()"/>.</remarks>
         protected internal virtual void CloneData(IScannableEntryItem target)
         {
-            if (target.RepeatOptions == ScannableEntryItemRepeatOptions.None 
+            if (target.RepeatOptions == ScannableEntryItemRepeatInfo.None 
              && target.RepeatOptions != this.RepeatOptions)
                 target.RepeatOptions = this.repeatOptions;
             if (!string.IsNullOrEmpty(this.name))
@@ -138,18 +138,7 @@ namespace Oilexer.Parser.GDFileData
             StringBuilder sb = new StringBuilder();
             if (!string.IsNullOrEmpty(this.Name))
                 sb.Append(string.Format(":{0};{1}", this.Name, this.ToStringFurtherOptions()));
-            switch (repeatOptions)
-            {
-                case ScannableEntryItemRepeatOptions.ZeroOrOne:
-                    sb.Append("?");
-                    break;
-                case ScannableEntryItemRepeatOptions.ZeroOrMore:
-                    sb.Append("*");
-                    break;
-                case ScannableEntryItemRepeatOptions.OneOrMore:
-                    sb.Append("+");
-                    break;
-            }
+            sb.Append(repeatOptions.ToString());
             return sb.ToString();
         }
 

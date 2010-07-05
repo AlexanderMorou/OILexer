@@ -20,7 +20,10 @@ namespace Oilexer
     public enum TranslationLanguage
     {
         CSharp,
-        //VisualBasic
+        /* *
+         * Visual Basic translator removed due to issues with it not 
+         * supporting iterators.
+         * */
     }
     public static class CodeGeneratorHelper
     {
@@ -263,13 +266,16 @@ namespace Oilexer
 
         public static IExternType GetExternType(this Type type)
         {
-            if (!(ExternTypeInstances.ContainsKey(type)))
+            lock (ExternTypeInstances)
             {
-                IExternType externType = null;
-                externType = new ExternType(type);
-                ExternTypeInstances.Add(type, externType);
+                if (!(ExternTypeInstances.ContainsKey(type)))
+                {
+                    IExternType externType = null;
+                    externType = new ExternType(type);
+                    ExternTypeInstances.Add(type, externType);
+                }
+                return ExternTypeInstances[type];
             }
-            return ExternTypeInstances[type];
         }
 
         public static ICreateNewObjectExpression CreateNew(this Type t, params IExpression[] exprs)

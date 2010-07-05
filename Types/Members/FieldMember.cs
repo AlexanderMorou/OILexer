@@ -47,6 +47,7 @@ namespace Oilexer.Types.Members
         {
             this.FieldType = nameAndType.TypeReference;
         }
+
         public override CodeMemberField GenerateCodeDom(ICodeDOMTranslationOptions options)
         {
             if (options.BuildTrail != null)

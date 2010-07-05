@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser.GDFileData;
+using Oilexer.FiniteAutomata.Tokens;
+using System.Linq;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -15,6 +17,8 @@ namespace Oilexer._Internal.Inlining
     internal class InlinedTokenExpressionSeries :
         TokenExpressionSeries
     {
+        private RegularLanguageNFAState state;
+
         /// <summary>
         /// Creates a new <see cref="InlinedTokenExpressionSeries"/> with the 
         /// <paramref name="source"/>, <paramref name="sourceRoot"/> and
@@ -46,6 +50,26 @@ namespace Oilexer._Internal.Inlining
         /// <see cref="InlinedTokenExpressionSeries"/>.
         /// </summary>
         public InlinedTokenEntry Root { get; private set; }
+
+
+        public RegularLanguageNFAState State
+        {
+            get
+            {
+                if (this.state == null)
+                    this.BuildNFAState();
+                return this.state;
+            }
+        }
+
+        private void BuildNFAState()
+        {
+            foreach (var expression in this.Cast<InlinedTokenExpression>())
+                if (this.state == null)
+                    this.state = expression.NFAState;
+                else
+                    this.state.Union(expression.NFAState);
+        }
 
     }
 }

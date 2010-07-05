@@ -23,6 +23,7 @@ namespace Oilexer.Parser
             private string tokenPrefix;
             private string tokenSuffix;
             private string startEntry;
+            private string nameSpace;
             /// <summary>
             /// Data member for <see cref="GrammarNameDirective"/>
             /// </summary>
@@ -201,76 +202,87 @@ namespace Oilexer.Parser
                 }
             }
 
+            public string Namespace
+            {
+                get { return this.nameSpace; }
+                set { this.nameSpace = value; }
+            }
+
             #endregion
 
             public static MyOptions operator +(MyOptions leftSide, MyOptions rightSide)
             {
                 MyOptions result = new MyOptions();
-                if (leftSide.rulePrefix == null || leftSide.rulePrefix == string.Empty &&
-                    rightSide.rulePrefix != null && rightSide.rulePrefix != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.rulePrefix) &&
+                    !string.IsNullOrEmpty(rightSide.rulePrefix))
                     result.rulePrefix = rightSide.RulePrefix;
                 else
                     result.RulePrefix = leftSide.RulePrefix;
 
-                if (leftSide.ruleSuffix == null || leftSide.ruleSuffix == string.Empty &&
-                    rightSide.ruleSuffix != null && rightSide.ruleSuffix != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.ruleSuffix) &&
+                    !string.IsNullOrEmpty(rightSide.ruleSuffix))
                     result.ruleSuffix = rightSide.RuleSuffix;
                 else
                     result.RuleSuffix = leftSide.RuleSuffix;
 
-                if (leftSide.startEntry == null || leftSide.startEntry == string.Empty &&
-                    rightSide.startEntry != null && rightSide.startEntry != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.startEntry) &&
+                    !string.IsNullOrEmpty(rightSide.startEntry))
                     result.startEntry = rightSide.StartEntry;
                 else
                     result.startEntry = leftSide.StartEntry;
 
-                if (leftSide.grammarName == null || leftSide.grammarName == string.Empty &&
-                    rightSide.grammarName != null && rightSide.grammarName != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.grammarName) &&
+                    !string.IsNullOrEmpty(rightSide.grammarName))
                     result.GrammarName = rightSide.GrammarName;
                 else
                     result.GrammarName = leftSide.GrammarName;
 
-                if (leftSide.assemblyName == null || leftSide.assemblyName == string.Empty &&
-                    rightSide.assemblyName != null && rightSide.assemblyName != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.assemblyName) &&
+                    !string.IsNullOrEmpty(rightSide.assemblyName))
                     result.assemblyName = rightSide.assemblyName;
                 else
                     result.assemblyName = leftSide.assemblyName;
 
-                if (leftSide.parserName == null || leftSide.parserName == string.Empty &&
-                    rightSide.parserName != null && rightSide.parserName != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.parserName) &&
+                    !string.IsNullOrEmpty(rightSide.parserName))
                     result.ParserName = rightSide.ParserName;
                 else
                     result.ParserName = leftSide.ParserName;
 
-                if (leftSide.lexerName == null || leftSide.lexerName == string.Empty &&
-                    rightSide.lexerName != null && rightSide.lexerName != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.lexerName) &&
+                    !string.IsNullOrEmpty(rightSide.lexerName))
                     result.LexerName = rightSide.LexerName;
                 else
                     result.LexerName = leftSide.LexerName;
 
-                if (leftSide.errorPrefix == null &&
-                    rightSide.errorPrefix != null && rightSide.errorPrefix != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.errorPrefix) &&
+                    !string.IsNullOrEmpty(rightSide.errorPrefix))
                     result.ErrorPrefix = rightSide.ErrorPrefix;
                 else
                     result.ErrorPrefix = leftSide.ErrorPrefix;
 
-                if (leftSide.errorSuffix == null &&
-                    rightSide.errorSuffix != null && rightSide.errorSuffix != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.errorSuffix) &&
+                    !string.IsNullOrEmpty(rightSide.errorSuffix))
                     result.ErrorSuffix = rightSide.ErrorSuffix;
                 else
                     result.ErrorSuffix = leftSide.ErrorSuffix;
 
-                if (leftSide.tokenPrefix == null &&
-                    rightSide.tokenPrefix != null && rightSide.tokenPrefix != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.tokenPrefix) &&
+                    !string.IsNullOrEmpty(rightSide.tokenPrefix))
                     result.TokenPrefix = rightSide.TokenPrefix;
                 else
                     result.TokenPrefix = leftSide.TokenPrefix;
 
-                if (leftSide.tokenSuffix == null &&
-                    rightSide.tokenSuffix != null && rightSide.tokenSuffix != string.Empty)
+                if (string.IsNullOrEmpty(leftSide.tokenSuffix) &&
+                    !string.IsNullOrEmpty(rightSide.tokenSuffix))
                     result.TokenSuffix = rightSide.TokenSuffix;
                 else
                     result.TokenSuffix = leftSide.TokenSuffix;
+                if (string.IsNullOrEmpty(leftSide.nameSpace) &&
+                    !string.IsNullOrEmpty(rightSide.nameSpace))
+                    result.Namespace = rightSide.Namespace;
+                else
+                    result.Namespace = leftSide.Namespace;
                 return result;
             }
         }

@@ -1,0 +1,107 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Oilexer.Parser;
+using Oilexer.FiniteAutomata.Tokens;
+using Oilexer.Parser.GDFileData;
+using Oilexer.Parser.Builder;
+using System.Threading.Tasks;
+using System.IO;
+
+namespace Oilexer.FiniteAutomata.Rules
+{
+    internal class SyntacticalParser
+    {
+        private ParserBuilder builder;
+        internal SyntacticalParser(ParserBuilder builder)
+        {
+            this.builder = builder;
+        }
+        public void Parse(string filename)
+        {
+            SyntacticalStreamState currentState = SyntacticalStreamState.ObtainRule(builder.StartEntry, builder);
+            //List<CSharpReaderScanData> scanData = new List<CSharpReaderScanData>();
+            var lexicalAnalyzer = builder.LexicalAnalyzer;
+            lexicalAnalyzer.Open(filename);
+            var ambiguityStack = Pusher(new { Location = long.MinValue, Entry = (RegularLanguageScanData.Entry)null, State = (SyntacticalStreamState)null, Transition = (GrammarVocabulary)null });
+            var errorPoints = Pusher(new { Location = long.MinValue, Transition = (GrammarVocabulary)null });
+            var errorPoint = errorPoints.Pop();
+            var lastAmbiguity = ambiguityStack.Pop();
+            errorPoint = null;
+            lastAmbiguity = null;
+            int states = 0;
+            bool hasValidExit = false;
+            while (true)
+            {
+                if (lastAmbiguity != null)
+                    lexicalAnalyzer.MoveTo(lastAmbiguity.Location + lastAmbiguity.Entry.Length);
+                var currentScanData = lexicalAnalyzer.NextToken(currentState.Transitions.FullSet);
+                if (currentScanData.Count == 0)
+                    errorPoints.Push(new { Location = currentScanData.Location, Transition = currentState.Transitions.FullSet });
+                else
+                {
+                    states++;
+                    //scanData.Add(currentScanData);
+                    foreach (var entry in currentScanData)
+                        ambiguityStack.Push(new { Location = currentScanData.Location, Entry = entry, State = currentState, Transition = entry.GetTransition() });
+                }
+                if (ambiguityStack.Count == 0)
+                    break;
+                var currentAmbiguity = ambiguityStack.Pop();
+                //Unhinged token check.
+                if (currentAmbiguity.State.Transitions.ContainsKey(currentAmbiguity.Transition))
+                    currentState = currentAmbiguity.State.Transitions[currentAmbiguity.Transition];
+                else
+                    /* *
+                     * Token doesn't exist in valid set.
+                     * It's still parsed because it can be
+                     * ignored.
+                     * */
+                    currentState = currentAmbiguity.State;
+                /* *
+                 * If the entire language parser has reached
+                 * either the end of the file, or there are
+                 * no valid transitions remaining, the parse
+                 * is done.
+                 * */
+                if (currentState.Transitions.Count == 0)
+                {
+                    hasValidExit = true;
+                    break;
+                }
+                lastAmbiguity = currentAmbiguity;
+            }
+            if (!hasValidExit)
+            {
+                foreach (var currentErrorPoint in errorPoints)
+                {
+                    if (errorPoint == null)
+                        errorPoint = currentErrorPoint;
+                    else if (currentErrorPoint.Location > errorPoint.Location)
+                        errorPoint = currentErrorPoint;
+                }
+                Console.WriteLine("{0} - Expected {1}, States: {2}", errorPoint.Location, errorPoint.Transition, states);
+            }
+            //scanData.Clear();
+            lexicalAnalyzer.Close();
+            return;
+        }
+
+        private static Stack<T> Pusher<T>(T root)
+        {
+            var result = new Stack<T>();
+            result.Push(root);
+            return result;
+        }
+
+        //public void Parse(string file)
+        //{
+        //    var startRuleState = SyntacticalStreamState.ObtainRule(builder.StartEntry, builder);
+        //    var lexicalAnalyzer = builder.LexicalAnalyzer;
+        //    lexicalAnalyzer.Open(file);
+        //    lexicalAnalyzer.Close();
+        //}
+
+    }
+}

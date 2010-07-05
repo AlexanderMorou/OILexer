@@ -11,7 +11,8 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
     /// </summary>
     public interface ITokenExpression :
         IReadOnlyCollection<ITokenItem>,
-        IAmbiguousGDEntity
+        IAmbiguousGDEntity,
+        ITokenSource
     {
         /// <summary>
         /// Returns the line the <see cref="IItem"/> was declared at.

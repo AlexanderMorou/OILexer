@@ -30,7 +30,10 @@ namespace Oilexer.Statements
 
         public override CodeLabeledStatement GenerateCodeDom(ICodeDOMTranslationOptions options)
         {
-            return new CodeLabeledStatement(this.name);
+            if (options.NameHandler != null && options.NameHandler.HandlesName(this.Name))
+                return new CodeLabeledStatement(options.NameHandler.HandleName(this.Name));
+            else
+                return new CodeLabeledStatement(this.name);
         }
 
         #region ILabelStatement Members
@@ -47,15 +50,14 @@ namespace Oilexer.Statements
             }
         }
 
-        #endregion
-
-
-        #region ILabelStatement Members
-
-
         public CodeGotoStatement GetCodeDomGoTo()
         {
             return new CodeGotoStatement(this.Name);
+        }
+
+        public IGoToLabelStatement GetGoTo(IStatementBlock sourceBlock)
+        {
+            return new GoToStatement(sourceBlock, this);
         }
 
         #endregion
@@ -75,15 +77,6 @@ namespace Oilexer.Statements
             //Labels carry no reference dependency.
             return;
         }
-
-        #region ILabelStatement Members
-
-        public IGoToLabelStatement GetGoTo(IStatementBlock sourceBlock)
-        {
-            return new GoToStatement(sourceBlock, this);
-        }
-
-        #endregion
 
     }
 }

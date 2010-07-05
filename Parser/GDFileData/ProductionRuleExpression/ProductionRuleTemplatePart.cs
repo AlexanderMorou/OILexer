@@ -38,7 +38,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             this.specialExpectancy = specialExpectancy;
             this.repeatSeries = repeatSeries;
             this.Name = name;
-            this.RepeatOptions = repeatSeries ? ScannableEntryItemRepeatOptions.OneOrMore : ScannableEntryItemRepeatOptions.None;
+            this.RepeatOptions = repeatSeries ? ScannableEntryItemRepeatInfo.OneOrMore : ScannableEntryItemRepeatInfo.None;
         }
 
         public ProductionRuleTemplatePart(string name, bool inSeries, string expectedTargetName, int line, int column, long position)
@@ -48,7 +48,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             this.repeatSeries = inSeries;
             if (expectedTargetName != null)
                 this.expectedSpecific = new SoftReferenceProductionRuleItem(expectedTargetName, null, line, column, position, false, false);
-            this.RepeatOptions = repeatSeries ? ScannableEntryItemRepeatOptions.OneOrMore : ScannableEntryItemRepeatOptions.None;
+            this.RepeatOptions = repeatSeries ? ScannableEntryItemRepeatInfo.OneOrMore : ScannableEntryItemRepeatInfo.None;
         }
         private ProductionRuleTemplatePart(string name, TemplatePartExpectedSpecial specialExpectancy, IProductionRuleItem reference, int line, int column, long position)
             : base(column, line, position)

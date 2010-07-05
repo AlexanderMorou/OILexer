@@ -6,7 +6,8 @@ using Oilexer.Parser.GDFileData.TokenExpression;
 namespace Oilexer.Parser.GDFileData
 {
     public interface ITokenEntry :
-        IScannableEntry
+        IScannableEntry,
+        ITokenSource
     {
         /// <summary>
         /// Returns the <see cref="ITokenExpressionSeries"/> which defines the branches of
@@ -29,17 +30,9 @@ namespace Oilexer.Parser.GDFileData
         /// </summary>
         ITokenEntry[] LowerPrecedenceTokens { get; }
         /// <summary>
-        /// Returns the whether the token is self ambiguous.
+        /// Returns whether the <see cref="ITokenEntry"/> is forced into being
+        /// a recognizer type token.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Self-ambiguous applies to enumeration tokens only.
-        /// </para>
-        /// <para>Typically means that two resultant tokens can exist
-        /// from a single parse and it might be necessary to parse 
-        /// both paths.</para>
-        /// </remarks>
-        bool SelfAmbiguous { get; }
-
+        bool ForcedRecognizer { get; }
     }
 }

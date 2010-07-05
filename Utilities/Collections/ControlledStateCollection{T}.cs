@@ -42,6 +42,21 @@ namespace Oilexer.Utilities.Collections
         #endregion
 
         #region IControlledStateCollection<T> Members
+        public int IndexOf(T element)
+        {
+            int index = -1;
+            int i = 0;
+            foreach (var currentElement in this.baseCollection)
+                if (currentElement.Equals(element))
+                {
+                    index = i;
+                    break;
+                }
+                else
+                    i++;
+            return index;
+        }
+
         /// <summary>:
         /// Gets the number of elements contained in the <see cref="ControlledStateCollection{T}"/>.
         /// </summary>
@@ -179,7 +194,6 @@ namespace Oilexer.Utilities.Collections
             }
         }
         #endregion
-
 
         #region ICollection Members
 

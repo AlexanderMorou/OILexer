@@ -80,9 +80,12 @@ namespace Oilexer.Parser
         public IToken PopAhead(bool move)
         {
             IToken r = LookAhead(0);
-            originalFormTokens.RemoveAt(0);
-            if (r.Length != -1 && move)
-                this.CurrentTokenizer.Position = r.Position + r.Length;
+            if (r != null)
+            {
+                originalFormTokens.RemoveAt(0);
+                if (r.Length != -1 && move)
+                    this.CurrentTokenizer.Position = r.Position + r.Length;
+            }
             return r;
         }
         public IToken PopAhead()

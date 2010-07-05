@@ -81,9 +81,9 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         public override string ToString()
         {
             if (this.SecondaryName != null && this.SecondaryName != string.Empty)
-                return string.Format("{0}.{1}", this.PrimaryName, this.SecondaryName);
+                return string.Format("{0}.{1}{2}", this.PrimaryName, this.SecondaryName, this.RepeatOptions);
             else
-                return this.PrimaryName;
+                return string.Format("{0}{1}", this.PrimaryName, this.RepeatOptions);
         }
     }
 }

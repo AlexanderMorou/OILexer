@@ -125,6 +125,7 @@ namespace Oilexer._Internal
                         unusedTokens.Add(entry);
             file.ExpungeType(unusedTokens);
         }
+
         public static bool NeedsDeliteralized(this IProductionRuleEntry entry)
         {
             return ((IProductionRuleSeries)(entry)).NeedsDeliteralized();
@@ -265,7 +266,7 @@ namespace Oilexer._Internal
             if (ruleItem is ILiteralCharProductionRuleItem)
             {
                 return Deliteralize<char, ILiteralCharTokenItem>(((ILiteralCharProductionRuleItem)(ruleItem)), availableStock, file,
-                    delegate(ILiteralProductionRuleItem<char> literal)
+                    literal=>
                     {
                         LiteralCharTokenItem result = new LiteralCharTokenItem(literal.Value, ((ILiteralCharProductionRuleItem)(literal)).CaseInsensitive, literal.Column, literal.Line, literal.Position);
                         if (literal.Name != null && literal.Name != string.Empty)
@@ -278,7 +279,11 @@ namespace Oilexer._Internal
                     },
                     (literal, destination) =>
                     {
-                        if (!(literal.Name != null && literal.Name != string.Empty))
+                        if (destination.Name != "__EXTRACTIONS" &&
+                            (destination.Branches.Count == 1 &&
+                             destination.Branches[0].Count == 1))
+                            return new TokenReferenceProductionRuleItem(destination, literal.Column, literal.Line, literal.Position);
+                        else if (!(literal.Name != null && literal.Name != string.Empty))
                             literal.Name = ExtractName(literal.Value);
                         return new LiteralCharReferenceProductionRuleItem((ILiteralCharTokenItem)literal, destination, literal.Column, literal.Line, literal.Position, ruleItem.Flag, ruleItem.Counter); 
                     }, errors);
@@ -286,9 +291,9 @@ namespace Oilexer._Internal
             else if (ruleItem is ILiteralStringProductionRuleItem)
             {
                 return Deliteralize<string, ILiteralStringTokenItem>(((ILiteralStringProductionRuleItem)(ruleItem)), availableStock, file,
-                    delegate(ILiteralProductionRuleItem<string> literal)
+                    literal =>
                     {
-                        LiteralStringTokenItem result = new LiteralStringTokenItem(literal.Value, ((ILiteralStringProductionRuleItem)(literal)).CaseInsensitive, literal.Column, literal.Line, literal.Position);
+                        LiteralStringTokenItem result = new LiteralStringTokenItem(literal.Value, ((ILiteralStringProductionRuleItem)(literal)).CaseInsensitive, literal.Column, literal.Line, literal.Position, false);
                         if (literal.Name != null && literal.Name != string.Empty)
                             result.Name = literal.Name;
                         else
@@ -297,9 +302,13 @@ namespace Oilexer._Internal
                         }
                         return result;
                     },
-                    delegate(ILiteralStringTokenItem literal, ITokenEntry destination)
+                    (literal, destination) =>
                     {
-                        if (!(literal.Name != null && literal.Name != string.Empty))
+                        if (destination.Name != "__EXTRACTIONS" &&
+                            (destination.Branches.Count == 1 &&
+                             destination.Branches[0].Count == 1))
+                            return new TokenReferenceProductionRuleItem(destination, literal.Column, literal.Line, literal.Position);
+                        else if (string.IsNullOrEmpty(literal.Name))
                             literal.Name = ExtractName(literal.Value);
                         LiteralStringReferenceProductionRuleItem result = new LiteralStringReferenceProductionRuleItem((ILiteralStringTokenItem)literal, destination, literal.Column, literal.Line, literal.Position, ruleItem.Flag, ruleItem.Counter);
                         if (ruleItem.Flag)
@@ -326,23 +335,23 @@ namespace Oilexer._Internal
             return ExtractName(original.ToString());
         }
 
-        private static ILiteralReferenceProductionRuleItem<T, TLiteral> Deliteralize<T, TLiteral>(this ILiteralProductionRuleItem<T> literal, IList<ITokenEntry> availableStock, GDFile file, Func<ILiteralProductionRuleItem<T>, TLiteral> createNewLiteral, Func<TLiteral, ITokenEntry, ILiteralReferenceProductionRuleItem<T, TLiteral>> createLiteralReference, CompilerErrorCollection errors)
+        private static IProductionRuleItem Deliteralize<T, TLiteral>(this ILiteralProductionRuleItem<T> literal, IList<ITokenEntry> availableStock, GDFile file, Func<ILiteralProductionRuleItem<T>, TLiteral> createNewLiteral, Func<TLiteral, ITokenEntry, IProductionRuleItem> createLiteralReference, CompilerErrorCollection errors)
             where TLiteral :
                 ILiteralTokenItem<T>
         {
             {
                 ITokenItem foundItem = null;
                 ITokenEntry literalContainerEntry = null;
-                if ((foundItem = FindItemFromStock<T>(literal, availableStock, out literalContainerEntry, file)) != null)
+                if ((foundItem = FindItemFromStock<T>(literal, availableStock, out literalContainerEntry, file, false)) != null)
                 {
-                    ILiteralReferenceProductionRuleItem<T, TLiteral> result = createLiteralReference(((TLiteral)(foundItem)), literalContainerEntry);
+                    var result = createLiteralReference(((TLiteral)(foundItem)), literalContainerEntry);
                     ((LiteralProductionRuleItem<T>)literal).CloneData(result);
                     return result;
                 }
             }
             if (availableStock.FindScannableEntry("__EXTRACTIONS") == null)
             {
-                ITokenEntry extractionsToken = new TokenEntry("__EXTRACTIONS", new TokenExpressionSeries(new ITokenExpression[0], literal.Line, literal.Column, literal.Position, currentEntry.FileName), currentEntry.ScanMode, currentEntry.FileName, literal.Column, literal.Line, literal.Position, false, false, new List<string>());
+                ITokenEntry extractionsToken = new TokenEntry("__EXTRACTIONS", new TokenExpressionSeries(new ITokenExpression[0], literal.Line, literal.Column, literal.Position, currentEntry.FileName), currentEntry.ScanMode, currentEntry.FileName, literal.Column, literal.Line, literal.Position, false, new List<string>(), false);
                 availableStock.Add(extractionsToken);
                 file.Add(extractionsToken);
             }
@@ -354,20 +363,20 @@ namespace Oilexer._Internal
                 {
                     TLiteral tokenLiteralItem = createNewLiteral(literal);
                     ((TokenExpressionSeries)extractionsToken.Branches).Add(new TokenExpression(new List<ITokenItem>(new ITokenItem[] { tokenLiteralItem }), currentEntry.FileName, literal.Column, literal.Line, literal.Position));
-                    ILiteralReferenceProductionRuleItem<T, TLiteral> tokenReferenceItem = createLiteralReference(((TLiteral)(tokenLiteralItem)), extractionsToken);
+                    var tokenReferenceItem = createLiteralReference(((TLiteral)(tokenLiteralItem)), extractionsToken);
                     ((LiteralProductionRuleItem<T>)literal).CloneData(tokenReferenceItem);
                     return tokenReferenceItem;
                 }
             }
         }
 
-        private static ITokenItem FindItemFromStock<T>(ILiteralProductionRuleItem<T> literal, IList<ITokenEntry> availableStock, out ITokenEntry entry, GDFile file)
+        private static ITokenItem FindItemFromStock<T>(ILiteralProductionRuleItem<T> literal, IList<ITokenEntry> availableStock, out ITokenEntry entry, GDFile file, bool followReferences)
         {
             entry = null;
             ITokenItem foundItem = null;
             foreach (ITokenEntry ite in availableStock)
             {
-                ITokenItem iti = ite.FindTokenItemByValue<T>(literal.Value, file);
+                ITokenItem iti = ite.FindTokenItemByValue<T>(literal.Value, file, followReferences);
                 if (iti != null)
                 {
                     foundItem = iti;
@@ -426,6 +435,8 @@ namespace Oilexer._Internal
 
         public static bool NeedsFinalLinking(this IProductionRule rule)
         {
+            if (rule.Count == 0)
+                return true;
             foreach (IProductionRuleItem ruleItem in rule)
                 if (ruleItem.NeedsFinalLinking())
                     return true;
@@ -546,6 +557,8 @@ namespace Oilexer._Internal
             if (((IProductionRuleSeries)(ruleGroupItem)).NeedsFinalLinking())
             {
                 IProductionRuleSeries series = ((IProductionRuleSeries)(ruleGroupItem)).FinalLink(file, errors);
+                if (series == null)
+                    return null;
                 ProductionRuleGroupItem result = new ProductionRuleGroupItem(series.ToArray(), ruleGroupItem.Column, ruleGroupItem.Line, ruleGroupItem.Position);
                 result.Name = ruleGroupItem.Name;
                 result.RepeatOptions = ruleGroupItem.RepeatOptions;

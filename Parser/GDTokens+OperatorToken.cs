@@ -11,52 +11,54 @@ namespace Oilexer.Parser
         /// </summary>
         public enum OperatorType
         {
+            None = 0x0,
             /// <summary>
             /// The operator used for the name of the production rule and the expression
             /// used by the production rule.
             /// </summary>
             /// <remarks>Literal value: '::='</remarks>
-            ProductionRuleSeparator,
+            ProductionRuleSeparator = 0x1,
             /// <summary>
             /// The operator used for the name of the token and the expression used
             /// by the token.
             /// </summary>
             /// <remarks>Literal value: ':='</remarks>
-            TokenSeparator,
+            TokenSeparator = 0x2,
             /// <summary>
             /// The operator used to segment the token/production rule parts.
             /// </summary>
             /// <remarks>Literal value: '|'</remarks>
-            LeafSeparator,
-            LeftCurlyBrace,
-            LeftParenthesis,
-            RightParenthesis,
-            OptionsSeparator,
-            RightCurlyBrace,
+            LeafSeparator = 0x4,
+            LeftCurlyBrace = 0x8,
+            LeftParenthesis = 0x10,
+            RightParenthesis = 0x20,
+            OptionsSeparator = 0x40,
+            RightCurlyBrace = 0x80,
             /// <summary>
             /// 
             /// </summary>
             /// <remarks>Literal value: '#'</remarks>
-            CounterNotification,
-            TemplatePartsStart,
-            TemplatePartsEnd,
-            TemplatePartsSeparator,
+            CounterNotification = 0x100,
+            TemplatePartsStart = 0x200,
+            TemplatePartsEnd = 0x400,
+            TemplatePartsSeparator = 0x800,
             /// <summary>
             /// The operator used to terminate a token/production rule declaration.
             /// </summary>
             /// <remarks>Literal value: ';'</remarks>
-            EntryTerminal,
-            OneOrMore,
-            ZeroOrMore,
-            ZeroOrOne,
+            EntryTerminal = 0x1000,
+            OneOrMore = 0x2000,
+            ZeroOrMore = 0x4000,
+            ZeroOrOne = 0x8000,
             /// <summary>
             /// The operator used to delimit an (ProductionRule.Member | Token.Member) combination
             /// or to denote an option at the start of a line outside of a declaration.
             /// </summary>
-            Period,
-            ErrorSeparator,
-            Minus,
-            ProductionRuleFlag
+            Period = 0x10000,
+            ErrorSeparator = 0x20000,
+            Minus = 0x40000,
+            ProductionRuleFlag = 0x080000,
+            ForcedStringForm = 0x100000,
         }
         public class OperatorToken :
             GDToken
@@ -104,6 +106,7 @@ namespace Oilexer.Parser
                         case OperatorType.Minus:
                         case OperatorType.ProductionRuleFlag:
                         case OperatorType.CounterNotification:
+                        case OperatorType.ForcedStringForm:
                             return 1;
                         default:
                             return 0;
@@ -165,6 +168,8 @@ namespace Oilexer.Parser
                         return "-";
                     case OperatorType.ProductionRuleFlag:
                         return "!";
+                    case OperatorType.ForcedStringForm:
+                        return "$";
                     default:
                         return "/#*NAO*#/";
                 }

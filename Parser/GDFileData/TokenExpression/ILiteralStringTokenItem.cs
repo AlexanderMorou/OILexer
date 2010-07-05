@@ -22,5 +22,10 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// case-insensitive.
         /// </summary>
         bool CaseInsensitive { get; }
+        /// <summary>
+        /// Returns whether the current <see cref="ILiteralStringTokenItem"/> can
+        /// ambiguate itself relative to a sibling within the current set.
+        /// </summary>
+        bool SiblingAmbiguity { get; }
     }
 }

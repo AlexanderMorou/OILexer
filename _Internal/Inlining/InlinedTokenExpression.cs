@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser.GDFileData;
 using Oilexer.Utilities.Collections;
+using Oilexer.FiniteAutomata.Tokens;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -16,6 +18,7 @@ namespace Oilexer._Internal.Inlining
     internal class InlinedTokenExpression :
         TokenExpression
     {
+        private RegularLanguageNFAState nfaState;
         /// <summary>
         /// Creates a new <see cref="InlinedTokenExpression"/> from
         /// the <paramref name="source"/> provided.
@@ -45,6 +48,22 @@ namespace Oilexer._Internal.Inlining
         /// </summary>
         public InlinedTokenEntry Root { get; private set; }
 
+        public RegularLanguageNFAState NFAState
+        {
+            get
+            {
+                if (this.nfaState == null)
+                    this.nfaState = this.BuildNFA();
+                return this.nfaState;
+            }
+        }
 
+        private RegularLanguageNFAState BuildNFA()
+        {
+            RegularLanguageNFAState state = new RegularLanguageNFAState();
+            foreach (var item in this.Cast<IInlinedTokenItem>())
+                state.Concat(item.State);
+            return state;
+        }
     }
 }

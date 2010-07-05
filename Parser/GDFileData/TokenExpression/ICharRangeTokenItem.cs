@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
+using Oilexer.FiniteAutomata.Tokens;
 
 namespace Oilexer.Parser.GDFileData.TokenExpression
 {
     public interface ICharRangeTokenItem :
         ITokenItem
     {
-        BitArray Range { get; }
+        RegularLanguageSet Range { get; }
         bool Inverted { get; }
     }
 }

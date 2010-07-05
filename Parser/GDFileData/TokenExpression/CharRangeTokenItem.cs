@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
-using Oilexer._Internal;
+using Oilexer.Parser.Builder;
+using Oilexer.FiniteAutomata.Tokens;
 
 namespace Oilexer.Parser.GDFileData.TokenExpression
 {
@@ -10,25 +11,24 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         TokenItem,
         ICharRangeTokenItem
     {
-        private BitArray chars;
         private bool inverted;
+        private RegularLanguageSet chars;
 
-        public CharRangeTokenItem(bool inverted, BitArray chars, int line, int column, long position)
+        protected internal CharRangeTokenItem(bool inverted, RegularLanguageSet chars, int line, int column, long position)
             : base(line, column, position)
         {
-            this.inverted = inverted;
             this.chars = chars;
-            //chars[0] = false;
+            this.inverted = inverted;
         }
 
         public override string ToString()
         {
-            return string.Format("[{0}]{1}", ProjectConstructor.BitArrayToString(this.chars, this.inverted), base.ToString());
+            return string.Format("[{0}]{1}", this.chars.ToString(), base.ToString());
         }
 
         #region ICharRangeTokenItem Members
 
-        public BitArray Range
+        public RegularLanguageSet Range
         {
             get { return this.chars; }
         }

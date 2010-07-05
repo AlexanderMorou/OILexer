@@ -17,6 +17,42 @@ namespace Oilexer._Internal
     internal static class GrammarCore
     {
         internal const string GrammarParserErrorFormat = "OILexP{0}";
+
+        internal static string Encode(this string target)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (char c in target)
+            {
+                switch (c)
+                {
+                    case '\n':
+                        sb.Append("\\n");
+                        break;
+                    case '\r':
+                        sb.Append("\\r");
+                        break;
+                    case '\\':
+                        sb.Append('\\');
+                        sb.Append(c);
+                        break;
+                    case '\t':
+                        sb.Append("\\t");
+                        break;
+                    case '\v':
+                        sb.Append("\\v");
+                        break;
+                    case '\f':
+                        sb.Append("\\f");
+                        break;
+                    default:
+                        sb.Append(c);
+                        break;
+                }
+            }
+            return string.Format("\"{0}\"", sb.ToString());
+        }
+
         /// <summary>
         /// Obtains a <see cref="CompmilerError"/> for the <paramref name="fileName"/>,
         /// <paramref name="line"/>, <paramref name="column"/>, with the <paramref name="error"/>
@@ -71,6 +107,8 @@ namespace Oilexer._Internal
                     CompilerError ce = new CompilerError(fileName, line, column, string.Format(GrammarParserErrorFormat, (int)error), string.Format(Resources.GrammarParserErrors_RuleNeverUsed, text));
                     ce.IsWarning = true;
                     return ce;
+                case GDParserErrors.DynamicArgumentCountError:
+                    return new CompilerError(fileName, line, column, string.Format(GrammarParserErrorFormat, (int)error), string.Format(Resources.GrammarErrors_DynamicArgumentCountError, text));
                 default:
                     break;
             }
@@ -117,16 +155,16 @@ namespace Oilexer._Internal
             return inst.Branches.FindTokenItem(name);
         }
 
-        public static ITokenItem FindTokenItemByValue<T>(this ITokenEntry inst, T value, GDFile file)
+        public static ITokenItem FindTokenItemByValue<T>(this ITokenEntry inst, T value, GDFile file, bool followReferences)
         {
-            return inst.Branches.FindTokenItemByValue(value,file);
+            return inst.Branches.FindTokenItemByValue(value, file, followReferences);
         }
 
-        private static ITokenItem FindTokenItemByValue<T>(this ITokenExpressionSeries series, T value, GDFile file)
+        private static ITokenItem FindTokenItemByValue<T>(this ITokenExpressionSeries series, T value, GDFile file, bool followReferences)
         {
             foreach (ITokenExpression ite in series)
             {
-                ITokenItem iti = ite.Count == 1 ? ite.FindTokenItemByValue(value, file) : null;
+                ITokenItem iti = ite.Count == 1 ? ite.FindTokenItemByValue(value, file, followReferences) : null;
                 if (iti != null)
                     return iti;
             }
@@ -146,7 +184,7 @@ namespace Oilexer._Internal
         /// <param name="file">The <see cref="GDFile"/> in which the <see cref="ITokenExpression"/> is within.</param>
         /// <returns>A <see cref="ITokenItem"/> if an element within the <paramref name="expression"/> contains the
         /// <paramref name="value"/> provided.</returns>
-        private static ITokenItem FindTokenItemByValue<T>(this ITokenExpression expression, T value, GDFile file)
+        private static ITokenItem FindTokenItemByValue<T>(this ITokenExpression expression, T value, GDFile file, bool followReferences)
         {
             for (int i = 0; i < expression.Count; i++)
             {
@@ -183,12 +221,21 @@ namespace Oilexer._Internal
                 }
                 else if (iti is ILiteralReferenceTokenItem)
                 {
-                    iti = ((ILiteralReferenceTokenItem)(iti)).Literal;
+                    
+                    var siti = ((ILiteralReferenceTokenItem)(iti));
+                    if (!file.Contains(siti.Source) ||
+                        followReferences)
+                    {
+                        iti = siti.Literal;
+                    }
+                    else
+                        continue;
                     goto _check;
                 }
                 else if (iti is ITokenGroupItem)
                 {
-                    ITokenItem find = ((ITokenGroupItem)(iti)).FindTokenItemByValue(value, file);
+                    //If it's a group, search within the elements of the group.
+                    ITokenItem find = ((ITokenGroupItem)(iti)).FindTokenItemByValue(value, file, followReferences);
                     if (find != null)
                         return find;
                 }
@@ -196,7 +243,9 @@ namespace Oilexer._Internal
                 {
                     if (!file.Contains(((ITokenReferenceTokenItem)iti).Reference))
                     {
-                        ITokenItem iti2 = ((ITokenReferenceTokenItem)iti).Reference.FindTokenItemByValue(value, file);
+                        //In the event that the element was purged, but its value 
+                        //exists elsewhere, obtain the alternate element.
+                        ITokenItem iti2 = ((ITokenReferenceTokenItem)iti).Reference.FindTokenItemByValue(value, file, followReferences);
                         if (iti2 != null)
                             return iti2;
                     }

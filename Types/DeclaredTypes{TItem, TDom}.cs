@@ -133,7 +133,10 @@ namespace Oilexer.Types
         protected override void Add(string uniqueIdentifier, TItem value)
         {
             value.DeclarationChange += new EventHandler<DeclarationChangeArgs>(OnItemChanged);
-            base.Add(uniqueIdentifier, value);
+            lock (base.baseCollection)
+            {
+                base.Add(uniqueIdentifier, value);
+            }
             
         }
 

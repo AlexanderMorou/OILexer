@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Oilexer.Parser.GDFileData.TokenExpression;
-
+using Oilexer._Internal;
 namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 {
 
@@ -60,7 +60,10 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 
         public override string ToString()
         {
-            return string.Format("{0}{1}{2}", base.ToString(), this.Counter ? "#" : string.Empty, this.IsFlag ? "!" : string.Empty);
+            if (this.Name != null)
+                return string.Format("{0}{3}{4}:{1};{2}{5}", this.Literal.Value.Encode(), this.Name, this.ToStringFurtherOptions(), this.Counter ? "#" : string.Empty, this.IsFlag ? "!" : string.Empty, this.RepeatOptions);
+            else
+                return string.Format("{0}{2}{3}{1}{4}", this.Literal.Value.Encode(), this.ToStringFurtherOptions(), this.Counter ? "#" : string.Empty, this.IsFlag ? "!" : string.Empty, this.RepeatOptions);
         }
 
     }

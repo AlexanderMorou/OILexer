@@ -9,7 +9,8 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
     /// in a <see cref="ITokenEntry"/>.
     /// </summary>
     public interface ITokenItem :
-        IScannableEntryItem
+        IScannableEntryItem,
+        ITokenSource
     {
         /// <summary>
         /// Creates a copy of the current <see cref="ITokenItem"/>.

@@ -145,11 +145,16 @@ namespace Oilexer.Statements
         #endregion
 
         #region IStatementBlockInsertBase Members
+        public void Add(IStatement statement)
+        {
+            this.Statements.Add(statement);
+        }
+
         public IBlockStatement NewBlock()
         {
             return this.Statements.NewBlock();
         }
-        
+
         public ISwitchStatement SelectCase(IExpression caseSwitch)
         {
             return this.Statements.SelectCase(caseSwitch);
@@ -193,6 +198,16 @@ namespace Oilexer.Statements
         public ICrementStatement Decrement(IAssignStatementTarget target, CrementType crementType)
         {
             return this.Statements.Decrement(target, crementType);
+        }
+
+        public IConditionStatement IfThen(IExpression condition, params IStatement[] trueStatements)
+        {
+            return this.Statements.IfThen(condition, trueStatements);
+        }
+
+        public IConditionStatement IfThen(IExpression condition, IStatement[] trueStatements, IStatement[] falseStatements)
+        {
+            return this.Statements.IfThen(condition, trueStatements, falseStatements);
         }
 
         public IIterationStatement Iterate(IStatement init, IStatement increment, IExpression test)
@@ -251,14 +266,20 @@ namespace Oilexer.Statements
             return this.Statements.Return();
         }
 
-        public IConditionStatement IfThen(IExpression condition, params IStatement[] trueStatements)
-        {
-            return this.Statements.IfThen(condition, trueStatements);
-        }
 
-        public IConditionStatement IfThen(IExpression condition, IStatement[] trueStatements, IStatement[] falseStatements)
+        #endregion
+
+
+        #region ITypeReferenceable Members
+
+        public void GatherTypeReferences(ref ITypeReferenceCollection result, Oilexer.Translation.ICodeTranslationOptions options)
         {
-            return this.Statements.IfThen(condition, trueStatements, falseStatements);
+            if (result == null)
+                result = new TypeReferenceCollection();
+            foreach (var @case in this.cases)
+                @case.GatherTypeReferences(ref result, options);
+            if (this.statements != null)
+                this.Statements.GatherTypeReferences(ref result, options);
         }
 
         #endregion

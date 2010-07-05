@@ -31,7 +31,11 @@ namespace Oilexer.Statements
 
         public override void GatherTypeReferences(ref ITypeReferenceCollection result, Oilexer.Translation.ICodeTranslationOptions options)
         {
-            
+            if (result == null)
+                result = new TypeReferenceCollection();
+            if (this.cases != null)
+                foreach (var @case in this.cases)
+                    @case.GatherTypeReferences(ref result, options);
         }
 
         #region ISwitchStatement Members

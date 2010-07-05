@@ -9,6 +9,11 @@ using Oilexer.Statements;
 
 namespace Oilexer.Translation
 {
+    /// <summary>
+    /// Provides a shell intermediate translator for objectified code,
+    /// implementing basic routines for refining general cases into
+    /// specific ones.
+    /// </summary>
     public abstract class IntermediateTranslator :
         IIntermediateTranslator
     {

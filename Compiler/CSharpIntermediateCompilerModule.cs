@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Oilexer.Types;
 using System.IO;
 using Oilexer.Utilities.Collections;
+using Oilexer._Internal;
 
 namespace Oilexer.Compiler
 {
@@ -105,7 +106,7 @@ namespace Oilexer.Compiler
             results.CommandLine = string.Join(" ", commandSequences);
             string outputText = string.Empty;
             string errorText = string.Empty;
-            results.NativeReturnValue = Executor.ExecWaitWithCapture(string.Format("{0}csc.exe /noconfig @\"{1}\"", _Internal._OIL._Core.GetRuntimeDirectory(), responseFile), temporaryFiles, ref outputText, ref errorText);
+            results.NativeReturnValue = Executor.ExecWaitWithCapture(string.Format("{0}csc.exe /noconfig @\"{1}\"", _OIL._Core.GetRuntimeDirectory(), responseFile), temporaryFiles, ref outputText, ref errorText);
             return results;
         }
 

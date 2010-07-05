@@ -8,12 +8,12 @@ namespace Oilexer.Utilities.Collections
     public class ReadOnlyCollectionGroup<TCollection, TItem> : 
         IReadOnlyCollection<TItem>
         where TCollection :
-            IControlledStateCollection
+            IControlledStateCollection<TItem>
     {
-        private IList<IControlledStateCollection> collections;
-        public ReadOnlyCollectionGroup(IControlledStateCollection[] collections)
+        private IList<IControlledStateCollection<TItem>> collections;
+        public ReadOnlyCollectionGroup(IControlledStateCollection<TItem>[] collections)
         {
-            this.collections = new List<IControlledStateCollection>(collections);
+            this.collections = new List<IControlledStateCollection<TItem>>(collections);
         }
         #region IControlledStateCollection<TItem> Members
 
@@ -95,5 +95,18 @@ namespace Oilexer.Utilities.Collections
         {
             throw new NotSupportedException();
         }
+
+        #region IControlledStateCollection<TItem> Members
+
+
+        public int IndexOf(TItem element)
+        {
+            for (int i = 0, j = 0; i < this.Count; j += this.collections[i].Count, i++)
+                if (this.collections[i].Contains(element))
+                    return j + this.collections[i].IndexOf(element);
+            return -1;
+        }
+
+        #endregion
     }
 }

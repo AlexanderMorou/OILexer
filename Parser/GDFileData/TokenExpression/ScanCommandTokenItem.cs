@@ -1,33 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using Oilexer._Internal;
 
 namespace Oilexer.Parser.GDFileData.TokenExpression
 {
     public class ScanCommandTokenItem :
-        TokenItem,
+        CommandTokenItem,
         IScanCommandTokenItem
     {
-        /// <summary>
-        /// Data member for <see cref="SearchTarget"/>.
-        /// </summary>
-        private string searchTarget;
+        private ITokenExpressionSeries searchTarget;
         /// <summary>
         /// Data member for <see cref="SeekPast"/>.
         /// </summary>
         private bool seekPast;
 
-        public ScanCommandTokenItem(string searchTarget, bool seekPast, int column, int line, long position)
-            : base(column, line, position)
+        public ScanCommandTokenItem(ITokenExpressionSeries searchTarget, bool seekPast, int column, int line, long position)
+            : base(new ITokenExpressionSeries[1] { searchTarget }, column, line, position)
         {
-            this.searchTarget = searchTarget;
             this.seekPast = seekPast;
+            this.searchTarget = searchTarget;
+        }
+
+        /// <summary>
+        /// Returns the <see cref="CommandType"/> associated to the command.
+        /// </summary>
+        /// <remarks>
+        /// Returns <see cref="CommandType.ScanCommand"/>.
+        /// </remarks>
+        public override CommandType Type
+        {
+            get { return CommandType.ScanCommand; }
         }
 
         #region IScanCommandTokenItem Members
 
-        public string SearchTarget
+        public ITokenExpressionSeries SearchTarget
         {
             get { return this.searchTarget; }
         }
@@ -39,15 +47,16 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
 
         #endregion
 
-        protected override object OnClone()
-        {
-            ScanCommandTokenItem scti = new ScanCommandTokenItem(searchTarget, seekPast, Column, Line, Position);
-            base.CloneData(scti);
-            return scti;
-        }
         public override string ToString()
         {
-            return string.Format("Scan({0}, {1})", this.searchTarget.Encode(), this.seekPast);
+            return string.Format("Scan({0}, {1})", this.searchTarget, this.seekPast);
+        }
+
+        protected override object OnClone()
+        {
+            ScanCommandTokenItem scti = new ScanCommandTokenItem(this.searchTarget, this.seekPast, Column, Line, Position);
+            base.CloneData(scti);
+            return scti;
         }
     }
 }

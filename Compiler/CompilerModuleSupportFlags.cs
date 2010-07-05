@@ -52,6 +52,10 @@ namespace Oilexer.Compiler
         /// Compiler module supports libraries with full debugger support.
         /// </summary>
         DebuggerSupport = 512,
+        /// <summary>
+        /// Compiler supports using a response file for longer command
+        /// sequences.
+        /// </summary>
         ResponseFile = 1024,
         FullSupport = XMLDocumentation 
                     | Optimization 

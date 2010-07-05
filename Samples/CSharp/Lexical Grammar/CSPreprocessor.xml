@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CSPreprocessor</name>
+    </assembly>
+    <members>
+        <member name="F:OILexer.DefaultNamespace.BooleanLiteralStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.CommentStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.DecimalNumberStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.ConditionalSymbolStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.PreprocessorOperatorStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.IgnoredSectionPartStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.DefaultOrDefaultLineStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.PreprocessorPoundStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.PreprocessorNewLineStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.FileNameStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.NewLineStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.PreprocessorMessageStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.PreprocessorSymbolStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.TokenStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.WarningActionStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+        <member name="F:OILexer.DefaultNamespace.WhitespaceStateMachine.state">
+            <summary>
+            The state machine's current state, determining the logic path to follow for the next character.
+            </summary>
+        </member>
+    </members>
+</doc>

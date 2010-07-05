@@ -46,7 +46,7 @@ namespace Oilexer.Parser
         /// </summary>
         InvalidRepeatOptions,
         /// <summary>
-        /// Include '{0}' not found.
+        /// StringTerminal '{0}' not found.
         /// </summary>
         IncludeFileNotFound = 500,
         FixedArgumentCountError = 600,

@@ -11,7 +11,8 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
     /// </summary>
     public interface IProductionRule :
         IReadOnlyCollection<IProductionRuleItem>,
-        IAmbiguousGDEntity
+        IAmbiguousGDEntity,
+        IProductionRuleSource
     {
         /// <summary>
         /// Returns the line the <see cref="IItem"/> was declared at.

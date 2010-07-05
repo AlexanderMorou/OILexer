@@ -7,7 +7,8 @@ namespace Oilexer.Parser.GDFileData
 {
     public class PreprocessorIfDirective :
         PreprocessorDirectiveBase,
-        IPreprocessorIfDirective
+        IPreprocessorIfDirective,
+        IEntry
     {
         /// <summary>
         /// Data member for <see cref="Condition"/>.
@@ -24,6 +25,8 @@ namespace Oilexer.Parser.GDFileData
 
         private DirectiveBody body;
 
+        private string filename;
+
         private EntryPreprocessorType ppType;
         /// <summary>
         /// Creates a new <see cref="PreprocessorIfDirective"/> with the <paramref name="condition"/>
@@ -38,9 +41,10 @@ namespace Oilexer.Parser.GDFileData
         /// <param name="line">The line index the <see cref="PreprocessorIfDirective"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorIfDirective"/> 
         /// was declared at.</param>
-        public PreprocessorIfDirective(EntryPreprocessorType ppType, IPreprocessorCLogicalOrConditionExp condition, int column, int line, long position)
+        public PreprocessorIfDirective(EntryPreprocessorType ppType, IPreprocessorCLogicalOrConditionExp condition, string filename, int column, int line, long position)
             : base(column, line, position)
         {
+            this.filename = filename;
             switch (ppType)
             {
                 case EntryPreprocessorType.If:
@@ -168,5 +172,14 @@ namespace Oilexer.Parser.GDFileData
                 baseCollection.Add(directive);
             }
         }
+
+        #region IEntry Members
+
+        public string FileName
+        {
+            get { return this.filename; }
+        }
+
+        #endregion
     }
 }

@@ -41,12 +41,10 @@ namespace Oilexer.Parser
         /// Returns/sets the token suffix.
         /// </summary>
         string TokenSuffix { get; set; }
-
         /// <summary>
         /// Returns/sets the name of the grammar.
         /// </summary>
         string GrammarName { get; set; }
-
         /// <summary>
         /// Returns/sets the name of the assembly that results.
         /// </summary>
@@ -55,5 +53,10 @@ namespace Oilexer.Parser
         /// Returns/sets the name of the entry that starts the parse.
         /// </summary>
         string StartEntry { get; set; }
+        /// <summary>
+        /// Returns/sets the default namespace associated to the project.
+        /// </summary>
+        string Namespace { get; set; }
+        
     }
 }

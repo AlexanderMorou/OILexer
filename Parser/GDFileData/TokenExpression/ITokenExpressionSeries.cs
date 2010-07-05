@@ -10,7 +10,8 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
     /// the branches of an <see cref="ITokenEntry"/> or <see cref="IGroupTokenItem"/>
     /// </summary>
     public interface ITokenExpressionSeries :
-        IReadOnlyCollection<ITokenExpression>
+        IReadOnlyCollection<ITokenExpression>,
+        ITokenSource
     {
         /// <summary>
         /// Returns the line the <see cref="ITokenExpressionSeries"/> was declared at.

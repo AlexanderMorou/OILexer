@@ -6,6 +6,9 @@ using System.CodeDom.Compiler;
 
 namespace Oilexer.Parser
 {
+    /// <summary>
+    /// Provides a base tokenizer for the OILexer grammar language.
+    /// </summary>
     public abstract partial class Tokenizer :
         ITokenizer
     {
@@ -184,12 +187,13 @@ namespace Oilexer.Parser
                 return -1;
             if (lineStarts[lineStarts.Count - 1] <= position)
                 return lineStarts.Count;
+            int furthest = 0;
             for (int i = 0; i < lineStarts.Count; i++)
-                if (lineStarts[i] >= position)
+                if (lineStarts[i] <= position)
                 {
-                    return i + 1;
+                    furthest= i + 1;
                 }
-            return lineStarts.Count;
+            return furthest;
         }
 
         /// <summary>
@@ -308,33 +312,31 @@ namespace Oilexer.Parser
             if (count > bufferSize)
                 count = bufferSize;
             char[] result = new char[count];
-            bool inCrLf = false;
-            long crLfStart = 0;
+            //bool inCrLf = false;
+            //long crLfStart = 0;
+            Array.Copy(buffer, 0, result, 0, count);
             for (long i = 0; i < count; i++)
             {
-                char cB = result[i] = (char)buffer[i];
+                char cB = (char)result[i];
                 //Works, but if they request a GetLineIndex beyond the scope of the 
                 //lineStarts array, they get the last line, regardless if the position they give
                 //is thirty lines later.
-                if (inCrLf)
+                if (cB == '\r')
                 {
-                    if (cB == '\r' || cB == '\n')
-                        crLfStart++;
-                    if (!lineStarts.Contains(crLfStart))
-                        lineStarts.Add(crLfStart + 1);
-                    inCrLf = false;
-                    continue;
+                    if (i < result.Length - 1)
+                        if (result[i + 1] == '\n' &&
+                            !lineStarts.Contains(bufferStartLocale + i + 2))
+                        {
+                            lineStarts.Add(bufferStartLocale + i + 2);
+                            continue;
+                        }
+                    if (!lineStarts.Contains(bufferStartLocale + i + 1))
+                        lineStarts.Add(bufferStartLocale + i + 1);
                 }
-                else if (cB == '\r' || cB == '\n')
-                {
-                    inCrLf = true;
-                    crLfStart = this.bufferStartLocale + i;
-                    continue;
-                }
+                else if (cB == '\n' &&
+                    !lineStarts.Contains(bufferStartLocale + i + 1))
+                    lineStarts.Add(bufferStartLocale + i + 1);
             }
-            //if (lastWasNL)
-            //    if (!lineStarts.Contains(ls))
-            //        lineStarts.Add(ls);
             stream.Position = bufferStartLocale + count;
             bufferStartLocale = stream.Position;
             bufferSize = 0;
@@ -399,7 +401,10 @@ namespace Oilexer.Parser
             {
                 return this.currentError;
             }
-            private set { this.currentError = value; }
+            private set
+            {
+                this.currentError = value;
+            }
         }
 
         /// <summary>

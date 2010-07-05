@@ -35,5 +35,10 @@ namespace Oilexer.Expression
         }
 
         #endregion
+
+        public override void GatherTypeReferences(ref ITypeReferenceCollection result, ICodeTranslationOptions options)
+        {
+            base.GatherTypeReferences(ref result, options);
+        }
     }
 }

@@ -17,6 +17,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// Data member for <see cref="CaseInsensitive"/>.
         /// </summary>
         private bool caseInsensitive;
+        private bool siblingAmbiguity;
         /// <summary>
         /// Creates a new <see cref="LiteralStringTokenItem"/> with the 
         /// <paramref name="column"/>, <paramref name="line"/>, and <paramref name="position"/>.
@@ -26,9 +27,10 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// defined.</param>
         /// <param name="line">The line at which the <see cref="LiteralStringTokenItem"/> was defined.</param>
         /// <param name="position">The byte in the file at which the <see cref="LiteralStringTokenItem"/> was declared.</param>
-        public LiteralStringTokenItem(String value, bool caseInsensitive, int column, int line, long position)
+        public LiteralStringTokenItem(String value, bool caseInsensitive, int column, int line, long position, bool siblingAmbiguity)
             : base(value, column, line, position)
         {
+            this.siblingAmbiguity = siblingAmbiguity;
             this.caseInsensitive = caseInsensitive;
         }
 
@@ -39,7 +41,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// members of the current <see cref="LiteralStringTokenItem"/>.</returns>
         protected override object OnClone()
         {
-            LiteralStringTokenItem lsti = new LiteralStringTokenItem(base.Value, this.CaseInsensitive, base.Column, base.Line, base.Position);
+            LiteralStringTokenItem lsti = new LiteralStringTokenItem(base.Value, this.CaseInsensitive, base.Column, base.Line, base.Position, siblingAmbiguity);
             
             base.CloneData((IScannableEntryItem)lsti);
             return lsti;
@@ -66,14 +68,20 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
             get { return this.caseInsensitive; }
         }
 
+        public bool SiblingAmbiguity
+        {
+            get { return this.siblingAmbiguity; }
+            internal set { this.siblingAmbiguity = value; }
+        }
+
         #endregion
 
         public override string ToString()
         {
             if (CaseInsensitive)
-                return string.Format("@{0}{1}", GrammarCore.EncodePrim(this.Value),base.ToString());
+                return string.Format("@{0}{1}{2}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.siblingAmbiguity ? "**" : string.Empty);
             else
-                return GrammarCore.EncodePrim(this.Value)+base.ToString();
+                return string.Format("{0}{1}{2}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.siblingAmbiguity ? "**" : string.Empty);
         }
 
     }

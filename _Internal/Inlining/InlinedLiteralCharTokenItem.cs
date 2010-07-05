@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser.GDFileData;
+using Oilexer.FiniteAutomata.Tokens;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -17,6 +18,7 @@ namespace Oilexer._Internal.Inlining
         LiteralCharTokenItem,
         IInlinedTokenItem
     {
+        private RegularLanguageNFAState state;
         /// <summary>
         /// Creates a new <see cref="InlinedLiteralCharTokenItem"/> instance
         /// with the <paramref name="source"/>, <paramref name="sourceRoot"/>
@@ -63,7 +65,28 @@ namespace Oilexer._Internal.Inlining
             get { return this.Source; }
         }
 
-        #endregion
+        public RegularLanguageNFAState State
+        {
+            get {
+                if (this.state == null)
+                {
+                    this.state = this.BuildNFAState();
+                    this.state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, InliningCore.TokenRootStateClonerCache, InliningCore.TokenStateClonerCache);
+                }
+                return this.state;
+            }
+        }
 
+        private RegularLanguageNFAState BuildNFAState()
+        {
+            RegularLanguageNFAState rootState = new RegularLanguageNFAState();
+            RegularLanguageNFAState endState = new RegularLanguageNFAState();
+            rootState.MoveTo(new RegularLanguageSet(!this.CaseInsensitive, this.Value), endState);
+            rootState.SetInitial(this);
+            endState.SetFinal(this);
+            return rootState;
+        }
+
+        #endregion
     }
 }

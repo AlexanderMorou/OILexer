@@ -30,7 +30,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         /// <summary>
         /// Data member for <see cref="RepeatOptions"/>.
         /// </summary>
-        private ScannableEntryItemRepeatOptions repeatOptions;
+        private ScannableEntryItemRepeatInfo repeatOptions;
         /// <summary>
         /// Data member for <see cref="Reference"/>.
         /// </summary>
@@ -59,6 +59,19 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             this.reference = reference;
         }
 
+        public TemplateReferenceProductionRuleItem(Dictionary<string, string> constraints, IProductionRuleTemplateEntry reference, ICollection<IProductionRuleSeries> parts, int column, int line, long position)
+        {
+            this.ConditionalConstraints = new ReadOnlyDictionary<string, string>(constraints);
+            
+            foreach (IProductionRuleSeries iprs in parts)
+                baseCollection.Add(iprs);
+            this.column = column;
+            this.line = line;
+            this.position = position;
+            this.reference = reference;
+            
+        }
+        public IReadOnlyDictionary<string, string> ConditionalConstraints { get; private set; }
 
         #region ITemplateReferenceProductionRuleItem Members
 
@@ -85,6 +98,8 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             foreach (IProductionRuleSeries iprs in this)
                 r.Add(iprs);
             TemplateReferenceProductionRuleItem trpri = new TemplateReferenceProductionRuleItem(this.Reference, r, this.Column, this.Line, this.Position);
+            if (this.ConditionalConstraints != null)
+                trpri.ConditionalConstraints = this.ConditionalConstraints;
             trpri.RepeatOptions = this.repeatOptions;
             trpri.Name = Name;
             return trpri;
@@ -146,7 +161,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         /// <summary>
         /// Returns the repeat options of the <see cref="TemplateReferenceProductionRuleItem"/>
         /// </summary>
-        public ScannableEntryItemRepeatOptions RepeatOptions
+        public ScannableEntryItemRepeatInfo RepeatOptions
         {
             get { return this.repeatOptions; }
             set
@@ -183,18 +198,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
                 sb.Append(this.Name);
                 sb.Append(";");
             }
-            switch (repeatOptions)
-            {
-                case ScannableEntryItemRepeatOptions.ZeroOrOne:
-                    sb.Append("?");
-                    break;
-                case ScannableEntryItemRepeatOptions.ZeroOrMore:
-                    sb.Append("*");
-                    break;
-                case ScannableEntryItemRepeatOptions.OneOrMore:
-                    sb.Append("+");
-                    break;
-            }
+            sb.Append(repeatOptions.ToString());
             return sb.ToString();
         }
         /// <summary>
@@ -205,7 +209,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         /// <remarks>Supplement to <see cref="OnClone()"/>.</remarks>
         internal void CloneData(IScannableEntryItem target)
         {
-            if (target.RepeatOptions == ScannableEntryItemRepeatOptions.None
+            if (target.RepeatOptions == ScannableEntryItemRepeatInfo.None
              && target.RepeatOptions != this.RepeatOptions)
                 target.RepeatOptions = this.repeatOptions;
             if (!string.IsNullOrEmpty(this.name))

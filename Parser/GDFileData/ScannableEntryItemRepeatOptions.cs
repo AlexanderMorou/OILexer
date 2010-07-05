@@ -4,11 +4,8 @@ using System.Text;
 
 namespace Oilexer.Parser.GDFileData
 {
-    /// <summary>
-    /// The repeat options for the <see cref="IScannableEntryItem"/>.
-    /// </summary>
     [FlagsAttribute]
-    public enum ScannableEntryItemRepeatOptions
+    public enum ScannableEntryItemRepeatOptions 
     {
         /// <summary>
         /// The <see cref="IScannableEntryItem"/> does not have any repeat options declared on it.
@@ -41,5 +38,6 @@ namespace Oilexer.Parser.GDFileData
         /// <para><see cref="None"/> - All items must be encountered
         /// at least once.</para></remarks>
         AnyOrder = 0x8,
+        Specific = 0x80,
     }
 }

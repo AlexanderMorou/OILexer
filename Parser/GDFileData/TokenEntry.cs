@@ -14,24 +14,24 @@ namespace Oilexer.Parser.GDFileData
         internal ITokenExpressionSeries branches;
         private List<string> lowerPrecedenceNames;
         private ITokenEntry[] lowerPrecedenceTokens;
-        private bool selfAmbiguous;
-        public TokenEntry(string name, ITokenExpressionSeries branches, EntryScanMode scanMode, string fileName, int column, int line, long position, bool unhinged, bool selfAmbiguous, List<string> lowerPrecedences)
+        private bool forcedRecognizer = false;
+        public TokenEntry(string name, ITokenExpressionSeries branches, EntryScanMode scanMode, string fileName, int column, int line, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer)
             : base(name, fileName, column, line, position)
         {
             this.lowerPrecedenceNames = lowerPrecedences;
             this.scanMode = scanMode;
             this.branches = branches;
-            this.selfAmbiguous = selfAmbiguous;
             this.unhinged = unhinged;
+            this.forcedRecognizer = forcedRecognizer;
         }
-        public TokenEntry(string name, ITokenExpressionSeries branches, EntryScanMode scanMode, string fileName, int column, int line, long position, bool unhinged, bool selfAmbiguous, ITokenEntry[] lowerPrecedences)
+        public TokenEntry(string name, ITokenExpressionSeries branches, EntryScanMode scanMode, string fileName, int column, int line, long position, bool unhinged, ITokenEntry[] lowerPrecedences, bool forcedRecognizer)
             : base(name, fileName, column, line, position)
         {
             this.lowerPrecedenceTokens = lowerPrecedences;
             this.scanMode = scanMode;
             this.branches = branches;
-            this.selfAmbiguous = selfAmbiguous;
             this.unhinged = unhinged;
+            this.forcedRecognizer = forcedRecognizer;
         }
 
         #region IScannableEntry Members
@@ -98,10 +98,7 @@ namespace Oilexer.Parser.GDFileData
             internal set { this.lowerPrecedenceTokens = value; }
         }
 
-        public bool SelfAmbiguous
-        {
-            get { return this.selfAmbiguous; }
-        }
+        public bool ForcedRecognizer { get { return this.forcedRecognizer; } }
 
         #endregion
     }

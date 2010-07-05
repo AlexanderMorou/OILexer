@@ -19,7 +19,7 @@ namespace Oilexer.Parser.GDFileData
         /// <summary>
         /// Returns the repeat options of the <see cref="IScannableEntryItem"/>
         /// </summary>
-        ScannableEntryItemRepeatOptions RepeatOptions { get; set; }
+        ScannableEntryItemRepeatInfo RepeatOptions { get; set; }
         /// <summary>
         /// Returns the line the <see cref="IItem"/> was declared at.
         /// </summary>

@@ -1,14 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Oilexer.Types;
-using System.ComponentModel;
 using System.CodeDom;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Oilexer.Utilities.Arrays;
-using Oilexer.Types.Members;
+using System.Text;
 using Oilexer.Translation;
+using Oilexer.Types;
+using Oilexer.Types.Members;
+using Oilexer.Utilities.Arrays;
 
 namespace Oilexer
 {
@@ -275,6 +275,8 @@ namespace Oilexer
         {
             get
             {
+                if (!this.IsRoot)
+                    return this.GetRootDeclaration().AssemblyInformation;
                 if (this.assemblyInformation == null)
                     this.assemblyInformation = this.InitializeAssemblyInformation();
                 return this.assemblyInformation;

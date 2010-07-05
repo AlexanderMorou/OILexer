@@ -1,0 +1,78 @@
+#include                  "..\\Root.oilexer";
+#include              "Constructors.oilexer";
+#include                    "Events.oilexer";
+#include                    "Fields.oilexer";
+#include                  "Indexers.oilexer";
+#include                    "Locals.oilexer";
+#include                   "Methods.oilexer";
+#include                 "Operators.oilexer";
+#include                "Parameters.oilexer";
+#include                "Properties.oilexer";
+
+/* B.2.3: Variables (Unnecessary)          *\
+VariableReference                        ::=>
+    Expression                              ;
+\*                                         */
+
+
+/* --------------------------------------- *\
+|*              B.2.7: Classes             *|
+\* --------------------------------------- */
+
+ClassMemberDeclaration                   ::=>
+    ConstantDeclaration                     |
+    FieldDeclaration                        |
+    MethodDeclaration                       |
+    PropertyDeclaration                     |
+    EventDeclaration                        |
+    IndexerDeclaration                      |
+    OperatorDeclaration                     |
+    ConstructorDeclaration                  |
+    DestructorDeclaration                   |
+    StaticConstructorDeclaration            |
+    TypeDeclaration                         ;
+
+MemberName                                ::=
+    (Type:TypePart; '.')?
+    Identifier:Name;                        ;
+
+/* --------------------------------------- *\
+|*              B.2.8: Structs             *|
+\* --------------------------------------- */
+
+StructMemberDeclaration                  ::=>
+    ConstantDeclaration                     |
+    FieldDeclaration                        |
+    ConcreteMethodDeclaration               |
+    ConcretePropertyDeclaration             |
+    EventDeclaration                        |
+    IndexerDeclaration                      |
+    ConcreteIndexerDeclaration              |
+    OperatorDeclaration                     |
+    ConstructorDeclaration                  |
+    StaticConstructorDeclaration            |
+    TypeDeclaration                         ;
+
+/* --------------------------------------- *\
+|*            B.2.10: Interfaces           *|
+\* --------------------------------------- */
+
+InterfaceMemberDeclaration               ::=>
+    InterfaceMethodDeclaration              |
+    InterfacePropertyDeclaration            |
+    InterfaceEventDeclaration               |
+    InterfaceIndexerDeclaration             ;
+
+AbstractGet                               ::=
+    Attributes:Attributes;? "get" ';'       ;
+    
+AbstractSet                               ::=
+    Attributes:Attributes;? "set" ';'       ;
+
+ConcreteGet                               ::=
+    Attributes:Attributes;? "get"
+    Block:Body;                             ;
+
+ConcreteSet                               ::=
+    Attributes:Attributes;? "set"
+    Block:Body;                             ;

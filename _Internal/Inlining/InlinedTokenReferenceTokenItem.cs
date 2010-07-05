@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer.Parser.GDFileData;
+using Oilexer.FiniteAutomata.Tokens;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -13,6 +15,7 @@ namespace Oilexer._Internal.Inlining
         TokenGroupItem,
         IInlinedTokenItem
     {
+        private RegularLanguageNFAState state;
         public InlinedTokenReferenceTokenItem(ITokenReferenceTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
             : base(source.Reference.FileName, InliningCore.Inline(source.Reference.Branches.ToArray(), sourceRoot, root, oldNewLookup), source.Column, source.Line, source.Position)
         {
@@ -44,7 +47,51 @@ namespace Oilexer._Internal.Inlining
             get { return this.Source; }
         }
 
+        public RegularLanguageNFAState State
+        {
+            get
+            {
+                if (this.state == null)
+                {
+                    this.state = this.BuildNFAState();
+                    this.state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, InliningCore.TokenRootStateClonerCache, InliningCore.TokenStateClonerCache);
+                }
+                return this.state;
+            }
+        }
+
+        private RegularLanguageNFAState BuildNFAState()
+        {
+            RegularLanguageNFAState state = null;
+            foreach (var expression in this.Cast<InlinedTokenExpression>())
+                if (state == null)
+                    state = expression.NFAState;
+                else
+                    state.Union(expression.NFAState);
+            if (Source.Reference.Name == "Number")
+                Console.WriteLine();
+            List<RegularLanguageNFAState> flatline = new List<RegularLanguageNFAState>();
+            RegularLanguageNFAState.FlatlineState(state, flatline);
+            foreach (var fState in flatline)
+                fState.SetIntermediate(this);
+            state.SetInitial(this);
+            foreach (var edge in state.ObtainEdges())
+                edge.SetFinal(this);
+            return state;
+        }
+
         #endregion
+
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(Source.Reference.Name);
+            if (this.Name != null && this.Name != string.Empty)
+                sb.Append(string.Format(":{0};{1}", this.Name, this.ToStringFurtherOptions()));
+            sb.Append(RepeatOptions.ToString());
+            return sb.ToString();
+        }
 
     }
 }

@@ -11,6 +11,10 @@ namespace Oilexer.Statements
     public interface IConditionStatement :
         IConditionBlock
     {
+        /// <summary>
+        /// The <see cref="IStatementBlock"/> associated to the false half of the 
+        /// <see cref="IConditionStatement"/>.
+        /// </summary>
         IStatementBlock FalseBlock { get; }
     }
 }
