@@ -88,5 +88,55 @@ namespace Oilexer.Utilities.Collections
             source.OnAll((tk, target, method) => target.Add(tk, method(tk)), r, f);
             return r;
         }
+
+        public static IEnumerable<T> Merge<T>(params IEnumerable<T>[] elements)
+        {
+            if (elements == null)
+                throw new ArgumentException();
+            return MergeInternal(elements);
+        }
+
+        private static IEnumerable<T> MergeInternal<T>(IEnumerable<T>[] elements)
+        {
+            foreach (var set in elements)
+                if (set != null)
+                    foreach (var t in set)
+                        yield return t;
+        }
+
+        public static IEnumerable<T> Merge<T>(this IEnumerable<IEnumerable<T>> elements)
+        {
+            if (elements == null)
+                throw new ArgumentException();
+            var p = elements.Distinct();
+            return MergeInternal(elements);
+        }
+
+
+        private static IEnumerable<T> MergeInternal<T>(IEnumerable<IEnumerable<T>> elements)
+        {
+            foreach (var set in elements)
+                if (set != null)
+                    foreach (var t in set)
+                        yield return t;
+        }
+
+        public static IEnumerable<T> MergeDistinct<T>(this IEnumerable<IEnumerable<T>> elements)
+        {
+            if (elements == null)
+                throw new ArgumentNullException("elements");
+            return elements.MergeDistinctInternal();
+        }
+
+        private static IEnumerable<T> MergeDistinctInternal<T>(this IEnumerable<IEnumerable<T>> elements)
+        {
+            HashSet<T> observed = new HashSet<T>();
+            foreach (var set in elements)
+                if (set != null)
+                    foreach (var t in set)
+                        if (observed.Add(t))
+                            yield return t;
+        }
+
     }
 }

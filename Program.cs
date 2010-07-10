@@ -300,110 +300,68 @@ namespace Oilexer
         {
             foreach (ParserBuilderPhase phase in resultsOfBuild.PhaseTimes.Keys)
             {
-                string op = null;
-
-                switch (phase)
-                {
-                    case ParserBuilderPhase.Linking:
-                        op = "Linking";
-                        break;
-                    case ParserBuilderPhase.ExpandingTemplates:
-                        op = "Expanding templates";
-                        break;
-                    case ParserBuilderPhase.LiteralLookup:
-                        op = "Deliteralization";
-                        break;
-                    case ParserBuilderPhase.InliningTokens:
-                        op = "Inlining tokens";
-                        break;
-                    case ParserBuilderPhase.TokenNFAConstruction:
-                        op = "Token NFA Construction";
-                        break;
-                    case ParserBuilderPhase.TokenDFAConstruction:
-                        op = "Token DFA Construction";
-                        break;
-                    case ParserBuilderPhase.TokenDFAReduction:
-                        op = "Token DFA Reduction";
-                        break;
-                    case ParserBuilderPhase.RuleNFAConstruction:
-                        op = "Rule NFA Construction";
-                        break;
-                    case ParserBuilderPhase.RuleDFAConstruction:
-                        op = "Rule DFA Construction";
-                        break;
-                    case ParserBuilderPhase.RuleStreamAnalysis:
-                        op = "Rule Stream Analysis";
-                        break;
-                    case ParserBuilderPhase.ObjectModelRootTypesConstruction:
-                        op = "Object Model Construction";
-                        break;
-                    case ParserBuilderPhase.ObjectModelTokenCaptureConstruction:
-                        op = "Token Capture Construction";
-                        break;
-                    case ParserBuilderPhase.ObjectModelTokenEnumConstruction:
-                        op = "Token Enum Construction";
-                        break;
-                    case ParserBuilderPhase.ObjectModelRuleStructureConstruction:
-                        op = "Rule structure construction";
-                        break;
-                }
+                string op = GetPhaseSubString(phase);
                 Console.WriteLine("{0} took: {1}", op, resultsOfBuild.PhaseTimes[phase]);
             }
+        }
+
+        private static string GetPhaseSubString(ParserBuilderPhase phase)
+        {
+            string op = null;
+
+            switch (phase)
+            {
+                case ParserBuilderPhase.Linking:
+                    op = "Linking";
+                    break;
+                case ParserBuilderPhase.ExpandingTemplates:
+                    op = "Expanding templates";
+                    break;
+                case ParserBuilderPhase.LiteralLookup:
+                    op = "Deliteralization";
+                    break;
+                case ParserBuilderPhase.InliningTokens:
+                    op = "Inlining tokens";
+                    break;
+                case ParserBuilderPhase.TokenNFAConstruction:
+                    op = "Token NFA Construction";
+                    break;
+                case ParserBuilderPhase.TokenDFAConstruction:
+                    op = "Token DFA Construction";
+                    break;
+                case ParserBuilderPhase.TokenDFAReduction:
+                    op = "Token DFA Reduction";
+                    break;
+                case ParserBuilderPhase.RuleNFAConstruction:
+                    op = "Rule NFA Construction";
+                    break;
+                case ParserBuilderPhase.RuleDFAConstruction:
+                    op = "Rule DFA Construction";
+                    break;
+                case ParserBuilderPhase.CallTreeAnalysis:
+                    op = "Call Tree Analysis";
+                    break;
+                case ParserBuilderPhase.ObjectModelRootTypesConstruction:
+                    op = "Object Model Construction";
+                    break;
+                case ParserBuilderPhase.ObjectModelTokenCaptureConstruction:
+                    op = "Token Capture Construction";
+                    break;
+                case ParserBuilderPhase.ObjectModelTokenEnumConstruction:
+                    op = "Token Enum Construction";
+                    break;
+                case ParserBuilderPhase.ObjectModelRuleStructureConstruction:
+                    op = "Rule structure construction";
+                    break;
+            }
+            return op;
         }
 
         private static ParserBuilderResults Build(IParserResults<IGDFile> iprs)
         {
             ParserBuilderResults resultsOfBuild = iprs.Result.Build(iprs.Errors, phase =>
             {
-                {
-                    switch (phase)
-                    {
-                        case ParserBuilderPhase.Linking:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Linking");
-                            break;
-                        case ParserBuilderPhase.ExpandingTemplates:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Expanding Templates");
-                            break;
-                        case ParserBuilderPhase.LiteralLookup:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Literal Lookup");
-                            break;
-                        case ParserBuilderPhase.InliningTokens:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Inlining tokens");
-                            break;
-                        case ParserBuilderPhase.TokenNFAConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Token NFA construction");
-                            break;
-                        case ParserBuilderPhase.TokenDFAConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Token NFA->DFA construction");
-                            break;
-                        case ParserBuilderPhase.TokenDFAReduction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Token DFA state reduction");
-                            break;
-                        case ParserBuilderPhase.RuleNFAConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Rule NFA construction");
-                            break;
-                        case ParserBuilderPhase.RuleDFAConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Rule NFA->DFA construction");
-                            break;
-                        case ParserBuilderPhase.RuleStreamAnalysis:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Rule stream analysis");
-                            break;
-                        case ParserBuilderPhase.ObjectModelRootTypesConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Code Object-model construction");
-                            break;
-                        case ParserBuilderPhase.ObjectModelTokenCaptureConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Token capture object-model construction");
-                            break;
-                        case ParserBuilderPhase.ObjectModelTokenEnumConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Token literal enum set object-model construction");
-                            break;
-                        case ParserBuilderPhase.ObjectModelRuleStructureConstruction:
-                            Console.Title = string.Format("{0} - {1}...", Program.baseTitle, "Rule structure construction");
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                Console.Title = string.Format("{0} - {1}...", Program.baseTitle, GetPhaseSubString(phase));
             });
             return resultsOfBuild;
         }

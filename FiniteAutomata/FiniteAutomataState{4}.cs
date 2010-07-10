@@ -5,7 +5,6 @@ using System.Diagnostics;
 using Oilexer._Internal;
 namespace Oilexer.FiniteAutomata
 {
-    [DebuggerDisplay("FiniteAutomataState")]
     public abstract class FiniteAutomataState<TCheck, TState, TForwardNodeTarget, TSourceElement> :
         IFiniteAutomataState<TCheck, TState, TForwardNodeTarget, TSourceElement>
         where TCheck :

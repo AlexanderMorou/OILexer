@@ -250,14 +250,9 @@
     <Compile Include="FiniteAutomata\NFAState+DFAEntryTable.cs" />
     <Compile Include="FiniteAutomata\NFAState{4}.cs" />
     <Compile Include="FiniteAutomata\FiniteAutomationSourceKind.cs" />
-    <Compile Include="FiniteAutomata\Rules\ForwardNodeType.cs" />
-    <Compile Include="FiniteAutomata\Rules\ISyntacticalForwardFollowerNode.cs" />
-    <Compile Include="FiniteAutomata\Rules\ISyntacticalForwardNode.cs" />
-    <Compile Include="FiniteAutomata\Rules\ISyntacticalForwardRootNode.cs" />
-    <Compile Include="FiniteAutomata\Rules\ISyntacticalRuleNode.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalCallTree.cs" />
     <Compile Include="FiniteAutomata\Rules\SyntacticalFollowTable.cs" />
     <Compile Include="FiniteAutomata\Rules\SyntacticalFollowInfo.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalForwardNode.cs" />
     <Compile Include="FiniteAutomata\Rules\SyntacticalParser.cs" />
     <Compile Include="FiniteAutomata\Rules\GrammarBreakdown.cs" />
     <Compile Include="FiniteAutomata\Rules\GrammarConstantItemSymbol.cs" />
@@ -280,6 +275,7 @@
     <Compile Include="FiniteAutomata\Rules\IGrammarVariableSymbol.cs" />
     <Compile Include="FiniteAutomata\Rules\SyntacticalDFARootState.cs" />
     <Compile Include="FiniteAutomata\Rules\SyntacticalNFARootState.cs" />
+    <Compile Include="FiniteAutomata\Rules\SyntacticalRootComparer.cs" />
     <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData+CaptureEntry.cs" />
     <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData+Entry.cs" />
     <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData.cs" />
@@ -903,7 +899,6 @@
     <Compile Include="_Internal\_SerializationMethods.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Parser\CSharp - Example Rule Tree Construct.txt" />
     <Content Include="_Internal\Inlining\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>

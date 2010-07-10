@@ -8,7 +8,6 @@ using System.Diagnostics;
 
 namespace Oilexer.FiniteAutomata.Rules
 {
-    [DebuggerDisplay("{StringForm}")]
     public class SyntacticalDFAState :
         DFAState<GrammarVocabulary, SyntacticalDFAState, IProductionRuleSource>
     {
@@ -44,7 +43,6 @@ namespace Oilexer.FiniteAutomata.Rules
                 return this.builder.RuleDFAStates[rule];
             }
         }
-        internal virtual string StringForm { get { return this.ToString(); } }
 
         protected override IFiniteAutomataTransitionTable<GrammarVocabulary, SyntacticalDFAState, SyntacticalDFAState> InitializeOutTransitionTable()
         {
@@ -59,5 +57,6 @@ namespace Oilexer.FiniteAutomata.Rules
                 return (SyntacticalDFAStateTransitionTable)base.OutTransitions;
             }
         }
+
     }
 }

@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
 using System.CodeDom.Compiler;
-using Oilexer.Parser.GDFileData.TokenExpression;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using Oilexer.FiniteAutomata.Tokens;
 namespace Oilexer.FiniteAutomata
 {
     public abstract class DFAState<TCheck, TState, TSourceElement> :
@@ -99,8 +96,14 @@ namespace Oilexer.FiniteAutomata
                 return count;
             }
         }
+        internal virtual string StringForm { get { return this.ToStringInternal(); } }
 
         public override string ToString()
+        {
+            return ToStringInternal();
+        }
+
+        private string ToStringInternal()
         {
             var thisTState = this as TState;
             bool firstOnStack = ToStringStack.Count == 0;
@@ -122,7 +125,7 @@ namespace Oilexer.FiniteAutomata
                     }
                     foreach (var subItem in this.OutTransitions)
                     {
-                        string current = subItem.Value.ToString();
+                        string current = subItem.Value.StringForm;
                         string[] currentLines = current.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                         itw.Write("{0}", subItem.Key);
                         for (int i = 0; i < currentLines.Length; i++)
