@@ -1,26 +1,22 @@
 ﻿using System;
+using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using Oilexer.Parser.Builder;
-using Oilexer.Parser.GDFileData;
-using Oilexer._Internal;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using Oilexer._Internal;
+using Oilexer._Internal.Inlining;
+using Oilexer.Expression;
 using Oilexer.FiniteAutomata.Rules;
 using Oilexer.FiniteAutomata.Tokens;
-using Oilexer._Internal.Inlining;
-using Oilexer.Types;
-using Oilexer.Expression;
-using Oilexer.FiniteAutomata;
-using System.CodeDom;
-using Oilexer.Statements;
-using System.Globalization;
-using Oilexer.Types.Members;
+using Oilexer.Parser.GDFileData;
 using Oilexer.Parser.GDFileData.TokenExpression;
-using System.Threading.Tasks;
+using Oilexer.Statements;
+using Oilexer.Types;
+using Oilexer.Types.Members;
 using Oilexer.Utilities.Collections;
 namespace Oilexer.Parser.Builder
 {
@@ -802,14 +798,14 @@ namespace Oilexer.Parser.Builder
                         timer.Stop();
                         PhaseTimes.Add(ParserBuilderPhase.RuleDFAConstruction, timer.Elapsed);
                         timer.Reset();
-                        Phase = ParserBuilderPhase.RuleStreamAnalysis;
+                        Phase = ParserBuilderPhase.CallTreeAnalysis;
                         break;
-                    case ParserBuilderPhase.RuleStreamAnalysis:
-                        yield return ParserBuilderPhase.RuleStreamAnalysis;
+                    case ParserBuilderPhase.CallTreeAnalysis:
+                        yield return ParserBuilderPhase.CallTreeAnalysis;
                         timer.Start();
                         this.PerformStreamAnalysis();
                         timer.Stop();
-                        PhaseTimes.Add(ParserBuilderPhase.RuleStreamAnalysis, timer.Elapsed);
+                        PhaseTimes.Add(ParserBuilderPhase.CallTreeAnalysis, timer.Elapsed);
                         timer.Reset();
                         Phase = ParserBuilderPhase.ObjectModelRootTypesConstruction;
                         break;

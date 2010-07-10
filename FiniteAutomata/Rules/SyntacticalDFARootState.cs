@@ -5,20 +5,21 @@ using System.Text;
 using Oilexer.Parser.GDFileData;
 using Oilexer.Parser.Builder;
 using System.Diagnostics;
+using Oilexer._Internal;
 
 namespace Oilexer.FiniteAutomata.Rules
 {
-    [DebuggerDisplay("{StringForm}", Name = "{EntryName}")]
     public class SyntacticalDFARootState :
         SyntacticalDFAState
     {
+
+        private SyntacticalFollowTable followTable;
+        private IProductionRuleEntry entry;
         private enum LinkElementKind
         {
             First,
             Follow,
         }
-        private SyntacticalFollowTable followTable;
-        private IProductionRuleEntry entry;
         public SyntacticalDFARootState(IProductionRuleEntry entry, ParserBuilder builder)
             : base(builder)
         {
@@ -51,16 +52,22 @@ namespace Oilexer.FiniteAutomata.Rules
         {
             //var followTargets = new Dictionary<SyntacticalDFARootState, Dictionary<SyntacticalDFAState, SyntacticalDFAState>>();
             var stateRuleInfo = new Dictionary<SyntacticalDFAState, Dictionary<IProductionRuleEntry, SyntacticalDFARootState>>();
+            List<SyntacticalDFARootState> leftRecursiveRules =null;
             var owner = new Dictionary<SyntacticalDFAState, SyntacticalDFARootState>();
             var following = new Stack<SyntacticalDFARootState>();
             var followed = new List<SyntacticalDFARootState>();
             var fullFlat = new List<SyntacticalDFAState>();
-            int uniqueNodes = 0;
+            var ruleEdges = new Dictionary<SyntacticalDFARootState, List<SyntacticalDFAState>>();
+            int followInstances = 0;
+            int potentiallyEmptyRules = 0;
             following.Push(this);
             do
             {
                 var current = following.Pop();
                 followed.Add(current);
+                if (current.IsEdge)
+                    potentiallyEmptyRules++;
+                ruleEdges.Add(current, new List<SyntacticalDFAState>());
                 var flatForm = new List<SyntacticalDFAState>();
                 SyntacticalDFAState.FlatlineState(current, flatForm);
                 
@@ -70,10 +77,9 @@ namespace Oilexer.FiniteAutomata.Rules
                 foreach (var ruleState in flatForm)
                 {
                     if (!owner.ContainsKey(ruleState) && ruleState != current)
-                    {
                         owner.Add(ruleState, current);
-                        uniqueNodes++;
-                    }
+                    if (ruleState.IsEdge)
+                        ruleEdges[current].Add(ruleState);
                     var ruleInfo = (from ruleTransition in ruleState.OutTransitions.Keys
                                     from ruleSymbol in ruleTransition.Breakdown.Rules
                                     select builder.RuleDFAStates[ruleSymbol.Source]);//.ToArray();
@@ -86,19 +92,23 @@ namespace Oilexer.FiniteAutomata.Rules
                         if (!stateRuleInfo[ruleState].ContainsKey(rule.Entry))
                             stateRuleInfo[ruleState].Add(rule.Entry, rule);
                         rule.FollowTable.Follow(ruleState, ruleState.OutTransitions[rule.Entry]);
+                        followInstances++;
                     }
                 }
             } while (following.Count > 0);
-            foreach (var rsi in (from state in stateRuleInfo.Keys
-                                where stateRuleInfo[state].Count == 0
-                                select state).ToArray())
-                stateRuleInfo.Remove(rsi);
-            var ruleStateQuery = (from rule in followed
-                                  orderby rule.EntryName
-                                  select rule).ToArray();
-            followed = (from rule in followed
-                        orderby rule.EntryName
-                        select rule).ToList();
+            foreach (var deadState in (from state in stateRuleInfo.Keys
+                                       where stateRuleInfo[state].Count == 0
+                                       select state).ToArray())
+                stateRuleInfo.Remove(deadState);
+            followed.Sort(SyntacticalRootComparer.Singleton);
+            ruleEdges = (from rule in ruleEdges.Keys
+                         orderby rule.EntryName
+                         select rule).ToDictionary(key => key, value => (from edge in ruleEdges[value]
+                                                                         orderby edge.StateValue
+                                                                         select edge).ToList());
+            leftRecursiveRules = (from v in ruleEdges.Keys
+                                  where v.DependsOn(v.Entry)
+                                  select v).ToList();
 
         }
 
@@ -114,12 +124,17 @@ namespace Oilexer.FiniteAutomata.Rules
         {
             return string.Format("EntryState {0}", this.EntryName);
         }
-        internal override string StringForm
+
+
+        public void GetLookAhead()
         {
-            get
-            {
-                return base.ToString();
-            }
+
         }
+
+        private static void GetLookAhead(List<SyntacticalDFAState> searched)
+        {
+
+        }
+
     }
 }

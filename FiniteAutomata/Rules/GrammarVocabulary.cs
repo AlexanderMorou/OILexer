@@ -59,6 +59,11 @@ namespace Oilexer.FiniteAutomata.Rules
             this.symbols = symbols;
             if (symbols != null)
                 this.FullLength = (uint)this.symbols.Count;
+            NullCheck(symbols);
+        }
+
+        private void NullCheck(IGrammarSymbolSet symbols)
+        {
             if (NullInst != null && NullInst.symbols == null)
             {
                 NullInst.symbols = symbols;
@@ -78,6 +83,7 @@ namespace Oilexer.FiniteAutomata.Rules
                 throw new ArgumentNullException("symbols");
             if (element == null)
                 throw new ArgumentNullException("element");
+            NullCheck(symbols);
             int index = symbols.IndexOf(element);
             BitArray values = new BitArray(1);
             values[0] = true;
@@ -91,6 +97,7 @@ namespace Oilexer.FiniteAutomata.Rules
                 throw new ArgumentNullException("symbols");
             if (elements == null)
                 throw new ArgumentNullException("elements");
+            NullCheck(symbols);
             int[] indices = new int[elements.Length];
             for (int i = 0; i < elements.Length; i++)
                 indices[i] = symbols.IndexOf(elements[i]);

@@ -3,11 +3,13 @@
 TypeParameterList                         ::=
     '<' DelimitedList<TypeParameter:Items;, ','> '>';
 
+
+
 TypeParameterConstraints                  ::=
     TypeParameterConstraint:Items;+;
 
 TypeParameterConstraint                   ::=
-    "where" TypeParameter:Parameter;
+    "where" TypeParameter:Parameter; ':'
     (
         (
             "class"                         | 

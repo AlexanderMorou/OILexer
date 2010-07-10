@@ -18,7 +18,7 @@ AbstractMethodDeclaration                 ::=
     ):Modifiers;, "abstract">
     ReturnType:ReturnType;
     Identifier:Name;
-    GenericHeader<'(' FormalParameterList:Parameters; ')'>
+    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
     ';'                                     ;
 
 ConcreteMethodDeclaration                ::=>
@@ -41,7 +41,7 @@ InstanceMethodDeclaration                 ::=
     "partial"!:IsPartial;?
     ReturnType:ReturnType;
     MemberName:Name;
-    GenericHeader<'(' FormalParameterList:Parameters; ')'>
+    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
     Block:Body;                             ;
 
 StaticMethodDeclaration                   ::=
@@ -57,7 +57,7 @@ StaticMethodDeclaration                   ::=
     "partial"!:IsPartial;?
     ReturnType:ReturnType;
     MemberName:Name;
-    GenericHeader<'(' MethodFormalParameterList:Parameters; ')'>
+    GenericHeader<'(' MethodFormalParameterList:Parameters;? ')'>
     Block:Body;                             ;
 
 /* --------------------------------------- *\

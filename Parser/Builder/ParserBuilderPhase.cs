@@ -62,11 +62,11 @@ namespace Oilexer.Parser.Builder
         /// </summary>
         RuleDFAConstruction = 0x2122,
         /// <summary>
-        /// The parser builder is utilizing files from the source
-        /// language to construct a default state set used to parse
-        /// files in the language.
+        /// The Parser builder is analyzing the call tree of the
+        /// language and constructing a larger deterministic state 
+        /// machine of the entire language.
         /// </summary>
-        RuleStreamAnalysis = 0x91111,
+        CallTreeAnalysis = 0x91111,
         /// <summary>
         /// The parser builder is constructing the initial object
         /// set for the next phase.

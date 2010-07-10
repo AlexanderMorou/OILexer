@@ -1,16 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Oilexer.Types;
-using System.IO;
-using Microsoft.CSharp;
-using System.CodeDom.Compiler;
-using Oilexer.Utilities.Collections;
-using System.Collections;
 using System.CodeDom;
+using System.CodeDom.Compiler;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.CSharp;
 using Oilexer;
-
+using Oilexer.Types;
+using Oilexer.Utilities.Collections;
+using Oilexer.FiniteAutomata.Rules;
+using Oilexer.Parser.GDFileData;
 #if x64
 using SlotType = System.UInt64;
 #elif x86
@@ -63,5 +65,42 @@ namespace Oilexer._Internal
             return values2;
         }
 
+        private static bool DependsOn(this SyntacticalDFAState target, IProductionRuleEntry entry, List<SyntacticalDFAState> followed)
+        {
+            //Ensure that cyclic models don't recurse infinitely
+            if (followed.Contains(target))
+                return target.ContainsRule(entry);
+            //Add the current element to the followed elements
+            followed.Add(target);
+            //Step through the out transition conditions.
+            foreach (var transition in target.OutTransitions.Keys)
+                //Step through the rules within the transition.
+                foreach (var rule in from rule in transition.Breakdown.Rules
+                                     select rule.Source)
+                {
+                    SyntacticalDFARootState state = null;
+                    //Exit with true when found.
+                    if (rule == entry)
+                        return true;
+                    //otherwise, if the root-state of the rule depends upon it...
+                    else if ((state = target[rule]).DependsOn(entry, followed))
+                        return true;
+                    /* *
+                     * ... in the event that the initial state of the rule is 
+                     * an edge state, continue checking the state after that rule
+                     * is called for, to ensure that the dependencies after that
+                     * rule's reference point are considered.  i.e. a hidden
+                     * dependency.
+                     * */
+                    else if (state.IsEdge && target.OutTransitions[transition].DependsOn(entry, followed))
+                        return true;
+                }
+            return false;
+        }
+
+        public static bool DependsOn(this SyntacticalDFARootState target, IProductionRuleEntry entry)
+        {
+            return target.DependsOn(entry, new List<SyntacticalDFAState>());
+        }
     }
 }

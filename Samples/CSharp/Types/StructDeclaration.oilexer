@@ -6,7 +6,11 @@ StructDeclaration                         ::=
         "new"? "public" |
         "new"? "protected" "internal"? |
         "new"? "internal" "protected"? |
-        "new"? "private"
+        "new"? "private" |
+	"private" "new" |
+	"public" "new" |
+	"protected" "new"? "internal" |
+	"internal" "new"? "protected"
     ):Modifiers;?
     "partial"!:IsPartial;?
     "struct"
