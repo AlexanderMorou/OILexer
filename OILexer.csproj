@@ -944,6 +944,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Build CSharp.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Samples\CSharp\Attributes.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

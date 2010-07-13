@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,6 +30,7 @@ namespace Oilexer
     /// </summary>
     internal static class Program
     {
+        private static int longestLineLength = 0;
         private const string Syntax = "-s";
         private const string NoSyntax = "-ns";
         private const string DoNotCompile = "-cmp:no";
@@ -39,6 +40,27 @@ namespace Oilexer
         private const string Verbose = "-v";
         private const string StreamAnalysis = "-a:";
         private const string StreamAnalysisExtension = "-ae:";
+        private const string TitleSequence_CharacterSetCache        = "Character set cache size";
+        private const string TitleSequence_CharacterSetComputations = "Character set computations";
+        private const string TitleSequence_VocabularyCache          = "Vocabulary set computations";
+        private const string TitleSequence_VocabularyComputations   = "Vocabulary cache size";
+        private const string TitleSequence_NumberOfRules            = "Number of rules";
+        private const string TitleSequence_NumberOfTokens           = "Number of tokens";
+        private const string PhaseName_Linking                      = "Linking";
+        private const string PhaseName_ExpandingTemplates           = "Expanding templates";
+        private const string PhaseName_Deliteralization             = "Deliteralization";
+        private const string PhaseName_InliningTokens               = "Inlining tokens";
+        private const string PhaseName_TokenNFAConstruction         = "Token NFA Construction";
+        private const string PhaseName_TokenDFAConstruction         = "Token DFA Construction";
+        private const string PhaseName_TokenDFAReduction            = "Token DFA Reduction";
+        private const string PhaseName_RuleNFAConstruction          = "Rule NFA Construction";
+        private const string PhaseName_RuleDFAConstruction          = "Rule DFA Construction";
+        private const string PhaseName_CallTreeAnalysis             = "Call Tree Analysis";
+        private const string PhaseName_ObjectModelConstruction      = "Object Model Construction";
+        private const string PhaseName_TokenCaptureConstruction     = "Token Capture Construction";
+        private const string PhaseName_TokenEnumConstruction        = "Token Enum Construction";
+        private const string PhaseName_RuleStructureConstruction    = "Rule Structure Construction";
+        //TitleSequence_CharacterSetCache.Length, TitleSequence_CharacterSetComputations.Length, TitleSequence_VocabularyCache.Length, TitleSequence_VocabularyComputations.Length, TitleSequence_NumberOfRules.Length, TitleSequence_NumberOfTokens.Length, PhaseName_Linking.Length, PhaseName_ExpandingTemplates.Length, PhaseName_Deliteralization.Length, PhaseName_InliningTokens.Length, PhaseName_TokenNFAConstruction.Length , PhaseName_TokenDFAConstruction.Length , PhaseName_TokenDFAReduction.Length, PhaseName_RuleNFAConstruction.Length  , PhaseName_RuleDFAConstruction.Length  , PhaseName_CallTreeAnalysis.Length , PhaseName_ObjectModelConstruction.Length  , PhaseName_TokenCaptureConstruction.Length , PhaseName_TokenEnumConstruction.Length, PhaseName_RuleStructureConstruction.Length
         /// <summary>
         /// Defines the valid options for the <see cref="Program"/>.
         /// </summary>
@@ -85,78 +107,90 @@ namespace Oilexer
         /// call site.</param>
         private static void Main(string[] args)
         {
-            Console.Title = string.Format("{0}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
-            if (args.Length <= 0)
+            //Console.BackgroundColor = ConsoleColor.DarkBlue;
+            //Console.ForegroundColor = ConsoleColor.White;
+            var consoleTitle = Console.Title;
+            try
             {
-                if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
-                    DisplayLogo();
-                Program.DisplayUsage();
-                return;
-            }
-            bool exists = false;
-            string file = null;
-            string extension = null;
-            foreach (string s in args)
-                if (s.ToLower() == NoSyntax)
-                    options = (options & ~ValidOptions.ShowSyntax) | ValidOptions.DoNotEmitSyntax;
-                else if (s.ToLower() == DoNotCompile)
-                    options = (options & ~ValidOptions.Compile) | ValidOptions.DoNotCompile;
-                else if (s.ToLower() == Compile)
-                    options = (options & ~ValidOptions.DoNotCompile) | ValidOptions.Compile;
-                else if (s.ToLower() == Syntax)
-                    options = (options & ~ValidOptions.DoNotEmitSyntax) | ValidOptions.ShowSyntax;
-                else if (s.ToLower() == NoLogo)
-                    options = options | ValidOptions.NoLogo;
-                else if (s.ToLower() == Quiet)
-                    options = (options & ~ValidOptions.VerboseMode) | ValidOptions.QuietMode;
-                else if (s.ToLower() == Verbose)
-                    options = (options & ~ValidOptions.QuietMode) | ValidOptions.VerboseMode;
-                //Ignored rule, redefined default.
-                else if (s.ToLower().Substring(0, StreamAnalysis.Length) == StreamAnalysis)
+                Console.Clear();
+                Console.Title = string.Format("{0}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
+                if (args.Length <= 0)
                 {
-                    var streamFile = s.ToLower().Substring(StreamAnalysis.Length);
-                    if (File.Exists(streamFile))
-                    {
-                        FileInfo fi = new FileInfo(streamFile);
-                        StreamAnalysisFiles.Add(fi.FullName);
-                    }
-                    else if (Directory.Exists(streamFile))
-                    {
-                        DirectoryInfo di = new DirectoryInfo(streamFile);
-                        foreach (var fileInfo in di.EnumerateFiles())
-                            StreamAnalysisFiles.Add(fileInfo.FullName);
-                        di = null;
-                    }
+                    if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
+                        DisplayLogo();
+                    Program.DisplayUsage();
+                    return;
                 }
-                else if (s.ToLower().Substring(0, StreamAnalysisExtension.Length) == StreamAnalysisExtension)
-                    extension = s.ToLower().Substring(StreamAnalysisExtension.Length);
-                else if (!File.Exists(s))
-                    Console.WriteLine("File {0} does not exist.", s);
-                else if (file == null)
+                bool exists = false;
+                string file = null;
+                string extension = null;
+                foreach (string s in args)
+                    if (s.ToLower() == NoSyntax)
+                        options = (options & ~ValidOptions.ShowSyntax) | ValidOptions.DoNotEmitSyntax;
+                    else if (s.ToLower() == DoNotCompile)
+                        options = (options & ~ValidOptions.Compile) | ValidOptions.DoNotCompile;
+                    else if (s.ToLower() == Compile)
+                        options = (options & ~ValidOptions.DoNotCompile) | ValidOptions.Compile;
+                    else if (s.ToLower() == Syntax)
+                        options = (options & ~ValidOptions.DoNotEmitSyntax) | ValidOptions.ShowSyntax;
+                    else if (s.ToLower() == NoLogo)
+                        options = options | ValidOptions.NoLogo;
+                    else if (s.ToLower() == Quiet)
+                        options = (options & ~ValidOptions.VerboseMode) | ValidOptions.QuietMode;
+                    else if (s.ToLower() == Verbose)
+                        options = (options & ~ValidOptions.QuietMode) | ValidOptions.VerboseMode;
+                    //Ignored rule, redefined default.
+                    else if (s.ToLower().Substring(0, StreamAnalysis.Length) == StreamAnalysis)
+                    {
+                        var streamFile = s.ToLower().Substring(StreamAnalysis.Length);
+                        if (File.Exists(streamFile))
+                        {
+                            FileInfo fi = new FileInfo(streamFile);
+                            StreamAnalysisFiles.Add(fi.FullName);
+                        }
+                        else if (Directory.Exists(streamFile))
+                        {
+                            DirectoryInfo di = new DirectoryInfo(streamFile);
+                            foreach (var fileInfo in di.EnumerateFiles())
+                                StreamAnalysisFiles.Add(fileInfo.FullName);
+                            di = null;
+                        }
+                    }
+                    else if (s.ToLower().Substring(0, StreamAnalysisExtension.Length) == StreamAnalysisExtension)
+                        extension = s.ToLower().Substring(StreamAnalysisExtension.Length);
+                    else if (!File.Exists(s))
+                        Console.WriteLine("File {0} does not exist.", s);
+                    else if (file == null)
+                    {
+                        exists = true;
+                        file = s;
+                    }
+                if (!string.IsNullOrEmpty(extension))
                 {
-                    exists = true;
-                    file = s;
+                    List<string> streamAnalysisFiles = new List<string>();
+                    foreach (var analysisFile in StreamAnalysisFiles)
+                        if (analysisFile.EndsWith(extension))
+                            streamAnalysisFiles.Add(analysisFile);
+                    StreamAnalysisFiles = streamAnalysisFiles;
                 }
-            if (!string.IsNullOrEmpty(extension))
-            {
-                List<string> streamAnalysisFiles = new List<string>();
-                foreach (var analysisFile in StreamAnalysisFiles)
-                    if (analysisFile.EndsWith(extension))
-                        streamAnalysisFiles.Add(analysisFile);
-                StreamAnalysisFiles = streamAnalysisFiles;
+                if (!exists)
+                {
+                    if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
+                        DisplayLogo();
+                    Program.DisplayUsage();
+                    return;
+                }
+                Program.ParseFile(file);
             }
-            if (!exists)
+            finally
             {
-                if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
-                    DisplayLogo();
-                Program.DisplayUsage();
-                return;
+                Console.Title = consoleTitle;
             }
-            Program.ParseFile(file);
         }
 
         private static void ParseFile(string file)
         {
+            int maxLength = new int[] { TitleSequence_CharacterSetCache.Length, TitleSequence_CharacterSetComputations.Length, TitleSequence_VocabularyCache.Length, TitleSequence_VocabularyComputations.Length, TitleSequence_NumberOfRules.Length, TitleSequence_NumberOfTokens.Length, PhaseName_Linking.Length, PhaseName_ExpandingTemplates.Length, PhaseName_Deliteralization.Length, PhaseName_InliningTokens.Length, PhaseName_TokenNFAConstruction.Length, PhaseName_TokenDFAConstruction.Length, PhaseName_TokenDFAReduction.Length, PhaseName_RuleNFAConstruction.Length, PhaseName_RuleDFAConstruction.Length, PhaseName_CallTreeAnalysis.Length, PhaseName_ObjectModelConstruction.Length, PhaseName_TokenCaptureConstruction.Length, PhaseName_TokenEnumConstruction.Length, PhaseName_RuleStructureConstruction.Length }.Max();
             baseTitle = string.Format("{0}: {1}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location), Path.GetFileName(file));
             Console.Title = baseTitle;
             GDParser gp = new GDParser();
@@ -180,6 +214,18 @@ namespace Oilexer
                 DisplayLogo();
             sw.Start();
             iprs = gp.Parse(file);
+            var tLenMax = (from e in iprs.Result
+                           let token = e as ITokenEntry
+                           where token != null
+                           select token.Name.Length).Max();
+
+            maxLength = Math.Max(maxLength, tLenMax);
+            int oldestLongest = longestLineLength;
+            longestLineLength = Math.Max(longestLineLength, maxLength + 19);
+            if ((options & ValidOptions.NoLogo) == ValidOptions.None)
+                FinishLogo(oldestLongest, Console.CursorTop, Console.CursorLeft);
+            else
+                Console.WriteLine("╒═{0}═╕", '═'.Repeat(longestLineLength));
             sw.Stop();
             if (iprs.Successful)
                 baseTitle = string.Format("{0}: {1}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location), Path.GetFileName(string.IsNullOrEmpty(iprs.Result.Options.AssemblyName) ? iprs.Result.Options.ParserName : iprs.Result.Options.AssemblyName));
@@ -196,12 +242,25 @@ namespace Oilexer
                 ParserBuilderResults resultsOfBuild = Build(iprs);
                 if (resultsOfBuild == null)
                     goto errorChecker;
-                DisplayBuildBreakdown(resultsOfBuild);
                 if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
                 {
-                    Console.WriteLine("Number of rules: {0}", iprs.Result.GetRules().Count());
-                    Console.WriteLine("Number of tokens: {0}", iprs.Result.GetTokens().Count());
+                    const string stateMachineCounts = "State machine state counts:";
+                    Console.WriteLine("│ {0}{1} │", stateMachineCounts, ' '.Repeat(longestLineLength - stateMachineCounts.Length));
+                    var toks = (from t in iprs.Result.GetTokens()
+                                let state = t.DFAState
+                                where state != null
+                                let stateCount = t.DFAState.CountStates()
+                                orderby stateCount
+                                select new { Name = t.Name, StateCount = stateCount, NameLength = t.Name.Length}).ToArray();
+                    foreach (var token in toks)
+                    {
+                        var s = string.Format("{2}{0} : {1}", token.Name, token.StateCount, ' '.Repeat(maxLength - token.NameLength));
+                        Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength-s.Length));
+                    }
+                    Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
+
                 }
+                DisplayBuildBreakdown(resultsOfBuild, maxLength);
             errorChecker:
                 if (resultsOfBuild == null || resultsOfBuild.Project == null)
                 {
@@ -262,23 +321,171 @@ namespace Oilexer
 
             if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
             {
+                Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
+                var sequence = (
+                    new
+                    {
+                        Title = TitleSequence_CharacterSetComputations,
+                        Value = RegularLanguageSet.CountComputations()
+                    }).GetArray(
+                    new
+                    {
+                        Title = TitleSequence_CharacterSetCache,
+                        Value = RegularLanguageSet.CountComputationCaches()
+                    },
+                    new
+                    {
+                        Title = TitleSequence_VocabularyCache,
+                        Value = GrammarVocabulary.CountComputations()
+                    },
+                    new
+                    {
+                        Title = TitleSequence_VocabularyComputations,
+                        Value = GrammarVocabulary.CountComputationCaches()
+                    });
+                if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
+                {
+                    sequence = sequence.AddBefore(
+                    new
+                    {
+                        Title = TitleSequence_NumberOfRules,
+                        Value = iprs.Result.GetRules().Count()
+                    }, new
+                    {
+                        Title = TitleSequence_NumberOfTokens,
+                        Value = iprs.Result.GetTokens().Count()
+                    },
+                    null);
+                }
+                foreach (var element in sequence)
+                    if (element == null)
+                        Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
+                    else
+                    {
+                        var s = string.Format("{0}{1} : {2}", ' '.Repeat(maxLength - element.Title.Length), element.Title, element.Value);
+                        Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));
+                    }
+                Console.WriteLine("╘═{0}═╛", '═'.Repeat(longestLineLength));
                 if ((options & ValidOptions.ShowSyntax) == ValidOptions.ShowSyntax)
                 {
                     Console.Title = string.Format("{0} - Expanded grammar.", baseTitle);
-                    foreach (IEntry ie in iprs.Result)
-                    {
-                        Console.WriteLine(ie);
-                        Console.WriteLine();
-                    }
+                    ShowSyntax(iprs);
                 }
-                Console.WriteLine("Character set cache size: {0}", RegularLanguageSet.CountComputationCaches());
-                Console.WriteLine("Character set computations: {0}", RegularLanguageSet.CountComputations());
-                Console.WriteLine("Vocabulary cache size: {0}", GrammarVocabulary.CountComputationCaches());
-                Console.WriteLine("Vocabulary set computations: {0}", GrammarVocabulary.CountComputations());
-                Console.WriteLine("Parse time: {0}ms", sw.Elapsed);
+
             }
             Console.Title = string.Format("{0} - {1}", baseTitle, "Finished");
             Console.ReadKey(true);
+        }
+
+        private static void FinishLogo(int oldestLongest, int cy, int cx)
+        {
+            Console.CursorTop = cy - 3;
+            Console.CursorLeft = cx;
+            Console.WriteLine("{0}═╕", '═'.Repeat(longestLineLength - oldestLongest));
+            Console.CursorTop = cy - 2;
+            Console.CursorLeft = cx;
+            Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - oldestLongest));
+            Console.CursorTop = cy - 1;
+            Console.CursorLeft = cx;
+            Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - oldestLongest));
+            Console.CursorTop = cy;
+            Console.CursorLeft = cx;
+            Console.WriteLine("{0}─┤", '─'.Repeat(longestLineLength - oldestLongest));
+        }
+
+        private static void DisplayBuildBreakdown(ParserBuilderResults resultsOfBuild, int maxLength)
+        {
+            var phaseIdentifiers = resultsOfBuild.PhaseTimes.Keys.ToDictionary(key => key, value => new { Title = GetPhaseSubString(value), Time = resultsOfBuild.PhaseTimes[value] });
+            foreach (ParserBuilderPhase phase in from phase in phaseIdentifiers.Keys
+                                                 orderby phaseIdentifiers[phase].Time descending
+                                                 select phase)
+            {
+                var currentPhaseData = phaseIdentifiers[phase];
+                var s = string.Format("{2}{0} : {1}", currentPhaseData.Title, currentPhaseData.Time, ' '.Repeat(maxLength - currentPhaseData.Title.Length));
+                Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));
+            }
+        }
+
+        private static void ShowSyntax(IParserResults<IGDFile> iprs)
+        {
+            var files = iprs.Result.Files.ToArray();
+            var parts = (from f in files
+                         let ePath = Path.GetDirectoryName(f)
+                         orderby ePath.Length descending
+                         select ePath).First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries);
+            /* *
+             * Breakdown the longest filename and rebuild it part by part,
+             * where all elements from the error set contain the current path,
+             * select that path, then select the longest common path.
+             * *
+             * If the longest file doesn't contain anything in common, then there
+             * is no group relative path and the paths will be shown in full.
+             * */
+            string relativeRoot = null;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string currentRoot = string.Join(@"\", parts, 0, parts.Length - i);
+                if (iprs.Result.Files.All(p => p.Contains(currentRoot)))
+                {
+                    relativeRoot = currentRoot;
+                    break;
+                }
+            }
+
+            var folderQuery = (from file in files
+                               select Path.GetDirectoryName(file)).Distinct();
+            var folderEntryQuery =
+                (from file in files
+                 join IEntry entry in iprs.Result on file equals entry.FileName into fileEntries
+                 let fileEntriesArray = (from entry in fileEntries
+                                         orderby entry.Line
+                                         select entry).ToArray()
+                 select new { File = Path.GetFileName(file), Path = Path.GetDirectoryName(file), Entries = fileEntriesArray }).ToArray();
+            var folderEntries =
+                (from folder in folderQuery
+                 join file in folderEntryQuery on folder equals file.Path into folderFileEntries
+                 let folderFiles = folderFileEntries.ToArray()
+                 orderby folder ascending
+                 select new { Path = folder, Files = folderFiles, FileCount = folderFiles.Length, EntryCount = folderFiles.Sum(fileData => fileData.Entries.Length) }).ToArray();
+
+            var consoleOriginal = Console.ForegroundColor;
+            foreach (var folder in folderEntries)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                string rPath = null;
+                if (relativeRoot != null)
+                {
+                    if (folder.Path == relativeRoot)
+                        rPath = @".\";
+                    else
+                        rPath = string.Format(".{0}", folder.Path.Substring(relativeRoot.Length));
+                }
+                else
+                    rPath = folder.Path;
+                var entryTerm = folder.EntryCount == 1 ? "entry" : "entries";
+                var fileTerm = folder.FileCount == 1 ? "file" : "files";
+                Console.WriteLine("//{2} {3} within {1} {4} in {0}", rPath, folder.FileCount, folder.EntryCount, entryTerm, fileTerm);
+                Console.ForegroundColor = consoleOriginal;
+                foreach (var file in folder.Files)
+                {
+                    if (file.Entries.Length == 0)
+                        continue;
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    if (file.Entries.Length == 1)
+                        Console.WriteLine("//1 entry in {0}", file.File);
+                    else
+                        Console.WriteLine("//{1} entries in {0}", file.File, file.Entries.Length);
+                    Console.ForegroundColor = consoleOriginal;
+                    foreach (var entry in file.Entries)
+                    {
+                        //Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        //Console.WriteLine("/*Line: {0}*/", entry.Line);
+                        //Console.ForegroundColor = consoleOriginal;
+                        Console.WriteLine(entry);
+                        Console.WriteLine();
+                    }
+                }
+            }
         }
 
         private static void DisplayLogo()
@@ -286,23 +493,14 @@ namespace Oilexer
             var assembly = typeof(Program).Assembly;
             var name = assembly.GetName();
             var copyright = assembly.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), true).Cast<AssemblyCopyrightAttribute>().First();
-            string p = string.Format("OILexer Parser Compiler version {0}", name.Version);
-            int pL = p.Length;
-            Console.WriteLine(p);
-            if (copyright.Copyright.Length > pL)
-                pL = copyright.Copyright.Length;
-            Console.WriteLine(copyright.Copyright);
-            Console.WriteLine('-'.Repeat(pL));
-            Console.WriteLine();
-        }
-
-        private static void DisplayBuildBreakdown(ParserBuilderResults resultsOfBuild)
-        {
-            foreach (ParserBuilderPhase phase in resultsOfBuild.PhaseTimes.Keys)
-            {
-                string op = GetPhaseSubString(phase);
-                Console.WriteLine("{0} took: {1}", op, resultsOfBuild.PhaseTimes[phase]);
-            }
+            string ProjectOpenLine = string.Format("OILexer Parser Compiler version {0}", name.Version);
+            longestLineLength = ProjectOpenLine.Length;
+            if (copyright.Copyright.Length > longestLineLength)
+                longestLineLength = copyright.Copyright.Length;
+            Console.WriteLine("╒═{0}", '═'.Repeat(longestLineLength));
+            Console.WriteLine("│ {0}", ProjectOpenLine);
+            Console.WriteLine("│ {0}", copyright.Copyright);
+            Console.Write("├─{0}", '─'.Repeat(longestLineLength));
         }
 
         private static string GetPhaseSubString(ParserBuilderPhase phase)
@@ -312,46 +510,46 @@ namespace Oilexer
             switch (phase)
             {
                 case ParserBuilderPhase.Linking:
-                    op = "Linking";
+                    op = PhaseName_Linking;
                     break;
                 case ParserBuilderPhase.ExpandingTemplates:
-                    op = "Expanding templates";
+                    op = PhaseName_ExpandingTemplates;
                     break;
                 case ParserBuilderPhase.LiteralLookup:
-                    op = "Deliteralization";
+                    op = PhaseName_Deliteralization;
                     break;
                 case ParserBuilderPhase.InliningTokens:
-                    op = "Inlining tokens";
+                    op = PhaseName_InliningTokens;
                     break;
                 case ParserBuilderPhase.TokenNFAConstruction:
-                    op = "Token NFA Construction";
+                    op = PhaseName_TokenNFAConstruction;
                     break;
                 case ParserBuilderPhase.TokenDFAConstruction:
-                    op = "Token DFA Construction";
+                    op = PhaseName_TokenDFAConstruction;
                     break;
                 case ParserBuilderPhase.TokenDFAReduction:
-                    op = "Token DFA Reduction";
+                    op = PhaseName_TokenDFAReduction;
                     break;
                 case ParserBuilderPhase.RuleNFAConstruction:
-                    op = "Rule NFA Construction";
+                    op = PhaseName_RuleNFAConstruction;
                     break;
                 case ParserBuilderPhase.RuleDFAConstruction:
-                    op = "Rule DFA Construction";
+                    op = PhaseName_RuleDFAConstruction;
                     break;
                 case ParserBuilderPhase.CallTreeAnalysis:
-                    op = "Call Tree Analysis";
+                    op = PhaseName_CallTreeAnalysis;
                     break;
                 case ParserBuilderPhase.ObjectModelRootTypesConstruction:
-                    op = "Object Model Construction";
+                    op = PhaseName_ObjectModelConstruction;
                     break;
                 case ParserBuilderPhase.ObjectModelTokenCaptureConstruction:
-                    op = "Token Capture Construction";
+                    op = PhaseName_TokenCaptureConstruction;
                     break;
                 case ParserBuilderPhase.ObjectModelTokenEnumConstruction:
-                    op = "Token Enum Construction";
+                    op = PhaseName_TokenEnumConstruction;
                     break;
                 case ParserBuilderPhase.ObjectModelRuleStructureConstruction:
-                    op = "Rule structure construction";
+                    op = PhaseName_RuleStructureConstruction;
                     break;
             }
             return op;
@@ -450,15 +648,17 @@ namespace Oilexer
                 Console.ForegroundColor = ConsoleColor.DarkGray;
 
                 string flError = (folder.ErrorCount > 1) ? "errors" : "error";
+                string rPath = null;
                 if (relativeRoot != null)
                 {
                     if (folder.Path == relativeRoot)
-                        Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, @".\", flError);
+                        rPath = @".\";
                     else
-                        Console.WriteLine("{0} {2} in folder .{1}", folder.ErrorCount, folder.Path.Substring(relativeRoot.Length), flError);
+                        rPath = folder.Path.Substring(relativeRoot.Length);// Console.WriteLine("{0} {2} in folder .{1}", folder.ErrorCount, folder.Path.Substring(relativeRoot.Length), flError);
                 }
                 else
-                    Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, folder.Path, flError);
+                    rPath = folder.Path;// Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, folder.Path, flError);
+                Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, rPath, flError);
                 foreach (var fileErrorSet in folder.ErroredFiles)
                 {
                     Console.ForegroundColor = errorMColor;
@@ -496,14 +696,33 @@ namespace Oilexer
 
         private static void DisplayUsage()
         {
-            Console.WriteLine("Usage:\r\n\t{0} [options] File [options]", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
-            Console.WriteLine("");
-            Console.WriteLine("options:");
-            Console.WriteLine("\t{0}  - Do not compile", DoNotCompile);
-            Console.WriteLine("\t{0} - Compile (default)", Compile);
-            Console.WriteLine("");
-            Console.WriteLine("\t{0}       - Show syntax.", Syntax);
-            Console.WriteLine("\t{0}      - Don't show syntax (default).", NoSyntax);
+            const string Usage_Options = "options:";
+            const string Usage_DoNotCompile = "    " + DoNotCompile + "  - Do not compile.";
+            const string Usage_Compile = "    " + Compile + " - Compile (default)";
+            const string Usage_Syntax = "    " + Syntax + "       - Show syntax.";
+            const string Usage_NoSyntax = "    " + NoSyntax + "      - Don't show syntax (default).";
+            const string Usage_Usage = "Usage:";
+            string Usage_TagLine = string.Format("    {0} [options] File [options]", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
+            string[] usageLines = new string[] {
+                Usage_Usage,
+                Usage_TagLine,
+                string.Empty,
+                Usage_Options,
+                Usage_DoNotCompile,
+                Usage_Compile,
+                string.Empty,
+                Usage_Syntax,
+                Usage_NoSyntax
+            };
+            int oldMaxLongestLength = longestLineLength;
+            longestLineLength = usageLines.Max(p => p.Length);
+            if ((options & ValidOptions.NoLogo) == ValidOptions.None)
+                FinishLogo(oldMaxLongestLength, Console.CursorTop, Console.CursorLeft);
+            else
+                Console.WriteLine("╒═{0}═╕", '═'.Repeat(longestLineLength));
+            foreach (string s in usageLines)
+                Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));
+            Console.WriteLine("╘═{0}═╛", '═'.Repeat(longestLineLength));
             Console.ReadKey(true);
         }
     }

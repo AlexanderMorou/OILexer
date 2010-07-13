@@ -2,6 +2,7 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Oilexer._Internal;
 using Oilexer.Parser.GDFileData;
 using Oilexer.Parser.GDFileData.ProductionRuleExpression;
@@ -43,7 +44,9 @@ namespace Oilexer.Parser
             /* *
              * Users on windows should be used to case leniency, not doing this
              * could lead to locked file runtime errors, when the same file is
-             * parsed twice.
+             * parsed twice.  Notably when there are case inconsistencies in the
+             * grammar itself or the application is invoked using a case variant
+             * of the actual file name.
              * */
             fileName = fileName.ToLower();
             #endif
@@ -663,7 +666,7 @@ namespace Oilexer.Parser
                 include = GrammarCore.CombinePaths(Path.GetDirectoryName(CurrentTokenizer.FileName), include);
             #if WINDOWS
             /* *
-             * Win32 only because it's not case-sensitive on file-names.
+             * Win32 only because it's not case-sensitive on filenames.
              * This ensures that the same file isn't included twice due to case
              * inconsistencies.
              * */
@@ -672,8 +675,10 @@ namespace Oilexer.Parser
 
             if (File.Exists(include))
             {
-                if (!(includeDirectives.Contains(include)))
-                    this.includeDirectives.Add(include);
+                if (!(currentTarget.Result.Includes.Contains(include)))
+                    currentTarget.Result.Includes.Add(include);
+                //if (!(includeDirectives.Contains(include)))
+                //    this.includeDirectives.Add(include);
             }
             else
                 LogError(GDParserErrors.IncludeFileNotFound, include);
@@ -681,9 +686,12 @@ namespace Oilexer.Parser
 
         private void ParseIncludes(GDParserResults currentTarget)
         {
-            for (int i = 0; i < includeDirectives.Count; i++)
+            var currentIncludes = (from include in currentTarget.Result.Includes
+                                   where !parsedIncludeDirectives.Contains(include)
+                                   select include).ToArray();
+            for (int i = 0; i < currentIncludes.Length; i++)
             {
-                string s = includeDirectives[i];
+                string s = currentIncludes[i];
                 if (!parsedIncludeDirectives.Contains(s) && File.Exists(s))
                 {
                     parsedIncludeDirectives.Add(s);

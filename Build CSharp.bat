@@ -1,0 +1,1 @@
+@OILexer.exe -ns -cmp:no -v "Samples\CSharp\Root.Oilexer"

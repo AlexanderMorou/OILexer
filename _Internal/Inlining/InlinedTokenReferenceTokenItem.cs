@@ -68,8 +68,6 @@ namespace Oilexer._Internal.Inlining
                     state = expression.NFAState;
                 else
                     state.Union(expression.NFAState);
-            if (Source.Reference.Name == "Number")
-                Console.WriteLine();
             List<RegularLanguageNFAState> flatline = new List<RegularLanguageNFAState>();
             RegularLanguageNFAState.FlatlineState(state, flatline);
             foreach (var fState in flatline)

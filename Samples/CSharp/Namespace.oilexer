@@ -1,7 +1,7 @@
-#include                      "Root.oilexer";
-/* --------------------------------------- *\
-|*             B.2.6: Namespaces           *|
-\* --------------------------------------- */
+#include                       "Root.oilexer";
+/* ---------------------------------------- *\
+|*             B.2.6: Namespaces            *|
+\* ---------------------------------------- */
 
 NamespaceName ::=>
     NamespaceOrTypeName;
@@ -11,18 +11,18 @@ NamespaceDeclaration ::=
     NamespaceBody:Body; ';'?;
 
 QualifiedIdentifier ::=
-    DelimitedList<Identifier:Names;, '.'>;
+    DelimitedList<Identifier:Names;, '.'>    ;
 
 QualifiedAliasMember ::=
-    Identifier:AliasName; "::" SimpleName:TypeOrNamespaceName;;
+    Identifier:AliasName; "::" 
+	SimpleName:TypeOrNamespaceName;          ;
 
-NamespaceBody                             ::=
-    '{'
-        ExternAliasDirective:Externs;*
+NamespaceBody                              ::=
+	CParametered<
+		ExternAliasDirective:Externs;*
         UsingDirective:Usings;*
-        NamespaceMemberDeclaration:Members;*
-    '}'                                     ;
+        NamespaceMemberDeclaration:Members;*>;
 
-NamespaceMemberDeclaration               ::=>
-    NamespaceDeclaration                    |
-    TypeDeclaration                         ;
+NamespaceMemberDeclaration                ::=>
+    NamespaceDeclaration                     |
+    TypeDeclaration                          ;

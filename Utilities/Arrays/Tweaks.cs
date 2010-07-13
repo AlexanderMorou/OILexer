@@ -11,6 +11,14 @@ namespace Oilexer.Utilities.Arrays
     /// </summary>
     public static partial class Tweaks
     {
+        public static T[] Add<T>(this T[] target, params T[] elements)
+        {
+            return MergeArrays(target, elements);
+        }
+        public static T[] AddBefore<T>(this T[] target, params T[] elements)
+        {
+            return MergeArrays(elements, target);
+        }
         /// <summary>
         /// Casts an array from the <typeparamref name="originatingType"/> to the <typeparamref name="desiredType"/>
         /// </summary>
@@ -137,6 +145,16 @@ namespace Oilexer.Utilities.Arrays
                 for (int i = start; i <= end; i++)
                     result[i] = i;
             }
+            return result;
+        }
+
+        public static T[] GetArray<T>(this T element, params T[] followers)
+        {
+            if (followers == null)
+                throw new ArgumentNullException("followers");
+            T[] result = new T[followers.Length + 1];
+            result[0] = element;
+            followers.CopyTo(result, 1);
             return result;
         }
     }
