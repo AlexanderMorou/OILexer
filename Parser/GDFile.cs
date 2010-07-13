@@ -27,6 +27,7 @@ namespace Oilexer.Parser
     {
         private IGDFileOptions options;
         private GDStringCollection _files;
+        private IList<string> includes;
         private IReadOnlyCollection<string> files;
 
         private GDFile()
@@ -91,6 +92,15 @@ namespace Oilexer.Parser
             }
         }
 
+        public IList<string> Includes
+        {
+            get
+            {
+                if (this.includes == null)
+                    this.includes = new List<string>();
+                return this.includes;
+            }
+        }
         #endregion
     }
 }

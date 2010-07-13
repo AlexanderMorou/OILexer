@@ -39,7 +39,7 @@ NamespaceOrTypeName ::=
     (
         QualifiedAliasMember:AliasPart;     |
         SimpleName:Names;
-    ) ('.' SimpleName:Names;)*;
+    ) ('.' SimpleName:Names;)*              ;
 
 CompilationUnit                           ::=
     ExternAliasDirective:Externs;*

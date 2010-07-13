@@ -22,5 +22,7 @@ namespace Oilexer.Parser
         /// resulted generation process.
         /// </summary>
         IGDFileOptions Options { get; }
+
+        IList<string> Includes { get; }
     }
 }

@@ -22,7 +22,7 @@ EmbeddedStatement                        ::=>
     YieldStatement                          ;
 
 Block                                     ::=
-    '{' Statement:Statements;* '}'           ;
+    CParametered<Statement:Statements;*>    ;
 
 EmptyStatement                            ::=
     ';'                                     ;
@@ -35,7 +35,7 @@ DeclarationStatement                     ::=>
     LocalVariableDeclaration                |
     LocalConstantDeclaration                ;
 
-ExpressionStatement                       ::=
+ExpressionStatement                      ::=>
     InvocationExpression                    |
     ObjectCreationExpression                |
     AssignmentExpression                    |
@@ -48,18 +48,20 @@ IterationStatement                       ::=>
     ForEachStatement                        ;
 
 WhileStatement                            ::=
-    "while" '(' BooleanExpression:Condition; ')'
+    "while" 
+	Parametered<BooleanExpression:Condition;>
     EmbeddedStatement:Body;                 ;
 
 DoStatement                               ::=
     "do" 
         EmbeddedStatement:Inner;
-    "while" '(' BooleanExpression:Condition; ')';
+    "while" 
+   Parametered<BooleanExpression:Condition;>;
 
 ForStatement                              ::=
-    "for" '(' ForInitializer:Initializer;?
+    "for" Parametered<ForInitializer:Initializer;?
         BooleanExpression:Condition;?
-        DelimitedList<ExpressionStatement:Iterators;, ','>? ')'
+        DelimitedList<ExpressionStatement:Iterators;, ','>?>
     EmbeddedStatement:Body;                 ;
 
 ForInitializer                           ::=>
@@ -70,10 +72,11 @@ ForStatementExpressionList                ::=
     DelimitedList<ExpressionStatement:Initializers;, ','>;
 
 ForEachStatement                          ::=
-    "foreach" '(' LocalVariableType:Type; 
-                  Identifier:Name;
-                    "in"
-                  Expression:Source; ')'
+    "foreach" Parametered<
+				LocalVariableType:Type; 
+                Identifier:Name;
+                  "in"
+                Expression:Source;>
     EmbeddedStatement:Body;                 ;
 
 JumpStatement                            ::=>

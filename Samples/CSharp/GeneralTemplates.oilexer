@@ -4,7 +4,13 @@ DelimitedList<Term, Delimiter>            ::=
     Term (Delimiter Term)*;
 
 Parametered<T>                            ::=
-    '(' T ')'                               ;
+    Encased<'(', T, ')'>                    ;
+
+CParametered<T>                           ::=
+	Encased<'{', T, '}'>                    ;
+
+Encased<L, M, R>                          ::=
+	L M R;
 
 LeftOrRightDelimited<Left, Delimiter, Right>::=
     Left (Delimiter Right)?                 |

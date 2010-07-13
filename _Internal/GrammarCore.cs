@@ -126,15 +126,17 @@ namespace Oilexer._Internal
             List<string> paths = new List<string>(path.Split(new char[] { '\\' }, StringSplitOptions.RemoveEmptyEntries));
             Stack<string> finalForm = new Stack<string>();
             foreach (string s in paths)
-                if (s == ".." && finalForm.Count > 0)
-                    finalForm.Pop();
-                else if (s != "..")
-                    if (s != ".")
-                        finalForm.Push(s);
+                if (s == "..")
+                {
+                    if (finalForm.Count > 0) 
+                        finalForm.Pop();
+                }
+                else if (s != ".")
+                    finalForm.Push(s);
             paths.Clear();
             paths = new List<string>(finalForm);
             paths.Reverse();
-            return string.Join("\\", paths.ToArray());
+            return string.Join(@"\", paths.ToArray());
         }
 
         internal static string EncodePrim<T>(T p)
