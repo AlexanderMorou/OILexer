@@ -69,7 +69,7 @@ namespace Oilexer.Parser
         {
             int count = includeDirectives.Count;
             bool addedInclude = false;
-            base.CurrentTokenizer = new GDTokenizer(s, fileName);
+            base.CurrentTokenizer = new Lexer(s, fileName);
             //If the include already exists in the include directives, this is 
             //a recursive call.
             if (!(includeDirectives.Contains(fileName)))
@@ -104,7 +104,7 @@ namespace Oilexer.Parser
             currentTarget.SetResult(new GDFile(this.CurrentTokenizer.FileName));
             while (true)
             {
-                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                 //Clear the ahead, hack.
                 this.ClearAhead();
                 char c = LookPastAndSkip();
@@ -113,11 +113,11 @@ namespace Oilexer.Parser
                 if (c == char.MinValue)
                     break;
 
-                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = false;
+                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = false;
                 //Expected pathExplorationComment.
                 if (c == '/')
                 {
-                    ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                     ITokenStream its = this.GetAhead(1);
                     if (its.Count == 0)
                     {
@@ -162,7 +162,7 @@ namespace Oilexer.Parser
 
                     }
                 }
-                else if (GDTokenizer.IsIdentifierChar(c))
+                else if (Lexer.IsIdentifierChar(c))
                 {
                     /* *
                      * All declarations must begin at the first column 
@@ -174,7 +174,7 @@ namespace Oilexer.Parser
                         LogError(GDParserErrors.ExpectedEndOfLine);
                         continue;
                     }
-                    ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                     EntryScanMode esm = EntryScanMode.Inherited;
                     ITokenStream its = GetAhead(2);
                     /* *
@@ -219,13 +219,13 @@ namespace Oilexer.Parser
                                     elementsAreChildren = true;
                                     PopAhead();
                                 }
-                                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                 ParseProductionRule(id.Name, EntryScanMode.Inherited, id.Position, elementsAreChildren);
                                 break;
                             //ID :=
                             case GDTokens.OperatorType.TokenSeparator:
                                 {
-                                    ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                     bool unhinged = false;
                                     if (LookPast(0) == '*')
                                     {
@@ -246,7 +246,7 @@ namespace Oilexer.Parser
                                 break;
                             //ID<
                             case GDTokens.OperatorType.TemplatePartsStart:
-                                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                 IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts();
                                 if (parts == null)
                                     continue;
@@ -314,7 +314,7 @@ namespace Oilexer.Parser
                                     switch (ot.Type)
                                     {
                                         case GDTokens.OperatorType.ProductionRuleSeparator:
-                                            ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                            ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                             if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
                                                 ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
                                             {
@@ -325,7 +325,7 @@ namespace Oilexer.Parser
                                             break;
                                         case GDTokens.OperatorType.TokenSeparator:
                                             {
-                                                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                                 bool unhinged = false;
                                                 if (LookPast(0) == '*')
                                                 {
@@ -358,9 +358,9 @@ namespace Oilexer.Parser
                         continue;
                     }
                 }
-                else if (GDTokenizer.IsWhitespaceChar(c))
+                else if (Lexer.IsWhitespaceChar(c))
                     //Skip
-                    ((GDTokenizer)(this.CurrentTokenizer)).ParseWhitespaceInternal();
+                    ((Lexer)(this.CurrentTokenizer)).ParseWhitespaceInternal();
                 else
                 {
                     LogError(GDParserErrors.ExpectedEndOfLine);
@@ -623,8 +623,8 @@ namespace Oilexer.Parser
 
         private char LookPastAndSkip()
         {
-            if (GDTokenizer.IsWhitespaceChar(LookPast(0)))
-                ((GDTokenizer)(CurrentTokenizer)).ParseWhitespaceInternal();
+            if (Lexer.IsWhitespaceChar(LookPast(0)))
+                ((Lexer)(CurrentTokenizer)).ParseWhitespaceInternal();
             return LookPast(0);
         }
 
@@ -865,7 +865,7 @@ namespace Oilexer.Parser
                 else if (c == '>' && templateDepth > 0 ||
                          c == ',' && templateDepth > 0)
                     break;
-                else if (GDTokenizer.IsIdentifierChar(c) || c == '\'' || c == '(' || c == '"' || c == '#' || c == '@')
+                else if (Lexer.IsIdentifierChar(c) || c == '\'' || c == '(' || c == '"' || c == '#' || c == '@')
                 {
                     if (c == '#')
                     {
@@ -1218,8 +1218,8 @@ namespace Oilexer.Parser
         private IPreprocessorDirective ParsePreprocessor(PreprocessorContainer container)
         {
             IPreprocessorDirective result = null;
-            bool ml = ((GDTokenizer)this.CurrentTokenizer).MultiLineMode;
-            ((GDTokenizer)this.CurrentTokenizer).MultiLineMode = false;
+            bool ml = ((Lexer)this.CurrentTokenizer).MultiLineMode;
+            ((Lexer)this.CurrentTokenizer).MultiLineMode = false;
             GDTokens.PreprocessorDirective ppd = LookAhead(0) as GDTokens.PreprocessorDirective;
             if (ppd != null)
             {
@@ -1282,7 +1282,7 @@ namespace Oilexer.Parser
                 ICollection<IProductionRule> containedSet = new List<IProductionRule>();
                 int line = this.CurrentTokenizer.GetLineIndex(), column = this.CurrentTokenizer.GetColumnIndex();
                 long position = this.CurrentTokenizer.Position;
-                var cTokenizer = ((GDTokenizer)(this.CurrentTokenizer));
+                var cTokenizer = ((Lexer)(this.CurrentTokenizer));
                 bool multiLine = cTokenizer.MultiLineMode;
                 cTokenizer.MultiLineMode = true;
                 this.ParseProductionRuleBody(containedSet, container);
@@ -1489,8 +1489,8 @@ namespace Oilexer.Parser
         private IPreprocessorConditionalReturnDirective ParseReturnDirective()
         {
             IPreprocessorConditionalReturnDirective result = null;
-            bool mlm = ((GDTokenizer)(CurrentTokenizer)).MultiLineMode;
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = false;
+            bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.ReturnDirective)
             {
@@ -1501,15 +1501,15 @@ namespace Oilexer.Parser
             ICollection<IProductionRule> icipr = new System.Collections.ObjectModel.Collection<IProductionRule>();
             ParseProductionRule(icipr, PreprocessorContainer.Template);
             result = new PreprocessorConditionalReturnDirective(new List<IProductionRule>(icipr).ToArray(), igdt.Column, igdt.Line, igdt.Position);
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = mlm;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
             return result;
         }
 
         private IPreprocessorAddRuleDirective ParseAddRuleDirective()
         {
             IPreprocessorAddRuleDirective result = null;
-            bool mlm = ((GDTokenizer)(CurrentTokenizer)).MultiLineMode;
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = false;
+            bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.AddRuleDirective)
             {
@@ -1530,19 +1530,19 @@ namespace Oilexer.Parser
                     return null;
                 }
                 ICollection<IProductionRule> icipr = new System.Collections.ObjectModel.Collection<IProductionRule>();
-                ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = true;
+                ((Lexer)(CurrentTokenizer)).MultiLineMode = true;
                 ParseProductionRule(icipr, PreprocessorContainer.Template);
                 result = new PreprocessorAddRuleDirective(target.Name, new List<IProductionRule>(icipr).ToArray(), igdt.Column, igdt.Line, igdt.Position);
             }
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = mlm;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
             return result;
         }
 
         private IPreprocessorDefineRuleDirective ParseDefineRuleDirective()
         {
             IPreprocessorDefineRuleDirective result = null;
-            bool mlm = ((GDTokenizer)(CurrentTokenizer)).MultiLineMode;
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = false;
+            bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.DefineDirective)
             {
@@ -1563,20 +1563,20 @@ namespace Oilexer.Parser
                     return null;
                 }
                 ICollection<IProductionRule> icipr = new System.Collections.ObjectModel.Collection<IProductionRule>();
-                ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = true;
+                ((Lexer)(CurrentTokenizer)).MultiLineMode = true;
                 ParseProductionRule(icipr, PreprocessorContainer.Template);
                 result = new PreprocessorDefineRuleDirective(target.Name, new List<IProductionRule>(icipr).ToArray(), igdt.Column, igdt.Line, igdt.Position);
             }
 
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = mlm;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
             return result;
         }
 
         private IPreprocessorThrowDirective ParseThrowDirective()
         {
             IPreprocessorThrowDirective result = null;
-            bool mlm = ((GDTokenizer)(CurrentTokenizer)).MultiLineMode;
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = false;
+            bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.ThrowDirective)
             {
@@ -1625,7 +1625,7 @@ namespace Oilexer.Parser
             else
                 Expect("identifier");
             
-            ((GDTokenizer)(CurrentTokenizer)).MultiLineMode = mlm;
+            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
             return result;
         }
 
@@ -1668,7 +1668,7 @@ namespace Oilexer.Parser
             IPreprocessorIfDirective last = current;
             bool final = false;
             IGDToken igdt = null;
-            ((GDTokenizer)CurrentTokenizer).MultiLineMode = true;
+            ((Lexer)CurrentTokenizer).MultiLineMode = true;
             while (
                 (igdt = LookAhead(0)).TokenType == GDTokenType.PreprocessorDirective ||
                 igdt.TokenType == GDTokenType.Comment)
@@ -1687,7 +1687,7 @@ namespace Oilexer.Parser
                                 Expect("#endif");
                                 goto endWhile;
                             }
-                            ((GDTokenizer)CurrentTokenizer).MultiLineMode = false;
+                            ((Lexer)CurrentTokenizer).MultiLineMode = false;
                             if (ParsePreprocessorCLogicalOrConditionExp(ref subCondition))
                             {
                                 current = ParseIfDirective(subCondition, ppd, container);
@@ -1716,7 +1716,7 @@ namespace Oilexer.Parser
                     ((PreprocessorIfDirective)(current)).Previous = last;
                 }
                 last = current;
-                ((GDTokenizer)CurrentTokenizer).MultiLineMode = true;
+                ((Lexer)CurrentTokenizer).MultiLineMode = true;
             }
             endWhile:
             return result;
@@ -1728,7 +1728,7 @@ namespace Oilexer.Parser
             Action<IEntry> preprocessorInserter = p => ppidb.Add(new PreprocessorEntryContainer(p, p.Column, p.Line, p.Position));
             while (true)
             {
-                ((GDTokenizer)this.CurrentTokenizer).MultiLineMode = true;
+                ((Lexer)this.CurrentTokenizer).MultiLineMode = true;
                 GDTokens.PreprocessorDirective ppd = LookAhead(0) as GDTokens.PreprocessorDirective;
                 if (ppd != null)
                 {
@@ -1837,13 +1837,13 @@ namespace Oilexer.Parser
                                     elementsAreChildren = true;
                                     PopAhead();
                                 }
-                                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                 ParseProductionRule(id.Name, EntryScanMode.Inherited, id.Position, elementsAreChildren, container, preprocessorInserter);
                                 break;
                             //ID :=
                             case GDTokens.OperatorType.TokenSeparator:
                                 {
-                                    ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                     bool unhinged = false;
                                     if (LookPast(0) == '*')
                                     {
@@ -1864,7 +1864,7 @@ namespace Oilexer.Parser
                                 break;
                             //ID<
                             case GDTokens.OperatorType.TemplatePartsStart:
-                                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                 IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts();
                                 if (parts == null)
                                     continue;
@@ -1932,7 +1932,7 @@ namespace Oilexer.Parser
                                     switch (ot.Type)
                                     {
                                         case GDTokens.OperatorType.ProductionRuleSeparator:
-                                            ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                            ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                             if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
                                                 ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
                                             {
@@ -1943,7 +1943,7 @@ namespace Oilexer.Parser
                                             break;
                                         case GDTokens.OperatorType.TokenSeparator:
                                             {
-                                                ((GDTokenizer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
                                                 bool unhinged = false;
                                                 if (LookPast(0) == '*')
                                                 {
@@ -2531,7 +2531,7 @@ namespace Oilexer.Parser
                     else
                         goto Expect;
                 }
-                else if (GDTokenizer.IsIdentifierChar(c) || c == '(' || c == '\'' || c == '"' || c == '@' || c == '[')
+                else if (Lexer.IsIdentifierChar(c) || c == '(' || c == '\'' || c == '"' || c == '@' || c == '[')
                 {
                     ParseTokenBody(expressions);
                 }

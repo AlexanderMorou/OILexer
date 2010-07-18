@@ -18,7 +18,7 @@ namespace Oilexer._Internal
     {
         internal const string GrammarParserErrorFormat = "OILexP{0}";
 
-        internal static string Encode(this string target)
+        internal static string Encode(this string target, bool addQuotes = true)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -45,12 +45,79 @@ namespace Oilexer._Internal
                     case '\f':
                         sb.Append("\\f");
                         break;
+                    case '\0':
+                        sb.Append("\\0");
+                        break;
+                    case '\b':
+                        sb.Append("\\b");
+                        break;
                     default:
-                        sb.Append(c);
+                        if (c > 255)
+                        {
+                            string charEncode = string.Format("{0:X}", (int)c);
+                            while (charEncode.Length < 4)
+                                charEncode = "0" + charEncode;
+                            sb.AppendFormat("\\u{0}", charEncode);
+                        }
+                        else
+                        {
+                            var unicodeCategory = char.GetUnicodeCategory(c);
+                            switch (unicodeCategory)
+                            {
+                                case System.Globalization.UnicodeCategory.SpacingCombiningMark:
+                                case System.Globalization.UnicodeCategory.Control:
+                                case System.Globalization.UnicodeCategory.Surrogate:
+                                case System.Globalization.UnicodeCategory.CurrencySymbol:
+                                case System.Globalization.UnicodeCategory.SpaceSeparator:
+                                case System.Globalization.UnicodeCategory.ParagraphSeparator:
+                                case System.Globalization.UnicodeCategory.EnclosingMark:
+                                case System.Globalization.UnicodeCategory.LineSeparator:
+                                case System.Globalization.UnicodeCategory.Format:
+                                case System.Globalization.UnicodeCategory.NonSpacingMark:
+                                case System.Globalization.UnicodeCategory.ModifierLetter:
+                                case System.Globalization.UnicodeCategory.OtherLetter:
+                                case System.Globalization.UnicodeCategory.OtherSymbol:
+                                case System.Globalization.UnicodeCategory.PrivateUse:
+                                case System.Globalization.UnicodeCategory.OtherNotAssigned:
+                                    {
+                                        string charEncode = string.Format("{0:X}", (int)c);
+                                        while (charEncode.Length < 2)
+                                            charEncode = "0" + charEncode;
+                                        sb.AppendFormat("\\x{0}", charEncode);
+
+                                    }
+                                    break;
+                                case System.Globalization.UnicodeCategory.ModifierSymbol:
+                                case System.Globalization.UnicodeCategory.MathSymbol:
+                                case System.Globalization.UnicodeCategory.FinalQuotePunctuation:
+                                case System.Globalization.UnicodeCategory.InitialQuotePunctuation:
+                                case System.Globalization.UnicodeCategory.LetterNumber:
+                                case System.Globalization.UnicodeCategory.LowercaseLetter:
+                                case System.Globalization.UnicodeCategory.OpenPunctuation:
+                                case System.Globalization.UnicodeCategory.OtherPunctuation:
+                                case System.Globalization.UnicodeCategory.OtherNumber:
+                                case System.Globalization.UnicodeCategory.DecimalDigitNumber:
+                                case System.Globalization.UnicodeCategory.DashPunctuation:
+                                case System.Globalization.UnicodeCategory.TitlecaseLetter:
+                                case System.Globalization.UnicodeCategory.UppercaseLetter:
+                                case System.Globalization.UnicodeCategory.ClosePunctuation:
+                                case System.Globalization.UnicodeCategory.ConnectorPunctuation:
+                                    sb.Append(c);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                         break;
                 }
             }
-            return string.Format("\"{0}\"", sb.ToString());
+            if (addQuotes)
+                if (target.Length == 1)
+                    return string.Format("'{0}'", sb.ToString());
+                else
+                    return string.Format("\"{0}\"", sb.ToString());
+            else
+                return sb.ToString();
         }
 
         /// <summary>
@@ -59,7 +126,7 @@ namespace Oilexer._Internal
         /// type and message <paramref name="text"/> provided.
         /// </summary>
         /// <param name="fileName">The <see cref="String"/> path of th file the
-        /// compiler error is for.</param>
+        /// intermediateCompiler error is for.</param>
         /// <param name="line">The <see cref="System.Int32"/> which denotes the line of the
         /// <paramref name="fileName"/> the error occurred on.</param>
         /// <param name="column">The <see cref="System.Int32"/> on the <paramref name="line"/>

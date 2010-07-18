@@ -11,7 +11,7 @@ namespace Oilexer.Parser
 {
     partial class GDParser
     {
-        public sealed class GDTokenizer :
+        public sealed class Lexer :
             Tokenizer<IGDToken>,
             IGDTokenizer
         {
@@ -21,7 +21,7 @@ namespace Oilexer.Parser
             private bool multiLineMode = true;
 
             /// <summary>
-            /// Creates a new <see cref="GDTokenizer"/> with the
+            /// Creates a new <see cref="Lexer"/> with the
             /// <see cref="Stream"/>, <paramref name="s"/>, and the 
             /// <paramref name="fileName"/> provided.
             /// </summary>
@@ -30,7 +30,7 @@ namespace Oilexer.Parser
             /// <param name="fileName">The <see cref="String"/> identifier
             /// which is used to identify the <see cref="Stream"/>, <paramref name="s"/>,
             /// when errors occur.</param>
-            public GDTokenizer(Stream s, string fileName)
+            public Lexer(Stream s, string fileName)
                 : base(s, fileName)
             {
             }
@@ -144,6 +144,7 @@ namespace Oilexer.Parser
                         switch (c)
                         {
                             case 'L'://ultmo
+                                #region Letters
                                 c = LookAhead(lookAhead + 2);
                                 if (c != ':' && LookAhead(lookAhead + 3) == ':')
                                 {
@@ -190,6 +191,7 @@ namespace Oilexer.Parser
                                     categories.Add(UnicodeCategory.OtherLetter);
                                     continue;
                                 }
+                                #endregion
                                 break;
                             case 'M'://nce
                                 #region Marks
@@ -272,6 +274,7 @@ namespace Oilexer.Parser
                                 #endregion
                                 break;
                             case 'Z'://slp
+                                #region Separators
                                 c = LookAhead(lookAhead + 2);
                                 if (c != ':' && LookAhead(lookAhead + 3) == ':')
                                 {
@@ -308,8 +311,10 @@ namespace Oilexer.Parser
                                 }
                                 else
                                     c = ':';
+                                #endregion
                                 break;
                             case 'C'://cfson
+                                #region Other
                                 c = LookAhead(lookAhead + 2);
                                 if (c != ':' && LookAhead(lookAhead + 3) == ':')
                                 {
@@ -356,8 +361,10 @@ namespace Oilexer.Parser
                                 }
                                 else
                                     c = ':';
+                                #endregion
                                 break;
                             case 'P'://cdseifo
+                                #region Punctuation 
                                 c = LookAhead(lookAhead + 2);
                                 if (c != ':' && LookAhead(lookAhead + 3) == ':')
                                 {
@@ -414,39 +421,41 @@ namespace Oilexer.Parser
                                 }
                                 else
                                     c = ':';
+                                #endregion
                                 break;
                             case 'S'://mcko
+                                #region Symbols
                                 c = LookAhead(lookAhead + 2);
-                                if (c != ':' && LookAhead(lookAhead + 3) == ':')
+                                if (c != ':')
                                 {
-                                    if (c == 'm' ||
-                                        c == 'c' ||
-                                        c == 'k' ||
-                                        c == 'o')
-                                        lookAhead += 4;
-                                    else
+                                    if (LookAhead(lookAhead + 3) == ':')
                                     {
-                                        c = ':';
-                                        break;
+                                        if (c == 'm' ||
+                                            c == 'c' ||
+                                            c == 'k' ||
+                                            c == 'o')
+                                            lookAhead += 4;
+                                        else
+                                            goto s_fallThrough;
+                                        switch (c)
+                                        {
+                                            case 'm': // Sm (symbol, math)
+                                                categories.Add(UnicodeCategory.MathSymbol);
+                                                break;
+                                            case 'c': // Sc (symbol, currency)
+                                                categories.Add(UnicodeCategory.CurrencySymbol);
+                                                break;
+                                            case 'k': // Sk (symbol, modifier)
+                                                categories.Add(UnicodeCategory.ModifierSymbol);
+                                                break;
+                                            case 'o': // So (symbol, other)
+                                                categories.Add(UnicodeCategory.OtherSymbol);
+                                                break;
+                                        }
+                                        continue;
                                     }
-                                    switch (c)
-                                    {
-                                        case 'm': // Sm (symbol, math)
-                                            categories.Add(UnicodeCategory.MathSymbol);
-                                            break;
-                                        case 'c': // Sc (symbol, currency)
-                                            categories.Add(UnicodeCategory.CurrencySymbol);
-                                            break;
-                                        case 'k': // Sk (symbol, modifier)
-                                            categories.Add(UnicodeCategory.ModifierSymbol);
-                                            break;
-                                        case 'o': // So (symbol, other)
-                                            categories.Add(UnicodeCategory.OtherSymbol);
-                                            break;
-                                    }
-                                    continue;
                                 }
-                                else if (c == ':') // :S: (symbol, math, currency, modifier, other)
+                                else// :S: (symbol, math, currency, modifier, other)
                                 {
                                     lookAhead += 3;
                                     categories.Add(UnicodeCategory.MathSymbol);
@@ -455,19 +464,20 @@ namespace Oilexer.Parser
                                     categories.Add(UnicodeCategory.OtherSymbol);
                                     continue;
                                 }
-                                else
-                                    c = ':';
+                        s_fallThrough:
+                                c = ':';
+                                #endregion
                                 break;
                             default:
                                 singleTons.Add(':');
-                                break;
+                                continue;
                         }
                     }
                     else if (c == '\\')
                     {
                         switch (c = LookAhead(++lookAhead))
                         {
-                            //\x[0-9A-Fa-f][0-9A-Fa-f]
+                            //\x[0-9A-Fa-f]{2}
                             case 'x':
                                 {
                                     c = LookAhead(++lookAhead);
@@ -485,6 +495,7 @@ namespace Oilexer.Parser
                                     }
                                 }
                                 break;
+                            //\u[0-9A-Fa-f]{4}
                             case 'u':
                                 {
                                     c = LookAhead(++lookAhead);

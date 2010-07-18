@@ -18,6 +18,9 @@ using Oilexer.Types;
 using Oilexer.Utilities.Arrays;
 using Oilexer.Utilities.Collections;
 using Oilexer.FiniteAutomata.Rules;
+using Oilexer.Parser.GDFileData.ProductionRuleExpression;
+using Oilexer.Parser.GDFileData.TokenExpression;
+using Oilexer._Internal.Inlining;
 /* *
  * Old Release Post-build command:
  * "$(ProjectDir)PostBuild.bat" "$(ConfigurationName)" "$(TargetPath)"
@@ -89,7 +92,7 @@ namespace Oilexer
             /// at the end.
             /// </summary>
             DoNotCompile            = 0x0008,
-            NoLogo                  = 0x0020,
+            NoLogo                  = 0x0010,
             /// <summary>
             /// Instructs the <see cref="Program"/> to emit as little
             /// as possible to the console.
@@ -112,8 +115,14 @@ namespace Oilexer
             var consoleTitle = Console.Title;
             try
             {
-                Console.Clear();
-                Console.Title = string.Format("{0}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
+                try
+                {
+                    Console.Clear();
+                    Console.Title = string.Format("{0}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
+                }
+                catch (IOException)
+                {
+                } 
                 if (args.Length <= 0)
                 {
                     if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
@@ -184,7 +193,12 @@ namespace Oilexer
             }
             finally
             {
-                Console.Title = consoleTitle;
+                try
+                {
+                    Console.Title = consoleTitle;
+                }
+                catch (IOException) {
+                }
             }
         }
 
@@ -200,6 +214,7 @@ namespace Oilexer
             try
             {
                 Console.Clear();
+                Console.Title = string.Format("{0} Parsing...", baseTitle);
             }
             catch (IOException) 
             {
@@ -209,7 +224,6 @@ namespace Oilexer
                  *        Console output redirected to something else, eg. file.
                  * */
             }
-            Console.Title = string.Format("{0} Parsing...", baseTitle);
             if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
                 DisplayLogo();
             sw.Start();
@@ -224,12 +238,19 @@ namespace Oilexer
             longestLineLength = Math.Max(longestLineLength, maxLength + 19);
             if ((options & ValidOptions.NoLogo) == ValidOptions.None)
                 FinishLogo(oldestLongest, Console.CursorTop, Console.CursorLeft);
-            else
+            else if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
                 Console.WriteLine("╒═{0}═╕", '═'.Repeat(longestLineLength));
             sw.Stop();
             if (iprs.Successful)
                 baseTitle = string.Format("{0}: {1}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location), Path.GetFileName(string.IsNullOrEmpty(iprs.Result.Options.AssemblyName) ? iprs.Result.Options.ParserName : iprs.Result.Options.AssemblyName));
-            Console.Title = baseTitle;
+            try
+            {
+                Console.Title = baseTitle;
+            }
+            catch (IOException)
+            {
+
+            }
 
             /* *
              * If the parser succeeds, build the project and check 
@@ -237,7 +258,11 @@ namespace Oilexer
              * */
             if (iprs.Successful)
             {
-                Console.Title = string.Format("{0} Linking project...", baseTitle);
+                try
+                {
+                    Console.Title = string.Format("{0} Linking project...", baseTitle);
+                }
+                catch (IOException) { }
                 //igdb.BuildPhaseChange += new EventHandler<BuildUpdateEventArgs>(igdb_BuildPhaseChange);
                 ParserBuilderResults resultsOfBuild = Build(iprs);
                 if (resultsOfBuild == null)
@@ -260,20 +285,31 @@ namespace Oilexer
                     Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
 
                 }
-                DisplayBuildBreakdown(resultsOfBuild, maxLength);
+                if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
+                    DisplayBuildBreakdown(resultsOfBuild, maxLength);
             errorChecker:
                 if (resultsOfBuild == null || resultsOfBuild.Project == null)
                 {
                     /* *
                      * The builder encountered an error not immediately obvious by linking.
                      * */
-                    Console.Title = string.Format("{0} could not build project...", baseTitle);
+                    try
+                    {
+                        Console.Title = string.Format("{0} could not build project...", baseTitle);
+                    }
+                    catch (IOException)
+                    {
+                    }
                     goto __CheckErrorAgain;
                 }
 
                 if ((options & ValidOptions.DoNotCompile) == ValidOptions.None)
                 {
-                    Console.Title = string.Format("{0} Compiling project...", baseTitle);
+                    try
+                    {
+                        Console.Title = string.Format("{0} Compiling project...", baseTitle);
+                    }
+                    catch (IOException) { }
                     string rootPath = string.Empty;
                     foreach (var cFile in iprs.Result.Files)
                     {
@@ -290,23 +326,31 @@ namespace Oilexer
                     resultsOfBuild.Project.AssemblyInformation.Description = string.Format("Language parser for {0}.", iprs.Result.Options.GrammarName);
                     resultsOfBuild.Project.Attributes.AddNew(typeof(AssemblyVersionAttribute).GetTypeReference(), new AttributeConstructorParameter(new PrimitiveExpression("1.0.0.*")));
                     rootPath += string.Format("{0}.dll", iprs.Result.Options.AssemblyName);
-                    IIntermediateCompiler iic = new CSharpIntermediateCompiler(resultsOfBuild.Project, new IntermediateCompilerOptions(true, true, rootPath, DebugSupport.None));
-                    iic.Translator.Options.AutoResolveReferences = true;
-                    iic.Translator.Options.AllowPartials = false;
-                    iic.Translator.Options.AutoComments = true;
+                    IIntermediateCompiler intermediateCompiler = new CSharpIntermediateCompiler(resultsOfBuild.Project, new IntermediateCompilerOptions(true, true, rootPath, DebugSupport.None));
+                    intermediateCompiler.Translator.Options.AutoResolveReferences = true;
+                    intermediateCompiler.Translator.Options.AllowPartials = false;
+                    intermediateCompiler.Translator.Options.AutoComments = true;
                     Stopwatch compileTimer = new Stopwatch();
                     compileTimer.Start();
-                    IIntermediateCompilerResults iicrs = iic.Compile();
+                    IIntermediateCompilerResults compileResults = intermediateCompiler.Compile();
                     compileTimer.Stop();
-                    Console.WriteLine("Compile time: {0}", compileTimer.Elapsed);
-                    iicrs.TemporaryFiles.KeepFiles = true;
+
                     if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
                     {
-                        if (iicrs.NativeReturnValue == 0)
-                            Console.WriteLine("Compile Successful");
+                        const string compile = "Compile";
+                        const string compileTime = compile + " time";
+                        const string compileSuccessful = "Successful";
+                        const string compileFailure = "Failed";
+                        Console.WriteLine("│ {1}{2} : {0} │", compileTimer.Elapsed, ' '.Repeat(maxLength - compileTime.Length), compileTime);
+                        string compileSuccess = string.Format("{0}{1}", ' '.Repeat(maxLength-compile.Length), compile);
+                        if (compileResults.NativeReturnValue == 0)
+                            compileSuccess = string.Format("{0} : {1}", compileSuccess, compileSuccessful);
                         else
-                            Console.WriteLine("Compile Failed.");
+                            compileSuccess = string.Format("{0} : {1}", compileSuccess, compileFailure);
+                        compileSuccess = string.Format("{0}{1}", compileSuccess, ' '.Repeat(longestLineLength - compileSuccess.Length));
+                        Console.WriteLine("│ {0} │",compileSuccess);
                     }
+                    compileResults.TemporaryFiles.KeepFiles = true;
                 }
                 goto ShowParseTime;
             __CheckErrorAgain:
@@ -322,75 +366,105 @@ namespace Oilexer
             if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
             {
                 Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
-                var sequence = (
-                    new
-                    {
-                        Title = TitleSequence_CharacterSetComputations,
-                        Value = RegularLanguageSet.CountComputations()
-                    }).GetArray(
-                    new
-                    {
-                        Title = TitleSequence_CharacterSetCache,
-                        Value = RegularLanguageSet.CountComputationCaches()
-                    },
-                    new
-                    {
-                        Title = TitleSequence_VocabularyCache,
-                        Value = GrammarVocabulary.CountComputations()
-                    },
-                    new
-                    {
-                        Title = TitleSequence_VocabularyComputations,
-                        Value = GrammarVocabulary.CountComputationCaches()
-                    });
-                if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
-                {
-                    sequence = sequence.AddBefore(
-                    new
-                    {
-                        Title = TitleSequence_NumberOfRules,
-                        Value = iprs.Result.GetRules().Count()
-                    }, new
-                    {
-                        Title = TitleSequence_NumberOfTokens,
-                        Value = iprs.Result.GetTokens().Count()
-                    },
-                    null);
-                }
-                foreach (var element in sequence)
-                    if (element == null)
-                        Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
-                    else
-                    {
-                        var s = string.Format("{0}{1} : {2}", ' '.Repeat(maxLength - element.Title.Length), element.Title, element.Value);
-                        Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));
-                    }
+                DisplayTailInformation(maxLength, iprs);
                 Console.WriteLine("╘═{0}═╛", '═'.Repeat(longestLineLength));
-                if ((options & ValidOptions.ShowSyntax) == ValidOptions.ShowSyntax)
+            }
+            if ((options & ValidOptions.ShowSyntax) == ValidOptions.ShowSyntax)
+            {
+                try
                 {
                     Console.Title = string.Format("{0} - Expanded grammar.", baseTitle);
-                    ShowSyntax(iprs);
                 }
-
+                catch (IOException) { }
+                ShowSyntax(iprs);
+            
             }
-            Console.Title = string.Format("{0} - {1}", baseTitle, "Finished");
+            try
+            {
+                Console.Title = string.Format("{0} - {1}", baseTitle, "Finished");
+            }
+            catch (IOException) { }
             Console.ReadKey(true);
+        }
+
+        private static void DisplayTailInformation(int maxLength, IParserResults<IGDFile> iprs)
+        {
+            var sequence = (
+                new
+                {
+                    Title = TitleSequence_CharacterSetComputations,
+                    Value = RegularLanguageSet.CountComputations()
+                }).GetArray(
+                new
+                {
+                    Title = TitleSequence_CharacterSetCache,
+                    Value = RegularLanguageSet.CountComputationCaches()
+                },
+                new
+                {
+                    Title = TitleSequence_VocabularyCache,
+                    Value = GrammarVocabulary.CountComputations()
+                },
+                new
+                {
+                    Title = TitleSequence_VocabularyComputations,
+                    Value = GrammarVocabulary.CountComputationCaches()
+                });
+            if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
+            {
+                sequence = sequence.AddBefore(
+                new
+                {
+                    Title = TitleSequence_NumberOfRules,
+                    Value = iprs.Result.GetRules().Count()
+                }, new
+                {
+                    Title = TitleSequence_NumberOfTokens,
+                    Value = iprs.Result.GetTokens().Count()
+                },
+                null);
+            }
+            foreach (var element in sequence)
+                if (element == null)
+                    Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
+                else
+                {
+                    var s = string.Format("{0}{1} : {2}", ' '.Repeat(maxLength - element.Title.Length), element.Title, element.Value);
+                    Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));
+                }
         }
 
         private static void FinishLogo(int oldestLongest, int cy, int cx)
         {
-            Console.CursorTop = cy - 3;
-            Console.CursorLeft = cx;
-            Console.WriteLine("{0}═╕", '═'.Repeat(longestLineLength - oldestLongest));
-            Console.CursorTop = cy - 2;
-            Console.CursorLeft = cx;
-            Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - oldestLongest));
-            Console.CursorTop = cy - 1;
-            Console.CursorLeft = cx;
-            Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - oldestLongest));
-            Console.CursorTop = cy;
-            Console.CursorLeft = cx;
-            Console.WriteLine("{0}─┤", '─'.Repeat(longestLineLength - oldestLongest));
+            bool canAdjustConsoleLocale = true;
+            try
+            {
+                Console.CursorTop = cy - 3;
+            }
+            catch (ArgumentOutOfRangeException) { canAdjustConsoleLocale = false; }
+            if (canAdjustConsoleLocale)
+            {
+                Console.CursorLeft = cx;
+                Console.WriteLine("{0}═╕", '═'.Repeat(longestLineLength - oldestLongest));
+                Console.CursorTop = cy - 2;
+                Console.CursorLeft = cx;
+                Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - oldestLongest));
+                Console.CursorTop = cy - 1;
+                Console.CursorLeft = cx;
+                Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - oldestLongest));
+                if ((options & ValidOptions.QuietMode) == ValidOptions.None)
+                {
+                    Console.CursorTop = cy;
+                    Console.CursorLeft = cx;
+                    Console.WriteLine("{0}─┤", '─'.Repeat(longestLineLength - oldestLongest));
+                }
+                else
+                {
+                    Console.CursorTop = cy;
+                    Console.CursorLeft = cx;
+                    Console.WriteLine("{0}═╛", '═'.Repeat(longestLineLength - oldestLongest));
+                }
+            }
         }
 
         private static void DisplayBuildBreakdown(ParserBuilderResults resultsOfBuild, int maxLength)
@@ -449,6 +523,13 @@ namespace Oilexer
                  select new { Path = folder, Files = folderFiles, FileCount = folderFiles.Length, EntryCount = folderFiles.Sum(fileData => fileData.Entries.Length) }).ToArray();
 
             var consoleOriginal = Console.ForegroundColor;
+            int longestName = ((from entry in iprs.Result
+                                let tokenEntry = entry as ITokenEntry
+                                let ruleEntry = entry as IProductionRuleEntry
+                                where tokenEntry != null || ruleEntry != null
+                                let nameLength = tokenEntry == null ? ruleEntry.Name.Length : tokenEntry.Name.Length
+                                orderby nameLength descending
+                                select nameLength).FirstOrDefault());
             foreach (var folder in folderEntries)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
@@ -477,16 +558,466 @@ namespace Oilexer
                         Console.WriteLine("//{1} entries in {0}", file.File, file.Entries.Length);
                     Console.ForegroundColor = consoleOriginal;
                     foreach (var entry in file.Entries)
-                    {
-                        //Console.ForegroundColor = ConsoleColor.DarkGreen;
-                        //Console.WriteLine("/*Line: {0}*/", entry.Line);
-                        //Console.ForegroundColor = consoleOriginal;
-                        Console.WriteLine(entry);
-                        Console.WriteLine();
-                    }
+                        DisplaySyntax(entry, longestName);
                 }
             }
         }
+
+        private static void DisplaySyntax(IEntry entry, int longestName)
+        {
+            if (entry is IProductionRuleEntry)
+                DisplaySyntax((IProductionRuleEntry)entry, longestName);
+            else if (entry is ITokenEntry)
+                DisplaySyntax((ITokenEntry)entry, longestName);
+            Console.WriteLine();
+        }
+
+        private static void DisplaySyntax(IProductionRuleEntry nonTerminal, int longestName)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.Write("{0} ", nonTerminal.Name);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            //Show all of the rule start symbols aligned to the same point.
+            Console.WriteLine("{1}::={0}", nonTerminal.ElementsAreChildren ? ">" : string.Empty, ' '.Repeat((longestName + (nonTerminal.ElementsAreChildren ? 0 : 1)) - nonTerminal.Name.Length));
+            Console.ForegroundColor = consoleColor;
+            bool startingLine = true;
+            DisplaySeriesSyntax<IProductionRuleItem, IProductionRule, IProductionRuleSeries>(nonTerminal, ref startingLine);
+
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            //If the cursor position is changeable, move it back one.
+            if (!startingLine)
+            {
+                try
+                {
+                    Console.CursorLeft--;
+                }
+                catch (ArgumentOutOfRangeException) { }
+            }
+            //Insert an ending ';'
+            Console.WriteLine(";");
+            Console.ForegroundColor = consoleColor;
+        }
+
+
+        private static void DisplaySyntax<T>(T item, ref bool startingLine, int depth)
+            where T :
+                IScannableEntryItem
+        {
+            if (item is IProductionRuleGroupItem)
+                DisplayGroupSyntax<IProductionRuleItem, IProductionRule, IProductionRuleSeries>((IProductionRuleGroupItem)item, ref startingLine, depth);
+            else if (item is ILiteralCharReferenceProductionRuleItem)
+                DisplaySyntax((ILiteralCharReferenceProductionRuleItem)item, ref startingLine, depth);
+            else if (item is ILiteralStringReferenceProductionRuleItem)
+                DisplaySyntax((ILiteralStringReferenceProductionRuleItem)item, ref startingLine, depth);
+            else if (item is IRuleReferenceProductionRuleItem)
+                DisplaySyntax((IRuleReferenceProductionRuleItem)item, ref startingLine, depth);
+            else if (item is ITokenReferenceProductionRuleItem)
+                DisplaySyntax((ITokenReferenceProductionRuleItem)item, ref startingLine, depth);
+            else if (item is InlinedTokenReferenceTokenItem)
+                DisplaySyntax((InlinedTokenReferenceTokenItem)(object)item, ref startingLine, depth);
+            else if (item is ILiteralCharTokenItem)
+                DisplaySyntax((ILiteralCharTokenItem)item, ref startingLine, depth);
+            else if (item is ILiteralStringTokenItem)
+                DisplaySyntax((ILiteralStringTokenItem)item, ref startingLine, depth);
+            else if (item is ITokenGroupItem)
+                DisplayGroupSyntax<ITokenItem, ITokenExpression, ITokenExpressionSeries>((ITokenGroupItem)item, ref startingLine, depth);
+            else if (item is ICharRangeTokenItem)
+                DisplaySyntax((ICharRangeTokenItem)item, ref startingLine, depth);
+            else if (item is ICommandTokenItem)
+                DisplaySyntax((ICommandTokenItem)item, ref startingLine, depth);
+            DisplayItemInfo(item, ref startingLine, depth);
+        }
+
+        private static void DisplayItemInfo(IScannableEntryItem item, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if (!string.IsNullOrEmpty(item.Name))
+            {
+                Console.Write(':');
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.Write(item.Name);
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(';');
+            }
+            if (item.RepeatOptions == ScannableEntryItemRepeatInfo.OneOrMore)
+                Console.Write("+");
+            else if (item.RepeatOptions == ScannableEntryItemRepeatInfo.ZeroOrMore)
+                Console.Write("*");
+            else if (item.RepeatOptions == ScannableEntryItemRepeatInfo.ZeroOrOne)
+                Console.Write("?");
+            else if (item.RepeatOptions != ScannableEntryItemRepeatInfo.None)
+            {
+                Console.Write("{");
+                if (item.RepeatOptions.Min != null && item.RepeatOptions.Max != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write(item.RepeatOptions.Min.Value);
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write(", ");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write(item.RepeatOptions.Max.Value);
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                }
+                else if (item.RepeatOptions.Max != null)
+                {
+                    Console.Write(" ,");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write(item.RepeatOptions.Max.Value);
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                }
+                else if (item.RepeatOptions.Min != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write(item.RepeatOptions.Min.Value);
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                }
+                Console.Write("}");
+            }
+            if (item is ILiteralStringTokenItem)
+            {
+                var stringItem = (ILiteralStringTokenItem)item;
+                if (stringItem.SiblingAmbiguity)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write("**");
+                }
+            }
+            Console.ForegroundColor = consoleColor;
+
+            Console.Write(" ");
+            if (startingLine)
+                startingLine = false;
+        }
+
+        private static void DisplaySyntax(IRuleReferenceProductionRuleItem item, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(item.Reference.Name);
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplaySyntax(ITokenReferenceProductionRuleItem item, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(item.Reference.Name);
+            Console.ForegroundColor = consoleColor;
+        }
+
+        /**
+         *  <summary>
+         *  Displays the syntax of a group, from either a token
+         *  or a production rule.
+         *  </summary>
+         *  <typeparam name="TItem">The kind of scannable entry item.</typeparam>
+         *  <typeparam name="TExpression">The kind of expression.</typeparam>
+         *  <typeparam name="TSeries">The kind of expression series.</typeparam>
+         *  <param name="series">The <typeparamref name="TSeries"/> instance which represents the group.</param>
+         *  <param name="startingLine">Whether the next element written starts the line.</param>
+         *  <param name="depth">The tabbing depth threshold.</param>
+         * */
+        private static void DisplayGroupSyntax<TItem, TExpression, TSeries>(TSeries series, ref bool startingLine, int depth)
+            where TItem :
+                IScannableEntryItem
+            where TExpression :
+                IReadOnlyCollection<TItem>
+            where TSeries :
+                IReadOnlyCollection<TExpression>
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            bool needLine = series.Count > 1;
+            if (!startingLine && needLine)
+            {
+                Console.WriteLine();
+                startingLine = true;
+            }
+            if (needLine)
+                Console.WriteLine("{0}(", ' '.Repeat((depth + 1) * 4));
+            else
+                if (startingLine)
+                    Console.Write("{0}(", ' '.Repeat((depth + 1) * 4));
+                else
+                    Console.Write("(");
+            if (!needLine && startingLine)
+                startingLine = false;
+            Console.ForegroundColor = consoleColor;
+            DisplaySeriesSyntax<TItem, TExpression, TSeries>(series, ref startingLine, depth + 1);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if (!startingLine)
+            {
+                if (needLine)
+                    Console.WriteLine();
+            }
+            else
+                startingLine = false;
+            if (needLine)
+                Console.Write("{0})", ' '.Repeat((depth + 1) * 4));
+            else
+            {
+                try
+                {
+                    if (!startingLine)
+                        Console.CursorLeft--;
+                }
+                catch (System.ArgumentOutOfRangeException) { }
+                Console.Write(")");
+            }
+            Console.ForegroundColor = consoleColor;
+        }
+
+        /**
+         *  <summary>
+         *  Displays the syntax of a series of unified expressions.
+         *  </summary>
+         *  <typeparam name="TItem">The kind of scannable entry item.</typeparam>
+         *  <typeparam name="TExpression">The kind of expression.</typeparam>
+         *  <typeparam name="TSeries">The kind of expression series.</typeparam>
+         *  <param name="series">The <typeparamref name="TSeries"/> instance which represents the series.</param>
+         *  <param name="startingLine">Whether the next element written starts the line.</param>
+         *  <param name="depth">The tabbing depth threshold.</param>
+         * */
+        private static void DisplaySeriesSyntax<TItem, TExpression, TSeries>(TSeries series, ref bool startingLine, int depth = 0)
+            where TItem :
+                IScannableEntryItem
+            where TExpression :
+                IReadOnlyCollection<TItem>
+            where TSeries :
+                IReadOnlyCollection<TExpression>
+        {
+            bool first = true;
+            foreach (var expression in series)
+            {
+                if (first)
+                    first = false;
+                else
+                {
+                    var consoleColor = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    if (!startingLine)
+                    {
+                        Console.WriteLine("|");
+                        startingLine = true;
+                    }
+                    else
+                        Console.WriteLine("{0}|", ' '.Repeat((depth + 1) * 4));
+
+                    Console.ForegroundColor = consoleColor;
+                }
+
+                DisplaySyntax<TItem, TExpression>(expression, ref startingLine, depth);
+            }
+        }
+
+        private static void DisplaySyntax<T, U>(U expression, ref bool startingLine, int depth)
+            where T :
+                IScannableEntryItem
+            where U :
+                IReadOnlyCollection<T>
+        {
+            foreach (var item in expression)
+                DisplaySyntax<T>(item, ref startingLine, depth);
+        }
+
+        private static void DisplaySyntax(ILiteralCharReferenceProductionRuleItem charItem, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Gray;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(charItem.Literal.Value.ToString().Encode());
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplaySyntax(ILiteralStringReferenceProductionRuleItem charItem, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Gray;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(charItem.Literal.Value.Encode());
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplaySyntax(ITokenEntry terminal, int longestName)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            Console.Write("{0} ", terminal.Name);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("{0}:=", ' '.Repeat((longestName + 2) - terminal.Name.Length));
+            Console.ForegroundColor = consoleColor;
+            bool startingLine = true;
+            DisplaySeriesSyntax<ITokenItem, ITokenExpression, ITokenExpressionSeries>(terminal.Branches, ref startingLine);
+
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if (!startingLine)
+            {
+                try
+                {
+                    Console.CursorLeft--;
+                }
+                catch (ArgumentOutOfRangeException) { }
+            }
+            Console.WriteLine(";");
+            Console.ForegroundColor = consoleColor;
+        }
+
+
+        private static void DisplaySyntax(ICommandTokenItem commandItem, ref bool startingLine, int depth)
+        {
+            if (commandItem is IScanCommandTokenItem)
+                DisplaySyntax((IScanCommandTokenItem)commandItem, ref startingLine, depth);
+            else if (commandItem is ISubtractionCommandTokenItem)
+                DisplaySyntax((ISubtractionCommandTokenItem)commandItem, ref startingLine, depth);
+        }
+
+        private static void DisplaySyntax(ISubtractionCommandTokenItem subtractCommand, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.Write("Subtract");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write("(");
+            Console.ForegroundColor = consoleColor;
+            DisplaySeriesSyntax<ITokenItem, ITokenExpression, ITokenExpressionSeries>(subtractCommand.Left, ref startingLine, depth + 1);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write(",");
+            Console.ForegroundColor = consoleColor;
+            DisplaySeriesSyntax<ITokenItem, ITokenExpression, ITokenExpressionSeries>(subtractCommand.Right, ref startingLine, depth + 1);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(")");
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplaySyntax(IScanCommandTokenItem scanCommand, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.Write("Scan");
+            DisplayCommandArguments(scanCommand, ref startingLine, depth, consoleColor);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write(", ");
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.Write(scanCommand.SeekPast);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(")");
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplayCommandArguments(IScanCommandTokenItem scanCommand, ref bool startingLine, int depth, ConsoleColor consoleColor)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write("(");
+            bool first = true;
+            foreach (var arg in scanCommand.Arguments)
+            {
+                if (first)
+                    first = false;
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write(", ");
+                    Console.ForegroundColor = consoleColor;
+                }
+                DisplaySeriesSyntax<ITokenItem, ITokenExpression, ITokenExpressionSeries>(arg, ref startingLine, depth + 1);
+            }
+        }
+
+        private static void DisplaySyntax(ICharRangeTokenItem charRange, ref bool startingLine, int depth)
+        {
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.Write(charRange.Range);
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplaySyntax(InlinedTokenReferenceTokenItem item, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(item.Source.Reference.Name);
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplaySyntax(ILiteralStringTokenItem stringItem, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Gray;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(stringItem.Value.Encode());
+            Console.ForegroundColor = consoleColor;
+        }
+
+        private static void DisplaySyntax(ILiteralCharTokenItem charItem, ref bool startingLine, int depth)
+        {
+            var consoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Gray;
+            if (startingLine)
+            {
+                Console.Write(' '.Repeat((depth + 1) * 4));
+                startingLine = false;
+            }
+            Console.Write(charItem.Value.ToString().Encode());
+            Console.ForegroundColor = consoleColor;
+        }
+
+
 
         private static void DisplayLogo()
         {
@@ -500,7 +1031,10 @@ namespace Oilexer
             Console.WriteLine("╒═{0}", '═'.Repeat(longestLineLength));
             Console.WriteLine("│ {0}", ProjectOpenLine);
             Console.WriteLine("│ {0}", copyright.Copyright);
-            Console.Write("├─{0}", '─'.Repeat(longestLineLength));
+            if ((options & ValidOptions.QuietMode) == ValidOptions.None)
+                Console.Write("├─{0}", '─'.Repeat(longestLineLength));
+            else
+                Console.Write("╘═{0}", '═'.Repeat(longestLineLength));
         }
 
         private static string GetPhaseSubString(ParserBuilderPhase phase)
@@ -559,7 +1093,11 @@ namespace Oilexer
         {
             ParserBuilderResults resultsOfBuild = iprs.Result.Build(iprs.Errors, phase =>
             {
-                Console.Title = string.Format("{0} - {1}...", Program.baseTitle, GetPhaseSubString(phase));
+                try
+                {
+                    Console.Title = string.Format("{0} - {1}...", Program.baseTitle, GetPhaseSubString(phase));
+                }
+                catch (IOException) { }
             });
             return resultsOfBuild;
         }
@@ -718,7 +1256,7 @@ namespace Oilexer
             longestLineLength = usageLines.Max(p => p.Length);
             if ((options & ValidOptions.NoLogo) == ValidOptions.None)
                 FinishLogo(oldMaxLongestLength, Console.CursorTop, Console.CursorLeft);
-            else
+            else if ((options & ValidOptions.QuietMode) == ValidOptions.None)
                 Console.WriteLine("╒═{0}═╕", '═'.Repeat(longestLineLength));
             foreach (string s in usageLines)
                 Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));

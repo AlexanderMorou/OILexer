@@ -26,7 +26,7 @@ namespace Oilexer.Parser.Builder
 using Oilexer.FiniteAutomata.Rules;
     using Oilexer.FiniteAutomata.Tokens;
     /// <summary>
-    /// Provides a series of extension methdos for the parser compiler 
+    /// Provides a series of extension methdos for the parser intermediateCompiler 
     /// to operate upon the data sets provided by the grammar description
     /// language.
     /// </summary>
@@ -595,7 +595,7 @@ using Oilexer.FiniteAutomata.Rules;
             else if (item is IRuleReferenceProductionRuleItem)
                 result = ((IRuleReferenceProductionRuleItem)(item)).BuildNFA(symbols, builder);
             else
-                throw new ArgumentException("item");
+                throw new ArgumentException("series");
             result.HandleRepeatCycle<GrammarVocabulary, SyntacticalNFAState, SyntacticalDFAState, IProductionRuleSource, SyntacticalNFARootState, IProductionRuleItem>(item, InliningCore.ProductionRuleRootStateClonerCache, () => new SyntacticalNFAState(builder));
             result.SetInitial(item);
             List<SyntacticalNFAState> flatForm = new List<SyntacticalNFAState>();

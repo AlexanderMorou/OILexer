@@ -6,9 +6,9 @@ using Oilexer.Translation;
 namespace Oilexer.Compiler
 {
     /// <summary>
-    /// Defines properties and methods for working with a compiler that first must translate
+    /// Defines properties and methods for working with a intermediateCompiler that first must translate
     /// the code from an intermediate format into a proper language code and then invokes the
-    /// appropriate compiler.
+    /// appropriate intermediateCompiler.
     /// </summary>
     public interface IIntermediateCompiler
     {
