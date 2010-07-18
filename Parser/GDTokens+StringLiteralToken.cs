@@ -82,14 +82,14 @@ namespace Oilexer.Parser
                                 break;
                             case 'x':
                                 i++;
-                                if (GDParser.GDTokenizer.IsHexadecimalChar(s[i]) && GDParser.GDTokenizer.IsHexadecimalChar(s[i + 1]))
+                                if (GDParser.Lexer.IsHexadecimalChar(s[i]) && GDParser.Lexer.IsHexadecimalChar(s[i + 1]))
                                     result.Append((char)Convert.ToInt32(string.Format("{0}{1}", s[i], s[i + 1]), 16));
                                 //only by one, the iteration will pick up the next.
                                 i++;
                                 break;
                             case 'u':
                                 i++;
-                                if (GDParser.GDTokenizer.IsHexadecimalChar(s[i]) && GDParser.GDTokenizer.IsHexadecimalChar(s[i + 1]) && GDParser.GDTokenizer.IsHexadecimalChar(s[i + 2]) && GDParser.GDTokenizer.IsHexadecimalChar(s[i + 3]))
+                                if (GDParser.Lexer.IsHexadecimalChar(s[i]) && GDParser.Lexer.IsHexadecimalChar(s[i + 1]) && GDParser.Lexer.IsHexadecimalChar(s[i + 2]) && GDParser.Lexer.IsHexadecimalChar(s[i + 3]))
                                     result.Append((char)Convert.ToInt32(string.Format("{0}{1}{2}{3}", s[i], s[i + 1], s[i + 2], s[i + 3]), 16));
                                 //only by three, same reason as above.
                                 i += 3;

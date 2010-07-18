@@ -428,14 +428,14 @@ namespace Oilexer.Types.Members
         void IMembers.Add(IMember item)
         {
             if (!(item is TItem))
-                throw new ArgumentException("item not of valid type.");
+                throw new ArgumentException("series not of valid type.");
             this.Add((TItem)item);
         }
         [DebuggerHidden()]
         public void Add(TItem item)
         {
             if (this.ContainsKey(item.GetUniqueIdentifier()))
-                throw new InvalidOperationException("item containing the same identifier exists.");
+                throw new InvalidOperationException("series containing the same identifier exists.");
             base.Add(item.GetUniqueIdentifier(), item);
         }
     }

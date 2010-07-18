@@ -19,7 +19,7 @@ namespace Oilexer.Compiler
         /// </summary>
         bool AllowUnsafeCode { get; set; }
         /// <summary>
-        /// Returns/sets whether the compiler should generate an accompanying XML documentation set.
+        /// Returns/sets whether the intermediateCompiler should generate an accompanying XML documentation set.
         /// </summary>
         bool GenerateXMLDocs { get; set; }
         /// <summary>

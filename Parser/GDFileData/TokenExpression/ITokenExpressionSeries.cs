@@ -26,6 +26,11 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// Returns the index in the original stream the <see cref="ITokenExpressionSeries"/> was declared at.
         /// </summary>
         long Position { get; }
+        /// <summary>
+        /// Returns the <see cref="String"/> representing the
+        /// name of the file in which the <see cref="ITokenExpressionSeries"/>
+        /// was defined.
+        /// </summary>
         string FileName { get; }
     }
 }

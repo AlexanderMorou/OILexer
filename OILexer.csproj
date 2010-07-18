@@ -816,7 +816,7 @@
     <Compile Include="Parser\GDFileData\TokenExpression\TokenGroupItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\TokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\TokenReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDParser+GDTokenizer.cs" />
+    <Compile Include="Parser\GDParser+Lexer.cs" />
     <Compile Include="Parser\GDParser.cs" />
     <Compile Include="Parser\GDParserErrors.cs" />
     <Compile Include="Parser\GDParserResults.cs" />

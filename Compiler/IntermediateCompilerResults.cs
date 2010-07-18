@@ -77,7 +77,7 @@ namespace Oilexer.Compiler
         }
 
         /// <summary>
-        /// Returns the native return value from the compiler.
+        /// Returns the native return value from the intermediateCompiler.
         /// </summary>
         public int NativeReturnValue
         {

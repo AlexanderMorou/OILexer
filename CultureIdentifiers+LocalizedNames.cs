@@ -1330,7 +1330,7 @@ namespace Oilexer
             ///</summary>
             ///<remarks>Culture ID: 0x0043
             ///Culture Name: uz</remarks>
-            public const string Uzbek = "U'zbek";
+            public const string Uzbek = "TExpression'zbek";
             ///<summary>
             ///Culture name for Uzbek (Cyrillic) - Uzbekistan.
             ///</summary>
@@ -1344,7 +1344,7 @@ namespace Oilexer
             ///<remarks>Culture ID: 0x0443
             ///Culture Name: uz-UZ-Latn</remarks>
             [SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores")]
-            public const string Uzbek_Latin_Uzbekistan = "U'zbek (U'zbekiston Respublikasi)";
+            public const string Uzbek_Latin_Uzbekistan = "TExpression'zbek (TExpression'zbekiston Respublikasi)";
             ///<summary>
             ///Culture name for Vietnamese.
             ///</summary>

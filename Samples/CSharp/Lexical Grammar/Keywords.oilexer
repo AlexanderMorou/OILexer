@@ -10,7 +10,19 @@ AttributeTargets                           :=
               "property":PropertyTarget;    |
                 "return":ReturnTarget;      |
                   "type":TypeTarget;        ;
-
+LinqKeywords                               :=
+             "ascending":Ascending;         |
+                    "by":By;                |
+            "descending":Descending;        |
+                  "from":From;              |
+                "equals":Equals;            |
+                  "into":Into;              |
+                  "join":Join;              |
+                   "let":Let;               |
+                 "group":Group;             |
+               "orderby":OrderBy;           |
+                 "where":Where;             ;
+	
 Keywords>Identifier,AttributeTargets       :=
              "__arglist":__ArgList;         |
              "__makeref":__MakeRef;         |
@@ -18,10 +30,8 @@ Keywords>Identifier,AttributeTargets       :=
             "__refvalue":__RefValue;        |
                    "add":Add;               |
                  "alias":Alias;             |
-             "ascending":Ascending;         |
                   "base":Base;              |
                  "break":Break;             |
-                    "by":By;                |
                   "case":Case;              |
                  "catch":Catch;             |
                "checked":Checked;           |
@@ -29,33 +39,25 @@ Keywords>Identifier,AttributeTargets       :=
               "continue":Continue;          |
                "default":Default;           |
               "delegate":Delegate;          |
-            "descending":Descending;        |
                     "do":Do;                |
                   "else":Else;              |
                   "enum":Enum;              |
-                "equals":Equals;            |
                  "event":Event;             |
                "finally":Finally;           |
                  "fixed":Fixed;             |
                    "for":For;               |
                "foreach":ForEach;           |
-                  "from":From;              |
                    "get":Get;               |
                 "global":Global;            |
                   "goto":GoTo;              |
-                 "group":Group;             |
                 "hidden":Hidden;            |
                     "if":If;                |
                     "in":In;                |
              "interface":Interface;         |
-                  "into":Into;              |
-                  "join":Join;              |
-                   "let":Let;               |
                   "lock":Lock;              |
              "namespace":Namespace;         |
                     "on":On;                |
               "operator":Operator;          |
-               "orderby":OrderBy;           |
                    "out":Out;               |
                 "params":Params;            |
                    "ref":Ref;               |
@@ -75,7 +77,6 @@ Keywords>Identifier,AttributeTargets       :=
              "unchecked":UnChecked;         |
                  "using":Using;             |
                    "var":Var;               |
-                 "where":Where;             |
                  "while":While;             |
                  "yield":Yield;             ;
 

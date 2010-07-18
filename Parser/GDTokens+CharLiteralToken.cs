@@ -15,6 +15,7 @@ namespace Oilexer.Parser
             public CharLiteralToken(string charDef, bool caseInsensitive, int column, int line, long position)
                 : base(column, line, position)
             {
+                
                 this.charDef = charDef;
                 this.caseInsensitive = caseInsensitive;
             }
@@ -57,7 +58,7 @@ namespace Oilexer.Parser
                                         charDef[index + 3], 
                                         charDef[index + 4], 
                                         charDef[index + 5], 
-                                        charDef[index + 5] }), 16);
+                                        charDef[index + 6] }), 16);
                             }
                             return char.MinValue;
                         case 'x':

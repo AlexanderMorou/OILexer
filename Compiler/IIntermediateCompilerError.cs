@@ -15,7 +15,7 @@ namespace Oilexer.Compiler
         /// Gets or sets the column number where the source of the error occurs.
         /// </summary>
         /// <Returns>
-        /// The column number of the source file where the compiler encountered the error.
+        /// The column number of the source file where the intermediateCompiler encountered the error.
         /// </Returns>
         int Column { get; }
         /// <summary>
@@ -52,7 +52,7 @@ namespace Oilexer.Compiler
         /// Gets or sets the line number where the source of the error occurs.
         /// </summary>
         /// <Returns>
-        /// The line number of the source file where the compiler encountered the error.
+        /// The line number of the source file where the intermediateCompiler encountered the error.
         /// </Returns>
         int Line { get; }
     }

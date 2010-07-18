@@ -86,7 +86,7 @@ namespace Oilexer.Types.Members
                     foreach (IMethodMember imm in this.baseCollection)
                         if (i++ == index)
                             return imm;
-                    throw new ArgumentOutOfRangeException("index", "beyond last item");
+                    throw new ArgumentOutOfRangeException("index", "beyond last series");
                 }
             }
 

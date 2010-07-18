@@ -73,7 +73,7 @@ namespace Oilexer.FiniteAutomata.Rules
              * Rules won't be a part of the in-order list of 
              * elements, but it is important to be able to refer to
              * all constructs in a uniform manner for the sake of
-             * the parser compiler.
+             * the parser intermediateCompiler.
              * */
             foreach (var rule in rules)
                 sorted.Add(new GrammarRuleSymbol(rule));

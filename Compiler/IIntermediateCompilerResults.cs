@@ -26,7 +26,7 @@ namespace Oilexer.Compiler
         /// <summary>
         /// Returns the command line used to compile.
         /// </summary>
-        /// <remarks>If the compiler wasn't command-line based, this is null.</remarks>
+        /// <remarks>If the intermediateCompiler wasn't command-line based, this is null.</remarks>
         string CommandLine { get; }
     }
 }

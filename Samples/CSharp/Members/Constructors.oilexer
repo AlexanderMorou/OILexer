@@ -12,8 +12,8 @@ InternConstructorDeclaration              ::=
     Attributes:Attributes;?
     (
         "public"                            |
-        "protected" "internal"              |
-        "internal" "protected"              |
+        "protected" "internal"?             |
+        "internal" "protected"?             |
         "private"
     ):Modifiers;?
     Identifier:Name;
@@ -29,18 +29,17 @@ ConstructorInitializer                    ::=
 ExternConstructorDeclaration              ::=
     Attributes:Attributes;?
     (
-        "public" "extern"                   |
-        "extern" "public"                   |
-        "protected" "internal" "extern"     |
-        "internal" "protected" "extern"     |
-        "protected" "extern" "internal"     |
-        "internal" "extern" "protected"     |
-        "extern" "protected" "internal"     |
-        "extern" "internal" "protected"     |
-        "private" "extern"                  |
-        "extern" "private"                  
-    ):Modifiers;?
-    Identifier:Name;
+        "public" "extern"?                  |
+        "extern" "public"?                  |
+        "protected" "internal"? "extern"?   |
+        "internal" "protected"? "extern"?   |
+        "protected" "extern"? "internal"?   |
+        "internal" "extern"? "protected"?   |
+        "extern" "protected"? "internal"?   |
+        "extern" "internal" "protected"?    |
+        "private" "extern"?                 |
+        "extern" "private"?                 
+    ):Modifiers;? Identifier:Name;
     '(' FormalParameterList:Parameters;? ')'
     ConstructorInitializer:Initializer;?
     ';'                                     ;
