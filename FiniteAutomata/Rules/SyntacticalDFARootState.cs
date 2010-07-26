@@ -100,16 +100,18 @@ namespace Oilexer.FiniteAutomata.Rules
                                        where stateRuleInfo[state].Count == 0
                                        select state).ToArray())
                 stateRuleInfo.Remove(deadState);
-            followed.Sort(SyntacticalRootComparer.Singleton);
             ruleEdges = (from rule in ruleEdges.Keys
                          orderby rule.EntryName
                          select rule).ToDictionary(key => key, value => (from edge in ruleEdges[value]
                                                                          orderby edge.StateValue
                                                                          select edge).ToList());
-            leftRecursiveRules = (from v in ruleEdges.Keys
-                                  where v.DependsOn(v.Entry)
-                                  select v).ToList();
+            leftRecursiveRules = (from ruleState in ruleEdges.Keys
+                                  where ruleState.DependsOn(ruleState.Entry)
+                                  select ruleState).ToList();
 
+            var nonLeftRecursiveRules = ruleEdges.Keys.Except(leftRecursiveRules).ToList();
+            leftRecursiveRules.Sort(SyntacticalRootComparer.Singleton);
+            nonLeftRecursiveRules.Sort(SyntacticalRootComparer.Singleton);
         }
 
         public string EntryName

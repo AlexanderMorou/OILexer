@@ -7,6 +7,7 @@
 #RulePrefix                             "CS";
 #RuleSuffix                           "Rule";
 #Root                      "CompilationUnit";
+#Namespace                "Languages.CSharp";
 
 #include                "Attributes.oilexer";
 #include          "GeneralTemplates.oilexer";

@@ -1443,6 +1443,9 @@ namespace Oilexer.Parser
                         case GDTokens.PreprocessorType.RuleSuffixDirective:
                             kind = StringTerminalKind.RuleSuffix;
                             break;
+                        case GDTokens.PreprocessorType.NamespaceDirective:
+                             kind = StringTerminalKind.Namespace;
+                            break;
                         default:
                             Expect("#include, #AssemblyName, #LexerName, #ParserName, #GrammarName, #TokenPrefix, #TokenSuffix, #RulePrefix, or #RuleSuffix directive", pp.Position);
                             break;

@@ -1,3 +1,8 @@
+#if x64
+using SlotType = System.UInt64;
+#elif x86
+using SlotType = System.UInt32;
+#endif
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -13,11 +18,9 @@ using Oilexer.Types;
 using Oilexer.Utilities.Collections;
 using Oilexer.FiniteAutomata.Rules;
 using Oilexer.Parser.GDFileData;
-#if x64
-using SlotType = System.UInt64;
-#elif x86
-using SlotType = System.UInt32;
-#endif
+using Oilexer._Internal.Inlining;
+using Oilexer.FiniteAutomata.Tokens;
+using System.Runtime.CompilerServices;
 
 
 namespace Oilexer._Internal
@@ -72,35 +75,79 @@ namespace Oilexer._Internal
                 return target.ContainsRule(entry);
             //Add the current element to the followed elements
             followed.Add(target);
-            //Step through the out transition conditions.
-            foreach (var transition in target.OutTransitions.Keys)
-                //Step through the rules within the transition.
-                foreach (var rule in from rule in transition.Breakdown.Rules
-                                     select rule.Source)
-                {
-                    SyntacticalDFARootState state = null;
-                    //Exit with true when found.
-                    if (rule == entry)
-                        return true;
-                    //otherwise, if the root-state of the rule depends upon it...
-                    else if ((state = target[rule]).DependsOn(entry, followed))
-                        return true;
-                    /* *
-                     * ... in the event that the initial state of the rule is 
-                     * an edge state, continue checking the state after that rule
-                     * is called for, to ensure that the dependencies after that
-                     * rule's reference point are considered.  i.e. a hidden
-                     * dependency.
-                     * */
-                    else if (state.IsEdge && target.OutTransitions[transition].DependsOn(entry, followed))
-                        return true;
-                }
+            var stateTransitionUnion = target.OutTransitions.FullCheck;
+            var breakdown = stateTransitionUnion.Breakdown;
+            //Step through the rules within the state.
+            var helper = new DependsOnPredicatedHelper();
+            foreach (var rule in from rule in breakdown.Rules
+                                 select rule.Source)
+            {
+                helper.rule = rule;
+                SyntacticalDFARootState state = null;
+                //Exit with true when found.
+                if (rule == entry)
+                    return true;
+                //otherwise, if the root-state of the rule depends upon it...
+                else if ((state = target[rule]).DependsOn(entry, followed))
+                    return true;
+                /* *
+                 * ... in the event that the initial state of the rule is 
+                 * an edge state, continue checking the state after that rule
+                 * is called for, to ensure that the dependencies after that
+                 * rule's reference point are considered.  i.e. a hidden
+                 * dependency.
+                 * */
+                else if (state.CanBeEmpty && 
+                    target.OutTransitions[target.OutTransitions.Keys.First(helper.rulePredicate)].DependsOn(entry, followed))
+                    return true;
+            }
+            /* *
+             * Same thing as the above, but only on the tokens
+             * instead of the rules.
+             * */
+            foreach (var token in breakdown.CaptureTokens)
+            {
+                helper.token = token.Source as InlinedTokenEntry;
+                if ((helper.token == null) ||
+                    (helper.token.DFAState == null))
+                    continue;
+                if (helper.token.DFAState.IsEdge &&
+                    target.OutTransitions[target.OutTransitions.Keys.First(helper.tokenPredicate)].DependsOn(entry, followed))
+                    return true;
+            }
+            helper.token = null;
+            helper.rule = null;
             return false;
         }
 
         public static bool DependsOn(this SyntacticalDFARootState target, IProductionRuleEntry entry)
         {
             return target.DependsOn(entry, new List<SyntacticalDFAState>());
+        }
+
+        private class DependsOnPredicatedHelper
+        {
+            internal IProductionRuleEntry rule;
+            internal InlinedTokenEntry token;
+
+            internal Func<GrammarVocabulary, bool> rulePredicate;
+            internal Func<GrammarVocabulary, bool> tokenPredicate;
+
+            public DependsOnPredicatedHelper()
+            {
+                this.rulePredicate = ContainsRule;
+                this.tokenPredicate = ContainsToken;
+            }
+
+            public bool ContainsRule(GrammarVocabulary set)
+            {
+                return set.Contains(rule);
+            }
+
+            public bool ContainsToken(GrammarVocabulary set)
+            {
+                return set.Breakdown.Tokens.Contains(token);
+            }
         }
     }
 }

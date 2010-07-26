@@ -229,7 +229,7 @@ namespace Oilexer.Compiler
         }
 
         /// <summary>
-        /// Returns/sets whether the intermediateCompiler should generate an accompanying XML documentation set.
+        /// Returns/sets whether the compiler should generate an accompanying XML documentation set.
         /// </summary>
         public bool GenerateXMLDocs
         {

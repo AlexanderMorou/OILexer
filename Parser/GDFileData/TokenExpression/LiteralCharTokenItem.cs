@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Oilexer.Translation;
-using Oilexer.Expression;
 using Oilexer._Internal;
 
 namespace Oilexer.Parser.GDFileData.TokenExpression

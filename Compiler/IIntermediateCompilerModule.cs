@@ -15,7 +15,7 @@ namespace Oilexer.Compiler
         /// </summary>
         CompilerModuleSupportFlags Support { get; }
         /// <summary>
-        /// Returns the type of intermediateCompiler module the <see cref="IIntermediateCompilerModule"/> is.
+        /// Returns the type of compiler module the <see cref="IIntermediateCompilerModule"/> is.
         /// </summary>
         CompilerModuleType Type { get; }
         /// <summary>

@@ -54,17 +54,9 @@ CommonEscapes :=
           HexEscape /* Hexadecimal Escape */|
           OctEscape /* Octal Escape */      |
           ErrEscape /* Errored escape */);
-#ifdef Lexer
-#if Lexer == "CSPreprocessor"
+
 Identifier := 
     '@'? IdentifierOrKeyword;
-#else
-Identifier := 
-    Subtract(IdentifierOrKeyword, Keywords | Modifiers | IntegralDataTypes) |
-    '@'IdentifierOrKeyword;
-#endif
-#endif
-
 /*
 IdentifierChar := [A-Z_a-z];
 
@@ -169,12 +161,14 @@ Whitespace :=
 
 #elif Lexer == "CSParser"
 Whitespace :=*
-    ([:Zs:]                                 | 
-    '\u0009'                                | 
-    '\v'                                    | 
-    '\t'                                    |
-    '\f'                                    |
-    NewLine)+; 
+    (
+        [:Zs:]                              | 
+        '\u0009'                            | 
+        '\v'                                | 
+        '\t'                                |
+        '\f'
+    )+                                      |
+    NewLine; 
 #endif
 #endif
 

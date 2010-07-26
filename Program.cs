@@ -36,13 +36,20 @@ namespace Oilexer
         private static int longestLineLength = 0;
         private const string Syntax = "-s";
         private const string NoSyntax = "-ns";
-        private const string DoNotCompile = "-cmp:no";
-        private const string Compile = "-cmp:yes";
         private const string NoLogo = "-nl";
         private const string Quiet = "-q";
         private const string Verbose = "-v";
         private const string StreamAnalysis = "-a:";
         private const string StreamAnalysisExtension = "-ae:";
+        private const string Export = "-ex:";
+        private const string ExportKind_TraversalHTML = "t-html";
+        private const string ExportKind_DLL = "dll";
+        private const string ExportKind_EXE = "exe";
+        private const string ExportKind_CSharp = "cs";
+        private const string Export_TraversalHTML = Export + ExportKind_TraversalHTML;
+        private const string Export_DLL = Export + ExportKind_DLL;
+        private const string Export_EXE = Export + ExportKind_EXE;
+        private const string Export_CSharp = Export + ExportKind_CSharp;
         private const string TitleSequence_CharacterSetCache        = "Character set cache size";
         private const string TitleSequence_CharacterSetComputations = "Character set computations";
         private const string TitleSequence_VocabularyCache          = "Vocabulary set computations";
@@ -75,30 +82,54 @@ namespace Oilexer
             /// </summary>
             None,
             /// <summary>
-            /// Compiles the langauge grammar into a library.
-            /// </summary>
-            Compile                 = 0x0001,
-            /// <summary>
             /// Displays the language's sytnax at the end.
             /// </summary>
-            ShowSyntax              = 0x0002,
+            ShowSyntax              = 0x0001,
             /// <summary>
             /// Instructs the <see cref="Program"/> to not emit 
             /// the syntax at the end.
             /// </summary>
-            DoNotEmitSyntax         = 0x0004,
+            DoNotEmitSyntax         = 0x0002,
             /// <summary>
-            /// Instructs the <see cref="Program"/> to not compile 
-            /// at the end.
+            /// Instructs the <see cref="Program"/> to not
+            /// display a logo to the console.
             /// </summary>
-            DoNotCompile            = 0x0008,
-            NoLogo                  = 0x0010,
+            NoLogo                  = 0x0014,
             /// <summary>
             /// Instructs the <see cref="Program"/> to emit as little
             /// as possible to the console.
             /// </summary>
-            QuietMode               = 0x0030,
-            VerboseMode             = 0x0040,
+            QuietMode               = 0x0018,
+            /// <summary>
+            /// Instructs the <see cref="Program"/> to 
+            /// display extra information to the console.
+            /// </summary>
+            VerboseMode             = 0x0030,
+            /// <summary>
+            /// Instructs the <see cref="Program"/> to emit
+            /// a series of hypertext mark-up language (HTML)
+            /// files associated to the current grammar.
+            /// </summary>
+            ExportTraversalHTML     = 0x0240,
+            /// <summary>
+            /// Instructs the <see cref="Program"/> to emit
+            /// a dynamic link library (DLL) which can parse
+            /// strings of the described language.
+            /// </summary>
+            ExportDLL               = 0x0280,
+            /// <summary>
+            /// Instructs the <see cref="Program"/> to emit
+            /// a simple executable (EXE) which can parse
+            /// strings of the described language by accepting
+            /// a series of strings which represent file(s) to 
+            /// parse.
+            /// </summary>
+            ExportEXE               = 0x0300,
+            /// <summary>
+            /// Instructs the <see cref="Program"/> to emit
+            /// a series of C&#9839; files.
+            /// </summary>
+            ExportCSharp            = 0x0600,
         }
         public static List<string> StreamAnalysisFiles = new List<string>();
         public static string baseTitle;
@@ -136,14 +167,32 @@ namespace Oilexer
                 foreach (string s in args)
                     if (s.ToLower() == NoSyntax)
                         options = (options & ~ValidOptions.ShowSyntax) | ValidOptions.DoNotEmitSyntax;
-                    else if (s.ToLower() == DoNotCompile)
-                        options = (options & ~ValidOptions.Compile) | ValidOptions.DoNotCompile;
-                    else if (s.ToLower() == Compile)
-                        options = (options & ~ValidOptions.DoNotCompile) | ValidOptions.Compile;
                     else if (s.ToLower() == Syntax)
                         options = (options & ~ValidOptions.DoNotEmitSyntax) | ValidOptions.ShowSyntax;
                     else if (s.ToLower() == NoLogo)
                         options = options | ValidOptions.NoLogo;
+                    else if (s.ToLower() == Export_TraversalHTML)
+                        options |= ValidOptions.ExportTraversalHTML;
+                    else if (s.ToLower() == Export_TraversalHTML)
+                    {
+                        options &= ~(ValidOptions.ExportEXE | ValidOptions.ExportDLL | ValidOptions.ExportCSharp);
+                        options |= ValidOptions.ExportTraversalHTML;
+                    }
+                    else if (s.ToLower() == Export_DLL)
+                    {
+                        options &= ~(ValidOptions.ExportEXE | ValidOptions.ExportTraversalHTML | ValidOptions.ExportCSharp);
+                        options |= ValidOptions.ExportDLL;
+                    }
+                    else if (s.ToLower() == Export_EXE)
+                    {
+                        options &= ~(ValidOptions.ExportTraversalHTML | ValidOptions.ExportDLL | ValidOptions.ExportCSharp);
+                        options |= ValidOptions.ExportEXE;
+                    }
+                    else if (s.ToLower() == Export_CSharp)
+                    {
+                        options &= ~(ValidOptions.ExportEXE | ValidOptions.ExportDLL | ValidOptions.ExportTraversalHTML);
+                        options |= ValidOptions.ExportCSharp;
+                    }
                     else if (s.ToLower() == Quiet)
                         options = (options & ~ValidOptions.VerboseMode) | ValidOptions.QuietMode;
                     else if (s.ToLower() == Verbose)
@@ -229,14 +278,15 @@ namespace Oilexer
             sw.Start();
             iprs = gp.Parse(file);
             var tLenMax = (from e in iprs.Result
-                           let token = e as ITokenEntry
-                           where token != null
-                           select token.Name.Length).Max();
+                           let scannableEntry = e as IScannableEntry
+                           where scannableEntry != null
+                           select scannableEntry.Name.Length).Max();
 
-            maxLength = Math.Max(maxLength, tLenMax);
+            if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
+                maxLength = Math.Max(maxLength, tLenMax);
             int oldestLongest = longestLineLength;
             longestLineLength = Math.Max(longestLineLength, maxLength + 19);
-            if ((options & ValidOptions.NoLogo) == ValidOptions.None)
+            if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
                 FinishLogo(oldestLongest, Console.CursorTop, Console.CursorLeft);
             else if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
                 Console.WriteLine("╒═{0}═╕", '═'.Repeat(longestLineLength));
@@ -263,25 +313,93 @@ namespace Oilexer
                     Console.Title = string.Format("{0} Linking project...", baseTitle);
                 }
                 catch (IOException) { }
-                //igdb.BuildPhaseChange += new EventHandler<BuildUpdateEventArgs>(igdb_BuildPhaseChange);
                 ParserBuilderResults resultsOfBuild = Build(iprs);
                 if (resultsOfBuild == null)
                     goto errorChecker;
+                
                 if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
                 {
                     const string stateMachineCounts = "State machine state counts:";
+                    /* *
+                     * Display the number of state machine states for both rules and tokens.
+                     * */
                     Console.WriteLine("│ {0}{1} │", stateMachineCounts, ' '.Repeat(longestLineLength - stateMachineCounts.Length));
+                    /* *
+                     * Obtain a series of elements which indicate the name, state count, and token status of 
+                     * the entries in the parsed file.
+                     * */
                     var toks = (from t in iprs.Result.GetTokens()
                                 let state = t.DFAState
                                 where state != null
                                 let stateCount = t.DFAState.CountStates()
-                                orderby stateCount
-                                select new { Name = t.Name, StateCount = stateCount, NameLength = t.Name.Length}).ToArray();
-                    foreach (var token in toks)
+                                select new { Name = t.Name, StateCount = stateCount, IsToken = true}).ToArray();
+                    var rules = (from rule in iprs.Result.GetRules()
+                                 let state = resultsOfBuild.RuleStateMachines.ContainsKey(rule) ? resultsOfBuild.RuleStateMachines[rule] : null
+                                 where state != null
+                                 let stateCount = state.CountStates()
+                                 select new { Name = rule.Name, StateCount = stateCount, IsToken=false}).ToArray();
+                    //Combine the tokens and rules into one array.
+                    var combined = toks.Add(rules);
+                    //Group the elements by the number of states.
+                    var grouped = (from entry in combined
+                                   orderby entry.StateCount descending,
+                                           entry.Name ascending
+                                   group entry by entry.StateCount).ToDictionary(key => key.Key, value => value.ToList());
+                    
+                    int longestMinusComma = longestLineLength - 2;
+                    var consoleForeColor = Console.ForegroundColor;
+                    /* *
+                     * Iterate through the elements and print the names
+                     * of each entry being cautious to not fill past the edge
+                     * of the allotted space.
+                     * */
+                    foreach (var count in grouped.Keys)
                     {
-                        var s = string.Format("{2}{0} : {1}", token.Name, token.StateCount, ' '.Repeat(maxLength - token.NameLength));
-                        Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength-s.Length));
+                        string countStr = string.Format(" {0} ", count);
+                        Console.WriteLine("├─{1}{0}─┤", '─'.Repeat(longestLineLength - countStr.Length), countStr);
+                        int currentLength = 0;
+                        bool first = true;
+                        Console.Write("│ ");
+                        foreach (var element in grouped[count])
+                        {
+                            if (first)
+                                first = false;
+                            else
+                            {
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write(", ");
+                                Console.ForegroundColor = consoleForeColor;
+                                currentLength += 2;
+                            }
+                            int newLength = currentLength + element.Name.Length;
+                            /* *
+                             * In the event of spill-over, cap the edge of the
+                             * current line and start the next.
+                             * */
+                            if (newLength >= longestMinusComma)
+                            {
+                                Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - currentLength));
+                                currentLength = element.Name.Length;
+                                Console.Write("│ ");
+                            }
+                            else
+                                currentLength = newLength;
+
+                            if (element.IsToken)
+                                Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                            else
+                                Console.ForegroundColor = ConsoleColor.DarkRed;
+                            Console.Write(element.Name);
+                            Console.ForegroundColor = consoleForeColor;
+                        }
+                        //Cap the last element.
+                        Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - currentLength));
+                        
                     }
+                    Console.ForegroundColor = consoleForeColor;
+                    /* *
+                     * Separate the state machine counts from the next section.
+                     * */
                     Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
 
                 }
@@ -303,7 +421,8 @@ namespace Oilexer
                     goto __CheckErrorAgain;
                 }
 
-                if ((options & ValidOptions.DoNotCompile) == ValidOptions.None)
+                if ((options & ValidOptions.ExportDLL) == ValidOptions.ExportDLL ||
+                    (options & ValidOptions.ExportEXE) == ValidOptions.ExportEXE)
                 {
                     try
                     {
@@ -452,7 +571,7 @@ namespace Oilexer
                 Console.CursorTop = cy - 1;
                 Console.CursorLeft = cx;
                 Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - oldestLongest));
-                if ((options & ValidOptions.QuietMode) == ValidOptions.None)
+                if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
                 {
                     Console.CursorTop = cy;
                     Console.CursorLeft = cx;
@@ -1031,7 +1150,7 @@ namespace Oilexer
             Console.WriteLine("╒═{0}", '═'.Repeat(longestLineLength));
             Console.WriteLine("│ {0}", ProjectOpenLine);
             Console.WriteLine("│ {0}", copyright.Copyright);
-            if ((options & ValidOptions.QuietMode) == ValidOptions.None)
+            if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
                 Console.Write("├─{0}", '─'.Repeat(longestLineLength));
             else
                 Console.Write("╘═{0}", '═'.Repeat(longestLineLength));
@@ -1091,7 +1210,7 @@ namespace Oilexer
 
         private static ParserBuilderResults Build(IParserResults<IGDFile> iprs)
         {
-            ParserBuilderResults resultsOfBuild = iprs.Result.Build(iprs.Errors, phase =>
+            ParserBuilderResults resultsOfBuild = iprs.Result.Build(StreamAnalysisFiles, iprs.Errors, phase =>
             {
                 try
                 {
@@ -1235,32 +1354,64 @@ namespace Oilexer
         private static void DisplayUsage()
         {
             const string Usage_Options = "options:";
-            const string Usage_DoNotCompile = "    " + DoNotCompile + "  - Do not compile.";
-            const string Usage_Compile = "    " + Compile + " - Compile (default)";
-            const string Usage_Syntax = "    " + Syntax + "       - Show syntax.";
-            const string Usage_NoSyntax = "    " + NoSyntax + "      - Don't show syntax (default).";
+            const string Usage_Export = "    " + Export + "kind; Export, where kind is:";
+            //const string Usage_ExportKindIs = "      Kind is: │       ";
+            const string Usage_Export_Exe = "           " + ExportKind_EXE + " │ Executable";
+            const string Usage_Export_Dll = "           " + ExportKind_DLL + " │ Dynamic link library";
+            const string Usage_Export_CSharp = "            " + ExportKind_CSharp + " │ CSharp Code";
+            const string Usage_Export_TraversalHTML = "        " + ExportKind_TraversalHTML + " │ Traversable HTML";
+            const string Usage_Syntax = "    " + Syntax + "         │ Show syntax.";
+            const string Usage_NoSyntax = "    " + NoSyntax + "*       │ Don't show syntax";
+            const string Usage_NoLogo = "    " + NoLogo + "        │ Do not show logo";
+            const string Usage_Verbose = "    " + Verbose + "         │ Verbose mode";
+            const string Usage_QuietMode = "    " + Quiet + "         │ Quiet mode";
+            const string Usage_LineCenter = "───────────────┼";
+            const string Usage_LineDown = "───────────────┬";
+            const string Usage_LineUp = "───────────────┴";
+            const string Usage_End = "═══════════════╧";
+            const string Usage_Default = "     *         │ default";
             const string Usage_Usage = "Usage:";
             string Usage_TagLine = string.Format("    {0} [options] File [options]", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
             string[] usageLines = new string[] {
                 Usage_Usage,
                 Usage_TagLine,
-                string.Empty,
+                "-",
                 Usage_Options,
-                Usage_DoNotCompile,
-                Usage_Compile,
-                string.Empty,
+                Usage_Export,
+                Usage_LineDown,
+                Usage_Export_Exe,
+                Usage_Export_Dll,
+                Usage_Export_CSharp,
+                Usage_Export_TraversalHTML,
+                Usage_LineCenter,
+                Usage_Verbose,
+                Usage_NoLogo,
+                Usage_QuietMode,
+                Usage_LineCenter,
                 Usage_Syntax,
-                Usage_NoSyntax
+                Usage_NoSyntax,
+                Usage_LineCenter,
+                Usage_Default
             };
             int oldMaxLongestLength = longestLineLength;
-            longestLineLength = usageLines.Max(p => p.Length);
-            if ((options & ValidOptions.NoLogo) == ValidOptions.None)
+            longestLineLength = Math.Max(usageLines.Max(p => p.Length), oldMaxLongestLength);
+            if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
                 FinishLogo(oldMaxLongestLength, Console.CursorTop, Console.CursorLeft);
-            else if ((options & ValidOptions.QuietMode) == ValidOptions.None)
+            else if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
                 Console.WriteLine("╒═{0}═╕", '═'.Repeat(longestLineLength));
             foreach (string s in usageLines)
-                Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));
-            Console.WriteLine("╘═{0}═╛", '═'.Repeat(longestLineLength));
+            {
+                if (s == "-")
+                    Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
+                else if (s == Usage_LineDown || 
+                         s == Usage_LineUp || 
+                         s == Usage_LineCenter)
+                    Console.WriteLine("├─{0}{1}─┤", s, '─'.Repeat(longestLineLength - s.Length));
+                else
+                    Console.WriteLine("│ {0}{1} │", s, ' '.Repeat(longestLineLength - s.Length));
+
+            }
+            Console.WriteLine("╘═{1}{0}═╛", '═'.Repeat(longestLineLength - Usage_End.Length), Usage_End);
             Console.ReadKey(true);
         }
     }

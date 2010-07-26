@@ -83,9 +83,7 @@ namespace Oilexer.Types
             }
             result.Attributes |= AccessLevelAttributes(this.AccessLevel);
             if (this.BaseType != null && (!(this.BaseType.Equals(typeof(object).GetTypeReference()))))
-            {
                 result.BaseTypes.Add(this.BaseType.GenerateCodeDom(options));
-            }
             ITypeReference[] impls = this.ImplementsList.ToArray();
             bool[] duplicate = new bool[impls.Length];
             List<string> names = new List<string>();
@@ -96,9 +94,7 @@ namespace Oilexer.Types
                     currentName += string.Format("`{0}", impls[i].TypeParameters.Count);
                 duplicate[i] = names.Contains(currentName);
                 if (duplicate[i])
-                {
                     duplicate[names.IndexOf(currentName)] = true;
-                }
                 names.Add(currentName);
             }
             bool autoResolve = options.AutoResolveReferences;
@@ -116,7 +112,7 @@ namespace Oilexer.Types
             if (options.AllowRegions && options.AutoRegionsFor(AutoRegionAreas.Class))
             {
                 result.StartDirectives.Add(new CodeRegionDirective(CodeRegionMode.Start, String.Format("Begin {0}", result.Name)));
-                result.EndDirectives.Add(new CodeRegionDirective(CodeRegionMode.End, ""));
+                result.EndDirectives.Add(new CodeRegionDirective(CodeRegionMode.End, string.Empty));
             }
             if (options.BuildTrail != null)
                 options.BuildTrail.Pop();

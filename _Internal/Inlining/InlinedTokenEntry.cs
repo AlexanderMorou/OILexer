@@ -53,8 +53,21 @@ namespace Oilexer._Internal.Inlining
             if (this.Source is ITokenEofEntry)
                 return;
             this.nfaState = new RegularLanguageNFARootState(this);
+            bool first = true;
             foreach (var expression in this.Branches.Cast<InlinedTokenExpression>())
-                nfaState.Union(expression.NFAState);
+            {
+                var expressionNFA = expression.NFAState;
+                if (first)
+                {
+                    bool isEdge = expressionNFA.IsEdge;
+                    first = false;
+                    nfaState.Union(expression.NFAState);
+                    if (nfaState.IsEdge && !isEdge)
+                        nfaState.IsEdge = isEdge;
+                }
+                else
+                    nfaState.Union(expression.NFAState);
+            }
         }
 
         /// <summary>

@@ -433,8 +433,8 @@ namespace Oilexer.Compiler
         }
 
         /// <summary>
-        /// Returns the intermediateCompiler module used to interact with the
-        /// intermediateCompiler regardless of the kind of intermediateCompiler.
+        /// Returns the compiler module used to interact with the
+        /// compiler regardless of the kind of intermediateCompiler.
         /// </summary>
         public IIntermediateCompilerModule Module
         {

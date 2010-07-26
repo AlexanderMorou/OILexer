@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Oilexer.Parser.Builder;
 
 namespace Oilexer.FiniteAutomata.Tokens
 {
@@ -26,5 +27,6 @@ namespace Oilexer.FiniteAutomata.Tokens
                 throw new ArgumentException("char");
             }
         }
+
     }
 }

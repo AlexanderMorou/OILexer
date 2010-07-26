@@ -24,6 +24,7 @@ namespace Oilexer.FiniteAutomata.Rules
         public IControlledStateCollection<IGrammarConstantEntrySymbol> ConstantTokens { get; private set; }
         public IControlledStateCollection<IGrammarTokenSymbol> CaptureTokens { get; private set; }
         public IControlledStateCollection<IGrammarRuleSymbol> Rules { get; private set; }
+        public IReadOnlyCollection<ITokenEntry> Tokens { get; private set; }
         public GrammarBreakdown(IGrammarSymbol[] symbols)
         {
             /* *
@@ -68,6 +69,14 @@ namespace Oilexer.FiniteAutomata.Rules
             ConstantTokens = new ControlledStateCollection<IGrammarConstantEntrySymbol>(constantEntries);
             CaptureTokens = new ControlledStateCollection<IGrammarTokenSymbol>(tokenEntries);
             Rules = new ControlledStateCollection<IGrammarRuleSymbol>(ruleEntries);
+            Tokens = new ReadOnlyCollection<ITokenEntry>((
+                      from constant in ConstantTokens
+                      select constant.Source).Concat(
+                      from captureToken in CaptureTokens
+                      select captureToken.Source).Concat(
+                      from literalToken in LiteralSeriesTokens.Keys
+                      select literalToken).ToArray());
+
         }
     }
 }
