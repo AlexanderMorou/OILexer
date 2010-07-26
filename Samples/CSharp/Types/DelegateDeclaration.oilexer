@@ -6,13 +6,7 @@
 
 DelegateDeclaration                       ::=
     Attributes:Attributes;? 
-    (
-        "new"                               |
-        "public"                            |
-        "protected"                         |
-        "internal"                          |
-        "private"
-    ):Modifiers;*
+    CommonTypeModifiers:Modifiers;?
     "delegate"
     ReturnType:ReturnType;
     Identifier:Name; 

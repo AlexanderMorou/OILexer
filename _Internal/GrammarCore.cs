@@ -126,7 +126,7 @@ namespace Oilexer._Internal
         /// type and message <paramref name="text"/> provided.
         /// </summary>
         /// <param name="fileName">The <see cref="String"/> path of th file the
-        /// intermediateCompiler error is for.</param>
+        /// compiler error is for.</param>
         /// <param name="line">The <see cref="System.Int32"/> which denotes the line of the
         /// <paramref name="fileName"/> the error occurred on.</param>
         /// <param name="column">The <see cref="System.Int32"/> on the <paramref name="line"/>

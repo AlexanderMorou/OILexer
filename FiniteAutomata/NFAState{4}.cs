@@ -5,6 +5,7 @@ using System.Linq;
 using System.IO;
 using System.CodeDom.Compiler;
 using System.Diagnostics;
+using Oilexer.FiniteAutomata.Tokens;
 namespace Oilexer.FiniteAutomata
 {
     /// <summary>
@@ -68,10 +69,12 @@ namespace Oilexer.FiniteAutomata
         /// in a deterministic manner.</returns>
         public TDFA DeterminateAutomata()
         {
+
             DFAEntryTable entrySet = new DFAEntryTable(this.GetDFAState);
             TDFA result = GetRootDFAState();
             ReplicateSourcesToAlt<TDFA, TDFA>(result);
             ReplicateStateTransitions(result, this.OutTransitions, entrySet);
+            result.IsEdge = this.IsEdge;
             return result;
         }
 

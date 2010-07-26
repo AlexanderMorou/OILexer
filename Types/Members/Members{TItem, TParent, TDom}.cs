@@ -435,7 +435,7 @@ namespace Oilexer.Types.Members
         public void Add(TItem item)
         {
             if (this.ContainsKey(item.GetUniqueIdentifier()))
-                throw new InvalidOperationException("series containing the same identifier exists.");
+                throw new InvalidOperationException("item containing the same identifier exists.");
             base.Add(item.GetUniqueIdentifier(), item);
         }
     }

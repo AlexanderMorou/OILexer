@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Oilexer.Utilities.Collections;
+using Oilexer.Parser.GDFileData;
+using Oilexer.FiniteAutomata.Rules;
 
 namespace Oilexer.Parser.Builder
 {
@@ -22,6 +24,7 @@ namespace Oilexer.Parser.Builder
         /// Returns the readonly dictionary of time spans for each
         /// phase in the build.
         /// </summary>
-        public ReadOnlyDictionary<ParserBuilderPhase, TimeSpan> PhaseTimes { get; internal set; } 
+        public ReadOnlyDictionary<ParserBuilderPhase, TimeSpan> PhaseTimes { get; internal set; }
+        public ReadOnlyDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleStateMachines { get; internal set; }
     }
 }

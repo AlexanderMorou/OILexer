@@ -26,7 +26,7 @@ namespace Oilexer.Parser.Builder
 using Oilexer.FiniteAutomata.Rules;
     using Oilexer.FiniteAutomata.Tokens;
     /// <summary>
-    /// Provides a series of extension methdos for the parser intermediateCompiler 
+    /// Provides a series of extension methdos for the parser compiler
     /// to operate upon the data sets provided by the grammar description
     /// language.
     /// </summary>
@@ -519,14 +519,14 @@ using Oilexer.FiniteAutomata.Rules;
                    select iE;
         }
 
-        public static ParserBuilderResults Build(this IGDFile file, CompilerErrorCollection errors, Action<ParserBuilderPhase> phaseShifter)
+        public static ParserBuilderResults Build(this IGDFile file, List<string> streamAnalysisFiles, CompilerErrorCollection errors, Action<ParserBuilderPhase> phaseShifter)
         {
-            ParserBuilder builder = new ParserBuilder(file, errors);
+            ParserBuilder builder = new ParserBuilder(file, errors, streamAnalysisFiles);
 
             foreach (ParserBuilderPhase phase in builder)
                 phaseShifter(phase);
 
-            return new ParserBuilderResults() { Project = builder.Project, PhaseTimes = new ReadOnlyDictionary<ParserBuilderPhase, TimeSpan>(builder.PhaseTimes) };
+            return new ParserBuilderResults() { Project = builder.Project, PhaseTimes = new ReadOnlyDictionary<ParserBuilderPhase, TimeSpan>(builder.PhaseTimes), RuleStateMachines= builder.RuleDFAStates };
         }
 
         public static SyntacticalNFAState BuildNFA(this IProductionRuleSeries series, IGrammarSymbolSet symbols, ParserBuilder builder)

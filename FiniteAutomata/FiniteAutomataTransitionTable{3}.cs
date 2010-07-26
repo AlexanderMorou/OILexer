@@ -21,6 +21,8 @@ namespace Oilexer.FiniteAutomata
         private KeysCollection keys;
         private ValuesCollection values;
         private Dictionary<TCheck, IFiniteAutomataTransitionNode<TCheck, TNodeTarget>> backup = new Dictionary<TCheck,IFiniteAutomataTransitionNode<TCheck,TNodeTarget>>();
+        private bool fullCheckObtained;
+        private TCheck fullCheck;
         #region IFiniteAutomataTransitionTable<TCheck,TState,TNodeTarget> Members
 
         public abstract void Add(TCheck check, TNodeTarget target);
@@ -175,6 +177,11 @@ namespace Oilexer.FiniteAutomata
         {
             if (!this.ContainsKey(check))
                 return;
+            if (this.fullCheckObtained)
+            {
+                this.fullCheck = default(TCheck);
+                this.fullCheckObtained = false;
+            }
             this.backup.Remove(check);
         }
 
@@ -208,8 +215,15 @@ namespace Oilexer.FiniteAutomata
 
         internal void AddInternal(TCheck check, TNodeTarget target)
         {
-            lock(this.backup)
-                this.backup.Add(check, new FiniteAutomataTransitionNode<TCheck, TNodeTarget>() { Check=check, Target = target });
+            lock (this.backup)
+            {
+                if (this.fullCheckObtained)
+                {
+                    this.fullCheck = default(TCheck);
+                    this.fullCheckObtained = false;
+                }
+                this.backup.Add(check, new FiniteAutomataTransitionNode<TCheck, TNodeTarget>() { Check = check, Target = target });
+            }
         }
 
         public IEnumerable<TCheck> Checks
@@ -220,19 +234,31 @@ namespace Oilexer.FiniteAutomata
             }
         }
 
+        /// <summary>
+        /// Returns the <typeparamref name="TCheck"/> of all of the transition requirements
+        /// combined into one.
+        /// </summary>
         public TCheck FullCheck
         {
             get
             {
-                if (this.Count == 0)
-                    return new TCheck();
-                var fullCheck = default(TCheck);
-                foreach (var check in this.Checks)
+                if (!this.fullCheckObtained)
                 {
-                    fullCheck = check.Union(fullCheck);
+                    if (this.Count == 0)
+                        return GetTCheck();
+                    var fullCheck = default(TCheck);
+                    foreach (var check in this.Checks)
+                        fullCheck = check.Union(fullCheck);
+                    this.fullCheck = fullCheck;
+                    this.fullCheckObtained = true;
                 }
-                return fullCheck;
+                return this.fullCheck;
             }
+        }
+
+        protected virtual TCheck GetTCheck()
+        {
+            return new TCheck();
         }
 
         #region IControlledStateCollection<KeyValuePair<TCheck,TNodeTarget>> Members

@@ -67,7 +67,7 @@ namespace Oilexer.FileModel
             bool ICollection<TemporaryFile>.Contains(TemporaryFile item)
             {
                 if (item == null)
-                    throw new ArgumentNullException("series");
+                    throw new ArgumentNullException("item");
                 return ((System.IO.Path.GetFullPath(item.Parent.Path)) == (System.IO.Path.GetFullPath(path)));
             }
 

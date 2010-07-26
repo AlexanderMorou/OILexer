@@ -106,8 +106,7 @@ namespace Oilexer.Parser
                         case PreprocessorType.IncludeDirective:           //#include
                         case PreprocessorType.ElseIfDefinedDirective:     //#elifdef
                             return 8;
-                        case PreprocessorType.NamespaceDirective:
-                            return 9;
+                        case PreprocessorType.NamespaceDirective:         //#Namespace
                         case PreprocessorType.LexerNameDirective:         //#LexerName
                             return 10;
                         case PreprocessorType.RulePrefixDirective:        //#RulePrefix

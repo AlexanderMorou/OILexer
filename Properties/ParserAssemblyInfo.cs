@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("OILexer")]
-[assembly: AssemblyDescription("Objectified Intermediate Language Lexical Analysis and Parser Builder")]
+[assembly: AssemblyDescription("Objectified Intermediate Language Grammar Description Parser")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("None")]
 [assembly: AssemblyProduct("OILexer")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("71a499b8-4d6b-44a3-8845-c5b6e88f7ccf")]
+[assembly: Guid("4A82D317-0C87-490D-8962-31424C2913FD")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -29,5 +29,6 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: InternalsVisibleTo("OILexer")]

@@ -5,7 +5,7 @@ using System.Text;
 namespace Oilexer.Compiler
 {
     /// <summary>
-    /// The various *support flags for intermediate -> code -> *intermediateCompiler module -> MSIL.
+    /// The various *support flags for intermediate -> code -> *compiler module -> MSIL.
     /// </summary>
     [Flags]
     public enum CompilerModuleSupportFlags :

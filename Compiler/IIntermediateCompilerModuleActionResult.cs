@@ -9,7 +9,7 @@ namespace Oilexer.Compiler
         IIntermediateCompilerResultsBase
     {
         /// <summary>
-        /// Returns whether the intermediateCompiler module action was successful.
+        /// Returns whether the compiler module action was successful.
         /// </summary>
         bool Successful { get; }
     }

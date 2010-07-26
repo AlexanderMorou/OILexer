@@ -37,5 +37,10 @@ namespace Oilexer.FiniteAutomata.Rules
                 throw new ArgumentException("entry");
             }
         }
+
+        protected override GrammarVocabulary GetTCheck()
+        {
+            return new GrammarVocabulary(this.state.builder.GrammarSymbols);
+        }
     }
 }

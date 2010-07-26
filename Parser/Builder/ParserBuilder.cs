@@ -56,7 +56,7 @@ namespace Oilexer.Parser.Builder
         /// </summary>
         public Dictionary<ParserBuilderPhase, TimeSpan> PhaseTimes { get; private set; }
 
-        public IControlledStateDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleDFAStates { get; private set; }
+        public ReadOnlyDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleDFAStates { get; private set; }
 
         public IProductionRuleEntry StartEntry { get; private set; }
 
@@ -77,13 +77,16 @@ namespace Oilexer.Parser.Builder
 
         private Dictionary<IProductionRuleEntry, SyntacticalDFARootState> ruleDFAStates { get; set; }
 
+        public IReadOnlyCollection<string> StreamAnalysisFiles { get; private set; }
+
         private CharStreamClass bitStream;
 
-        public ParserBuilder(IGDFile source, CompilerErrorCollection errors)
+        public ParserBuilder(IGDFile source, CompilerErrorCollection errors, List<string> streamAnalysisFiles)
         {
             this.PhaseTimes = new Dictionary<ParserBuilderPhase, TimeSpan>();
             this.Source = (GDFile)source;
             this.Errors = errors;
+            this.StreamAnalysisFiles = new ReadOnlyCollection<string>(streamAnalysisFiles);
         }
 
         private void ConstructTokenNFA()
@@ -160,7 +163,7 @@ namespace Oilexer.Parser.Builder
                         this.ruleDFAStates.Add(rule, dfa);
                     }
                 });
-            this.RuleDFAStates = new ControlledStateDictionary<IProductionRuleEntry, SyntacticalDFARootState>(this.ruleDFAStates);
+            this.RuleDFAStates = new ReadOnlyDictionary<IProductionRuleEntry, SyntacticalDFARootState>(this.ruleDFAStates);
         }
 
         private void PerformStreamAnalysis()
@@ -168,7 +171,7 @@ namespace Oilexer.Parser.Builder
             this.ReduceRuleDFA();
             this.RuleDFAStates[this.StartEntry].Connect();
             this.SyntaxParser = new SyntacticalParser(this);
-            foreach (var file in Program.StreamAnalysisFiles)
+            foreach (var file in this.StreamAnalysisFiles)
                 this.SyntaxParser.Parse(file);
         }
 

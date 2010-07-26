@@ -2,16 +2,7 @@
 
 StructDeclaration                         ::=
     Attributes:Attributes;?
-    (
-        "new"? "public" |
-        "new"? "protected" "internal"? |
-        "new"? "internal" "protected"? |
-        "new"? "private" |
-	"private" "new" |
-	"public" "new" |
-	"protected" "new"? "internal" |
-	"internal" "new"? "protected"
-    ):Modifiers;?
+    CommonTypeModifiers:Modifiers;?
     "partial"!:IsPartial;?
     "struct"
     Identifier:Name;
