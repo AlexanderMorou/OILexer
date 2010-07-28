@@ -1,0 +1,52 @@
+#Root        "InitialRule";
+#GrammarName "TestGrammar";
+
+InitialRule ::=
+        DirectLeftRecursion   |
+        HiddenLeftRecursion   |
+        IndirectLeftRecursion |
+        DoubleHiddenLeftRecursion;
+
+
+Exp<Pz> ::=  Pz [IndirectLeftRecursion] Pz;
+
+DirectLeftRecursion ::=
+        DirectLeftRecursion? AlternatePath;
+
+HiddenLeftHelper ::=
+        "OptionalTerminal"?;
+
+
+IndirectLeftRecursion ::=
+        IndirectHelper | 
+		Exp<AlternatePath>
+        AlternatePath;
+
+DoubleLeftHelper ::=
+        DoubleLeftSecondHelper;
+
+IndirectHelper ::=
+        IndirectLeftRecursion "IndirectCap";
+
+HiddenLeftRecursion ::=
+        HiddenLeftHelper HiddenLeftRecursion AlternatePath |
+        AlternatePath;
+
+DoubleLeftSecondHelper :=
+        "OptionalTerminal"?;
+
+/* *
+ * Intent here is simple.  To ensure that left recursion detection
+ * is correctly structured, it needs to delve as far down and
+ * into a rule as needed to detect a cyclic reference.
+ * Here, two rules deep are needed to detect that DoubleLeftHelper
+ * is potentially null, further, the second referenced rule can also
+ * be null, therefore there's a chance that it would immediately go into
+ * DoubleHiddenLeftRecursion again.
+ * */
+DoubleHiddenLeftRecursion ::=
+        DoubleLeftHelper DoubleLeftSecondHelper DoubleHiddenLeftRecursion |
+        AlternatePath;
+
+AlternatePath :=
+        "Terminal";
