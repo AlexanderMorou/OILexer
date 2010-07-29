@@ -35,6 +35,11 @@ namespace Oilexer.Parser
             {
             }
 
+            internal Lexer()
+                : base()
+            {
+            }
+
             /* *
              * The linear approach.
              * */
@@ -52,6 +57,10 @@ namespace Oilexer.Parser
                 }
                 if (c == ':')
                     isOp = AreOperatorChars(c, LookAhead(1), LookAhead(2));
+                else if (c == '@' && LookAhead(1) == '"')
+                    return ParseString();
+                else if (c == '@' && LookAhead(1) == '\'')
+                    return ParseCharacterLiteral();
                 else if (IsOperatorChar(c))
                     isOp = true;
                 if (isOp && c != '#')
@@ -75,12 +84,10 @@ namespace Oilexer.Parser
                     return ParseNumber();
                 else if (c == '\'')
                     return ParseCharacterLiteral();
-                else if (c == '@' && LookAhead(1) == '"')
-                    return ParseString();
-                else if (c == '@' && LookAhead(1) == '\'')
-                    return ParseCharacterLiteral();
                 else if (c == '[')
                     return ParseCharacterRange();
+                else if (c == '\0')
+                    return new NextTokenResults();
                 return new NextTokenResults(_Internal.GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
             }
 
@@ -673,7 +680,7 @@ namespace Oilexer.Parser
                     }
 
                 }
-                return new NextTokenResults(new GDTokens.CommentToken(string.Format("{0}{1}", commentHeader, commentBody), ci, l, p));
+                return new NextTokenResults(new GDTokens.CommentToken(string.Format("{0}{1}", commentHeader, commentBody), ci, l, p, commentBody.Contains(Environment.NewLine)));
             }
 
             private NextTokenResults ParseWhitespace()
@@ -851,6 +858,7 @@ namespace Oilexer.Parser
             {
                 char c = this.LookAhead(0);
                 int lookAhead = 1;
+
                 //[A-Za-z_]+
                 if (!(IsIdentifierChar(c)))
                     //At least one.
@@ -992,7 +1000,11 @@ namespace Oilexer.Parser
                             ot = GDTokens.OperatorType.OptionsSeparator;
                         break;
                     case '*':
-                        ot = GDTokens.OperatorType.ZeroOrMore;
+                        c = LookAhead(1);
+                        if (c == '*')
+                            ot = GDTokens.OperatorType.AsteriskAsterisk;
+                        else
+                            ot = GDTokens.OperatorType.ZeroOrMore;
                         break;
                     case '+':
                         ot = GDTokens.OperatorType.OneOrMore;
@@ -1004,7 +1016,11 @@ namespace Oilexer.Parser
                         ot = GDTokens.OperatorType.TemplatePartsStart;
                         break;
                     case '|':
-                        ot = GDTokens.OperatorType.LeafSeparator;
+                        c = LookAhead(1);
+                        if (c == '|')
+                            ot = GDTokens.OperatorType.PipePipe;
+                        else
+                            ot = GDTokens.OperatorType.LeafSeparator;
                         break;
                     case ';':
                         ot = GDTokens.OperatorType.EntryTerminal;
@@ -1013,7 +1029,11 @@ namespace Oilexer.Parser
                         ot = GDTokens.OperatorType.TemplatePartsEnd;
                         break;
                     case '!':
-                        ot = GDTokens.OperatorType.ProductionRuleFlag;
+                        c = LookAhead(1);
+                        if (c == '=')
+                            ot = GDTokens.OperatorType.ExclaimEqual;
+                        else
+                            ot = GDTokens.OperatorType.ProductionRuleFlag;
                         break;
                     case ',':
                         ot = GDTokens.OperatorType.TemplatePartsSeparator;
@@ -1022,7 +1042,11 @@ namespace Oilexer.Parser
                         ot = GDTokens.OperatorType.Period;
                         break;
                     case '=':
-                        ot = GDTokens.OperatorType.ErrorSeparator;
+                        c = LookAhead(1);
+                        if (c == '=')
+                            ot = GDTokens.OperatorType.EqualEqual;
+                        else
+                            ot = GDTokens.OperatorType.ErrorSeparator;
                         break;
                     case '{':
                         ot = GDTokens.OperatorType.LeftCurlyBrace;
@@ -1033,8 +1057,18 @@ namespace Oilexer.Parser
                     case '#':
                         ot = GDTokens.OperatorType.CounterNotification;
                         break;
+                    case '&':
+                        c = LookAhead(1);
+                        if (c == '&')
+                            ot = GDTokens.OperatorType.AndAnd;
+                        else
+                            return new NextTokenResults(_Internal.GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                        break;
                     case '$':
                         ot = GDTokens.OperatorType.ForcedStringForm;
+                        break;
+                    case '@':
+                        ot = GDTokens.OperatorType.AtSign;
                         break;
                     default:
                         return new NextTokenResults(_Internal.GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
@@ -1077,6 +1111,24 @@ namespace Oilexer.Parser
             {
                 switch (p)
                 {
+                    case '*':
+                        //GDTokens.OperatorType.ZeroOrMore
+                        if (q == char.MinValue && r == char.MinValue)
+                            return true;
+                        else if (q == '*' && r == char.MinValue)
+                            return true;
+                        return true;
+                    case '=':
+                    case '!':
+                        //GDTokens.OperatorType.ErrorSeparator
+                        //GDTokens.OperatorType.ProductionRuleFlag
+                        if (q == char.MinValue && r == char.MinValue)
+                            return true;
+                        else if (q == '=' && r == char.MinValue)
+                            //GDTokens.OperatorType.EqualsEquals
+                            //GDTokens.OperatorType.ExclaimEquals
+                            return true;
+                        return true;
                     case ':':
                         if ((q == char.MinValue) && (r == char.MinValue))
                             return true;
@@ -1097,12 +1149,10 @@ namespace Oilexer.Parser
                         //GDTokens.OperatorType.CounterNotification
                     case '-':
                         //GDTokens.OperatorType.Minus
-                    case '*':
-                        //GDTokens.OperatorType.ZeroOrMore
-                    case '!':
-                        //GDTokens.OperatorType.ProductionRuleFlag
                     case '+':
                         //GDTokens.OperatorType.OneOrMore
+                    case '@':
+                        //GDTokens.OperatorType.AtSign
                     case '?':
                         //GDTokens.OperatorType.ZeroOrOne
                     case '<':
@@ -1117,8 +1167,6 @@ namespace Oilexer.Parser
                         //GDTokens.OperatorType.Period
                     case ',':
                         //GDTokens.OperatorType.TemplatePartsSeparator
-                    case '=':
-                        //GDTokens.OperatorType.ErrorSeparator
                     case '{':
                         //GDTokens.OperatorType.LeftCurlyBrace
                     case '}':

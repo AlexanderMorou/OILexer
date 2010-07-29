@@ -38,18 +38,18 @@ namespace Oilexer.FiniteAutomata.Rules
         /// entry names.</returns>
         public int Compare(SyntacticalDFARootState x, SyntacticalDFARootState y)
         {
-            var rX = x.Entry;
-            var rY = y.Entry;
-            if (rX == rY)
+            var xRule = x.Entry;
+            var yRule = y.Entry;
+            if (xRule == yRule)
                 return 0;
-            bool xD = x.DependsOn(rY);
-            bool yD = y.DependsOn(rX);
-            if (xD && !yD)
+            bool xDependsOnY = x.DependsOn(yRule);
+            bool yDependsOnX = y.DependsOn(xRule);
+            if (xDependsOnY && !yDependsOnX)
                 return 1;
-            else if (yD && !xD)
+            else if (yDependsOnX && !xDependsOnY)
                 return -1;
             else
-                return rX.Name.CompareTo(rY.Name);
+                return xRule.Name.CompareTo(yRule.Name);
         }
 
         #endregion

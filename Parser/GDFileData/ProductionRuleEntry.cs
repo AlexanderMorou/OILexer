@@ -132,6 +132,12 @@ namespace Oilexer.Parser.GDFileData
         }
         public override string ToString()
         {
+            return string.Format("{0} ::={2} {1};", this.Name, GetBodyString(), elementsAreChildren ? ">" : string.Empty);
+
+        }
+
+        public string GetBodyString()
+        {
             StringBuilder sb = new StringBuilder();
             bool first = true;
             foreach (IProductionRule ite in this.baseCollection)
@@ -145,8 +151,8 @@ namespace Oilexer.Parser.GDFileData
                 }
                 sb.Append(ite.ToString().Replace("\r\n\t", "\r\n\t\t"));
             }
-            return string.Format("{0} ::={2} {1};", this.Name, sb.ToString(), elementsAreChildren ? ">" : string.Empty);
-
+            var bodyString = sb.ToString();
+            return bodyString;
         }
 
         #region IProductionRuleEntry Members

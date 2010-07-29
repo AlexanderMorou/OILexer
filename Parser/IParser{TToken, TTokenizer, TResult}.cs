@@ -57,7 +57,7 @@ namespace Oilexer.Parser
         /// </summary>
         /// <param name="token">The token to push into the look-ahead stream.</param>
         /// <param name="howFar">How far to push the token.</param>
-        void PushAhead(TToken token, int howFar);
+        void PushAhead(TToken token, int howFar = 0);
         /// <summary>
         /// Pushes ahead a token that's not from the stream.
         /// </summary>

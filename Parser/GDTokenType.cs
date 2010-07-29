@@ -52,6 +52,16 @@ namespace Oilexer.Parser
         /// aspect is parsed continuously and wrapped in the defining rule post-parse.</para>
         /// <para>Reference tokens represent the wrapped form placed upon the token stack.</para>
         /// </summary>
-        ReferenceToken
+        ReferenceToken,
+        /// <summary>
+        /// The token represents an error.
+        /// </summary>
+        Error,
+        TokenReference,
+        RuleReference,
+        RuleTemplateReference,
+        RuleTemplateParameterReference,
+        Keyword,
+        SoftReference,
     }
 }

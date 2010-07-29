@@ -105,9 +105,9 @@ namespace Oilexer._Internal
              * Same thing as the above, but only on the tokens
              * instead of the rules.
              * */
-            foreach (var token in breakdown.CaptureTokens)
+            foreach (var token in breakdown.Tokens)
             {
-                helper.token = token.Source as InlinedTokenEntry;
+                helper.token = token as InlinedTokenEntry;
                 if ((helper.token == null) ||
                     (helper.token.DFAState == null))
                     continue;
@@ -146,7 +146,7 @@ namespace Oilexer._Internal
 
             public bool ContainsToken(GrammarVocabulary set)
             {
-                return set.Breakdown.Tokens.Contains(token);
+                return set.Contains(token);
             }
         }
     }

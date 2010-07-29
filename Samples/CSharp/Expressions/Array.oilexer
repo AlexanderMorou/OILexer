@@ -3,7 +3,7 @@
 ArrayCreationExpression                  ::=>
     ArraySizeCreationExpression             |
     ArrayInitializerCreationExpression      ;
-//    ArrayRankInitializerCreationExpression  ;
+//    ArrayRankInitializerCreationExpression;
     
 ArraySizeCreationExpression               ::=
     "new" NonArrayType:Type;
@@ -14,10 +14,6 @@ ArraySizeCreationExpression               ::=
 ArrayInitializerCreationExpression        ::=
     "new" ArrayType:Type;
     ArrayInitializer:Initializer;           ;
-    
-//ArrayRankInitializerCreationExpression    ::=
-//    "new" RankSpecifier:Rank; 
-//    ArrayInitializer:Initializer;           ;
 
 RankSpecifier                             ::=
     '[' ',':Rank;* ']';

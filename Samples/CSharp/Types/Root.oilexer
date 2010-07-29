@@ -90,7 +90,7 @@ ClassType                                ::=>
     TypeName                                |
     StringType                              |
     ObjectType                              ;
-
+	
 StringType                                ::=
     "string"                                ;
     
@@ -118,7 +118,7 @@ VoidType                                  ::=
 
 TypeParameter                            ::=>
     Identifier                              ;
-
+    
 
 TypeDeclaration                          ::=>
     ClassDeclaration                        |
@@ -130,18 +130,19 @@ TypeDeclaration                          ::=>
 /* --------------------------------------- *\
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
+
 ReturnType                               ::=>
     VoidType                                |
     Type                                    ;
 
 CommonTypeModifiers                       ::=
-		"new" "public"?                     |
-		"new" "private"?                    |
-		"new" "internal"? "protected"?      |
-		"new" "protected"? "internal"?      |
-		"public" "new"?                     |
-		"private" "new"?                    |
-		"internal" "new"? "protected"?      |
-		"internal" "protected"? "new"?      |
-		"protected" "new"? "internal"?      |
-		"protected" "internal"? "new"?      ;
+        "new" "public"?                     |
+        "new" "private"?                    |
+        "new" "internal"? "protected"?      |
+        "new" "protected"? "internal"?      |
+        "public" "new"?                     |
+        "private" "new"?                    |
+        "internal" "new"? "protected"?      |
+        "internal" "protected"? "new"?      |
+        "protected" "new"? "internal"?      |
+        "protected" "internal"? "new"?      ;

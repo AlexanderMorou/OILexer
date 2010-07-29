@@ -349,12 +349,31 @@ using Oilexer.FiniteAutomata.Rules;
             return c.ToString();
         }
 
-        public static void InitLookups(this IGDFile file)
+        public static void InitLookups(this IGDFile file, _GDResolutionAssistant resolutionAid = null)
         {
+            LinkerCore.resolutionAid = resolutionAid;
             LinkerCore.errorEntries = (file.GetErrorEnumerator());
             LinkerCore.tokenEntries = (file.GetTokenEnumerator());
             LinkerCore.ruleEntries = (file.GetRulesEnumerator());
             LinkerCore.ruleTemplEntries = (file.GetTemplateRulesEnumerator());
+        }
+
+        public static void InitLookups(this IEnumerable<IGDFile> files, _GDResolutionAssistant resolutionAid = null)
+        {
+            LinkerCore.resolutionAid = resolutionAid;
+            LinkerCore.errorEntries = (LinkerCore.GetErrorEnumerator(files));
+            LinkerCore.tokenEntries = (LinkerCore.GetTokenEnumerator(files));
+            LinkerCore.ruleEntries = (LinkerCore.GetRulesEnumerator(files));
+            LinkerCore.ruleTemplEntries = (LinkerCore.GetTemplateRulesEnumerator(files));
+        }
+
+        public static void ClearLookups()
+        {
+            LinkerCore.resolutionAid = null;
+            LinkerCore.errorEntries = null;
+            LinkerCore.tokenEntries = null;
+            LinkerCore.ruleEntries = null;
+            LinkerCore.ruleTemplEntries = null;
         }
 
         /// <summary>

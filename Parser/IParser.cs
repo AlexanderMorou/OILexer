@@ -50,18 +50,13 @@ namespace Oilexer.Parser
         /// <param name="howFar">how many characters past the last token in the lookahead stream to go.</param>
         /// <returns>A <see cref="System.Char"/> of the character <paramref name="howFar"/> past
         /// the last token in the look-ahead stream.</returns>
-        char LookPast(int howFar);
+        char TokenizerLookAhead(int howFar);
         /// <summary>
         /// Pushes ahead a token that's not from the stream 
         /// </summary>
         /// <param name="token">The token to push into the look-ahead stream.</param>
         /// <param name="howFar">How far to push the token.</param>
-        void PushAhead(IToken token, int howFar);
-        /// <summary>
-        /// Pushes ahead a token that's not from the stream.
-        /// </summary>
-        /// <param name="token">The token to push into the look-ahead stream.</param>
-        void PushAhead(IToken token);
+        void PushAhead(IToken token, int howFar = 0);
         IToken PopAhead(bool move);
         IToken PopAhead();
         /*

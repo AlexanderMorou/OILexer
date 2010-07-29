@@ -114,6 +114,12 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         {
             this.baseCollection.Add(ite);
         }
+
+        public string GetBodyString()
+        {
+            return this.ToString();
+        }
+
         #endregion
     }
 }

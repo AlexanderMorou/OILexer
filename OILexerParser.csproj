@@ -96,6 +96,12 @@
     </StartupObject>
   </PropertyGroup>
   <PropertyGroup />
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>AllenCopeland.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -356,6 +362,9 @@
     <Compile Include="Parser\Builder\UnicodeTargetCategory.cs" />
     <Compile Include="Parser\Builder\UnicodeTargetGraph.cs" />
     <Compile Include="Parser\Builder\UnicodeTargetPartialCategory.cs" />
+    <Compile Include="Parser\GDTokenRegion.cs" />
+    <Compile Include="Parser\GDTokenGroupRegion.cs" />
+    <Compile Include="Parser\GDCommentRegion.cs" />
     <Compile Include="Parser\GDFile+MyOptions.cs" />
     <Compile Include="Parser\GDFile.cs" />
     <Compile Include="Parser\GDFileData\CommentEntry.cs" />
@@ -488,11 +497,14 @@
     <Compile Include="Parser\GDFileData\TokenExpression\TokenGroupItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\TokenItem.cs" />
     <Compile Include="Parser\GDFileData\TokenExpression\TokenReferenceTokenItem.cs" />
+    <Compile Include="Parser\GDProductionRuleGroupRegion.cs" />
     <Compile Include="Parser\GDParser+Lexer.cs" />
     <Compile Include="Parser\GDParser+PreprocessorContainer.cs" />
     <Compile Include="Parser\GDParser.cs" />
     <Compile Include="Parser\GDParserErrors.cs" />
     <Compile Include="Parser\GDParserResults.cs" />
+    <Compile Include="Parser\GDPreprocessorRegion.cs" />
+    <Compile Include="Parser\GDProductionRuleRegion.cs" />
     <Compile Include="Parser\GDToken.cs" />
     <Compile Include="Parser\GDTokens+CharacterRangeToken.cs" />
     <Compile Include="Parser\GDTokens+CharLiteralToken.cs" />
@@ -509,6 +521,7 @@
     <Compile Include="Parser\IGDFile.cs" />
     <Compile Include="Parser\IGDFileOptions.cs" />
     <Compile Include="Parser\IGDParser.cs" />
+    <Compile Include="Parser\IGDRegion.cs" />
     <Compile Include="Parser\IGDToken.cs" />
     <Compile Include="Parser\IGDTokenizer.cs" />
     <Compile Include="Parser\IParser.cs" />
@@ -922,6 +935,7 @@
     <Compile Include="_Internal\LinkerCore %28Stage 3%29.cs" />
     <Compile Include="_Internal\LinkerCore+ProductionRuleTemplateArgumentSeries.cs" />
     <Compile Include="_Internal\Tuple{T1}.cs" />
+    <Compile Include="_Internal\_GDResolutionAssistant.cs" />
     <Compile Include="_Internal\_OIL+_Core+CommentConstants.cs" />
     <Compile Include="_Internal\_OIL+_Core+MaintenanceResources.cs" />
     <Compile Include="_Internal\_OIL+_Core.cs" />
@@ -939,6 +953,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="_Internal\Inlining\ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AllenCopeland.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

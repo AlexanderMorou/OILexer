@@ -24,5 +24,7 @@ namespace Oilexer.Parser
         IGDFileOptions Options { get; }
 
         IList<string> Includes { get; }
+
+        IReadOnlyCollection<IGDRegion> Regions { get; }
     }
 }

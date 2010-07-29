@@ -762,24 +762,7 @@ namespace Oilexer.Parser.Builder
                     case ParserBuilderPhase.TokenDFAReduction:
                         yield return ParserBuilderPhase.TokenDFAReduction;
                         timer.Start();
-                        bool? cursorVisible = null;
-                        try
-                        {
-                            cursorVisible = Console.CursorVisible;
-                            Console.CursorVisible = false;
-                        }
-                        catch (IOException)
-                        {
-                        }
                         this.ReduceTokenDFA();
-                        try
-                        {
-                            if (cursorVisible != null)
-                                Console.CursorVisible = cursorVisible.Value;
-                        }
-                        catch (IOException)
-                        {
-                        }
                         timer.Stop();
                         PhaseTimes.Add(ParserBuilderPhase.TokenDFAReduction, timer.Elapsed);
                         timer.Reset();
@@ -874,8 +857,8 @@ namespace Oilexer.Parser.Builder
 
         private void BuildCodeModelCaptures()
         {
-            //this.Source.GetTokens().AsParallel().ForAll(token =>
-            //    BuildStateMachine(token, this.Project, bitStream));
+            this.Source.GetTokens().AsParallel().ForAll(token =>
+                BuildStateMachine(token, this.Project, bitStream));
         }
 
 

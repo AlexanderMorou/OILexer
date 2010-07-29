@@ -148,9 +148,14 @@ namespace Oilexer.Parser
             NewBuffer();
         }
 
+        internal Tokenizer()
+        {
+        }
+
         private void NewBuffer()
         {
             this.buffer = new byte[128];
+            this.bufferSize = 0;
         }
 
         private void CheckBuffer(long chars)
@@ -250,6 +255,10 @@ namespace Oilexer.Parser
                 if (!ntr.Token.ConsumedFeed)
                     this.Flush(ntr.Token.Length);
             }
+            else if (ntr.Error == null)
+            {
+                return;
+            }
             else
             {
                 //Move one...
@@ -281,12 +290,22 @@ namespace Oilexer.Parser
         /// is in range.  <see cref="Char.MinValue"/> otherwise.</returns>
         public char LookAhead(long howFar)
         {
-            if (Position + (howFar + 1) > stream.Length)
-                return char.MinValue;
-            CheckBuffer(howFar + 1);
-            if (bufferSize < (howFar + 1))
-                bufferSize += stream.Read(buffer, (int)bufferSize, (int)((howFar + 1) - bufferSize));
-            return (char)buffer[howFar];
+            lock (buffer)
+            {
+                if (Position + (howFar + 1) > stream.Length)
+                    return char.MinValue;
+                CheckBuffer(howFar + 1);
+                if (bufferSize < (howFar + 1))
+                {
+                    int readBytes = (int)((howFar + 1) - bufferSize);
+                    if (readBytes > 0)
+                        bufferSize += stream.Read(buffer, (int)bufferSize, readBytes);
+                    else
+                    {
+                    }
+                }
+                return (char)buffer[howFar];
+            }
         }
 
         /// <summary>
@@ -344,6 +363,7 @@ namespace Oilexer.Parser
             return result;
         }
 
+        private object positionGetLocker = new object();
         /// <summary>
         /// Returns/sets the location in the current stream.
         /// </summary>
@@ -351,7 +371,8 @@ namespace Oilexer.Parser
         {
             get
             {
-                return (int)bufferStartLocale;
+                lock (positionGetLocker)
+                    return (int)bufferStartLocale;
             }
             set
             {
@@ -489,8 +510,27 @@ namespace Oilexer.Parser
         public string FileName
         {
             get { return this.fileName; }
+            internal set { this.fileName = value; }
         }
 
+        public long GetPositionFromLine(int line)
+        {
+            if (line > this.lineStarts.Count)
+                return this.Position;
+            else
+                return this.lineStarts[line - 1];
+        }
         #endregion
+
+        internal void SetStream(StringStream stream)
+        {
+            stream.Position = 0;
+            this.bufferStartLocale = 0;
+            this.stream = stream;
+            lineStarts.Clear();
+            lineStarts.Add(0);
+            NewBuffer();
+        }
+
     }
 }

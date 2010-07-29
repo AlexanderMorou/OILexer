@@ -56,7 +56,11 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         /// members of the current <see cref="SoftReferenceProductionRuleItem"/>.</returns>
         protected override object OnClone()
         {
-            SoftReferenceProductionRuleItem srpri = new SoftReferenceProductionRuleItem(this.PrimaryName, this.SecondaryName, this.Line, this.Column, this.Position, this.isFlag, this.isCounter);
+            SoftReferenceProductionRuleItem srpri = new SoftReferenceProductionRuleItem(this.PrimaryName, this.SecondaryName, this.Line, this.Column, this.Position, this.isFlag, this.isCounter)
+                {
+                    PrimaryToken = this.PrimaryToken,
+                    SecondaryToken = this.SecondaryToken
+                };
             base.CloneData(srpri);
             return srpri;
         }
@@ -102,5 +106,9 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             else
                 return this.PrimaryName;
         }
+
+        public GDTokens.IdentifierToken PrimaryToken { get; internal set; }
+
+        public GDTokens.IdentifierToken SecondaryToken { get; internal set; }
     }
 }

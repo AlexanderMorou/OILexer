@@ -47,4 +47,3 @@ CompilationUnit                           ::=
     UsingDirective:Usings;*
     GlobalAttributes:Attributes;?
     NamespaceMemberDeclaration:Members;*    ;
-

@@ -9,5 +9,14 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         IReadOnlyCollection<IProductionRule>,
         IProductionRuleSource
     {
+
+        /// <summary>
+        /// Obtains the string form of the body of the 
+        /// <see cref="IProductionRuleSeries"/>.
+        /// </summary>
+        /// <returns>A <see cref="String"/> representing
+        /// the elements within the description of the
+        /// <see cref="IProductionRuleSeries"/>.</returns>
+        string GetBodyString();
     }
 }

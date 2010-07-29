@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 
 #if x64
 using SlotType = System.UInt64;
 #elif x86
 using SlotType = System.UInt32;
 #endif
+
 namespace Oilexer.FiniteAutomata
 {
     using OperationSignature = Action<uint, uint, uint, uint, uint, uint, bool, bool, SlotType[], SlotType[], SlotType[]>;
-    using System.Threading;
+
     /// <summary>
     /// Provides a base implementation of a 
     /// <see cref="IFiniteAutomataSet"/> whose individual elements
@@ -26,7 +28,6 @@ namespace Oilexer.FiniteAutomata
             FiniteAutomataBitSet<TCheck>,
             new()
     {
-        
         /// <summary>
         /// Data member for <see cref="IsNegativeSet"/>.
         /// </summary>
@@ -71,9 +72,7 @@ namespace Oilexer.FiniteAutomata
         private SlotType[] values;
         private SlotType lastMask;
         private SlotType lastMod;
-        protected void Set(SlotType[] values, uint offset, uint length, uint fullLength) { this.Set(values, offset, length, fullLength, false); }
-        protected void Set(SlotType[] values, uint offset, uint length, uint fullLength, bool isNegativeSet) { this.Set(values, offset, length, fullLength, isNegativeSet, true); }
-        protected void Set(SlotType[] values, uint offset, uint length, uint fullLength, bool isNegativeSet, bool reduce)
+        protected void Set(SlotType[] values, uint offset, uint length, uint fullLength, bool isNegativeSet = false, bool reduce = true)
         {
             this.isNegativeSet = isNegativeSet;
             this.values = values;
@@ -408,7 +407,7 @@ namespace Oilexer.FiniteAutomata
 
         private static TCheck SetOperation(
             TCheck left, TCheck right, 
-            Action<uint, uint, uint, uint, uint, uint, bool, bool, SlotType[], SlotType[], SlotType[]> @operator,
+            OperationSignature @operator,
             Func<bool, bool, bool> inversionPredicate,
             Func<TCheck> checkCreator,
             ref int cacheHits,
@@ -446,16 +445,16 @@ namespace Oilexer.FiniteAutomata
             /* out working set */            ows = oil > 0 ? new SlotType[oil] : null;
 
                     /* *
-                * Eases code management when setup/finalization
-                * logic is in one place.
-                * *
-                * Loops and other logic out-sourced to @operator(...).
-                * */
+                     * Eases code management when setup/finalization
+                     * logic is in one place.
+                     * *
+                     * Loops and other logic out-sourced to @operator(...).
+                     * */
                     @operator(lo, ro, ll, rl, mo, nl, li, ri, lws, rws, ows);
                     /* *
-                        * Different bitwise operations have different rules
-                        * for whether the result set is inverted.
-                        * */
+                     * Different bitwise operations have different rules
+                     * for whether the result set is inverted.
+                     * */
                     bool invert = inversionPredicate(li, ri);
                     if (invert)
                         //If it is inverted, flip the bits of each subset.

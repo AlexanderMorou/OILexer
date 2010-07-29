@@ -10,6 +10,7 @@ AttributeTargets                           :=
               "property":PropertyTarget;    |
                 "return":ReturnTarget;      |
                   "type":TypeTarget;        ;
+                  
 LinqKeywords                               :=
              "ascending":Ascending;         |
                     "by":By;                |
@@ -22,7 +23,7 @@ LinqKeywords                               :=
                  "group":Group;             |
                "orderby":OrderBy;           |
                  "where":Where;             ;
-	
+
 Keywords>Identifier,AttributeTargets       :=
              "__arglist":__ArgList;         |
              "__makeref":__MakeRef;         |
@@ -99,7 +100,7 @@ Modifiers                                  :=
                 "unsafe":Unsafe;            |
                "virtual":Virtual;           |
               "volatile":Volatile;          ;
-    
+
 IntegralDataTypes                          :=
                   "bool":Boolean;           |
                   "byte":Byte;              |
@@ -119,7 +120,6 @@ IntegralDataTypes                          :=
 
 #ifdef Lexer
 #if Lexer == "CSPreprocessor"
-
 PreprocessorSymbol :=
                     "if":If;                |
                   "else":Else;              |
@@ -133,19 +133,19 @@ PreprocessorSymbol :=
                   "line":Line;              |
                 "pragma":Pragma;            |
               "undefine":Undefine;          ;
-              
+
 PreprocessorOperator                       :=
-    "!=":NotEqual;                          |
-    "==":Equal;                             |
-    "&&":And;                               |
-    "||":Or;                                |
-    '!':Negate;                             |
-    ',':Comma;                              |
-    '(':LeftParenthesis;                    |
-    ')':RightParenthesis;                   ;
+                    "!=":NotEqual;          |
+                    "==":Equal;             |
+                    "&&":And;               |
+                    "||":Or;                |
+                     '!':Negate;            |
+                     ',':Comma;             |
+                     '(':LeftParenthesis;   |
+                     ')':RightParenthesis;  ;
 
 PreprocessorPound :=
-    '#'                                     ;
-    
+                     '#'                    ;
+	
 #endif
 #endif

@@ -139,12 +139,18 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
 
         public override string ToString()
         {
+            return BuildString();
+        }
+
+        private string BuildString(bool appendExtra = true)
+        {
             StringBuilder sb = new StringBuilder();
             bool first = true;
             bool lastCarriage = false;
             if (this.Count == 0)
             {
-                sb.Append("()");
+                if (appendExtra)
+                    sb.Append("()");
                 goto ExitPoint;
             }
             foreach (ITokenExpression ite in this.baseCollection)
@@ -152,16 +158,19 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
                 string s = ite.ToString();
                 if (first)
                 {
-                    if (baseCollection.Count > 1 || s.Contains("\r\n"))
+                    if (appendExtra)
                     {
-                        sb.Append("\r\n");
-                        lastCarriage = true;
-                    }
-                    sb.Append("(");
-                    if (baseCollection.Count > 1)
-                    {
-                        sb.AppendLine();
-                        sb.Append("\t");
+                        if (baseCollection.Count > 1 || s.Contains("\r\n"))
+                        {
+                            sb.Append("\r\n");
+                            lastCarriage = true;
+                        }
+                        sb.Append("(");
+                        if (baseCollection.Count > 1)
+                        {
+                            sb.AppendLine();
+                            sb.Append("\t");
+                        }
                     }
                     first = false;
                 }
@@ -172,34 +181,40 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
                 }
                 sb.Append(s.Replace("\r\n", "\r\n\t"));
             }
-            if (baseCollection.Count > 1 || lastCarriage)
+            if (appendExtra)
+                if (baseCollection.Count > 1 || lastCarriage)
+                {
+                    sb.AppendLine();
+                    sb.Append(")");
+                }
+                else
+                    sb.Append(")");
+        ExitPoint:
+            if (appendExtra)
             {
-                sb.AppendLine();
-                sb.Append(")");
+                if (this.name != null && this.name != string.Empty)
+                    sb.Append(string.Format(":{0};{1}", this.Name, this.ToStringFurtherOptions()));
+                sb.Append(repeatOptions.ToString());
+                string result = sb.ToString();
+                sb.Remove(0, sb.Length);
+                string[] lines = result.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                result = string.Empty;
+                for (int i = 0; i < lines.Length; i++)
+                    if (string.IsNullOrEmpty(lines[i].Trim().Replace("\t", string.Empty)))
+                        continue;
+                    else
+                    {
+                        result += lines[i];
+                        if (i < lines.Length - 1)
+                            result += "\r\n";
+                    }
+                if (lastCarriage)
+                    return "\r\n" + result;
+                else
+                    return result;
             }
             else
-                sb.Append(")");
-        ExitPoint:
-            if (this.name != null && this.name != string.Empty)
-                sb.Append(string.Format(":{0};{1}", this.Name, this.ToStringFurtherOptions()));
-            sb.Append(repeatOptions.ToString());
-            string result = sb.ToString();
-            sb.Remove(0, sb.Length);
-            string[] lines = result.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            result = string.Empty;
-            for (int i = 0; i < lines.Length; i++)
-                if (string.IsNullOrEmpty(lines[i].Trim().Replace("\t", string.Empty)))
-                    continue;
-                else
-                {
-                    result += lines[i];
-                    if (i < lines.Length - 1)
-                        result += "\r\n";
-                }
-            if (lastCarriage)
-                return "\r\n" + result;
-            else
-                return result.ToString();
+                return sb.ToString();
         }
 
         internal string ToStringFurtherOptions()
@@ -217,6 +232,12 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
 
         public string FileName { get; private set; }
 
+        public string GetBodyString()
+        {
+            return this.BuildString(false);
+        }
+
         #endregion
+
     }
 }
