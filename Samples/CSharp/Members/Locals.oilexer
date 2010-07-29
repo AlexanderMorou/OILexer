@@ -8,10 +8,6 @@ LocalConstantDeclaration                 ::=>
     "const" Type:Type; 
     DelimitedList<ConstantDeclarator:Declared;, ','> ';';
 
-//ConstantDeclarator                        ::=
-//    Identifier:Name; '=' 
-//    ConstantExpression:Value;               ;
-
 LocalVariableType                        ::=>
     Type                                    |
     ImplicitType                            ;

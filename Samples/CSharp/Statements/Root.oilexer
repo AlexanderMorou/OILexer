@@ -153,11 +153,6 @@ UsingStatement                            ::=
         "using" 
         Parametered<
         ResourceAcquisition:Target;>>;
-//    "using" 
-//    '(' 
-//        ResourceAcquisition:Target; 
-//    ')'
-//    EmbeddedStatement:Body;;
 
 ResourceAcquisition                      ::=>
     LocalVariableDeclaration                |

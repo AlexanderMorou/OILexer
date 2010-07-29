@@ -3,8 +3,6 @@
 TypeParameterList                         ::=
     '<' DelimitedList<TypeParameter:Items;, ','> '>';
 
-
-
 TypeParameterConstraints                  ::=
     TypeParameterConstraint:Items;+;
 

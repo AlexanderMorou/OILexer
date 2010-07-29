@@ -24,6 +24,11 @@ namespace Oilexer.VSIntegration
 
         public IEnumerable<ITagSpan<GDOutliningTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
+            /* *
+             * The handler performs the outliner logic by parsing the active file and 
+             * instructing it to create workable regions associated to the code in
+             * the active buffer.
+             * */
             foreach (var span in spans)
                 foreach (var regionTag in this.handler.OutliningSpansFrom(range: span.Span))
                     yield return regionTag;

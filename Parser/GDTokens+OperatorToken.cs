@@ -62,8 +62,8 @@ namespace Oilexer.Parser
             AndAnd = 0x200000,
             PipePipe = 0x400000,
             ExclaimEqual = 0x800000,
-            AtSign    = 0x1000000,
-            EqualEqual       = 0x2000000,
+            AtSign = 0x1000000,
+            EqualEqual = 0x2000000,
             AsteriskAsterisk = 0x4000000,
         }
         public class OperatorToken :
