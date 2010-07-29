@@ -22,5 +22,8 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         string SecondaryName { get; }
         bool IsFlag { get; }
         bool Counter { get; }
+        GDTokens.IdentifierToken PrimaryToken { get; }
+        GDTokens.IdentifierToken SecondaryToken { get;}
+
     }
 }

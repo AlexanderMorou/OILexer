@@ -222,5 +222,17 @@ namespace Oilexer.FiniteAutomata.Rules
                 return false;
         }
 
+        public bool Contains(ITokenEntry entry)
+        {
+            var tSymbols = from symbol in this.symbols
+                           let tokenSymbol = symbol as IGrammarTokenSymbol
+                           where tokenSymbol != null && tokenSymbol.Source == entry
+                           select (uint)symbols.IndexOf(tokenSymbol);
+            foreach (var tokenSymbolIndex in tSymbols)
+                if (this.Offset <= tokenSymbolIndex && Offset + this.Length > tokenSymbolIndex && this[tokenSymbolIndex])
+                    return true;
+            return false;
+        }
+
     }
 }

@@ -9,8 +9,7 @@ namespace Oilexer.Parser
         IParser
     {
         private ITokenStream lookaheadStream = null;
-
-        private IList<IToken> originalFormTokens = null;
+        protected IList<IToken> originalFormTokens = null;
 
         /// <summary>
         /// Data member for <see cref="State"/>.
@@ -22,10 +21,12 @@ namespace Oilexer.Parser
         /// Data member for <see cref="CurrentTokenizer"/>
         /// </summary>
         private ITokenizer currentTokenizer = null;
-        protected Parser()
+        protected Parser(IList<IToken> originalFormTokens = null)
         {
-            this.originalFormTokens = new List<IToken>();
-            this.lookaheadStream = new TokenStream(originalFormTokens);
+            if (originalFormTokens == null)
+                originalFormTokens = new List<IToken>();
+            this.originalFormTokens = originalFormTokens;
+            this.lookaheadStream = new TokenStream(this.originalFormTokens);
         }
 
         #region IParser Members
@@ -43,6 +44,11 @@ namespace Oilexer.Parser
 
         public IToken LookAhead(int howFar)
         {
+            return LookAheadImpl(howFar);
+        }
+
+        protected virtual IToken LookAheadImpl(int howFar)
+        {
             if (howFar < originalFormTokens.Count)
             {
                 return originalFormTokens[howFar];
@@ -53,7 +59,7 @@ namespace Oilexer.Parser
                     LookAhead(i);
                 if (this.originalFormTokens.Count > 0)
                     this.currentTokenizer.Position = this.originalFormTokens[this.originalFormTokens.Count - 1].Position + this.originalFormTokens[this.originalFormTokens.Count - 1].Length;
-                
+
                 CurrentTokenizer.NextToken(this.State);
                 if (CurrentTokenizer.CurrentToken != null)
                 {
@@ -62,19 +68,14 @@ namespace Oilexer.Parser
                 else
                     return null;
                 if (this.originalFormTokens.Count > 0)
-                    this.CurrentTokenizer.Position = this.originalFormTokens[0].Position;
+                    StreamPosition = this.originalFormTokens[0].Position;
                 return originalFormTokens[howFar];
             }
         }
 
-        public void PushAhead(IToken token, int howFar)
+        public void PushAhead(IToken token, int howFar = 0)
         {
             this.originalFormTokens.Insert(howFar, token);
-        }
-
-        public void PushAhead(IToken token)
-        {
-            this.PushAhead(token, 0);
         }
 
         public IToken PopAhead(bool move)
@@ -84,7 +85,7 @@ namespace Oilexer.Parser
             {
                 originalFormTokens.RemoveAt(0);
                 if (r.Length != -1 && move)
-                    this.CurrentTokenizer.Position = r.Position + r.Length;
+                    StreamPosition = r.Position + r.Length;
             }
             return r;
         }
@@ -131,47 +132,18 @@ namespace Oilexer.Parser
                 this.state = value;
             }
         }
-        /*
-        public ITokenStream Unwind(int number)
+
+        public virtual char TokenizerLookAhead(int howFar)
         {
-            if (number > this.lookaheadStream.Count)
-                number = this.lookaheadStream.Count;
-            IToken[] buffer = new IToken[number];
-            for (int i = 0; i < number; i++)
-                buffer[i] = this.lookaheadStream[this.lookaheadStream.Count - number + i];
-            for (int i = 0; i < number; i++)
-                this.originalFormTokens.RemoveAt(this.lookaheadStream.Count - number);
-            return new TokenStream(buffer);
+            return this.CurrentTokenizer.LookAhead(howFar);
         }
 
-        public ITokenStream Unwind()
-        {
-            return this.Unwind(this.lookaheadStream.Count);
-        }
-
-         * */
-
-        public char LookPast(int howFar)
-        {
-            if (this.lookaheadStream.Count > 0)
-            {
-                char re = char.MinValue;
-                IToken i = lookaheadStream[lookaheadStream.Count - 1];
-                this.CurrentTokenizer.Position = i.Position + i.Length;
-                re = this.CurrentTokenizer.LookAhead(howFar);
-                this.CurrentTokenizer.Position = lookaheadStream[0].Position;
-                return re;
-            }
-            else
-                return this.CurrentTokenizer.LookAhead(howFar);
-        }
-
-        public int AheadLength
+        public virtual int AheadLength
         {
             get { return this.originalFormTokens.Count; }
         }
 
-        public ITokenStream GetAhead(int count)
+        public virtual ITokenStream GetAhead(int count)
         {
             List<IToken> streamItems = new List<IToken>();
 
@@ -181,21 +153,32 @@ namespace Oilexer.Parser
                 if (it != null)
                     streamItems.Add(it);
             }
-            this.originalFormTokens.Clear();
+            ClearAhead();
             if (streamItems.Count > 0)
             {
                 IToken t = streamItems[streamItems.Count - 1];
-                this.CurrentTokenizer.Position = t.Position + t.Length;
+                StreamPosition = t.Position + t.Length;
             }
             return new TokenStream(streamItems);
         }
 
         #endregion
 
-        protected void ClearAhead()
+        protected virtual void ClearAhead()
         {
             this.originalFormTokens.Clear();
         }
 
+        public virtual long StreamPosition
+        {
+            get
+            {
+                return this.CurrentTokenizer.Position;
+            }
+            set
+            {
+                this.CurrentTokenizer.Position = value;
+            }
+        }
     }
 }

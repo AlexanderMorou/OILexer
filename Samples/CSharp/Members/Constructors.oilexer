@@ -24,7 +24,8 @@ InternConstructorDeclaration              ::=
 ConstructorInitializer                    ::=
     ':'
     ("base" | "this"):Target;
-    '(' DelimitedList<Argument:CascadeArguments;, ','>? ')';
+	Parametered<DelimitedList<Argument:CascadeArguments;, ','>?>;
+//  '(' DelimitedList<Argument:CascadeArguments;, ','>? ')';
 
 ExternConstructorDeclaration              ::=
     Attributes:Attributes;?
@@ -75,4 +76,3 @@ InternDestructorDeclaration               ::=
     Attributes:Attributes;?
     '~'Identifier:Name; '(' ')'
     Block:Body;                             ;
-

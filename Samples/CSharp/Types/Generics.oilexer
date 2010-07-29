@@ -13,7 +13,7 @@ TypeParameterConstraint                   ::=
     (
         (
             "class"                         | 
-            "struct"
+            "struct fds"
         ):PrimaryConstraint; 
         (
             ',' DelimitedList<Type:BaseTypes;, ','>

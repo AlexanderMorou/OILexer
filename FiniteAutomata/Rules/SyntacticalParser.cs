@@ -23,7 +23,6 @@ namespace Oilexer.FiniteAutomata.Rules
         public void Parse(string filename)
         {
             var lexicalAnalyzer = builder.LexicalAnalyzer;
-            //Console.Title = string.Format("Analyzing {0}", filename);
 #if FALSE
             lexicalAnalyzer.Open(filename);
             bool hasNext = true;
@@ -34,10 +33,10 @@ namespace Oilexer.FiniteAutomata.Rules
                                                                                 select symbol).ToArray());
             if (eofEntry == null)
                 eofEntry = new GrammarVocabulary(builder.GrammarSymbols, (from symbol in builder.GrammarSymbols
-                                                                            let tokenSymbol = symbol as IGrammarTokenSymbol
-                                                                            where tokenSymbol != null
-                                                                            where tokenSymbol.Source is ITokenEofEntry
-                                                                            select tokenSymbol).First());
+                                                                          let tokenSymbol = symbol as IGrammarTokenSymbol
+                                                                          where tokenSymbol != null
+                                                                          where tokenSymbol.Source is ITokenEofEntry
+                                                                          select tokenSymbol).First());
             do
             {
 

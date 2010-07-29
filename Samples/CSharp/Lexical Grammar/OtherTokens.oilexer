@@ -53,16 +53,10 @@ CommonEscapes :=
           '\\' /* Backslash Escape */       |
           HexEscape /* Hexadecimal Escape */|
           OctEscape /* Octal Escape */      |
-          ErrEscape /* Errored escape */);
+          ErrEscape /* Errored escape */)   ;
 
 Identifier := 
     '@'? IdentifierOrKeyword;
-/*
-IdentifierChar := [A-Z_a-z];
-
-Identifier := '@' IdentifierChar+ (IdentifierChar | [0-9])* |
-    Subtract(IdentifierChar+ (IdentifierChar | [0-9])*, Keywords);
-//*/
 
 UnicodeEscapeSequence :=
     "\\u" HexChar{4};

@@ -28,10 +28,12 @@ namespace Oilexer.Parser
 
         public CompilerErrorCollection Errors
         {
-            get {
+            get
+            {
                 if (this.errors == null)
                     this.errors = new CompilerErrorCollection();
-                return this.errors; }
+                return this.errors;
+            }
         }
 
         object IParserResults.Result

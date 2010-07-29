@@ -1,7 +1,0 @@
-#LexerName   :=                                                     "OILexer";
-#ParserName  :=                                                    "GDParser";
-#AssemblyName:=                                                     "Oilexer";
-#GrammarName := "Objectified Intermediate Language: Grammar Description File";
-#Root                                                           "GrammarFile";
-
-

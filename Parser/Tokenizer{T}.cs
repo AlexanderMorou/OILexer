@@ -16,6 +16,10 @@ namespace Oilexer.Parser
         {
 
         }
+        internal Tokenizer()
+            : base()
+        {
+        }
 
         #region ITokenizer<T> Members
 

@@ -1,214 +1,212 @@
 #include                      "Root.oilexer";
-
 /* --------------------------------------- *\
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
-
 ClassDeclaration                          ::=
     Attributes:Attributes;?
     (
-		"new" "public"? 
+        "new" "public"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"new" "private"? 
+        "new" "private"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"new" "internal"? "protected"? 
+        "new" "internal"? "protected"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"new" "protected"? "internal"? 
+        "new" "protected"? "internal"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"new" "internal"? 
+        "new" "internal"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "protected"?                     |
-		"new" "protected"? 
+        "new" "protected"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "internal"?                      |
-		"new" 
+        "new" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "public"?                        |
-		"new" 
+        "new" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "private"?                       |
-		"new" 
+        "new" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "internal"? "protected"?         |
-		"new" 
+        "new" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "protected"? "internal"?         |
-		"public" "new"? 
+        "public" "new"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"public" 
+        "public" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "new"?                           | 
-		"private" 
+        "private" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "new"?                           | 
-		"private" "new"? 
+        "private" "new"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"internal" "new"? "protected"? 
+        "internal" "new"? "protected"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"internal" "new"? 
+        "internal" "new"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "protected"?                     |
-		"internal" "protected"? "new"? 
+        "internal" "protected"? "new"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"internal" "protected"? 
+        "internal" "protected"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "new"?                           |
-		"internal" 
+        "internal" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "new"? "protected"?              | 
-		"internal" 
+        "internal" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "protected"? "new"?              | 
-		"protected" "new"? "internal"? 
+        "protected" "new"? "internal"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"protected" "new"? 
+        "protected" "new"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "internal"?                      |
-		"protected" "internal"? "new"? 
+        "protected" "internal"? "new"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )?                                  |
-		"protected" "internal"? 
+        "protected" "internal"? 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "new"?                           |
-		"protected" 
+        "protected" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "new"? "internal"?               | 
-		"protected" 
+        "protected" 
         (
             "sealed"                        |
             "abstract"                      |
             "static"
         )? "internal"? "new"?               | 
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "new"? "public"?                  |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "new"? "private"?                 |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "new"? "internal"? "protected"?   |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "new"? "protected"? "internal"?   |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "public"? "new"?                  |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "private"? "new"?                 |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "internal"? "new"? "protected"?   |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "protected"? "new"? "internal"?   |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
         ) "internal"? "protected"? "new"?   |
-		(
+        (
             "sealed"                        |
             "abstract"                      |
             "static"
@@ -219,3 +217,4 @@ ClassDeclaration                          ::=
     '{'
         ClassMemberDeclaration:Members;*
     '}' ';'?                                ;
+	

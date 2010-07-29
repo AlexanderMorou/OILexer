@@ -17,6 +17,8 @@ namespace Oilexer.Parser
         OM::Collection<GDFD::IEntry>;
     using GDStringCollection =
         OM::Collection<string>;
+using Oilexer.Parser.GDFileData.ProductionRuleExpression;
+    using Oilexer.Parser.GDFileData.TokenExpression;
 
     /// <summary>
     /// Provides a base implementation of <see cref="IGDFile"/>.
@@ -29,7 +31,8 @@ namespace Oilexer.Parser
         private GDStringCollection _files;
         private IList<string> includes;
         private IReadOnlyCollection<string> files;
-
+        private IList<IGDRegion> myRegions = new List<IGDRegion>();
+        private IReadOnlyCollection<IGDRegion> regions;
         private GDFile()
         {
         }
@@ -101,6 +104,47 @@ namespace Oilexer.Parser
                 return this.includes;
             }
         }
+
+        public IReadOnlyCollection<IGDRegion> Regions
+        {
+            get
+            {
+                if (this.regions == null)
+                    this.regions = new ReadOnlyCollection<IGDRegion>(this.myRegions);
+                return this.regions;
+            }
+        }
+
         #endregion
+
+        internal void AddCommentRegion(GDTokens.CommentToken commentToken)
+        {
+            this.myRegions.Add(new GDCommentRegion(commentToken));
+        }
+
+        internal void AddRuleRegion(IProductionRuleEntry entry, long bodyStart, long bodyEnd)
+        {
+            this.myRegions.Add(new GDProductionRuleRegion(entry, bodyStart, bodyEnd));
+        }
+
+        internal void AddIfRegion(IPreprocessorIfDirective directive, long bodyStart, long bodyEnd)
+        {
+            this.myRegions.Add(new GDPreprocessorIfDirectiveRegion(directive, bodyStart, bodyEnd));
+        }
+
+        internal void AddRuleGroupRegion(IProductionRuleGroupItem group, long openParen, long endParen)
+        {
+            this.myRegions.Add(new GDProductionRuleGroupRegion(group, openParen + 1, endParen));
+        }
+
+        internal void AddTokenGroupRegion(ITokenGroupItem group, long openParen, long endParen)
+        {
+            this.myRegions.Add(new GDTokenGroupRegion(group, openParen + 1, endParen));
+        }
+
+        internal void AddTokenRegion(ITokenEntry ite, long bodyStart, long bodyEnd)
+        {
+            this.myRegions.Add(new GDTokenRegion(ite, bodyStart, bodyEnd));
+        }
     }
 }

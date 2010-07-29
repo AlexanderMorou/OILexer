@@ -20,5 +20,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// Returns the name of the member in the target (<see cref="PrimaryName"/>).
         /// </summary>
         string SecondaryName { get; }
+        GDTokens.IdentifierToken PrimaryToken { get; }
+        GDTokens.IdentifierToken SecondaryToken { get; }
     }
 }

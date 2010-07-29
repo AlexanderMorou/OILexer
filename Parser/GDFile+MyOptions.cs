@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Oilexer.Properties;
 using Oilexer._Internal;
+using Oilexer.Parser.GDFileData.TokenExpression;
 namespace Oilexer.Parser
 {
     partial class GDFile

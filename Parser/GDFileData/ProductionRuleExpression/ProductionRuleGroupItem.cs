@@ -151,9 +151,15 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         #endregion
         public override string ToString()
         {
+            return BuildString();
+        }
+
+        private string BuildString(bool appendExtra = true)
+        {
             StringBuilder sb = new StringBuilder();
             bool first = true;
-            sb.Append("(");
+            if (appendExtra)
+                sb.Append("(");
             foreach (IProductionRule ite in this.baseCollection)
             {
                 if (first)
@@ -165,11 +171,21 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
                 }
                 sb.Append(ite.ToString().Replace("\r\n\t", "\r\n\t\t"));
             }
-            sb.Append(")");
-            if (this.name != null && this.name != string.Empty)
-                sb.Append(string.Format(":{0};", this.Name));
-            sb.Append(repeatOptions.ToString());
+            if (appendExtra)
+            {
+                sb.Append(")");
+                if (this.name != null && this.name != string.Empty)
+                    sb.Append(string.Format(":{0};", this.Name));
+                sb.Append(repeatOptions.ToString());
+            }
             return sb.ToString();
         }
+
+
+        public string GetBodyString()
+        {
+            return BuildString(false);
+        }
+
     }
 }

@@ -48,5 +48,10 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             }
             return sb.ToString();
         }
+
+        public string GetBodyString()
+        {
+            return ToString();
+        }
     }
 }

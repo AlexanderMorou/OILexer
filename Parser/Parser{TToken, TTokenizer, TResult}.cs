@@ -13,6 +13,11 @@ namespace Oilexer.Parser
         where TTokenizer :
             ITokenizer<TToken>
     {
+        public Parser(IList<IToken> originalFormTokens = null)
+            : base(originalFormTokens)
+        {
+        }
+
         #region IParser<TToken,TTokenizer> Members
 
         public new TToken GetCurrentToken()
@@ -27,7 +32,7 @@ namespace Oilexer.Parser
         public new TTokenizer CurrentTokenizer
         {
             get { return (TTokenizer)base.CurrentTokenizer; }
-            set { base.CurrentTokenizer = value; }
+            protected set { base.CurrentTokenizer = value; }
         }
 
         /// <summary>

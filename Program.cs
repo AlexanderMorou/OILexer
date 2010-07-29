@@ -172,8 +172,6 @@ namespace Oilexer
                     else if (s.ToLower() == NoLogo)
                         options = options | ValidOptions.NoLogo;
                     else if (s.ToLower() == Export_TraversalHTML)
-                        options |= ValidOptions.ExportTraversalHTML;
-                    else if (s.ToLower() == Export_TraversalHTML)
                     {
                         options &= ~(ValidOptions.ExportEXE | ValidOptions.ExportDLL | ValidOptions.ExportCSharp);
                         options |= ValidOptions.ExportTraversalHTML;
@@ -461,7 +459,7 @@ namespace Oilexer
                         const string compileSuccessful = "Successful";
                         const string compileFailure = "Failed";
                         Console.WriteLine("│ {1}{2} : {0} │", compileTimer.Elapsed, ' '.Repeat(maxLength - compileTime.Length), compileTime);
-                        string compileSuccess = string.Format("{0}{1}", ' '.Repeat(maxLength-compile.Length), compile);
+                        string compileSuccess = string.Format("{0}{1}", ' '.Repeat(maxLength - compile.Length), compile);
                         if (compileResults.NativeReturnValue == 0)
                             compileSuccess = string.Format("{0} : {1}", compileSuccess, compileSuccessful);
                         else

@@ -50,7 +50,11 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// members of the current <see cref="SoftReferenceTokenItem"/>.</returns>
         protected override object OnClone()
         {
-            SoftReferenceTokenItem srpri = new SoftReferenceTokenItem(this.PrimaryName, this.SecondaryName, this.Column, this.Line, this.Position);
+            SoftReferenceTokenItem srpri = new SoftReferenceTokenItem(this.PrimaryName, this.SecondaryName, this.Column, this.Line, this.Position)
+            {
+                PrimaryToken = this.PrimaryToken,
+                SecondaryToken = this.SecondaryToken
+            };
             base.CloneData(srpri);
             return srpri;
         }
@@ -85,5 +89,10 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
             else
                 return string.Format("{0}{1}", this.PrimaryName, this.RepeatOptions);
         }
+
+        public GDTokens.IdentifierToken PrimaryToken { get; internal set; }
+
+        public GDTokens.IdentifierToken SecondaryToken { get; internal set; }
+
     }
 }

@@ -96,12 +96,6 @@ namespace Oilexer._Internal.Inlining
             this.dfaState.Enumerate();
         }
 
-        //public void EmitState()
-        //{
-        //    if (this.dfaState != null)
-        //        Console.WriteLine("{0} => {1}",this.Name,this.dfaState);
-        //}
-
         public RegularCaptureType DetermineKind()
         {
             if (this.ForcedRecognizer)

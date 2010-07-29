@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexer", "OILexer.csproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexerParser", "OILexerParser.csproj", "{886B34E8-755F-420C-8725-767EADD92996}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSOILexer", "VSOILexer\VSOILexer.csproj", "{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -28,6 +30,14 @@ Global
 		{886B34E8-755F-420C-8725-767EADD92996}.Release|x64.Build.0 = Release|x64
 		{886B34E8-755F-420C-8725-767EADD92996}.Release|x86.ActiveCfg = Release|x86
 		{886B34E8-755F-420C-8725-767EADD92996}.Release|x86.Build.0 = Release|x86
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Debug|x64.ActiveCfg = Debug|x64
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Debug|x64.Build.0 = Debug|x64
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Debug|x86.ActiveCfg = Debug|x86
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Debug|x86.Build.0 = Debug|x86
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Release|x64.ActiveCfg = Release|x64
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Release|x64.Build.0 = Release|x64
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Release|x86.ActiveCfg = Release|x86
+		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

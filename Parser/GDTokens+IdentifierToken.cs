@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Oilexer.Parser.GDFileData;
 
 namespace Oilexer.Parser
 {
@@ -13,7 +14,8 @@ namespace Oilexer.Parser
             /// Data member for <see cref="Name"/>.
             /// </summary>
             private string name;
-
+            private GDTokenType tokenType = GDTokenType.Identifier;
+            private IScannableEntry entry;
             public IdentifierToken(string name, int column, int line, long position)
                 : base(column, line, position)
             {
@@ -33,7 +35,12 @@ namespace Oilexer.Parser
 
             public override GDTokenType TokenType
             {
-                get { return GDTokenType.Identifier; }
+                get { return this.tokenType; }
+            }
+
+            internal void SetTokenType(GDTokenType newType, IScannableEntry entry = null)
+            {
+                this.tokenType = newType;
             }
 
             public override int Length

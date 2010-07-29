@@ -10,11 +10,13 @@ namespace Oilexer.Parser
             GDToken
         {
             private string comment;
-            public CommentToken(string comment, int column, int line, long position)
+            public CommentToken(string comment, int column, int line, long position, bool multiLine=false)
                 : base(column, line, position)
             {
+                this.MultiLine = multiLine;
                 this.comment = comment;
             }
+            public bool MultiLine { get; private set; }
 
             public string Comment
             {

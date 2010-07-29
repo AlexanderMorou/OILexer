@@ -32,5 +32,14 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// was defined.
         /// </summary>
         string FileName { get; }
+
+        /// <summary>
+        /// Obtains the string form of the body of the 
+        /// <see cref="ITokenExpressionSeries"/>.
+        /// </summary>
+        /// <returns>A <see cref="String"/> representing
+        /// the elements within the description of the
+        /// <see cref="ITokenExpressionSeries"/>.</returns>
+        string GetBodyString();
     }
 }

@@ -65,6 +65,16 @@ namespace Oilexer.Parser
         /// </summary>
         long Length { get; }
         /// <summary>
+        /// Returns the <see cref="Int64"/> value representing
+        /// the point in the file where the 
+        /// <paramref name="line"/> is.
+        /// </summary>
+        /// <param name="line">The <see cref="Int32"/> value representing
+        /// the line to obtain the positional start of.</param>
+        /// <returns>A <see cref="Int64"/> value representing the position
+        /// that <paramref name="line"/> starts.</returns>
+        long GetPositionFromLine(int line);
+        /// <summary>
         /// Returns the current line index based on the current <see cref="Position"/>.
         /// </summary>
         /// <returns>A <see cref="System.Int32"/> value which denotes the current line.</returns>

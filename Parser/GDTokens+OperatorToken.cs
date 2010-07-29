@@ -59,6 +59,12 @@ namespace Oilexer.Parser
             Minus = 0x40000,
             ProductionRuleFlag = 0x080000,
             ForcedStringForm = 0x100000,
+            AndAnd = 0x200000,
+            PipePipe = 0x400000,
+            ExclaimEqual = 0x800000,
+            AtSign    = 0x1000000,
+            EqualEqual       = 0x2000000,
+            AsteriskAsterisk = 0x4000000,
         }
         public class OperatorToken :
             GDToken
@@ -86,7 +92,12 @@ namespace Oilexer.Parser
                     {
                         case OperatorType.ProductionRuleSeparator:
                             return 3;
+                        case OperatorType.AsteriskAsterisk:
                         case OperatorType.TokenSeparator:
+                        case OperatorType.ExclaimEqual:
+                        case OperatorType.EqualEqual:
+                        case OperatorType.AndAnd:
+                        case OperatorType.PipePipe:
                             return 2;
                         case OperatorType.LeafSeparator:
                         case OperatorType.LeftCurlyBrace:
@@ -107,6 +118,7 @@ namespace Oilexer.Parser
                         case OperatorType.ProductionRuleFlag:
                         case OperatorType.CounterNotification:
                         case OperatorType.ForcedStringForm:
+                        case OperatorType.AtSign:
                             return 1;
                         default:
                             return 0;
@@ -130,6 +142,12 @@ namespace Oilexer.Parser
                 {
                     case OperatorType.ProductionRuleSeparator:
                         return "::=";
+                    case OperatorType.AndAnd:
+                        return "&&";
+                    case OperatorType.AsteriskAsterisk:
+                        return "**";
+                    case OperatorType.PipePipe:
+                        return "||";
                     case OperatorType.TokenSeparator:
                         return ":=";
                     case  OperatorType.OptionsSeparator:
@@ -146,6 +164,12 @@ namespace Oilexer.Parser
                         return "#";
                     case OperatorType.RightCurlyBrace:
                         return "}";
+                    case OperatorType.EqualEqual:
+                        return "==";
+                    case OperatorType.ExclaimEqual:
+                        return "!=";
+                    case OperatorType.AtSign:
+                        return "@";
                     case OperatorType.TemplatePartsStart:
                         return "<";
                     case OperatorType.TemplatePartsEnd:

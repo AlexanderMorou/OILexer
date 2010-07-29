@@ -11,11 +11,10 @@ using System.Collections.ObjectModel;
 
 namespace Oilexer.Parser
 {
-    public sealed partial class GDParser :
+    public partial class GDParser :
         Parser<IGDToken, IGDTokenizer, IGDFile>,
         IGDParser
     {
-        
         private List<string> includeDirectives = new List<string>();
         private List<string> parsedIncludeDirectives = new List<string>();
         private List<int> commandDepths = new List<int>();
@@ -24,6 +23,16 @@ namespace Oilexer.Parser
         private int parameterDepth = 0;
         private IDictionary<string, string> definedSymbols = new Dictionary<string,string>();
         private delegate bool SimpleParseDelegate<T>(ref T target);
+        private bool parseIncludes;
+        private bool captureRegions;
+        
+        internal GDParser(bool parseIncludes = true, bool captureRegions = false, IList<IToken> originalFormTokens = null)
+            : base(originalFormTokens)
+        {
+            this.parseIncludes = parseIncludes;
+            this.captureRegions = captureRegions;
+        }
+
         /// <summary>
         /// Parses the <paramref name="fileName"/> and returns the appropriate <see cref="IParserResults{T}"/>
         /// </summary>
@@ -97,14 +106,14 @@ namespace Oilexer.Parser
         /* *
          * Initializes the parse process.
          * */
-        private IParserResults<IGDFile> BeginParse()
+        protected IParserResults<IGDFile> BeginParse()
         {
             //Instantiate the parser results and give it a blank file to work with.
             currentTarget = new GDParserResults();
             currentTarget.SetResult(new GDFile(this.CurrentTokenizer.FileName));
             while (true)
             {
-                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                SetMultiLineMode(true);
                 //Clear the ahead, hack.
                 this.ClearAhead();
                 char c = LookPastAndSkip();
@@ -113,11 +122,11 @@ namespace Oilexer.Parser
                 if (c == char.MinValue)
                     break;
 
-                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = false;
+                SetMultiLineMode(false);
                 //Expected pathExplorationComment.
                 if (c == '/')
                 {
-                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                    SetMultiLineMode(true);
                     ITokenStream its = this.GetAhead(1);
                     if (its.Count == 0)
                     {
@@ -127,7 +136,11 @@ namespace Oilexer.Parser
                     IGDToken it = (IGDToken)its[0];
                     if (it == null || it.TokenType != GDTokenType.Comment)
                         Expect("pathExplorationComment");
-                    this.currentTarget.Result.Add(new CommentEntry(((GDTokens.CommentToken)(it)).Comment, CurrentTokenizer.FileName, it.Column, it.Line, it.Position));
+                    var gdResult = this.currentTarget.Result as GDFile;
+                    var commentToken = ((GDTokens.CommentToken)(it));
+                    if (commentToken.MultiLine && captureRegions)
+                        gdResult.AddCommentRegion(commentToken);
+                    this.currentTarget.Result.Add(new CommentEntry(commentToken.Comment, CurrentTokenizer.FileName, it.Column, it.Line, it.Position));
                 }
                 //Expected preprocessor.
                 else if (c == '#')
@@ -168,13 +181,13 @@ namespace Oilexer.Parser
                      * All declarations must begin at the first column 
                      * of the line.
                      * */
-                    if (this.CurrentTokenizer.GetColumnIndex() != 1)
+                    if (this.CurrentTokenizer.GetColumnIndex(this.StreamPosition) != 1)
                     {
                         GetAhead(1);
                         LogError(GDParserErrors.ExpectedEndOfLine);
                         continue;
                     }
-                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                    SetMultiLineMode(true);
                     EntryScanMode esm = EntryScanMode.Inherited;
                     ITokenStream its = GetAhead(2);
                     /* *
@@ -219,15 +232,15 @@ namespace Oilexer.Parser
                                     elementsAreChildren = true;
                                     PopAhead();
                                 }
-                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
-                                ParseProductionRule(id.Name, EntryScanMode.Inherited, id.Position, elementsAreChildren);
+                                SetMultiLineMode(true);
+                                ParseProductionRule(id, EntryScanMode.Inherited, id.Position, elementsAreChildren);
                                 break;
                             //ID :=
                             case GDTokens.OperatorType.TokenSeparator:
                                 {
-                                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                    SetMultiLineMode(true);
                                     bool unhinged = false;
-                                    if (LookPast(0) == '*')
+                                    if (TokenizerLookAhead(0) == '*')
                                     {
                                         //ID :=*
                                         /* *
@@ -237,7 +250,7 @@ namespace Oilexer.Parser
                                         this.PopAhead();
                                         unhinged = true;
                                     }
-                                    ParseToken(id.Name, EntryScanMode.Inherited, id.Position, unhinged, lowerPrecedences, forcedRecognizer);
+                                    ParseToken(id, EntryScanMode.Inherited, id.Position, unhinged, lowerPrecedences, forcedRecognizer);
                                 }
                                 break;
                             //ID =
@@ -246,8 +259,8 @@ namespace Oilexer.Parser
                                 break;
                             //ID<
                             case GDTokens.OperatorType.TemplatePartsStart:
-                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
-                                IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts();
+                                SetMultiLineMode(true);
+                                IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts(ot);
                                 if (parts == null)
                                     continue;
                                 else
@@ -271,7 +284,7 @@ namespace Oilexer.Parser
                                         Expect("::=");
                                         break;
                                     }
-                                    this.ParseProductionRuleTemplate(id.Name, parts, esm, id.Position);
+                                    this.ParseProductionRuleTemplate(id, parts, esm, id.Position);
                                 }
                                 break;
                             //ID>
@@ -314,20 +327,20 @@ namespace Oilexer.Parser
                                     switch (ot.Type)
                                     {
                                         case GDTokens.OperatorType.ProductionRuleSeparator:
-                                            ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                            SetMultiLineMode(true);
                                             if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
                                                 ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
                                             {
                                                 elementsAreChildren = true;
                                                 PopAhead();
                                             }
-                                            ParseProductionRule(id.Name, esm, id.Position, elementsAreChildren);
+                                            ParseProductionRule(id, esm, id.Position, elementsAreChildren);
                                             break;
                                         case GDTokens.OperatorType.TokenSeparator:
                                             {
-                                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                                SetMultiLineMode(true);
                                                 bool unhinged = false;
-                                                if (LookPast(0) == '*')
+                                                if (TokenizerLookAhead(0) == '*')
                                                 {
                                                     //ID[+-] :=*
                                                     /* *
@@ -337,7 +350,7 @@ namespace Oilexer.Parser
                                                     this.PopAhead();
                                                     unhinged = true;
                                                 }
-                                                ParseToken(id.Name, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer);
+                                                ParseToken(id, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer);
                                             }
                                             break;
                                         case GDTokens.OperatorType.ErrorSeparator:
@@ -360,7 +373,7 @@ namespace Oilexer.Parser
                 }
                 else if (Lexer.IsWhitespaceChar(c))
                     //Skip
-                    ((Lexer)(this.CurrentTokenizer)).ParseWhitespaceInternal();
+                    SkipWhitespace();
                 else
                 {
                     LogError(GDParserErrors.ExpectedEndOfLine);
@@ -369,8 +382,14 @@ namespace Oilexer.Parser
             }
             GDParserResults gdpr = currentTarget;
             currentTarget = null;
-            ParseIncludes(gdpr);
+            if (this.parseIncludes)
+                ParseIncludes(gdpr);
             return gdpr;
+        }
+
+        internal virtual void SkipWhitespace()
+        {
+            ((Lexer)(this.CurrentTokenizer)).ParseWhitespaceInternal();
         }
 
         private void ProcessIfEntry(IPreprocessorIfDirective ifEntry)
@@ -623,9 +642,9 @@ namespace Oilexer.Parser
 
         private char LookPastAndSkip()
         {
-            if (Lexer.IsWhitespaceChar(LookPast(0)))
-                ((Lexer)(CurrentTokenizer)).ParseWhitespaceInternal();
-            return LookPast(0);
+            if (Lexer.IsWhitespaceChar(TokenizerLookAhead(0)))
+                this.SkipWhitespace();
+            return TokenizerLookAhead(0);
         }
 
         private void ParseError(string name, long position)
@@ -704,11 +723,11 @@ namespace Oilexer.Parser
             }
         }
 
-        private IList<IProductionRuleTemplatePart> ParseProductionRuleTemplateParts()
+        private IList<IProductionRuleTemplatePart> ParseProductionRuleTemplateParts(GDTokens.OperatorToken currentOperator)
         {
-            if (!(CurrentTokenizer.CurrentToken != null &&
-                CurrentTokenizer.CurrentToken.TokenType == GDTokenType.Operator &&
-                ((GDTokens.OperatorToken)(CurrentTokenizer.CurrentToken)).Type == GDTokens.OperatorType.TemplatePartsStart))
+            var currentToken = currentOperator;
+            if (!(currentOperator != null &&
+                currentOperator.Type == GDTokens.OperatorType.TemplatePartsStart))
             {
                 Expect("<");
                 return null;
@@ -773,6 +792,7 @@ namespace Oilexer.Parser
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, expectTarget, id.Line, id.Column, id.Position);
                             else
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, special.Value, id.Line, id.Column, id.Position);
+                            this.DefineRuleTemplateParameterIdentifier(id, currentPart);
                             result.Add(currentPart);
                             break;
                         case GDTokens.OperatorType.OneOrMore:
@@ -790,6 +810,7 @@ namespace Oilexer.Parser
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, expectTarget, id.Line, id.Column, id.Position);
                             else
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, special.Value, id.Line, id.Column, id.Position);
+                            this.DefineRuleTemplateParameterIdentifier(id, currentPart);
                             result.Add(currentPart);
                             goto _ter;
                         default:
@@ -827,15 +848,28 @@ namespace Oilexer.Parser
             return false;
         }
 
-        private void ParseProductionRuleTemplate(string name, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position)
+        private void ParseProductionRuleTemplate(GDTokens.IdentifierToken identifier, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position)
         {
-            ParseProductionRuleTemplate(name, parts, scanMode, position, null);
+            ParseProductionRuleTemplate(identifier, parts, scanMode, position, null);
         }
 
-        private void ParseProductionRuleTemplate(string name, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position, PreprocessorIfDirective.DirectiveBody target)
+        private void ParseProductionRuleTemplate(GDTokens.IdentifierToken identifier, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position, PreprocessorIfDirective.DirectiveBody target)
         {
-            IProductionRuleTemplateEntry iprte = new ProductionRuleTemplateEntry(name, scanMode, parts, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
+            long bodyStart = this.StreamPosition;
+            IProductionRuleTemplateEntry iprte = new ProductionRuleTemplateEntry(identifier.Name, scanMode, parts, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
             ParseProductionRule(((ProductionRuleTemplateEntry)iprte).BaseCollection, PreprocessorContainer.Template);
+            long bodyEnd = this.StreamPosition;
+            this.DefineRuleTemplateIdentifier(identifier, iprte);
+            if (captureRegions)
+            {
+                int startLine = this.CurrentTokenizer.GetLineIndex(bodyStart);
+                int endLine = this.CurrentTokenizer.GetLineIndex(bodyEnd);
+                if (endLine > startLine + 1)
+                {
+                    var gdResult = this.currentTarget.Result as GDFile;
+                    gdResult.AddRuleRegion(iprte, bodyStart, bodyEnd);
+                }
+            }
             if (target == null)
                 this.currentTarget.Result.Add(iprte);
             else
@@ -848,7 +882,9 @@ namespace Oilexer.Parser
             {
                 ClearAhead();
                 char c = LookPastAndSkip();
-                if (c == ';')
+                if (c == char.MinValue)
+                    break;
+                else if (c == ';')
                 {
                     ExpectOperator(PopAhead(), GDTokens.OperatorType.EntryTerminal, true);
                     break;
@@ -878,6 +914,9 @@ namespace Oilexer.Parser
                     }
                     ParseProductionRuleBody(iprte, container);
                 }
+                else if (Lexer.IsWhitespaceChar(c))
+                    //Skip
+                    SkipWhitespace();
                 else
                 {
                     Expect("string, char, identifier, preprocessor, or ';'");
@@ -888,9 +927,9 @@ namespace Oilexer.Parser
 
         private void ParseProductionRuleBody(ICollection<IProductionRule> series, PreprocessorContainer container)
         {
-            int l = this.CurrentTokenizer.GetLineIndex();
-            int ci = this.CurrentTokenizer.GetColumnIndex();
-            long p = this.CurrentTokenizer.Position;
+            int l = this.CurrentTokenizer.GetLineIndex(this.StreamPosition);
+            int ci = this.CurrentTokenizer.GetColumnIndex(this.StreamPosition);
+            long p = this.StreamPosition;
             IList<IProductionRuleItem> seriesItemMembers = new List<IProductionRuleItem>();
             while (true)
             {
@@ -901,9 +940,17 @@ namespace Oilexer.Parser
                     this.currentTarget.Errors.Add(CurrentTokenizer.CurrentError);
                     return;
                 }
+                else if (igdt == null)
+                    goto yield;
                 switch (igdt.TokenType)
                 {
                     case GDTokenType.Comment:
+                        var commentToken = igdt as GDTokens.CommentToken;
+                        if (captureRegions && commentToken.MultiLine)
+                        {
+                            var gdResult = currentTarget.Result as GDFile;
+                            gdResult.AddCommentRegion(commentToken);
+                        }
                         PopAhead();
                         continue;
                     case GDTokenType.CharacterLiteral:
@@ -1010,7 +1057,7 @@ namespace Oilexer.Parser
                                 ClearAhead();
                                 if (templateDepth != 0 || parameterDepth != 0)
                                 {
-                                    Expect((templateDepth == 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.CurrentTokenizer.Position);
+                                    Expect((templateDepth == 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.StreamPosition);
                                 }
                                 goto yield;
                             default:
@@ -1028,30 +1075,30 @@ namespace Oilexer.Parser
                 if (item != null)
                 {
                     ClearAhead();
-                    if (LookPast(0) == ':')
+                    if (TokenizerLookAhead(0) == ':')
                     {
                         ParseItemOptions(item);
                     }
                     //Just in case -_-
                     ClearAhead();
-                    if (LookPast(0) == '?')
+                    if (TokenizerLookAhead(0) == '?')
                     {
                         item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrOne;
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                     }
-                    else if (LookPast(0) == '+')
+                    else if (TokenizerLookAhead(0) == '+')
                     {
                         item.RepeatOptions = ScannableEntryItemRepeatInfo.OneOrMore;
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                     }
-                    else if (LookPast(0) == '*')
+                    else if (TokenizerLookAhead(0) == '*')
                     {
                         item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                     }
-                    else if (LookPast(0) == '{')
+                    else if (TokenizerLookAhead(0) == '{')
                     {
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                         ITokenStream numberOp = this.GetAhead(2);
                         //Either min unbounded or error.
                         if (!(SeriesMatch(numberOp, GDTokenType.NumberLiteral, GDTokenType.Operator) ||
@@ -1099,10 +1146,10 @@ namespace Oilexer.Parser
                                 ExpectOperator(op, GDTokens.OperatorType.RightCurlyBrace | GDTokens.OperatorType.TemplatePartsSeparator, true);
                         }
                     }
-                    if (LookPast(0) == '@')
+                    if (TokenizerLookAhead(0) == '@')
                     {
                         item.RepeatOptions |= ScannableEntryItemRepeatInfo.AnyOrder;
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                     }
                     seriesItemMembers.Add(item);
                 }
@@ -1114,13 +1161,24 @@ namespace Oilexer.Parser
 
         private IProductionRuleGroupItem ParseProductionRuleGroup(PreprocessorContainer container)
         {
+            
             GDTokens.OperatorToken ot = LookAhead(0) as GDTokens.OperatorToken;
             if (ot != null && ExpectOperator(PopAhead(), GDTokens.OperatorType.LeftParenthesis, true))
             {
                 List<IProductionRule> items = new List<IProductionRule>();
                 ParseProductionRule(items, container);
                 IProductionRuleGroupItem result = new ProductionRuleGroupItem(items.ToArray(), ot.Column, ot.Line, ot.Position);
-                ExpectOperator(PopAhead(), GDTokens.OperatorType.RightParenthesis, true);
+                var endTok = this.PopAhead();
+                long groupEnd = endTok.Position;
+                if (captureRegions)
+                {
+                    var gdResult = this.currentTarget.Result as GDFile;
+                    int lineStart = ot.Line;
+                    int lineEnd = endTok.Line;
+                    if (lineEnd > lineStart + 1)
+                        gdResult.AddRuleGroupRegion(result, ot.Position, groupEnd);
+                }
+                ExpectOperator(endTok, GDTokens.OperatorType.RightParenthesis, true);
                 return result;
             }
             return null;
@@ -1219,7 +1277,7 @@ namespace Oilexer.Parser
         {
             IPreprocessorDirective result = null;
             bool ml = ((Lexer)this.CurrentTokenizer).MultiLineMode;
-            ((Lexer)this.CurrentTokenizer).MultiLineMode = false;
+            this.SetMultiLineMode(false);
             GDTokens.PreprocessorDirective ppd = LookAhead(0) as GDTokens.PreprocessorDirective;
             if (ppd != null)
             {
@@ -1250,7 +1308,9 @@ namespace Oilexer.Parser
                         PopAhead();
                         IPreprocessorCLogicalOrConditionExp condition = null;
                         if (ParsePreprocessorCLogicalOrConditionExp(ref condition))
+                        {
                             result = ParseIfDirective(condition, ppd, container);
+                        }
                         break;
                     case GDTokens.PreprocessorType.AddRuleDirective:
                         if (container == PreprocessorContainer.Template)
@@ -1280,13 +1340,12 @@ namespace Oilexer.Parser
             else if (container == PreprocessorContainer.Rule)
             {
                 ICollection<IProductionRule> containedSet = new List<IProductionRule>();
-                int line = this.CurrentTokenizer.GetLineIndex(), column = this.CurrentTokenizer.GetColumnIndex();
-                long position = this.CurrentTokenizer.Position;
-                var cTokenizer = ((Lexer)(this.CurrentTokenizer));
-                bool multiLine = cTokenizer.MultiLineMode;
-                cTokenizer.MultiLineMode = true;
+                int line = this.CurrentTokenizer.GetLineIndex(this.StreamPosition), column = this.CurrentTokenizer.GetColumnIndex(this.StreamPosition);
+                long position = this.StreamPosition;
+                bool multiLine = ((Lexer)(this.CurrentTokenizer)).MultiLineMode;
+                this.SetMultiLineMode(true);
                 this.ParseProductionRuleBody(containedSet, container);
-                cTokenizer.MultiLineMode = multiLine;
+                this.SetMultiLineMode(multiLine);
                 return new PreprocessorProductionRuleSeries(containedSet, column, line, position);
             }
             return result;
@@ -1318,16 +1377,19 @@ namespace Oilexer.Parser
                     tok = PopAhead();
                     if (!ExpectOperator(tok, GDTokens.OperatorType.EntryTerminal, true))
                         return null;
-                    
+
                 }
                 else if (!ExpectOperator(op, GDTokens.OperatorType.EntryTerminal, true))
                     return null;
                 return new PreprocessorDefineSymbolDirective(name, value, preprocessor.Column, preprocessor.Line, preprocessor.Position);
             }
-            else if (((IGDToken)stream[1]).TokenType == GDTokenType.Identifier)
+            else if (stream.Count == 3 && ((IGDToken)stream[1]).TokenType == GDTokenType.Identifier)
                 ExpectOperator((IGDToken)stream[2], GDTokens.OperatorType.TemplatePartsSeparator | GDTokens.OperatorType.EntryTerminal, true);
-            else
+            else if (stream.Count > 1)
                 Expect("identifier", stream[1].Position);
+            else if (stream.Count == 1)
+                Expect("identifier", stream[0].Position + stream[0].Length);
+
             return null;
         }
 
@@ -1482,7 +1544,7 @@ namespace Oilexer.Parser
                     default:
                         Expect("#include, #AssemblyName, #LexerName, #ParserName, #GrammarName, #TokenPrefix, #TokenSuffix, #RulePrefix, or #RuleSuffix directive", pp.Position);
                         if (its.Count > 1)
-                            this.CurrentTokenizer.Position = its[1].Position;
+                            this.StreamPosition = its[1].Position;
                         break;
                 }
             }
@@ -1493,7 +1555,7 @@ namespace Oilexer.Parser
         {
             IPreprocessorConditionalReturnDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
+            this.SetMultiLineMode(false);
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.ReturnDirective)
             {
@@ -1504,7 +1566,7 @@ namespace Oilexer.Parser
             ICollection<IProductionRule> icipr = new System.Collections.ObjectModel.Collection<IProductionRule>();
             ParseProductionRule(icipr, PreprocessorContainer.Template);
             result = new PreprocessorConditionalReturnDirective(new List<IProductionRule>(icipr).ToArray(), igdt.Column, igdt.Line, igdt.Position);
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
+            this.SetMultiLineMode(mlm);
             return result;
         }
 
@@ -1512,7 +1574,7 @@ namespace Oilexer.Parser
         {
             IPreprocessorAddRuleDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
+            this.SetMultiLineMode(false);
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.AddRuleDirective)
             {
@@ -1533,11 +1595,11 @@ namespace Oilexer.Parser
                     return null;
                 }
                 ICollection<IProductionRule> icipr = new System.Collections.ObjectModel.Collection<IProductionRule>();
-                ((Lexer)(CurrentTokenizer)).MultiLineMode = true;
+                this.SetMultiLineMode(true);
                 ParseProductionRule(icipr, PreprocessorContainer.Template);
                 result = new PreprocessorAddRuleDirective(target.Name, new List<IProductionRule>(icipr).ToArray(), igdt.Column, igdt.Line, igdt.Position);
             }
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
+            this.SetMultiLineMode(mlm);
             return result;
         }
 
@@ -1545,7 +1607,7 @@ namespace Oilexer.Parser
         {
             IPreprocessorDefineRuleDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
+            this.SetMultiLineMode(false);
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.DefineDirective)
             {
@@ -1566,12 +1628,12 @@ namespace Oilexer.Parser
                     return null;
                 }
                 ICollection<IProductionRule> icipr = new System.Collections.ObjectModel.Collection<IProductionRule>();
-                ((Lexer)(CurrentTokenizer)).MultiLineMode = true;
+                this.SetMultiLineMode(true);
                 ParseProductionRule(icipr, PreprocessorContainer.Template);
                 result = new PreprocessorDefineRuleDirective(target.Name, new List<IProductionRule>(icipr).ToArray(), igdt.Column, igdt.Line, igdt.Position);
             }
 
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
+            this.SetMultiLineMode(mlm);
             return result;
         }
 
@@ -1579,7 +1641,7 @@ namespace Oilexer.Parser
         {
             IPreprocessorThrowDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = false;
+            this.SetMultiLineMode(false);
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.ThrowDirective)
             {
@@ -1628,7 +1690,7 @@ namespace Oilexer.Parser
             else
                 Expect("identifier");
             
-            ((Lexer)(CurrentTokenizer)).MultiLineMode = mlm;
+            this.SetMultiLineMode(mlm);
             return result;
         }
 
@@ -1671,7 +1733,7 @@ namespace Oilexer.Parser
             IPreprocessorIfDirective last = current;
             bool final = false;
             IGDToken igdt = null;
-            ((Lexer)CurrentTokenizer).MultiLineMode = true;
+            this.SetMultiLineMode(true);
             while (
                 (igdt = LookAhead(0)).TokenType == GDTokenType.PreprocessorDirective ||
                 igdt.TokenType == GDTokenType.Comment)
@@ -1690,7 +1752,7 @@ namespace Oilexer.Parser
                                 Expect("#endif");
                                 goto endWhile;
                             }
-                            ((Lexer)CurrentTokenizer).MultiLineMode = false;
+                            this.SetMultiLineMode(false);
                             if (ParsePreprocessorCLogicalOrConditionExp(ref subCondition))
                             {
                                 current = ParseIfDirective(subCondition, ppd, container);
@@ -1712,14 +1774,22 @@ namespace Oilexer.Parser
                     }
                 }
                 else if (igdt.TokenType == GDTokenType.Comment)
+                {
+                    var commentToken = igdt as GDTokens.CommentToken;
+                    if (captureRegions && commentToken.MultiLine)
+                    {
+                        var gdResult = currentTarget.Result as GDFile;
+                        gdResult.AddCommentRegion(commentToken);
+                    }
                     PopAhead();
+                }
                 if (last != current)
                 {
                     ((PreprocessorIfDirective)(last)).Next = current;
                     ((PreprocessorIfDirective)(current)).Previous = last;
                 }
                 last = current;
-                ((Lexer)CurrentTokenizer).MultiLineMode = true;
+                this.SetMultiLineMode(true);
             }
             endWhile:
             return result;
@@ -1729,10 +1799,14 @@ namespace Oilexer.Parser
         {
             var ppidb = ((PreprocessorIfDirective.DirectiveBody)ipid.Body);
             Action<IEntry> preprocessorInserter = p => ppidb.Add(new PreprocessorEntryContainer(p, p.Column, p.Line, p.Position));
+            long bodyStart = ipid.Position;
             while (true)
             {
-                ((Lexer)this.CurrentTokenizer).MultiLineMode = true;
-                GDTokens.PreprocessorDirective ppd = LookAhead(0) as GDTokens.PreprocessorDirective;
+                LookPastAndSkip();
+                this.SetMultiLineMode(true);
+
+                var la0 = this.LookAhead(0);
+                GDTokens.PreprocessorDirective ppd = la0 as GDTokens.PreprocessorDirective;
                 if (ppd != null)
                 {
                     switch (ppd.Type)
@@ -1761,7 +1835,7 @@ namespace Oilexer.Parser
                         case GDTokens.PreprocessorType.ElseIfDefinedDirective:
                         case GDTokens.PreprocessorType.ElseDirective:
                         case GDTokens.PreprocessorType.EndIfDirective:
-                            return;
+                            goto endBody;
                         case GDTokens.PreprocessorType.IncludeDirective:
                         case GDTokens.PreprocessorType.RootDirective:
                         case GDTokens.PreprocessorType.AssemblyNameDirective:
@@ -1784,13 +1858,13 @@ namespace Oilexer.Parser
                             break;
                     }
                 }
-                else if (container == PreprocessorContainer.File && LookAhead(0).TokenType == GDTokenType.Identifier)
+                else if (container == PreprocessorContainer.File && la0.TokenType == GDTokenType.Identifier)
                 {
                     /* *
                      * All declarations must begin at the first column 
                      * of the line.
                      * */
-                    if (this.CurrentTokenizer.GetColumnIndex() != 1)
+                    if (this.CurrentTokenizer.GetColumnIndex(this.StreamPosition) != 1)
                     {
                         GetAhead(1);
                         LogError(GDParserErrors.ExpectedEndOfLine);
@@ -1840,15 +1914,15 @@ namespace Oilexer.Parser
                                     elementsAreChildren = true;
                                     PopAhead();
                                 }
-                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
-                                ParseProductionRule(id.Name, EntryScanMode.Inherited, id.Position, elementsAreChildren, container, preprocessorInserter);
+                                SetMultiLineMode(true);
+                                ParseProductionRule(id, EntryScanMode.Inherited, id.Position, elementsAreChildren, preprocessorInserter, container);
                                 break;
                             //ID :=
                             case GDTokens.OperatorType.TokenSeparator:
                                 {
-                                    ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                    SetMultiLineMode(true);
                                     bool unhinged = false;
-                                    if (LookPast(0) == '*')
+                                    if (TokenizerLookAhead(0) == '*')
                                     {
                                         //ID :=*
                                         /* *
@@ -1858,7 +1932,7 @@ namespace Oilexer.Parser
                                         this.PopAhead();
                                         unhinged = true;
                                     }
-                                    ParseToken(id.Name, EntryScanMode.Inherited, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb);
+                                    ParseToken(id, EntryScanMode.Inherited, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb);
                                 }
                                 break;
                             //ID =
@@ -1867,8 +1941,8 @@ namespace Oilexer.Parser
                                 break;
                             //ID<
                             case GDTokens.OperatorType.TemplatePartsStart:
-                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
-                                IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts();
+                                SetMultiLineMode(true);
+                                IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts(ot);
                                 if (parts == null)
                                     continue;
                                 else
@@ -1892,7 +1966,7 @@ namespace Oilexer.Parser
                                         Expect("::=");
                                         break;
                                     }
-                                    this.ParseProductionRuleTemplate(id.Name, parts, esm, id.Position, ppidb);
+                                    this.ParseProductionRuleTemplate(id, parts, esm, id.Position, ppidb);
                                 }
                                 break;
                             //ID>
@@ -1935,20 +2009,20 @@ namespace Oilexer.Parser
                                     switch (ot.Type)
                                     {
                                         case GDTokens.OperatorType.ProductionRuleSeparator:
-                                            ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                            SetMultiLineMode(true);
                                             if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
                                                 ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
                                             {
                                                 elementsAreChildren = true;
                                                 PopAhead();
                                             }
-                                            ParseProductionRule(id.Name, esm, id.Position, elementsAreChildren, container, preprocessorInserter);
+                                            ParseProductionRule(id, esm, id.Position, elementsAreChildren, preprocessorInserter, container);
                                             break;
                                         case GDTokens.OperatorType.TokenSeparator:
                                             {
-                                                ((Lexer)(this.CurrentTokenizer)).MultiLineMode = true;
+                                                SetMultiLineMode(true);
                                                 bool unhinged = false;
-                                                if (LookPast(0) == '*')
+                                                if (TokenizerLookAhead(0) == '*')
                                                 {
                                                     //ID[+-] :=*
                                                     /* *
@@ -1958,7 +2032,7 @@ namespace Oilexer.Parser
                                                     this.PopAhead();
                                                     unhinged = true;
                                                 }
-                                                ParseToken(id.Name, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb);
+                                                ParseToken(id, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb);
                                             }
                                             break;
                                         case GDTokens.OperatorType.ErrorSeparator:
@@ -1984,14 +2058,45 @@ namespace Oilexer.Parser
                     IPreprocessorDirective ipd = ParsePreprocessor(container);
                     ppidb.Add(ipd);
                 }
-                else if (LookAhead(0).TokenType == GDTokenType.Comment)
+                else if (la0.TokenType == GDTokenType.Comment)
+                {
+                    var commentToken = la0 as GDTokens.CommentToken;
+                    if (captureRegions && commentToken.MultiLine)
+                    {
+                        var gdResult = currentTarget.Result as GDFile;
+                        gdResult.AddCommentRegion(commentToken);
+                    }
+
                     PopAhead();
+                }
                 else
                 {
                     Expect("#endif, #else, or #elif");
                     break;
                 }
             }
+        endBody:
+            if (captureRegions)
+            {
+                var gdResult = this.currentTarget.Result as GDFile;
+                long bodyEnd = this.StreamPosition;
+                int startLine = this.CurrentTokenizer.GetLineIndex(bodyStart) + 1;
+                int endLine = this.CurrentTokenizer.GetLineIndex(bodyEnd);
+                if (endLine > startLine + 1)
+                {
+                    var nlLen = Environment.NewLine.Length;
+                    bodyStart = this.CurrentTokenizer.GetPositionFromLine(startLine) - nlLen;
+                    bodyEnd = this.CurrentTokenizer.GetPositionFromLine(endLine) - nlLen;
+
+                    gdResult.AddIfRegion(ipid, bodyStart, bodyEnd);
+                }
+            }
+            ;
+        }
+
+        internal virtual void SetMultiLineMode(bool value)
+        {
+            ((Lexer)(this.CurrentTokenizer)).MultiLineMode = value;
         }
 
         private T ParseContinuous<T>(T incoming, SimpleParseDelegate<T> parseMethod)
@@ -2053,8 +2158,8 @@ namespace Oilexer.Parser
                  * */
                 IPreprocessorCLogicalOrConditionExp last = GetReference<IPreprocessorCLogicalOrConditionExp>();
                 //Check for the required '||'...
-                if (LookPastAndSkip() == '|' && LookPast(1) == '|')
-                    CurrentTokenizer.Flush(2);
+                if (LookPastAndSkip() == '|' && TokenizerLookAhead(1) == '|')
+                    this.PopAhead();
                 else if (rResult == null)
                 {
                     Expect("||", CurrentTokenizer.Position);
@@ -2107,8 +2212,8 @@ namespace Oilexer.Parser
             {
                 IPreprocessorCLogicalAndConditionExp last = GetReference<IPreprocessorCLogicalAndConditionExp>();
                 //Required '&&'
-                if (LookPastAndSkip() == '&' && LookPast(1) == '&')
-                    CurrentTokenizer.Flush(2);
+                if (LookPastAndSkip() == '&' && TokenizerLookAhead(1) == '&')
+                    this.PopAhead();
                 else if (rResult == null)
                 {
                     Expect("&&", CurrentTokenizer.Position);
@@ -2164,16 +2269,16 @@ namespace Oilexer.Parser
                 bool isEq = false;
                 LookPastAndSkip();
                 //Required '!=' or '=='
-                if (LookPast(1) == '=')
+                if (TokenizerLookAhead(1) == '=')
                 {
-                    if (LookPast(0) == '=')
+                    if (TokenizerLookAhead(0) == '=')
                         isEq = true;
-                    else if (LookPast(0) != '!' && rResult == null)
+                    else if (TokenizerLookAhead(0) != '!' && rResult == null)
                     {
                         Expect("== or !=", CurrentTokenizer.Position);
                         return false;
                     }
-                    CurrentTokenizer.Flush(2);
+                    this.PopAhead();
                 }
                 else if (rResult == null)
                 {
@@ -2202,13 +2307,13 @@ namespace Oilexer.Parser
             //if the next token is a '(' then we're in a sub-expression...
             if (LookPastAndSkip() == '(')
             {
-                CurrentTokenizer.Flush(1);
+                this.PopAhead();
                 IPreprocessorCLogicalOrConditionExp orExp = null;
                 if (ParsePreprocessorCLogicalOrConditionExp(ref orExp))
                 {
                     if (LookPastAndSkip() == ')')
                         //Skip it, not a token but a literal for CPrimary.
-                        CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                     else
                     {
                         Expect(")", CurrentTokenizer.Position);
@@ -2269,6 +2374,7 @@ namespace Oilexer.Parser
             }
             return null;
         }
+
         private bool ExpectReference<T>()
         {
             if (LookAhead(0).TokenType == GDTokenType.ReferenceToken && ((GDTokens.ReferenceToken)(LookAhead(0))).Reference is T)
@@ -2302,12 +2408,17 @@ namespace Oilexer.Parser
                     bool isFlag;
                     bool isCounter;
                     GetIsFlagOrCounter(out isFlag, out isCounter);
-                    isrpri = new SoftReferenceProductionRuleItem(id.Name, id2.Name, id.Line, id.Column, id.Position, isFlag, isCounter);
+                    DefineRuleSoftReference(id, id2);
+                    isrpri = new SoftReferenceProductionRuleItem(id.Name, id2.Name, id.Line, id.Column, id.Position, isFlag, isCounter)
+                        {
+                            PrimaryToken = id,
+                            SecondaryToken = id2
+                        };
                 }
                 else
                 {
                     ClearAhead();
-                    if (LookPast(0) == '<')
+                    if (TokenizerLookAhead(0) == '<')
                     {
                         isrpri = ParseTemplateReference(id, container);
                     }
@@ -2316,13 +2427,45 @@ namespace Oilexer.Parser
                         bool isFlag;
                         bool isCounter;
                         GetIsFlagOrCounter(out isFlag, out isCounter);
-                        isrpri = new SoftReferenceProductionRuleItem(id.Name, null, id.Line, id.Column, id.Position, isFlag,isCounter);
+                        DefineRuleSoftReference(id);
+                        isrpri = new SoftReferenceProductionRuleItem(id.Name, null, id.Line, id.Column, id.Position, isFlag, isCounter)
+                            {
+                                PrimaryToken = id
+                            };
                     }
                 }
             }
             else
                 Expect("identifier");
             return isrpri;
+        }
+
+        protected virtual void DefineRuleIdentifier(GDTokens.IdentifierToken identifier, IProductionRuleEntry ruleEntry)
+        {
+        }
+
+        protected virtual void DefineRuleTemplateIdentifier(GDTokens.IdentifierToken ruleTemplateIdentifier, IProductionRuleTemplateEntry ruleTemplateEntry)
+        {
+        }
+
+        protected virtual void DefineCommandIdentifier(GDTokens.IdentifierToken commandIdentifier)
+        {
+        }
+        protected virtual void DefineBooleanIdentifier(GDTokens.IdentifierToken booleanIdentifier)
+        {
+        }
+
+        protected virtual void DefineTokenIdentifier(GDTokens.IdentifierToken identifier, ITokenEntry tokenEntry)
+        {
+            
+        }
+
+        protected virtual void DefineRuleSoftReference(GDTokens.IdentifierToken primary, GDTokens.IdentifierToken secondary = null)
+        {
+        }
+
+        protected virtual void DefineRuleTemplateParameterIdentifier(GDTokens.IdentifierToken id, IProductionRuleTemplatePart currentPart)
+        {
         }
 
         private void GetIsFlagOrCounter(out bool isFlag, out bool isCounter)
@@ -2385,7 +2528,10 @@ namespace Oilexer.Parser
                         break;
                 }
                 templateDepth--;
-                return new SoftTemplateReferenceProductionRuleItem(serii.ToArray(), id.Name, id.Line, id.Column, id.Position);
+                return new SoftTemplateReferenceProductionRuleItem(serii.ToArray(), id.Name, id.Line, id.Column, id.Position)
+                    {
+                        PrimaryToken = id
+                    };
             }
             return null;
         }
@@ -2464,36 +2610,63 @@ namespace Oilexer.Parser
             return new LiteralCharProductionRuleItem(slt.GetCleanValue(), slt.CaseInsensitive, slt.Column, slt.Line, slt.Position, isFlag, isCounter);
         }
 
-        private void ParseProductionRule(string name, EntryScanMode scanMode, long position, bool elementsAreChildren)
+        private void ParseProductionRule(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren)
         {
-            ParseProductionRule(name, scanMode, position, elementsAreChildren, PreprocessorContainer.File, p => this.currentTarget.Result.Add(p));
+            ParseProductionRule(identifier, scanMode, position, elementsAreChildren, p => this.currentTarget.Result.Add(p));
         }
-        private void ParseProductionRule(string name, EntryScanMode scanMode, long position, bool elementsAreChildren, PreprocessorContainer container, Action<IEntry> adder)
+        private void ParseProductionRule(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, Action<IEntry> adder, PreprocessorContainer container = PreprocessorContainer.File)
         {
-            IProductionRuleEntry ipre = new ProductionRuleEntry(name, scanMode, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
+            long bodyStart = this.StreamPosition;
+            IProductionRuleEntry ipre = new ProductionRuleEntry(identifier.Name, scanMode, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
             ipre.ElementsAreChildren = elementsAreChildren;
             ParseProductionRule(((ProductionRuleEntry)ipre).BaseCollection, container);
+            long bodyEnd = this.StreamPosition;
             adder(ipre);
+            DefineRuleIdentifier(identifier, ipre);
+            if (captureRegions)
+            {
+                int lineStart = this.CurrentTokenizer.GetLineIndex(bodyStart);
+                int lineEnd = this.CurrentTokenizer.GetLineIndex(bodyEnd);
+                if (lineEnd > lineStart + 1)
+                {
+                    var gdResult = currentTarget.Result as GDFile;
+                    gdResult.AddRuleRegion(ipre, bodyStart, bodyEnd);
+                }
+            }
         }
 
-        private void ParseToken(string name, EntryScanMode scanMode, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer)
+        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer)
         {
-            ParseToken(name, scanMode, position, unhinged, lowerPrecedences, forcedRecognizer, null);
+            ParseToken(identifier, scanMode, position, unhinged, lowerPrecedences, forcedRecognizer, null);
         }
-        private void ParseToken(string name, EntryScanMode scanMode, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer, PreprocessorIfDirective.DirectiveBody target)
+
+        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer, PreprocessorIfDirective.DirectiveBody target)
         {
-            ITokenEntry ite = new TokenEntry(name, ParseTokenExpressionSeries(), scanMode, this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position, unhinged, lowerPrecedences, forcedRecognizer);
+            long bodyStart = this.StreamPosition;
+            ITokenEntry ite = new TokenEntry(identifier.Name, ParseTokenExpressionSeries(), scanMode, this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position, unhinged, lowerPrecedences, forcedRecognizer);
             if (target == null)
                 this.currentTarget.Result.Add(ite);
             else
                 target.Add(new PreprocessorEntryContainer(ite, ite.Column, ite.Line, ite.Position));
+            long bodyEnd = this.StreamPosition;
+            this.DefineTokenIdentifier(identifier, ite);
+            if (captureRegions)
+            {
+                int lineStart = this.CurrentTokenizer.GetLineIndex(bodyStart);
+                int lineEnd = this.CurrentTokenizer.GetLineIndex(bodyEnd);
+                if (lineEnd > lineStart + 1)
+                {
+                    var gdResult = currentTarget.Result as GDFile;
+                    gdResult.AddTokenRegion(ite, bodyStart, bodyEnd);
+                }
+            }
         }
 
         private ITokenExpressionSeries ParseTokenExpressionSeries()
         {
-            int l = this.CurrentTokenizer.GetLineIndex();
-            int ci = this.CurrentTokenizer.GetColumnIndex();
-            long p = this.CurrentTokenizer.Position;
+            int l = this.CurrentTokenizer.GetLineIndex(this.StreamPosition);
+            int ci = this.CurrentTokenizer.GetColumnIndex(this.StreamPosition);
+            long p = this.StreamPosition;
 
             List<ITokenExpression> expressions = new List<ITokenExpression>();
             ParseTokenExpressions(expressions);
@@ -2518,10 +2691,20 @@ namespace Oilexer.Parser
                     ParseTokenBody(expressions);
                     continue;
                 }
-                else if (c == '/' && (LookPast(1) == '*' || LookPast(1) == '/'))
+                else if (c == '/' && (TokenizerLookAhead(1) == '*' || TokenizerLookAhead(1) == '/'))
                 {
-                    if (LookAhead(0).TokenType == GDTokenType.Comment)
+                    var igdt = LookAhead(0);
+                    if (igdt.TokenType == GDTokenType.Comment)
+                    {
+                        var commentToken = igdt as GDTokens.CommentToken;
+                        if (captureRegions && commentToken.MultiLine)
+                        {
+                            var gdResult = currentTarget.Result as GDFile;
+                            gdResult.AddCommentRegion(commentToken);
+                        }
+
                         PopAhead();
+                    }
                     else
                         goto Expect;
                 }
@@ -2552,6 +2735,7 @@ namespace Oilexer.Parser
         private ITokenGroupItem ParseTokenGroup()
         {
             GDTokens.OperatorToken ot = LookAhead(0) as GDTokens.OperatorToken;
+            
             if (ot != null && ExpectOperator(PopAhead(), GDTokens.OperatorType.LeftParenthesis, true))
             {
                 List<ITokenExpression> items = new List<ITokenExpression>();
@@ -2559,7 +2743,16 @@ namespace Oilexer.Parser
                 ParseTokenExpressions(items);
                 parameterDepth--;
                 ITokenGroupItem result = new TokenGroupItem(this.CurrentTokenizer.FileName, items.ToArray(), ot.Column, ot.Line, ot.Position);
-                ExpectOperator(PopAhead(), GDTokens.OperatorType.RightParenthesis, true);
+                var endTok = PopAhead();
+                if (captureRegions)
+                {
+                    var gdResult = this.currentTarget.Result as GDFile;
+                    int lineStart = ot.Line;
+                    int lineEnd = endTok.Line;
+                    if (lineEnd > lineStart + 1)
+                        gdResult.AddTokenGroupRegion(result, ot.Position, endTok.Position);
+                }
+                ExpectOperator(endTok, GDTokens.OperatorType.RightParenthesis, true);
                 return result;
             }
             return null;
@@ -2567,9 +2760,9 @@ namespace Oilexer.Parser
 
         private void ParseTokenBody(List<ITokenExpression> expressions)
         {
-            int l = this.CurrentTokenizer.GetLineIndex();
-            int ci = this.CurrentTokenizer.GetColumnIndex();
-            long p = this.CurrentTokenizer.Position;
+            int l = this.CurrentTokenizer.GetLineIndex(this.StreamPosition);
+            int ci = this.CurrentTokenizer.GetColumnIndex(this.StreamPosition);
+            long p = this.StreamPosition;
             List<ITokenItem> seriesItemMembers = new List<ITokenItem>();
             while (true)
             {
@@ -2578,6 +2771,13 @@ namespace Oilexer.Parser
                 switch (igdt.TokenType)
                 {
                     case GDTokenType.Comment:
+                        var commentToken = igdt as GDTokens.CommentToken;
+                        if (captureRegions && commentToken.MultiLine)
+                        {
+                            var gdResult = currentTarget.Result as GDFile;
+                            gdResult.AddCommentRegion(commentToken);
+                        }
+
                         PopAhead();
                         continue;
                     case GDTokenType.CharacterLiteral:
@@ -2594,10 +2794,10 @@ namespace Oilexer.Parser
                         break;
                     case GDTokenType.NumberLiteral:
                         LogError(GDParserErrors.Unexpected, "number", igdt.Position);
-                        break;
+                        goto yield;
                     case GDTokenType.PreprocessorDirective:
                         LogError(GDParserErrors.Unexpected, "preprocessor", igdt.Position);
-                        break;
+                        goto yield;
                     case GDTokenType.Operator:
                         switch (((GDTokens.OperatorToken)(igdt)).Type)
                         {
@@ -2625,7 +2825,7 @@ namespace Oilexer.Parser
                                 ClearAhead();
                                 if (templateDepth != 0 || parameterDepth != 0)
                                 {
-                                    Expect((templateDepth == 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.CurrentTokenizer.Position);
+                                    Expect((templateDepth == 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.StreamPosition);
                                 }
                                 goto yield;
                             default:
@@ -2641,39 +2841,39 @@ namespace Oilexer.Parser
                 if (item != null)
                 {
                     ClearAhead();
-                    if (LookPast(0) == ':')
+                    if (TokenizerLookAhead(0) == ':')
                     {
                         ParseItemOptions(item);
                     }
                     //Just in case -_-
                     ClearAhead();
-                    if (LookPast(0) == '?')
+                    if (TokenizerLookAhead(0) == '?')
                     {
                         item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrOne;
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                     }
-                    else if (LookPast(0) == '+')
+                    else if (TokenizerLookAhead(0) == '+')
                     {
                         item.RepeatOptions = ScannableEntryItemRepeatInfo.OneOrMore;
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                     }
-                    else if (LookPast(0) == '*')
+                    else if (TokenizerLookAhead(0) == '*')
                     {
-                        if (LookPast(1) == '*' &&
+                        if (TokenizerLookAhead(1) == '*' &&
                             item is LiteralStringTokenItem)
                         {
-                            this.CurrentTokenizer.Flush(2);
+                            this.PopAhead();
                             ((LiteralStringTokenItem)(item)).SiblingAmbiguity = true;
                         }
                         else
                         {
                             item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
-                            this.CurrentTokenizer.Flush(1);
+                            this.PopAhead();
                         }
                     }
-                    else if (LookPast(0) == '{')
+                    else if (TokenizerLookAhead(0) == '{')
                     {
-                        this.CurrentTokenizer.Flush(1);
+                        this.PopAhead();
                         ITokenStream numberOp = this.GetAhead(2);
                         //Either min unbounded or error.
                         if (!(SeriesMatch(numberOp, GDTokenType.NumberLiteral, GDTokenType.Operator) ||
@@ -2781,10 +2981,17 @@ namespace Oilexer.Parser
                     id2 = LookAhead(1) as GDTokens.IdentifierToken;
                     if (id2 != null)
                         GetAhead(2);
-                    isrpri = new SoftReferenceTokenItem(id.Name, id2.Name, id.Column, id.Line, id.Position);
+                    isrpri = new SoftReferenceTokenItem(id.Name, id2.Name, id.Column, id.Line, id.Position)
+                    {
+                        PrimaryToken = id,
+                        SecondaryToken = id2
+                    };
                 }
                 else
-                    isrpri = new SoftReferenceTokenItem(id.Name, null, id.Column, id.Line, id.Position);
+                    isrpri = new SoftReferenceTokenItem(id.Name, null, id.Column, id.Line, id.Position)
+                    {
+                        PrimaryToken = id
+                    };
             }
             else
                 Expect("identifier");
@@ -2816,6 +3023,7 @@ namespace Oilexer.Parser
                 switch (id.Name.ToLower())
                 {
                     case "scan":
+                        DefineCommandIdentifier(id);
                         if (commandExpressionSets.Count != 2)
                         {
                             LogError(GDParserErrors.FixedArgumentCountError, "Scan command requires exactly two parameters.", id.Position);
@@ -2845,6 +3053,7 @@ namespace Oilexer.Parser
                         }
                         break;
                     case "subtract":
+                        DefineCommandIdentifier(id);
                         if (commandExpressionSets.Count != 2)
                         {
                             LogError(GDParserErrors.FixedArgumentCountError, "Subtraction command requires exactly two parameters.", id.Position);
@@ -2880,9 +3089,12 @@ namespace Oilexer.Parser
 
         private bool ExpectBoolean(IGDToken boolIDToken, bool error)
         {
-            if (ExpectIdentifier(boolIDToken, "true", StringComparison.InvariantCultureIgnoreCase, false) ||
-                ExpectIdentifier(boolIDToken, "false", StringComparison.InvariantCultureIgnoreCase, false))
+            var boolID = boolIDToken as GDTokens.IdentifierToken;
+            if (boolID != null &&
+                (ExpectIdentifier(boolIDToken, "true", StringComparison.InvariantCultureIgnoreCase, false) ||
+                 ExpectIdentifier(boolIDToken, "false", StringComparison.InvariantCultureIgnoreCase, false)))
             {
+                this.DefineBooleanIdentifier(boolID);
                 return true;
             }
             else if (error)
@@ -2914,7 +3126,7 @@ namespace Oilexer.Parser
 
         private void LogError(GDParserErrors error, string text)
         {
-            currentTarget.Errors.Add(GrammarCore.GetParserError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetLineIndex(), this.CurrentTokenizer.GetColumnIndex(), error, text));
+            currentTarget.Errors.Add(GrammarCore.GetParserError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetLineIndex(this.StreamPosition), this.CurrentTokenizer.GetColumnIndex(this.StreamPosition), error, text));
         }
         private void Expect(string s, long position)
         {

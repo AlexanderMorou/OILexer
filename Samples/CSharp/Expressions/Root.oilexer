@@ -19,14 +19,14 @@ Argument                                  ::=
 
 ExpressionList                            ::=
     DelimitedList<Expression:Items;, ','>   ;
-    
+
 EnclosedExpressionList<Left, Right>       ::=
     Left ExpressionList:Items; Right        ;
 
 PrimaryExpression                        ::=>
     ArrayCreationExpression                 |
     PrimaryNoArrayCreationExpression        ;
-    
+
 PrimaryNoArrayCreationExpression         ::=>
     Literal                                 |
     SimpleName                              |

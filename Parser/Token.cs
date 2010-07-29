@@ -53,7 +53,7 @@ namespace Oilexer.Parser
             {
                 return this.column;
             }
-            protected set
+            protected internal set
             {
                 this.column = value;
             }
@@ -68,7 +68,7 @@ namespace Oilexer.Parser
             {
                 return this.line;
             }
-            protected set
+            protected internal set
             {
                 this.line = value;
             }
@@ -83,7 +83,7 @@ namespace Oilexer.Parser
             {
                 return this.position;
             }
-            protected set
+            protected internal set
             {
                 this.position = value;
             }

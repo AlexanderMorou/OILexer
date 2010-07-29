@@ -4,13 +4,13 @@ using System.Text;
 using Oilexer.Utilities.Collections;
 using System.Linq;
 using System.Collections.ObjectModel;
-
 namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 {
     public class SoftTemplateReferenceProductionRuleItem :
         SoftReferenceProductionRuleItem,
         ISoftTemplateReferenceProductionRuleItem
     {
+        
         private IReadOnlyCollection<IProductionRuleSeries> parts;
         /// <summary>
         /// Creates a new <see cref="SoftTemplateReferenceProductionRuleItem"/> instance
@@ -38,8 +38,13 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
 
         protected override object OnClone()
         {
-            SoftTemplateReferenceProductionRuleItem srpri = new SoftTemplateReferenceProductionRuleItem((from series in this.parts 
-                                                                                                         select new Collection<IProductionRule>(series.ToArray())).ToArray(), this.PrimaryName, this.Line, this.Column, this.Position);
+            SoftTemplateReferenceProductionRuleItem srpri = new SoftTemplateReferenceProductionRuleItem((from series in this.parts
+                                                                                                         select new Collection<IProductionRule>(series.ToArray())).ToArray(), this.PrimaryName, this.Line, this.Column, this.Position)
+            {
+                PrimaryToken = this.PrimaryToken,
+                SecondaryToken = this.SecondaryToken
+            };
+
             base.CloneData(srpri);
             return srpri;
         }
@@ -92,6 +97,16 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
                 }
                 return sb.ToString();
             }
+
+            #region IProductionRuleSeries Members
+
+            public string GetBodyString()
+            {
+                return this.ToString();
+            }
+
+            #endregion
+
         }
     }
 }

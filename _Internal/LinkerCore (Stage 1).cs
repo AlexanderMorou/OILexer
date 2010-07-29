@@ -19,16 +19,16 @@ namespace Oilexer._Internal
         internal static IEnumerable<IProductionRuleEntry> ruleEntries;
         internal static IEnumerable<IProductionRuleTemplateEntry> ruleTemplEntries;
         internal static IEnumerable<IErrorEntry> errorEntries;
+        internal static _GDResolutionAssistant resolutionAid;
         
         private static void ResolveToken(this ITokenEntry entry, GDFile file, CompilerErrorCollection errors)
         {
             List<ITokenEntry> lowerTokens = new List<ITokenEntry>();
-            var fileTokens = file.GetTokenEnumerator();
             if (entry.LowerPrecedenceTokens == null)
             {
                 foreach (string s in entry.LowerPrecedenceNames)
                 {
-                    var match = (from generalEntry in fileTokens
+                    var match = (from generalEntry in tokenEntries
                                  let tokenEntry = generalEntry as ITokenEntry
                                  where tokenEntry != null &&
                                         tokenEntry.Name == s
@@ -53,8 +53,8 @@ namespace Oilexer._Internal
 
         private static void ResolveTokenExpression(this ITokenExpression expression, ITokenEntry entry, GDFile file, CompilerErrorCollection errors)
         {
-            IList<ITokenItem> rCopy = new List<ITokenItem>(from item in expression
-                                                           select item);
+            IList<ITokenItem> rCopy = (from item in expression
+                                       select item).ToList();
             TokenExpression te = expression as TokenExpression;
             IEnumerable<ITokenItem> finalVersion = from item in rCopy
                                                    select (item.ResolveTokenExpressionItem(entry, file, errors));
@@ -122,6 +122,8 @@ namespace Oilexer._Internal
                             LiteralCharReferenceTokenItem result = new LiteralCharReferenceTokenItem(tokenE, ((ILiteralCharTokenItem)(iti)), item.Column, item.Line, item.Position);
                             if (!(string.IsNullOrEmpty(item.Name)))
                                 result.Name = item.Name;
+                            if (resolutionAid != null)
+                                resolutionAid.ResolvedDualPartToTokenItem(item, tokenE, iti);
                             return result;
                         }
                         else if (iti is ILiteralStringTokenItem)
@@ -129,6 +131,8 @@ namespace Oilexer._Internal
                             LiteralStringReferenceTokenItem result = new LiteralStringReferenceTokenItem(tokenE, ((ILiteralStringTokenItem)(iti)), item.Column, item.Line, item.Position);
                             if (!(string.IsNullOrEmpty(item.Name)))
                                 result.Name = item.Name;
+                            if (resolutionAid != null)
+                                resolutionAid.ResolvedDualPartToTokenItem(item, tokenE, iti);
                             return result;
                         }
                         else
@@ -143,6 +147,8 @@ namespace Oilexer._Internal
                 {
                     TokenReferenceTokenItem result = new TokenReferenceTokenItem(tokenE, item.Column, item.Line, item.Position);
                     ((SoftReferenceTokenItem)(item)).CloneData(result);
+                    if (resolutionAid != null)
+                        resolutionAid.ResolvedSinglePartToToken(item, tokenE);
                     return result;
                 }
             }
@@ -167,10 +173,15 @@ namespace Oilexer._Internal
                 ITokenEntry reference = null;
                 if (part.SpecialExpectancy == TemplatePartExpectedSpecial.None && part.ExpectedSpecific != null && part.ExpectedSpecific is ISoftReferenceProductionRuleItem)
                 {
-                    if ((reference = tokenEntries.FindScannableEntry(((ISoftReferenceProductionRuleItem)(part.ExpectedSpecific)).PrimaryName)) != null)
+                    var softExpect = part.ExpectedSpecific as ISoftReferenceProductionRuleItem;
+                    if ((reference = tokenEntries.FindScannableEntry(softExpect.PrimaryName)) != null)
+                    {
                         part.ExpectedSpecific = new TokenReferenceProductionRuleItem(reference, part.Column, part.Line, part.Position);
+                        if (resolutionAid != null)
+                            resolutionAid.ResolvedSinglePartToToken(softExpect, reference);
+                    }
                     else
-                        errors.Add(GrammarCore.GetParserError(entry.FileName, part.ExpectedSpecific.Line, part.ExpectedSpecific.Column, GDParserErrors.UndefinedTokenReference, ((ISoftReferenceProductionRuleItem)(part.ExpectedSpecific)).PrimaryName));
+                        errors.Add(GrammarCore.GetParserError(entry.FileName, part.ExpectedSpecific.Line, part.ExpectedSpecific.Column, GDParserErrors.UndefinedTokenReference, softExpect.PrimaryName));
                     return;
                 }
             }
@@ -334,6 +345,8 @@ namespace Oilexer._Internal
                 foreach (IProductionRuleSeries iprs in item.Parts)
                     iprs.ResolveProductionRuleSeries(entry, file, errors);
                 TemplateReferenceProductionRuleItem rResult = new TemplateReferenceProductionRuleItem(iprte, new List<IProductionRuleSeries>(item.Parts.ToArray()), item.Column, item.Line, item.Position);
+                if (resolutionAid != null)
+                    resolutionAid.ResolvedSinglePartToRuleTemplate(item, iprte);
                 if (item.RepeatOptions != ScannableEntryItemRepeatInfo.None)
                     rResult.RepeatOptions = item.RepeatOptions;
                 if (item.Name != null && item.Name != string.Empty)
@@ -353,22 +366,28 @@ namespace Oilexer._Internal
                 IProductionRuleEntry
         {
             if (entry is IProductionRuleTemplateEntry)
-                if (item.SecondaryName == null || item.SecondaryName == string.Empty)
-                    foreach (IProductionRuleTemplatePart iprtp in ((IProductionRuleTemplateEntry)(entry)).Parts)
+            {
+                var templateEntry = entry as IProductionRuleTemplateEntry;
+                if (string.IsNullOrEmpty(item.SecondaryName))
+                    foreach (IProductionRuleTemplatePart iprtp in templateEntry.Parts)
                         if (iprtp.Name == item.PrimaryName)
                         {
-                            TemplateParamReferenceProductionRuleItem result = new TemplateParamReferenceProductionRuleItem(((IProductionRuleTemplateEntry)(entry)), iprtp, item.Column, item.Line, item.Position);
+                            TemplateParamReferenceProductionRuleItem result = new TemplateParamReferenceProductionRuleItem(templateEntry, iprtp, item.Column, item.Line, item.Position);
+                            if (resolutionAid != null)
+                                resolutionAid.ResolvedSinglePartToTemplateParameter(templateEntry, iprtp, item);
                             if (item.RepeatOptions != ScannableEntryItemRepeatInfo.None)
                                 result.RepeatOptions = item.RepeatOptions;
                             if (item.Name != null && result.Name == null)
                                 result.Name = item.Name;
                             return result;
                         }
-
+            }
             IProductionRuleEntry ipre = ruleEntries.FindScannableEntry(item.PrimaryName);
             if (ipre != null)
             {
                 RuleReferenceProductionRuleItem rrpri = new RuleReferenceProductionRuleItem(ipre, item.Column, item.Line, item.Position);
+                if (resolutionAid != null)
+                    resolutionAid.ResolvedSinglePartToRule(item, ipre);
                 ((ProductionRuleItem)(item)).CloneData(rrpri);
                 return rrpri;
             }
@@ -385,9 +404,17 @@ namespace Oilexer._Internal
                         {
                             IProductionRuleItem result = null;
                             if (iti is ILiteralCharTokenItem)
+                            {
+                                if (resolutionAid != null)
+                                    resolutionAid.ResolvedDualPartToTokenItem(item, tokenE, iti);
                                 result = new LiteralCharReferenceProductionRuleItem(((ILiteralCharTokenItem)(iti)), tokenE, item.Column, item.Line, item.Position, item.IsFlag, item.Counter);
+                            }
                             else if (iti is ILiteralStringTokenItem)
+                            {
+                                if (resolutionAid != null)
+                                    resolutionAid.ResolvedDualPartToTokenItem(item, tokenE, iti);
                                 result = new LiteralStringReferenceProductionRuleItem(((ILiteralStringTokenItem)(iti)), tokenE, item.Column, item.Line, item.Position, item.IsFlag, item.Counter);
+                            }
                             else
                             {
                                 /* *
@@ -405,6 +432,8 @@ namespace Oilexer._Internal
                     else
                     {
                         TokenReferenceProductionRuleItem result = new TokenReferenceProductionRuleItem(tokenE, item.Column, item.Line, item.Position);
+                        if (resolutionAid != null)
+                            resolutionAid.ResolvedSinglePartToToken(item, tokenE);
                         var softee = item as SoftReferenceProductionRuleItem;
                         softee.CloneData(result);
                         return result;
@@ -429,11 +458,11 @@ namespace Oilexer._Internal
                 throw new ArgumentNullException("file");
             if (errors == null)
                 throw new ArgumentNullException("errors");
-            foreach (ITokenEntry ite in tokenEntries)
+            foreach (ITokenEntry ite in file.GetTokenEnumerator())
                 ite.ResolveToken(file, errors);
-            foreach (IProductionRuleEntry ipre in ruleEntries)
+            foreach (IProductionRuleEntry ipre in file.GetRulesEnumerator())
                 ipre.ResolveProductionRule(file, errors);
-            foreach (IProductionRuleTemplateEntry ipre in ruleTemplEntries)
+            foreach (IProductionRuleTemplateEntry ipre in file.GetTemplateRulesEnumerator())
                 ipre.ResolveProductionRule(file, errors);
 
         }
@@ -445,6 +474,22 @@ namespace Oilexer._Internal
                    select (IErrorEntry)item;
         }
 
+        internal static IEnumerable<IErrorEntry> GetErrorEnumerator(IEnumerable<IGDFile> files)
+        {
+            return from file in files
+                   from item in file
+                   where item is IErrorEntry
+                   select (IErrorEntry)item;
+        }
+
+        internal static IEnumerable<ITokenEntry> GetTokenEnumerator(IEnumerable<IGDFile> files)
+        {
+            return from file in files
+                   from IEntry item in file
+                   where item is ITokenEntry
+                   orderby ((ITokenEntry)(item)).Name
+                   select (ITokenEntry)item;
+        }
         internal static IEnumerable<ITokenEntry> GetTokenEnumerator(this IGDFile file)
         {
             return from IEntry item in file
@@ -453,12 +498,30 @@ namespace Oilexer._Internal
                    select (ITokenEntry)item;
         }
 
+        internal static IEnumerable<IProductionRuleTemplateEntry> GetTemplateRulesEnumerator(IEnumerable<IGDFile> files)
+        {
+            return from file in files
+                   from IEntry item in file
+                   where item is IProductionRuleTemplateEntry
+                   orderby ((IProductionRuleTemplateEntry)(item)).Name
+                   select (IProductionRuleTemplateEntry)item;
+        }
+
         internal static IEnumerable<IProductionRuleTemplateEntry> GetTemplateRulesEnumerator(this IGDFile file)
         {
             return from IEntry item in file
                    where item is IProductionRuleTemplateEntry
                    orderby ((IProductionRuleTemplateEntry)(item)).Name
                    select (IProductionRuleTemplateEntry)item;
+        }
+
+        internal static IEnumerable<IProductionRuleEntry> GetRulesEnumerator(IEnumerable<IGDFile> files)
+        {
+            return from file in files
+                   from IEntry item in file
+                   where item is IProductionRuleEntry && !(item is IProductionRuleTemplateEntry)
+                   orderby ((IProductionRuleEntry)(item)).Name
+                   select (IProductionRuleEntry)item;
         }
 
         internal static IEnumerable<IProductionRuleEntry> GetRulesEnumerator(this IGDFile file)
