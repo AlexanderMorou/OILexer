@@ -23,7 +23,6 @@ namespace Oilexer.VSIntegration.Classifications
         public GDRuleTemplateParameterReference()
         {
             this.ForegroundColor = Colors.DarkGray;
-            this.IsBold = true;
             this.ForegroundCustomizable = true;
             this.DisplayName = "OILexer: Rule Template Parameter Reference";
         }

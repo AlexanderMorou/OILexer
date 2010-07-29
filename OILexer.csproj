@@ -153,9 +153,7 @@
     <None Include="Samples\CSharp\Expressions\Array.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\CSharp\Expressions\LINQ.oilexer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Include="Samples\CSharp\Expressions\LINQ.oilexer" />
     <None Include="Samples\CSharp\Expressions\Math.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -162,6 +162,11 @@ namespace Oilexer.Parser
                                 }
                                 break;
                             case GDTokens.PreprocessorType.DefineDirective:
+                                IPreprocessorDirective ipd = ParsePreprocessor(PreprocessorContainer.File);
+                                var defineDirective = ipd as IPreprocessorDefineSymbolDirective;
+                                if (defineDirective != null)
+                                    if (!definedSymbols.ContainsKey(defineDirective.SymbolName))
+                                        definedSymbols.Add(defineDirective.SymbolName, defineDirective.Value);
                                 break;
                             case GDTokens.PreprocessorType.ThrowDirective:
                                 break;
@@ -536,7 +541,8 @@ namespace Oilexer.Parser
                         if (container == PreprocessorContainer.File)
                         {
                             IPreprocessorDefineSymbolDirective defineDirective = ((IPreprocessorDefineSymbolDirective)(item));
-                            definedSymbols.Add(defineDirective.SymbolName, defineDirective.Value);
+                            if (!definedSymbols.ContainsKey(defineDirective.SymbolName))
+                                definedSymbols.Add(defineDirective.SymbolName, defineDirective.Value);
                         }
                         break;
                     case EntryPreprocessorType.ProductionRuleSeries:
@@ -640,11 +646,11 @@ namespace Oilexer.Parser
             return false;
         }
 
-        private char LookPastAndSkip()
+        private char LookPastAndSkip(int position = 0)
         {
-            if (Lexer.IsWhitespaceChar(TokenizerLookAhead(0)))
+            if (Lexer.IsWhitespaceChar(TokenizerLookAhead(position)))
                 this.SkipWhitespace();
-            return TokenizerLookAhead(0);
+            return TokenizerLookAhead(position);
         }
 
         private void ParseError(string name, long position)
@@ -2085,7 +2091,7 @@ namespace Oilexer.Parser
                 if (endLine > startLine + 1)
                 {
                     var nlLen = Environment.NewLine.Length;
-                    bodyStart = this.CurrentTokenizer.GetPositionFromLine(startLine) - nlLen;
+                    bodyStart = this.CurrentTokenizer.GetPositionFromLine(startLine);
                     bodyEnd = this.CurrentTokenizer.GetPositionFromLine(endLine) - nlLen;
 
                     gdResult.AddIfRegion(ipid, bodyStart, bodyEnd);
@@ -2418,7 +2424,7 @@ namespace Oilexer.Parser
                 else
                 {
                     ClearAhead();
-                    if (TokenizerLookAhead(0) == '<')
+                    if (LookPastAndSkip() == '<')
                     {
                         isrpri = ParseTemplateReference(id, container);
                     }
@@ -2473,25 +2479,25 @@ namespace Oilexer.Parser
             isFlag = false;
             isCounter = false;
 
-            if (CurrentTokenizer.LookAhead(0) == '!')
+            if (this.TokenizerLookAhead(0) == '!')
             {
                 LookAhead(0);
                 PopAhead();
                 isFlag = true;
-                if (CurrentTokenizer.LookAhead(0) == '#')
+                if (this.TokenizerLookAhead(0) == '#')
                 {
                     LookAhead(0);
                     PopAhead();
                     isCounter = true;
                 }
             }
-            else if (CurrentTokenizer.LookAhead(0) == '#')
+            else if (this.TokenizerLookAhead(0) == '#')
             {
                 if (LookAhead(0).TokenType == GDTokenType.Operator)
                 {
                     PopAhead();
                     isCounter = true;
-                    if (CurrentTokenizer.LookAhead(0) == '!')
+                    if (this.TokenizerLookAhead(0) == '!')
                     {
                         LookAhead(0);
                         PopAhead();
@@ -2546,26 +2552,22 @@ namespace Oilexer.Parser
             }
             PopAhead();
             bool isFlag = false, isCounter = false;
-            if (CurrentTokenizer.LookAhead(0) == '!')
+            if (this.TokenizerLookAhead(0) == '!')
             {
-                LookAhead(0);
                 PopAhead();
                 isFlag = true;
-                if (CurrentTokenizer.LookAhead(0) == '#')
+                if (this.TokenizerLookAhead(0) == '#')
                 {
-                    LookAhead(0);
                     PopAhead();
                     isCounter = true;
                 }
             }
-            else if (CurrentTokenizer.LookAhead(0) == '#')
+            else if (this.TokenizerLookAhead(0) == '#')
             {
-                LookAhead(0);
                 PopAhead();
                 isCounter = true;
-                if (CurrentTokenizer.LookAhead(0) == '!')
+                if (this.TokenizerLookAhead(0) == '!')
                 {
-                    LookAhead(0);
                     PopAhead();
                     isFlag = true;
                 }
@@ -2583,24 +2585,24 @@ namespace Oilexer.Parser
             }
             PopAhead();
             bool isFlag = false, isCounter = false;
-            if (CurrentTokenizer.LookAhead(0) == '!')
+            if (this.TokenizerLookAhead(0) == '!')
             {
                 LookAhead(0);
                 PopAhead();
                 isFlag = true;
-                if (CurrentTokenizer.LookAhead(0) == '#')
+                if (this.TokenizerLookAhead(0) == '#')
                 {
                     LookAhead(0);
                     PopAhead();
                     isCounter = true;
                 }
             }
-            else if (CurrentTokenizer.LookAhead(0) == '#')
+            else if (this.TokenizerLookAhead(0) == '#')
             {
                 LookAhead(0);
                 PopAhead();
                 isCounter = true;
-                if (CurrentTokenizer.LookAhead(0) == '!')
+                if (this.TokenizerLookAhead(0) == '!')
                 {
                     LookAhead(0);
                     PopAhead();
@@ -3149,5 +3151,7 @@ namespace Oilexer.Parser
         {
             return (T)this.LookAhead(this.AheadLength);
         }
+
+        
     }
 }

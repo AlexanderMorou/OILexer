@@ -24,7 +24,6 @@ namespace Oilexer.VSIntegration
         GDFileHandlerBase
     {
         private Dictionary<GDFileHandlerBase, IList<string>> includes;
-
         /// <summary>
         /// Returns the <see cref="ITextBuffer"/> associated to the
         /// <see cref="GDFileHandlerBase"/>.
@@ -139,24 +138,6 @@ namespace Oilexer.VSIntegration
             }
         }
 
-        /// <summary>
-        /// The <see cref="ITextDocumentFactoryService"/> used to obtain
-        /// new <see cref="ITextDocument"/> instances.
-        /// </summary>
-        public ITextDocumentFactoryService DocumentFactory { get; private set; }
-
-        /// <summary>
-        /// Returns the <see cref="IContentTypeRegistryService"/> used to obtain
-        /// the content type of the buffer.
-        /// </summary>
-        public IContentTypeRegistryService ContentTypeRegistry { get; private set; }
-
-        /// <summary>
-        /// The <see cref="ITextBufferFactoryService"/> used to obtain
-        /// new <see cref="ITextBuffer"/> instances.
-        /// </summary>
-        public ITextBufferFactoryService BufferFactory { get; private set; }
-
         public IClassificationTypeRegistryService ClassificationRegistry { get; private set; }
 
         private Dictionary<GDTokenType, IClassificationType> classificationTypes;
@@ -217,8 +198,6 @@ namespace Oilexer.VSIntegration
             set
             {
                 if (!(this.ClassifierEnabled || this.ParserEnabled))
-                    return;
-                if (tokensInvalid == value)
                     return;
                 this.tokensInvalid = value;
                 if (value)
@@ -285,22 +264,34 @@ namespace Oilexer.VSIntegration
              * to parse the file.
              * */
             if (this.CurrentlyParsing || 
-               !this.OutlinerEnabled)
+               !this.OutlinerEnabled)// ||
+                //this.BufferChanging)
                 return;
-            this.CurrentlyParsing = true;
-            this.ClearReclassifications();
-            this.ClearOutlines();
-            CurrentParseResults = this.Parser.BeginParse();
-            this.ParseIncludes(this.CurrentParseResults.Result.Includes);
-            (from handler in this.RelativeScopeFiles.Values
-             select handler.CurrentParseResults.Result).Union(new IGDFile[] { this.CurrentParseResults.Result }).InitLookups(this.ResolutionAssistant);
-            ((GDFile)this.CurrentParseResults.Result).ResolveTemplates(this.CurrentParseResults.Errors);
-            ReclassifyTokens();
-            ParserCompilerExtensions.ClearLookups();
-            if (!creatingOutliner)
-                this.Outliner.MakeTagChanges();
-            this.ClearReclassifications();
-            this.CurrentlyParsing = false;
+            try
+            {
+                this.CurrentlyParsing = true;
+                this.ClearReclassifications();
+                this.ClearOutlines();
+                CurrentParseResults = this.Parser.BeginParse();
+                this.ParseIncludes(this.CurrentParseResults.Result.Includes);
+                (from handler in this.RelativeScopeFiles.Values
+                 select handler.CurrentParseResults.Result).Union(new IGDFile[] { this.CurrentParseResults.Result }).InitLookups(this.ResolutionAssistant);
+                ((GDFile)this.CurrentParseResults.Result).ResolveTemplates(this.CurrentParseResults.Errors);
+                ReclassifyTokens();
+                ParserCompilerExtensions.ClearLookups();
+                if (!creatingOutliner)
+                    this.Outliner.MakeTagChanges();
+
+                this.ClearReclassifications();
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(e.Message);
+            }
+            finally
+            {
+                this.CurrentlyParsing = false;
+            }
         }
 
         protected internal void ParseIncludes(IList<string> fileIncludes)
@@ -400,47 +391,89 @@ namespace Oilexer.VSIntegration
             FinishedOutlining = true;
         }
 
+        private object TokensFromNextTokenLocker = new object();
         public IEnumerable<GDTagSpan> TokensFrom(int index = 0, Span range = default(Span))
         {
         tokensInvalidatedCheck:
+            /* *
+             * If the tokens were invalidated due to a change in the text,
+             * clear the tokens and start again.
+             * */
             if (this.TokensInvalidated)
             {
+                /* *
+                 * Indicate that the current stream
+                 * of tokens is incomplete.
+                 * */
                 this.FinishedLexing = false;
                 lock (this.tokens)
                     this.tokens.Clear();
                 this.TokensInvalidated = false;
             }
             int offset = 0;
+            /* *
+             * If the requested token index is greater
+             * than the number of cached tokens, and
+             * the last pass finished, yield a 
+             * stopping point.
+             * */
             if (index >= tokens.Count)
                 if (this.FinishedLexing)
                     yield break;
                 else
                 {
+                    /* *
+                     * Start scanning at the end of the
+                     * cached elements.
+                     * */
                     offset = this.tokens.Count;
                     goto nextToken;
                 }
             else
             {
                 GDTagSpan[] tokensArr;
+                /* *
+                 * In the event that there's two machines going at once
+                 * lock the current set and obtain a copy.
+                 * *
+                 * This ensures that the other machine doesn't interrupt
+                 * the results of the current one because it changed the
+                 * 
+                 * */
                 lock (this.tokens)
                     tokensArr = this.tokens.Values.ToArray();
+                int totalRetrieved = tokens.Count;
+            nextChunk:
                 foreach (var currentSpan in tokensArr)
-                {
-                    if (offset++ >= index)
+                    if (this.TokensInvalidated)
+                        goto tokensInvalidatedCheck;
+                    else if (offset++ >= index)
                     {
                         if (range.End < currentSpan.Span.Start)
                             yield break;
                         if (CustomIntersect(currentSpan.Span, range))
                             yield return currentSpan;
                     }
+                if (tokens.Count > totalRetrieved)
+                {
+                    lock (this.tokens)
+                        tokensArr = this.tokens.Values.Skip(totalRetrieved).ToArray();
+                    totalRetrieved += tokensArr.Length;
+                    goto nextChunk;
                 }
                 if (FinishedLexing)
                     yield break;
                 goto nextToken;
             }
         nextToken:
-            long lastGoodLocation = Lexer.Position;
-            Lexer.NextToken();
+            lock (TokensFromNextTokenLocker)
+                Lexer.NextToken();
+            /* *
+             * ToDo: Add code here to enable multi-threaded 
+             * awareness, if two machines are shotgunning the
+             * next token method it might lead to two machines yielding
+             * different tokens sets
+             * */
             /* *
              * If the stream became dirty during parse, restart
              * tokenization.
@@ -470,17 +503,6 @@ namespace Oilexer.VSIntegration
                 }
                 goto nextToken;
             }
-            //var currentError = Lexer.CurrentError;
-            //if (currentError != null)
-            //{
-            //    var lastToken = new GDErrorToken(currentError, currentError.Line, currentError.Column, lastGoodLocation);
-            //    var lastSpan = new Span((int)lastGoodLocation, Math.Abs((int)(range.End - lastGoodLocation)));
-            //    if (range.End < lastSpan.Start)
-            //        yield break;
-            //    var lastTokenSpanPair = new KeyValuePair<IGDToken, Span>(lastToken, lastSpan);
-            //    if (CustomIntersect(lastSpan, range))
-            //        yield return lastTokenSpanPair;
-            //}
             this.FinishedLexing = true;
         }
 
@@ -550,9 +572,6 @@ namespace Oilexer.VSIntegration
              * */
             this.ClassificationRegistry = classificationRegistry;
 
-            this.BufferFactory = bufferFactory;
-            this.DocumentFactory = documentFactory;
-            this.ContentTypeRegistry = contentTypeRegistry;
             this.Buffer = buffer;
             try
             {
@@ -582,7 +601,6 @@ namespace Oilexer.VSIntegration
                 return;
             if (this.Buffer.EditInProgress)
                 return;
-            
             this.IsDirty = true;
         }
 
@@ -617,10 +635,6 @@ namespace Oilexer.VSIntegration
             RelativeScopeFiles.Clear();
             foreach (var helperFile in relativeHelperCopy.Keys)
                     relativeHelperCopy[helperFile].Dispose();
-            if (this.DocumentFactory != null)
-                this.DocumentFactory = null;
-            if (this.BufferFactory != null)
-                this.BufferFactory = null;
             this.outliningSpans.Clear();
             this.tokens.Clear();
             this.RelativeScopeFiles = null;
@@ -820,5 +834,7 @@ namespace Oilexer.VSIntegration
         {
             return new SimpleParser(this);
         }
+
+        //public bool BufferChanging { get; set; }
     }
 }
