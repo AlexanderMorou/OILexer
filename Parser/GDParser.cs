@@ -123,23 +123,22 @@ namespace Oilexer.Parser
                     break;
 
                 SetMultiLineMode(false);
-                //Expected pathExplorationComment.
+                //Expected comment.
                 if (c == '/')
                 {
                     SetMultiLineMode(true);
-                    ITokenStream its = this.GetAhead(1);
+                    var its = this.GetAhead(1);
                     if (its.Count == 0)
                     {
-                        Expect("pathExplorationComment");
+                        Expect("comment");
                         continue;
                     }
-                    IGDToken it = (IGDToken)its[0];
+                    IGDToken it = its[0];
                     if (it == null || it.TokenType != GDTokenType.Comment)
-                        Expect("pathExplorationComment");
-                    var gdResult = this.currentTarget.Result as GDFile;
+                        Expect("comment");
                     var commentToken = ((GDTokens.CommentToken)(it));
-                    if (commentToken.MultiLine && captureRegions)
-                        gdResult.AddCommentRegion(commentToken);
+                    if (captureRegions && commentToken.MultiLine)
+                        (this.currentTarget.Result as GDFile).AddCommentRegion(commentToken);
                     this.currentTarget.Result.Add(new CommentEntry(commentToken.Comment, CurrentTokenizer.FileName, it.Column, it.Line, it.Position));
                 }
                 //Expected preprocessor.
@@ -194,7 +193,7 @@ namespace Oilexer.Parser
                     }
                     SetMultiLineMode(true);
                     EntryScanMode esm = EntryScanMode.Inherited;
-                    ITokenStream its = GetAhead(2);
+                    var its = GetAhead(2);
                     /* *
                      * expected patterns:
                      * ID   = | * Language defined error 
@@ -225,14 +224,14 @@ namespace Oilexer.Parser
                                 }
                                 else
                                 {
-                                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.TokenSeparator | GDTokens.OperatorType.TemplatePartsEnd, true);
+                                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.GreaterThan, true);
                                     PopAhead();
                                 }
                                 break;
                             //ID ::=
-                            case GDTokens.OperatorType.ProductionRuleSeparator:
+                            case GDTokens.OperatorType.ColonColonEquals:
                                 if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                    ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
+                                    ot.Type == GDTokens.OperatorType.GreaterThan)
                                 {
                                     elementsAreChildren = true;
                                     PopAhead();
@@ -241,7 +240,7 @@ namespace Oilexer.Parser
                                 ParseProductionRule(id, EntryScanMode.Inherited, id.Position, elementsAreChildren);
                                 break;
                             //ID :=
-                            case GDTokens.OperatorType.TokenSeparator:
+                            case GDTokens.OperatorType.ColonEquals:
                                 {
                                     SetMultiLineMode(true);
                                     bool unhinged = false;
@@ -259,11 +258,11 @@ namespace Oilexer.Parser
                                 }
                                 break;
                             //ID =
-                            case GDTokens.OperatorType.ErrorSeparator:
+                            case GDTokens.OperatorType.Equals:
                                 ParseError(id.Name, id.Position);
                                 break;
                             //ID<
-                            case GDTokens.OperatorType.TemplatePartsStart:
+                            case GDTokens.OperatorType.LessThan:
                                 SetMultiLineMode(true);
                                 IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts(ot);
                                 if (parts == null)
@@ -273,27 +272,29 @@ namespace Oilexer.Parser
                                     IGDToken g = null;
                                     GDTokens.OperatorToken gdt = (g = PopAhead()) as GDTokens.OperatorToken;
                                     if (gdt == null)
-                                        Expect("+, -, or ::=");
+                                        ExpectOperator(g, GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.Plus | GDTokens.OperatorType.Minus, true);
+                                        //Expect("+, -, or ::=");
                                     if (gdt.Type == GDTokens.OperatorType.Minus)
                                     {
-                                        gdt = PopAhead() as GDTokens.OperatorToken;
+                                        gdt = (g = PopAhead()) as GDTokens.OperatorToken;
                                         esm = EntryScanMode.SingleLine;
                                     }
-                                    else if (gdt.Type == GDTokens.OperatorType.OneOrMore)
+                                    else if (gdt.Type == GDTokens.OperatorType.Plus)
                                     {
-                                        gdt = PopAhead() as GDTokens.OperatorToken;
+                                        gdt = (g = PopAhead()) as GDTokens.OperatorToken;
                                         esm = EntryScanMode.Multiline;
                                     }
-                                    if (gdt == null || !ExpectOperator(gdt, GDTokens.OperatorType.ProductionRuleSeparator, true))
+                                    if (gdt == null || !ExpectOperator(gdt, GDTokens.OperatorType.ColonColonEquals, true))
                                     {
-                                        Expect("::=");
+                                        ExpectOperator(g, GDTokens.OperatorType.ColonColonEquals, true);
+                                        //Expect("::=");
                                         break;
                                     }
                                     this.ParseProductionRuleTemplate(id, parts, esm, id.Position);
                                 }
                                 break;
                             //ID>
-                            case GDTokens.OperatorType.TemplatePartsEnd:
+                            case GDTokens.OperatorType.GreaterThan:
                                 //Case of a token defining precedence.
                                 while (LookAhead(0).TokenType == GDTokenType.Identifier)
                                 {
@@ -303,19 +304,19 @@ namespace Oilexer.Parser
                                     GDTokens.OperatorToken cOp = null;
                                     //','  * More precedences exist.
                                     if ((cOp = (LookAhead(0) as GDTokens.OperatorToken)) != null &&
-                                        cOp.Type == GDTokens.OperatorType.TemplatePartsSeparator)
+                                        cOp.Type == GDTokens.OperatorType.Comma)
                                         PopAhead();
                                     //":=" * Final precedence reached.
                                     else if (cOp != null &&
-                                        cOp.Type == GDTokens.OperatorType.TokenSeparator)
+                                        cOp.Type == GDTokens.OperatorType.ColonEquals)
                                     {
                                         PopAhead();
-                                        goto case GDTokens.OperatorType.TokenSeparator;
+                                        goto case GDTokens.OperatorType.ColonEquals;
                                     }
                                     else
                                     {
                                         //Syntax error.
-                                        ExpectOperator(LookAhead(0), GDTokens.OperatorType.TokenSeparator, true);
+                                        ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Comma, true);
                                         break;
                                     }
                                 }
@@ -323,7 +324,7 @@ namespace Oilexer.Parser
                             //ID-
                             case GDTokens.OperatorType.Minus:
                             //ID+
-                            case GDTokens.OperatorType.OneOrMore:
+                            case GDTokens.OperatorType.Plus:
                                 esm = ot.Type == GDTokens.OperatorType.Minus ? EntryScanMode.SingleLine : EntryScanMode.Multiline;
                                 IGDToken ahead = PopAhead();
                                 if (ahead.TokenType == GDTokenType.Operator)
@@ -331,17 +332,17 @@ namespace Oilexer.Parser
                                     ot = ((GDTokens.OperatorToken)(ahead));
                                     switch (ot.Type)
                                     {
-                                        case GDTokens.OperatorType.ProductionRuleSeparator:
+                                        case GDTokens.OperatorType.ColonColonEquals:
                                             SetMultiLineMode(true);
                                             if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                                ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
+                                                ot.Type == GDTokens.OperatorType.GreaterThan)
                                             {
                                                 elementsAreChildren = true;
                                                 PopAhead();
                                             }
                                             ParseProductionRule(id, esm, id.Position, elementsAreChildren);
                                             break;
-                                        case GDTokens.OperatorType.TokenSeparator:
+                                        case GDTokens.OperatorType.ColonEquals:
                                             {
                                                 SetMultiLineMode(true);
                                                 bool unhinged = false;
@@ -358,21 +359,21 @@ namespace Oilexer.Parser
                                                 ParseToken(id, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer);
                                             }
                                             break;
-                                        case GDTokens.OperatorType.ErrorSeparator:
+                                        case GDTokens.OperatorType.Equals:
                                             break;
                                     }
                                 }
                                 else
-                                    Expect("::=, :=, or =");
+                                    ExpectOperator(ahead, GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Equals, true);
                                 break;
                             default:
-                                Expect("::=, :=, =, <, - or +");
+                                ExpectOperator(ot, GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Equals |  GDTokens.OperatorType.LessThan | GDTokens.OperatorType.Minus | GDTokens.OperatorType.Plus, true);
                                 break;
                         }
                     }
                     else
                     {
-                        Expect("::=, :=, =, or <");
+                        ExpectOperator(its[1], GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Equals | GDTokens.OperatorType.LessThan | GDTokens.OperatorType.Minus | GDTokens.OperatorType.Plus, true);
                         continue;
                     }
                 }
@@ -465,7 +466,7 @@ namespace Oilexer.Parser
                     string left = null,
                            right = null;
                     if (eqExp.PreCEqualityExp.PreCPrimary.Rule == 1)
-                        left = eqExp.PreCEqualityExp.PreCPrimary.String;
+                        left = eqExp.PreCEqualityExp.PreCPrimary.String.GetCleanValue();
                     else if (eqExp.PreCEqualityExp.PreCPrimary.Rule == 4)
                     {
                         left = eqExp.PreCEqualityExp.PreCPrimary.Identifier.Name;
@@ -478,7 +479,7 @@ namespace Oilexer.Parser
                         }
                     }
                     if (eqExp.PreCPrimary.Rule == 1)
-                        right = eqExp.PreCPrimary.String;
+                        right = eqExp.PreCPrimary.String.GetCleanValue();
                     else if (eqExp.PreCPrimary.Rule == 4)
                     {
                         right = eqExp.PreCPrimary.Identifier.Name;
@@ -495,7 +496,7 @@ namespace Oilexer.Parser
                     else
                         return left != right;
                 case 3:
-                    Expect("== or !=", eqExp.PreCPrimary.Position + eqExp.PreCPrimary.ToString().Length);
+                    ExpectOperator(eqExp.PreCPrimary.Token, GDTokens.OperatorType.EqualEqual | GDTokens.OperatorType.ExclaimEqual, true);
                     return false;
                 default:
                     LogError(GDParserErrors.Unexpected, "Unexpected kind of equality expression", eqExp.Position);
@@ -535,7 +536,6 @@ namespace Oilexer.Parser
                     case EntryPreprocessorType.EntryContainer:
                         if (container == PreprocessorContainer.File)
                             adder(((T)(((PreprocessorEntryContainer)(item)).Contained)));
-                        //currentTarget.Result.Add(((PreprocessorEntryContainer)(item)).Contained);
                         break;
                     case EntryPreprocessorType.DefineSymbol:
                         if (container == PreprocessorContainer.File)
@@ -543,6 +543,8 @@ namespace Oilexer.Parser
                             IPreprocessorDefineSymbolDirective defineDirective = ((IPreprocessorDefineSymbolDirective)(item));
                             if (!definedSymbols.ContainsKey(defineDirective.SymbolName))
                                 definedSymbols.Add(defineDirective.SymbolName, defineDirective.Value);
+                            else
+                                LogError(GDParserErrors.Unexpected, "define directive: symbol already exists", defineDirective.Position);
                         }
                         break;
                     case EntryPreprocessorType.ProductionRuleSeries:
@@ -655,27 +657,28 @@ namespace Oilexer.Parser
 
         private void ParseError(string name, long position)
         {
-            ITokenStream its = GetAhead(4);
+            var its = GetAhead(4);
             if (SeriesMatch(its, GDTokenType.StringLiteral, GDTokenType.Operator, GDTokenType.NumberLiteral, GDTokenType.Operator))
             {
-                if (ExpectOperator(((IGDToken)(its[1])), GDTokens.OperatorType.TemplatePartsSeparator, true) && 
-                    ExpectOperator(((IGDToken)(its[3])), GDTokens.OperatorType.EntryTerminal, true))
+                if (ExpectOperator(its[1], GDTokens.OperatorType.Comma, true) && 
+                    ExpectOperator(its[3], GDTokens.OperatorType.SemiColon, true))
                 {
                     IErrorEntry iee = new ErrorEntry(name, ((GDTokens.StringLiteralToken)(its[0])).GetCleanValue(), ((GDTokens.NumberLiteral)(its[2])).GetCleanValue(), this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position);
                     this.currentTarget.Result.Add(iee);
                 }
             }
-            else if (((IGDToken)its[0]).TokenType == GDTokenType.StringLiteral)
+            else if (its[0].TokenType == GDTokenType.StringLiteral)
             {
-                if (((IGDToken)its[1]).TokenType == GDTokenType.Operator && (((GDTokens.OperatorToken)(its[1])).Type == GDTokens.OperatorType.TemplatePartsSeparator))
+                var second = its[1];
+                if (second.TokenType == GDTokenType.Operator && (((GDTokens.OperatorToken)(second)).Type == GDTokens.OperatorType.Comma))
                 {
-                    if (((IGDToken)its[2]).TokenType == GDTokenType.NumberLiteral)
-                        Expect(";", its[3].Position);
+                    if (its[2].TokenType == GDTokenType.NumberLiteral)
+                        ExpectOperator(its[3], GDTokens.OperatorType.SemiColon, true);
                     else
                         Expect("number", its[2].Position);
                 }
                 else
-                    Expect(",", its[1].Position);
+                    ExpectOperator(second, GDTokens.OperatorType.Comma, true);
             }
             else
                 Expect("string", its[0].Position);
@@ -733,7 +736,7 @@ namespace Oilexer.Parser
         {
             var currentToken = currentOperator;
             if (!(currentOperator != null &&
-                currentOperator.Type == GDTokens.OperatorType.TemplatePartsStart))
+                currentOperator.Type == GDTokens.OperatorType.LessThan))
             {
                 Expect("<");
                 return null;
@@ -745,7 +748,7 @@ namespace Oilexer.Parser
                 string expectTarget = null;
                 TemplatePartExpectedSpecial? special = null;
                 ProductionRuleTemplatePart currentPart = null;
-                ITokenStream its = GetAhead(2);
+                var its = GetAhead(2);
                 if (its.Count < 2)
                 {
                     Expect("+, (, or >");
@@ -760,30 +763,30 @@ namespace Oilexer.Parser
                         case GDTokens.OperatorType.OptionsSeparator:
                             its = GetAhead(5);
                             if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator, GDTokenType.Identifier, GDTokenType.Operator, GDTokenType.Operator))
-                                if (ExpectIdentifier((IGDToken)its[0], "expect", StringComparison.InvariantCultureIgnoreCase, true))
+                                if (ExpectIdentifier(its[0], "expect", StringComparison.InvariantCultureIgnoreCase, true))
                                 {
                                     special = TemplatePartExpectedSpecial.None;
-                                    if (ExpectOperator((IGDToken)its[1], GDTokens.OperatorType.ErrorSeparator, true))
-                                        if (ExpectIdentifier((IGDToken)its[2], "token", StringComparison.InvariantCultureIgnoreCase, false))
+                                    if (ExpectOperator(its[1], GDTokens.OperatorType.Equals, true))
+                                        if (ExpectIdentifier(its[2], "token", StringComparison.InvariantCultureIgnoreCase, false))
                                             special = TemplatePartExpectedSpecial.Token;
-                                        else if (ExpectIdentifier((IGDToken)its[2], "tokenorrule", StringComparison.InvariantCultureIgnoreCase, false))
+                                        else if (ExpectIdentifier(its[2], "tokenorrule", StringComparison.InvariantCultureIgnoreCase, false))
                                             special = TemplatePartExpectedSpecial.TokenOrRule;
-                                        else if (ExpectIdentifier((IGDToken)its[2], "rule", StringComparison.InvariantCultureIgnoreCase, false))
+                                        else if (ExpectIdentifier(its[2], "rule", StringComparison.InvariantCultureIgnoreCase, false))
                                             special = TemplatePartExpectedSpecial.Rule;
                                         else
                                         {
                                             special =  null;
                                             expectTarget = ((GDTokens.IdentifierToken)(its[2])).Name;
                                         }
-                                    if (ExpectOperator((IGDToken)its[3], GDTokens.OperatorType.EntryTerminal, true))
+                                    if (ExpectOperator(its[3], GDTokens.OperatorType.SemiColon, true))
                                     {
                                         ot = its[4] as GDTokens.OperatorToken;
-                                        if (ot.Type == GDTokens.OperatorType.TemplatePartsSeparator)
-                                            goto case GDTokens.OperatorType.TemplatePartsSeparator;
-                                        else if (ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
-                                            goto case GDTokens.OperatorType.TemplatePartsEnd;
-                                        else if (ot.Type == GDTokens.OperatorType.OneOrMore)
-                                            goto case GDTokens.OperatorType.OneOrMore;
+                                        if (ot.Type == GDTokens.OperatorType.Comma)
+                                            goto case GDTokens.OperatorType.Comma;
+                                        else if (ot.Type == GDTokens.OperatorType.GreaterThan)
+                                            goto case GDTokens.OperatorType.GreaterThan;
+                                        else if (ot.Type == GDTokens.OperatorType.Plus)
+                                            goto case GDTokens.OperatorType.Plus;
                                         else
                                             Expect("'+', ',' or '>'", ot.Position);
                                     }
@@ -793,7 +796,7 @@ namespace Oilexer.Parser
                             else
                                 return null;
                             break;
-                        case GDTokens.OperatorType.TemplatePartsSeparator:
+                        case GDTokens.OperatorType.Comma:
                             if (special == null)
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, expectTarget, id.Line, id.Column, id.Position);
                             else
@@ -801,17 +804,17 @@ namespace Oilexer.Parser
                             this.DefineRuleTemplateParameterIdentifier(id, currentPart);
                             result.Add(currentPart);
                             break;
-                        case GDTokens.OperatorType.OneOrMore:
+                        case GDTokens.OperatorType.Plus:
                             currentIsSeries = true;
                             IGDToken gdt = PopAhead();
-                            if (ExpectOperator(gdt, GDTokens.OperatorType.TemplatePartsSeparator, false))
-                                goto case GDTokens.OperatorType.TemplatePartsSeparator;
-                            else if (ExpectOperator(gdt, GDTokens.OperatorType.TemplatePartsEnd, false))
-                                goto case GDTokens.OperatorType.TemplatePartsEnd;
+                            if (ExpectOperator(gdt, GDTokens.OperatorType.Comma, false))
+                                goto case GDTokens.OperatorType.Comma;
+                            else if (ExpectOperator(gdt, GDTokens.OperatorType.GreaterThan, false))
+                                goto case GDTokens.OperatorType.GreaterThan;
                             else
                                 Expect("',' or '>'");
                             break;
-                        case GDTokens.OperatorType.TemplatePartsEnd:
+                        case GDTokens.OperatorType.GreaterThan:
                             if (special == null)
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, expectTarget, id.Line, id.Column, id.Position);
                             else
@@ -824,7 +827,7 @@ namespace Oilexer.Parser
                             return null;
                     }
                 }
-                else if (((IGDToken)its[0]).TokenType == GDTokenType.Identifier)
+                else if ((its[0]).TokenType == GDTokenType.Identifier)
                 {
                     Expect("'+', '(', ',' or '>'");
                     return null;
@@ -850,7 +853,7 @@ namespace Oilexer.Parser
             if (gdt != null && gdt.TokenType == GDTokenType.Operator && (((GDTokens.OperatorToken)(gdt)).Type & operatorType) != GDTokens.OperatorType.None)
                 return true;
             else if (error)
-                Expect(operatorType.ToString());
+                Expect(operatorType.ToString(), gdt.Position);
             return false;
         }
 
@@ -892,12 +895,12 @@ namespace Oilexer.Parser
                     break;
                 else if (c == ';')
                 {
-                    ExpectOperator(PopAhead(), GDTokens.OperatorType.EntryTerminal, true);
+                    ExpectOperator(PopAhead(), GDTokens.OperatorType.SemiColon, true);
                     break;
                 }
                 else if (c == '|')
                 {
-                    if (!(ExpectOperator(PopAhead(), GDTokens.OperatorType.LeafSeparator, true)))
+                    if (!(ExpectOperator(PopAhead(), GDTokens.OperatorType.Pipe, true)))
                         break;
                     ParseProductionRuleBody(iprte, container);
                     continue;
@@ -1043,7 +1046,7 @@ namespace Oilexer.Parser
                     case GDTokenType.Operator:
                         switch (((GDTokens.OperatorToken)(igdt)).Type)
                         {
-                            case GDTokens.OperatorType.LeafSeparator:
+                            case GDTokens.OperatorType.Pipe:
                                 ClearAhead();
                                 goto yield;
                             case GDTokens.OperatorType.LeftParenthesis:
@@ -1054,12 +1057,12 @@ namespace Oilexer.Parser
                                 break;
                             case GDTokens.OperatorType.RightParenthesis:
                                 goto yield;
-                            case GDTokens.OperatorType.TemplatePartsEnd:
-                            case GDTokens.OperatorType.TemplatePartsSeparator:
+                            case GDTokens.OperatorType.GreaterThan:
+                            case GDTokens.OperatorType.Comma:
                                 if (templateDepth <= 0)
                                     LogError(GDParserErrors.Expected, "#if, #ifdef, #ifndef,identifier, '(', or ';'");
                                 goto yield;
-                            case GDTokens.OperatorType.EntryTerminal:
+                            case GDTokens.OperatorType.SemiColon:
                                 ClearAhead();
                                 if (templateDepth != 0 || parameterDepth != 0)
                                 {
@@ -1085,78 +1088,7 @@ namespace Oilexer.Parser
                     {
                         ParseItemOptions(item);
                     }
-                    //Just in case -_-
-                    ClearAhead();
-                    if (TokenizerLookAhead(0) == '?')
-                    {
-                        item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrOne;
-                        this.PopAhead();
-                    }
-                    else if (TokenizerLookAhead(0) == '+')
-                    {
-                        item.RepeatOptions = ScannableEntryItemRepeatInfo.OneOrMore;
-                        this.PopAhead();
-                    }
-                    else if (TokenizerLookAhead(0) == '*')
-                    {
-                        item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
-                        this.PopAhead();
-                    }
-                    else if (TokenizerLookAhead(0) == '{')
-                    {
-                        this.PopAhead();
-                        ITokenStream numberOp = this.GetAhead(2);
-                        //Either min unbounded or error.
-                        if (!(SeriesMatch(numberOp, GDTokenType.NumberLiteral, GDTokenType.Operator) ||
-                              SeriesMatch(numberOp, GDTokenType.Operator, GDTokenType.NumberLiteral)))
-                        {
-                            //Error of some kind.
-                            if (((GDToken)(numberOp[0])).TokenType == GDTokenType.NumberLiteral)
-                                ExpectOperator(((IGDToken)(numberOp[1])), GDTokens.OperatorType.Minus | GDTokens.OperatorType.TemplatePartsSeparator, true);
-                            else
-                                Expect("Number or ','", numberOp[0].Position);
-                        }
-                        if (((IGDToken)numberOp[0]).TokenType == GDTokenType.Operator)
-                        {
-                            GDTokens.OperatorToken op = numberOp[0] as GDTokens.OperatorToken;
-                            if (op.Type == GDTokens.OperatorType.TemplatePartsSeparator)
-                                item.RepeatOptions = new ScannableEntryItemRepeatInfo(null, ((GDTokens.NumberLiteral)(numberOp[1])).GetCleanValue());
-                            else
-                                Expect("Number or ','", numberOp[0].Position);
-                        }
-                        {
-                            GDTokens.NumberLiteral num = numberOp[0] as GDTokens.NumberLiteral;
-                            GDTokens.OperatorToken op = numberOp[1] as GDTokens.OperatorToken;
-                            if (op.Type == GDTokens.OperatorType.TemplatePartsSeparator)
-                            {
-                                var max = this.PopAhead();
-                                if (max.TokenType == GDTokenType.NumberLiteral)
-                                {
-                                    var maxNumber = max as GDTokens.NumberLiteral;
-                                    var maxTail = this.PopAhead();
-                                    if (maxTail.TokenType == GDTokenType.Operator &&
-                                        ((GDTokens.OperatorToken)(maxTail)).Type == GDTokens.OperatorType.RightCurlyBrace)
-                                        item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), maxNumber.GetCleanValue());
-                                    else
-                                        ExpectOperator(maxTail, GDTokens.OperatorType.RightCurlyBrace, true);
-                                }
-                                else
-                                    Expect("Number", max.Position);
-                            }
-                            else if (op.Type == GDTokens.OperatorType.RightCurlyBrace)
-                            {
-                                int cl = num.GetCleanValue();
-                                item.RepeatOptions = new ScannableEntryItemRepeatInfo(cl, cl);
-                            }
-                            else
-                                ExpectOperator(op, GDTokens.OperatorType.RightCurlyBrace | GDTokens.OperatorType.TemplatePartsSeparator, true);
-                        }
-                    }
-                    if (TokenizerLookAhead(0) == '@')
-                    {
-                        item.RepeatOptions |= ScannableEntryItemRepeatInfo.AnyOrder;
-                        this.PopAhead();
-                    }
+                    ParseItemRepeatOptions(item);
                     seriesItemMembers.Add(item);
                 }
             }
@@ -1196,7 +1128,7 @@ namespace Oilexer.Parser
             if (ot != null && ExpectOperator(ot, GDTokens.OperatorType.OptionsSeparator, true))
             {
                 PopAhead();
-                ITokenStream its = GetAhead(2);
+                var its = GetAhead(2);
                 if (its.Count != 2)
                 {
                     Expect("Name and ';'");
@@ -1206,7 +1138,7 @@ namespace Oilexer.Parser
                 {
                     GDTokens.IdentifierToken idt = its[0] as GDTokens.IdentifierToken;
                     GDTokens.OperatorToken op = its[1] as GDTokens.OperatorToken;
-                    if (ExpectOperator(op, GDTokens.OperatorType.EntryTerminal, true))
+                    if (ExpectOperator(op, GDTokens.OperatorType.SemiColon, true))
                         item.Name = idt.Name;
                 }
                 ParseFlagOption(item);
@@ -1224,10 +1156,10 @@ namespace Oilexer.Parser
                     LookAhead(3).TokenType == GDTokenType.Operator)
                 { 
                     if (ExpectIdentifier(LookAhead(0), "default", StringComparison.InvariantCultureIgnoreCase, false) &&
-                        ExpectOperator(LookAhead(1), GDTokens.OperatorType.ErrorSeparator, false) &&
+                        ExpectOperator(LookAhead(1), GDTokens.OperatorType.Equals, false) &&
                         //At this point, we can expect beyond a doubt, so error if there is no
                         //';' operator.
-                        ExpectOperator(LookAhead(3), GDTokens.OperatorType.EntryTerminal, true))
+                        ExpectOperator(LookAhead(3), GDTokens.OperatorType.SemiColon, true))
                     {
                         string v = ((GDTokens.IdentifierToken)LookAhead(2)).Name;
                         if (item is TokenGroupItem)
@@ -1250,11 +1182,11 @@ namespace Oilexer.Parser
                     LookAhead(3).TokenType == GDTokenType.Operator)
                 {
                     if (ExpectIdentifier(LookAhead(0), "flag", StringComparison.InvariantCultureIgnoreCase, false) &&
-                        ExpectOperator(LookAhead(1), GDTokens.OperatorType.ErrorSeparator, false) &&
+                        ExpectOperator(LookAhead(1), GDTokens.OperatorType.Equals, false) &&
                         //At this point, we can expect beyond a doubt, so error if there is no
                         //boolean or ';' operator.
                         ExpectBoolean(LookAhead(2), true) &&
-                        ExpectOperator(LookAhead(3), GDTokens.OperatorType.EntryTerminal, true))
+                        ExpectOperator(LookAhead(3), GDTokens.OperatorType.SemiColon, true))
                     {
                         if (item is LiteralCharTokenItem)
                             ((LiteralCharTokenItem)(item)).IsFlag = bool.Parse(((GDTokens.IdentifierToken)(LookAhead(2))).Name);
@@ -1367,7 +1299,7 @@ namespace Oilexer.Parser
                 GDTokens.OperatorToken op = (GDTokens.OperatorToken)stream[2];
                 string name = id.Name;
                 string value = null;
-                if (op.Type == GDTokens.OperatorType.ErrorSeparator)
+                if (op.Type == GDTokens.OperatorType.Equals)
                 {
                     var tok = LookAhead(0);
                     if (tok.TokenType == GDTokenType.Identifier)
@@ -1381,16 +1313,16 @@ namespace Oilexer.Parser
                     }
                     PopAhead();
                     tok = PopAhead();
-                    if (!ExpectOperator(tok, GDTokens.OperatorType.EntryTerminal, true))
+                    if (!ExpectOperator(tok, GDTokens.OperatorType.SemiColon, true))
                         return null;
 
                 }
-                else if (!ExpectOperator(op, GDTokens.OperatorType.EntryTerminal, true))
+                else if (!ExpectOperator(op, GDTokens.OperatorType.SemiColon, true))
                     return null;
                 return new PreprocessorDefineSymbolDirective(name, value, preprocessor.Column, preprocessor.Line, preprocessor.Position);
             }
-            else if (stream.Count == 3 && ((IGDToken)stream[1]).TokenType == GDTokenType.Identifier)
-                ExpectOperator((IGDToken)stream[2], GDTokens.OperatorType.TemplatePartsSeparator | GDTokens.OperatorType.EntryTerminal, true);
+            else if (stream.Count == 3 && (stream[1]).TokenType == GDTokenType.Identifier)
+                ExpectOperator(stream[2], GDTokens.OperatorType.Comma | GDTokens.OperatorType.SemiColon, true);
             else if (stream.Count > 1)
                 Expect("identifier", stream[1].Position);
             else if (stream.Count == 1)
@@ -1469,14 +1401,14 @@ namespace Oilexer.Parser
                 this.PopAhead();
                 return null;
             }
-            ITokenStream its = GetAhead(3);
+            var its = GetAhead(3);
 
             if (its.Count == 3 && SeriesMatch(its, GDTokenType.PreprocessorDirective, GDTokenType.StringLiteral, GDTokenType.Operator))
             {
                 StringTerminalKind kind = StringTerminalKind.Unknown;
                 GDTokens.StringLiteralToken str = (GDTokens.StringLiteralToken)its[1];
                 GDTokens.OperatorToken op = (GDTokens.OperatorToken)its[2];
-                if (op.Type == GDTokens.OperatorType.EntryTerminal)
+                if (op.Type == GDTokens.OperatorType.SemiColon)
                 {
                     string literal = str.GetCleanValue();
                     switch (pp.Type)
@@ -1538,9 +1470,9 @@ namespace Oilexer.Parser
                     case GDTokens.PreprocessorType.NamespaceDirective:
                         if (its.Count > 1)
                         {
-                            IGDToken second = (IGDToken)its[1];
+                            IGDToken second = its[1];
                             if (second.TokenType == GDTokenType.StringLiteral)
-                                ExpectOperator((IGDToken)(its[2]), GDTokens.OperatorType.EntryTerminal, true);
+                                ExpectOperator(its[2], GDTokens.OperatorType.SemiColon, true);
                             else
                             {
                                 Expect("string", second.Position);
@@ -1561,7 +1493,7 @@ namespace Oilexer.Parser
         {
             IPreprocessorConditionalReturnDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
-            this.SetMultiLineMode(false);
+            this.SetMultiLineMode(true);
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.ReturnDirective)
             {
@@ -1588,12 +1520,12 @@ namespace Oilexer.Parser
                 return null;
             }
             IGDToken igdt = PopAhead();
-            ITokenStream its = GetAhead(2);
+            var its = GetAhead(2);
             if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
             {
                 GDTokens.IdentifierToken target = its[0] as GDTokens.IdentifierToken;
                 GDTokens.OperatorToken op = its[1] as GDTokens.OperatorToken;
-                if (!ExpectOperator(op, GDTokens.OperatorType.TemplatePartsSeparator, true))
+                if (!ExpectOperator(op, GDTokens.OperatorType.Comma, true))
                     return null;
                 if (target == null)
                 {
@@ -1613,7 +1545,7 @@ namespace Oilexer.Parser
         {
             IPreprocessorDefineRuleDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
-            this.SetMultiLineMode(false);
+            this.SetMultiLineMode(true);
             if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
                 ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.DefineDirective)
             {
@@ -1621,12 +1553,12 @@ namespace Oilexer.Parser
                 return null;
             }
             IGDToken igdt = PopAhead();
-            ITokenStream its = GetAhead(2);
+            var its = GetAhead(2);
             if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
             {
                 GDTokens.IdentifierToken target = its[0] as GDTokens.IdentifierToken;
                 GDTokens.OperatorToken op = its[1] as GDTokens.OperatorToken;
-                if (!ExpectOperator(op, GDTokens.OperatorType.ErrorSeparator, true))
+                if (!ExpectOperator(op, GDTokens.OperatorType.Equals, true))
                     return null;
                 if (target == null)
                 {
@@ -1655,19 +1587,19 @@ namespace Oilexer.Parser
                 return null;
             }
             IGDToken preproc = PopAhead();
-            ITokenStream its = GetAhead(2);
+            var its = GetAhead(2);
             if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
             {
                 GDTokens.IdentifierToken id = (GDTokens.IdentifierToken)its[0];
-                if (ExpectOperator((IGDToken)its[1], GDTokens.OperatorType.EntryTerminal, false))
+                if (ExpectOperator(its[1], GDTokens.OperatorType.SemiColon, false))
                     result = new PreprocessorThrowDirective(this.currentTarget.Result, id.Name, new IGDToken[0], preproc.Column, preproc.Line, preproc.Position);
-                else if (ExpectOperator((IGDToken)its[1], GDTokens.OperatorType.TemplatePartsSeparator, true))
+                else if (ExpectOperator(its[1], GDTokens.OperatorType.Comma, true))
                 {
                     List<IGDToken> args = new List<IGDToken>();
                     while (true)
                     {
                         its = GetAhead(2);
-                        IGDToken arg = (IGDToken)its[0];
+                        IGDToken arg = its[0];
                         if (its.Count != 2)
                             break;
                         if (arg.TokenType == GDTokenType.Identifier || arg.TokenType == GDTokenType.StringLiteral || arg.TokenType == GDTokenType.CharacterLiteral)
@@ -1677,21 +1609,21 @@ namespace Oilexer.Parser
                             Expect("string, char or identifier");
                             break;
                         }
-                        if (ExpectOperator((IGDToken)its[1], GDTokens.OperatorType.EntryTerminal, false))
+                        if (ExpectOperator(its[1], GDTokens.OperatorType.SemiColon, false))
                         {
                             result = new PreprocessorThrowDirective(this.currentTarget.Result, id.Name, args.ToArray(), preproc.Column, preproc.Line, preproc.Position);
                             break;
                         }
-                        else if (ExpectOperator((IGDToken)its[1], GDTokens.OperatorType.TemplatePartsSeparator, true))
+                        else if (ExpectOperator(its[1], GDTokens.OperatorType.Comma, true))
                             continue;
                         else
                             break;
                     }
                 }
             }
-            else if (its.Count > 0 && ((IGDToken)(its[0])).TokenType == GDTokenType.Identifier)
+            else if (its.Count > 0 && its[0].TokenType == GDTokenType.Identifier)
             {
-                Expect(";");
+                ExpectOperator(its[0], GDTokens.OperatorType.SemiColon, true);
             }
             else
                 Expect("identifier");
@@ -1877,7 +1809,7 @@ namespace Oilexer.Parser
                         continue;
                     }
                     EntryScanMode esm = EntryScanMode.Inherited;
-                    ITokenStream its = GetAhead(2);
+                    var its = GetAhead(2);
                     /* *
                      * expected patterns:
                      * ID   = | * Language defined error 
@@ -1908,14 +1840,14 @@ namespace Oilexer.Parser
                                 }
                                 else
                                 {
-                                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.TokenSeparator | GDTokens.OperatorType.TemplatePartsEnd, true);
+                                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.GreaterThan, true);
                                     PopAhead();
                                 } 
                                 break;
                             //ID ::=
-                            case GDTokens.OperatorType.ProductionRuleSeparator:
+                            case GDTokens.OperatorType.ColonColonEquals:
                                 if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                    ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
+                                    ot.Type == GDTokens.OperatorType.GreaterThan)
                                 {
                                     elementsAreChildren = true;
                                     PopAhead();
@@ -1924,7 +1856,7 @@ namespace Oilexer.Parser
                                 ParseProductionRule(id, EntryScanMode.Inherited, id.Position, elementsAreChildren, preprocessorInserter, container);
                                 break;
                             //ID :=
-                            case GDTokens.OperatorType.TokenSeparator:
+                            case GDTokens.OperatorType.ColonEquals:
                                 {
                                     SetMultiLineMode(true);
                                     bool unhinged = false;
@@ -1942,11 +1874,11 @@ namespace Oilexer.Parser
                                 }
                                 break;
                             //ID =
-                            case GDTokens.OperatorType.ErrorSeparator:
+                            case GDTokens.OperatorType.Equals:
                                 ParseError(id.Name, id.Position);
                                 break;
                             //ID<
-                            case GDTokens.OperatorType.TemplatePartsStart:
+                            case GDTokens.OperatorType.LessThan:
                                 SetMultiLineMode(true);
                                 IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts(ot);
                                 if (parts == null)
@@ -1962,12 +1894,12 @@ namespace Oilexer.Parser
                                         gdt = PopAhead() as GDTokens.OperatorToken;
                                         esm = EntryScanMode.SingleLine;
                                     }
-                                    else if (gdt.Type == GDTokens.OperatorType.OneOrMore)
+                                    else if (gdt.Type == GDTokens.OperatorType.Plus)
                                     {
                                         gdt = PopAhead() as GDTokens.OperatorToken;
                                         esm = EntryScanMode.Multiline;
                                     }
-                                    if (gdt == null || !ExpectOperator(gdt, GDTokens.OperatorType.ProductionRuleSeparator, true))
+                                    if (gdt == null || !ExpectOperator(gdt, GDTokens.OperatorType.ColonColonEquals, true))
                                     {
                                         Expect("::=");
                                         break;
@@ -1976,7 +1908,7 @@ namespace Oilexer.Parser
                                 }
                                 break;
                             //ID>
-                            case GDTokens.OperatorType.TemplatePartsEnd:
+                            case GDTokens.OperatorType.GreaterThan:
                                 //Case of a token defining precedence.
                                 while (LookAhead(0).TokenType == GDTokenType.Identifier)
                                 {
@@ -1986,19 +1918,19 @@ namespace Oilexer.Parser
                                     GDTokens.OperatorToken cOp = null;
                                     //','  * More precedences exist.
                                     if ((cOp = (LookAhead(0) as GDTokens.OperatorToken)) != null &&
-                                        cOp.Type == GDTokens.OperatorType.TemplatePartsSeparator)
+                                        cOp.Type == GDTokens.OperatorType.Comma)
                                         PopAhead();
                                     //":=" * Final precedence reached.
                                     else if (cOp != null &&
-                                        cOp.Type == GDTokens.OperatorType.TokenSeparator)
+                                        cOp.Type == GDTokens.OperatorType.ColonEquals)
                                     {
                                         PopAhead();
-                                        goto case GDTokens.OperatorType.TokenSeparator;
+                                        goto case GDTokens.OperatorType.ColonEquals;
                                     }
                                     else
                                     {
                                         //Syntax error.
-                                        ExpectOperator(LookAhead(0), GDTokens.OperatorType.TokenSeparator, true);
+                                        ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals, true);
                                         break;
                                     }
                                 }
@@ -2006,7 +1938,7 @@ namespace Oilexer.Parser
                             //ID-
                             case GDTokens.OperatorType.Minus:
                             //ID+
-                            case GDTokens.OperatorType.OneOrMore:
+                            case GDTokens.OperatorType.Plus:
                                 esm = ot.Type == GDTokens.OperatorType.Minus ? EntryScanMode.SingleLine : EntryScanMode.Multiline;
                                 IGDToken ahead = PopAhead();
                                 if (ahead.TokenType == GDTokenType.Operator)
@@ -2014,17 +1946,17 @@ namespace Oilexer.Parser
                                     ot = ((GDTokens.OperatorToken)(ahead));
                                     switch (ot.Type)
                                     {
-                                        case GDTokens.OperatorType.ProductionRuleSeparator:
+                                        case GDTokens.OperatorType.ColonColonEquals:
                                             SetMultiLineMode(true);
                                             if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                                ot.Type == GDTokens.OperatorType.TemplatePartsEnd)
+                                                ot.Type == GDTokens.OperatorType.GreaterThan)
                                             {
                                                 elementsAreChildren = true;
                                                 PopAhead();
                                             }
                                             ParseProductionRule(id, esm, id.Position, elementsAreChildren, preprocessorInserter, container);
                                             break;
-                                        case GDTokens.OperatorType.TokenSeparator:
+                                        case GDTokens.OperatorType.ColonEquals:
                                             {
                                                 SetMultiLineMode(true);
                                                 bool unhinged = false;
@@ -2041,7 +1973,7 @@ namespace Oilexer.Parser
                                                 ParseToken(id, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb);
                                             }
                                             break;
-                                        case GDTokens.OperatorType.ErrorSeparator:
+                                        case GDTokens.OperatorType.Equals:
                                             break;
                                     }
                                 }
@@ -2313,7 +2245,7 @@ namespace Oilexer.Parser
             //if the next token is a '(' then we're in a sub-expression...
             if (LookPastAndSkip() == '(')
             {
-                this.PopAhead();
+                var leftParenthesis = this.PopAhead() as GDTokens.OperatorToken;
                 IPreprocessorCLogicalOrConditionExp orExp = null;
                 if (ParsePreprocessorCLogicalOrConditionExp(ref orExp))
                 {
@@ -2325,7 +2257,7 @@ namespace Oilexer.Parser
                         Expect(")", CurrentTokenizer.Position);
                         return false;
                     }
-                    cPrimary = new PreprocessorCPrimary(orExp, orExp.Column, orExp.Line, orExp.Position);
+                    cPrimary = new PreprocessorCPrimary(leftParenthesis, orExp, orExp.Column, orExp.Line, orExp.Position);
                     return true;
                 }
                 else
@@ -2361,11 +2293,11 @@ namespace Oilexer.Parser
                 if (ahead.TokenType == GDTokenType.Identifier)
                     cPrimary = new PreprocessorCPrimary(((GDTokens.IdentifierToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
                 else if (ahead.TokenType == GDTokenType.StringLiteral)
-                    cPrimary = new PreprocessorCPrimary(((GDTokens.StringLiteralToken)(ahead)).GetCleanValue(), ahead.Column, ahead.Line, ahead.Position);
+                    cPrimary = new PreprocessorCPrimary(((GDTokens.StringLiteralToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
                 else if (ahead.TokenType == GDTokenType.CharacterLiteral)
-                    cPrimary = new PreprocessorCPrimary(((GDTokens.CharLiteralToken)(ahead)).GetCleanValue(), ahead.Column, ahead.Line, ahead.Position);
+                    cPrimary = new PreprocessorCPrimary(((GDTokens.CharLiteralToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
                 else if (ahead.TokenType == GDTokenType.NumberLiteral)
-                    cPrimary = new PreprocessorCPrimary(((GDTokens.NumberLiteral)(ahead)).GetCleanValue(), ahead.Column, ahead.Line, ahead.Position);
+                    cPrimary = new PreprocessorCPrimary(((GDTokens.NumberLiteral)(ahead)), ahead.Column, ahead.Line, ahead.Position);
                 return true;
             }
         }
@@ -2509,7 +2441,7 @@ namespace Oilexer.Parser
 
         private ISoftTemplateReferenceProductionRuleItem ParseTemplateReference(GDTokens.IdentifierToken id, PreprocessorContainer container)
         {
-            if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.TemplatePartsStart, true))
+            if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.LessThan, true))
             {
                 List<ICollection<IProductionRule>> serii = new List<ICollection<IProductionRule>>();
                 PopAhead();
@@ -2520,12 +2452,12 @@ namespace Oilexer.Parser
                     ParseProductionRule(current, container);
                     ClearAhead();
                     serii.Add(current);
-                    if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.TemplatePartsSeparator, false))
+                    if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.Comma, false))
                     {
                         PopAhead();
                         continue;
                     }
-                    else if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.TemplatePartsEnd, true))
+                    else if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.GreaterThan, true))
                     {
                         PopAhead();
                         break;
@@ -2683,12 +2615,12 @@ namespace Oilexer.Parser
                 char c = LookPastAndSkip();
                 if (c == ';')
                 {
-                    ExpectOperator(PopAhead(), GDTokens.OperatorType.EntryTerminal, true);
+                    ExpectOperator(PopAhead(), GDTokens.OperatorType.SemiColon, true);
                     break;
                 }
                 else if (c == '|')
                 {
-                    if (!(ExpectOperator(PopAhead(), GDTokens.OperatorType.LeafSeparator, true)))
+                    if (!(ExpectOperator(PopAhead(), GDTokens.OperatorType.Pipe, true)))
                         break;
                     ParseTokenBody(expressions);
                     continue;
@@ -2803,7 +2735,7 @@ namespace Oilexer.Parser
                     case GDTokenType.Operator:
                         switch (((GDTokens.OperatorToken)(igdt)).Type)
                         {
-                            case GDTokens.OperatorType.LeafSeparator:
+                            case GDTokens.OperatorType.Pipe:
                                 ClearAhead();
                                 goto yield;
                             case GDTokens.OperatorType.LeftParenthesis:
@@ -2814,8 +2746,8 @@ namespace Oilexer.Parser
                                 if (parameterDepth <= 0)
                                     LogError(GDParserErrors.Expected, ";", igdt.Position);
                                 goto yield;
-                            case GDTokens.OperatorType.TemplatePartsEnd:
-                            case GDTokens.OperatorType.TemplatePartsSeparator:
+                            case GDTokens.OperatorType.GreaterThan:
+                            case GDTokens.OperatorType.Comma:
                                 if (commandDepths.Contains(parameterDepth))
                                 {
                                     ClearAhead();
@@ -2823,7 +2755,7 @@ namespace Oilexer.Parser
                                 }
                                 LogError(GDParserErrors.Expected, "identifier, '(', or ';'");
                                 goto yield;
-                            case GDTokens.OperatorType.EntryTerminal:
+                            case GDTokens.OperatorType.SemiColon:
                                 ClearAhead();
                                 if (templateDepth != 0 || parameterDepth != 0)
                                 {
@@ -2847,87 +2779,109 @@ namespace Oilexer.Parser
                     {
                         ParseItemOptions(item);
                     }
-                    //Just in case -_-
-                    ClearAhead();
-                    if (TokenizerLookAhead(0) == '?')
-                    {
-                        item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrOne;
-                        this.PopAhead();
-                    }
-                    else if (TokenizerLookAhead(0) == '+')
-                    {
-                        item.RepeatOptions = ScannableEntryItemRepeatInfo.OneOrMore;
-                        this.PopAhead();
-                    }
-                    else if (TokenizerLookAhead(0) == '*')
-                    {
-                        if (TokenizerLookAhead(1) == '*' &&
-                            item is LiteralStringTokenItem)
-                        {
-                            this.PopAhead();
-                            ((LiteralStringTokenItem)(item)).SiblingAmbiguity = true;
-                        }
-                        else
-                        {
-                            item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
-                            this.PopAhead();
-                        }
-                    }
-                    else if (TokenizerLookAhead(0) == '{')
-                    {
-                        this.PopAhead();
-                        ITokenStream numberOp = this.GetAhead(2);
-                        //Either min unbounded or error.
-                        if (!(SeriesMatch(numberOp, GDTokenType.NumberLiteral, GDTokenType.Operator) ||
-                              SeriesMatch(numberOp, GDTokenType.Operator, GDTokenType.NumberLiteral)))
-                        {
-                            //Error of some kind.
-                            if (((GDToken)(numberOp[0])).TokenType == GDTokenType.NumberLiteral)
-                                ExpectOperator(((IGDToken)(numberOp[1])), GDTokens.OperatorType.Minus | GDTokens.OperatorType.TemplatePartsSeparator, true);
-                            else
-                                Expect("Number or ','", numberOp[0].Position);
-                        }
-                        if (((IGDToken)numberOp[0]).TokenType == GDTokenType.Operator)
-                        {
-                            GDTokens.OperatorToken op = numberOp[0] as GDTokens.OperatorToken;
-                            if (op.Type == GDTokens.OperatorType.TemplatePartsSeparator)
-                                item.RepeatOptions = new ScannableEntryItemRepeatInfo(null, ((GDTokens.NumberLiteral)(numberOp[1])).GetCleanValue());
-                            else
-                                Expect("Number or ','", numberOp[0].Position);
-                        }
-                        {
-                            GDTokens.NumberLiteral num = numberOp[0] as GDTokens.NumberLiteral;
-                            GDTokens.OperatorToken op = numberOp[1] as GDTokens.OperatorToken;
-                            if (op.Type == GDTokens.OperatorType.TemplatePartsSeparator)
-                            {
-                                var max = this.PopAhead();
-                                if (max.TokenType == GDTokenType.NumberLiteral)
-                                {
-                                    var maxNumber = max as GDTokens.NumberLiteral;
-                                    var maxTail = this.PopAhead();
-                                    if (maxTail.TokenType == GDTokenType.Operator &&
-                                        ((GDTokens.OperatorToken)(maxTail)).Type == GDTokens.OperatorType.RightCurlyBrace)
-                                        item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), maxNumber.GetCleanValue());
-                                    else
-                                        ExpectOperator(maxTail, GDTokens.OperatorType.RightCurlyBrace, true);
-                                }
-                                else
-                                    Expect("Number", max.Position);
-                            }
-                            else if (op.Type == GDTokens.OperatorType.RightCurlyBrace)
-                            {
-                                int cl = num.GetCleanValue();
-                                item.RepeatOptions = new ScannableEntryItemRepeatInfo(cl, cl);
-                            }
-                            else
-                                ExpectOperator(op, GDTokens.OperatorType.RightCurlyBrace | GDTokens.OperatorType.TemplatePartsSeparator, true);
-                        }
-                    }
+                    ParseItemRepeatOptions(item);
                     seriesItemMembers.Add(item);
                 }
             }
         yield:
             expressions.Add(new TokenExpression(seriesItemMembers, CurrentTokenizer.FileName, l, ci, p));
+        }
+
+        private void ParseItemRepeatOptions(IScannableEntryItem item, bool itemIsRuleItem = false)
+        {
+            //Just in case -_-
+            ClearAhead();
+            if (TokenizerLookAhead(0) == '?')
+            {
+                item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrOne;
+                this.PopAhead();
+            }
+            else if (TokenizerLookAhead(0) == '+')
+            {
+                item.RepeatOptions = ScannableEntryItemRepeatInfo.OneOrMore;
+                this.PopAhead();
+            }
+            else if (TokenizerLookAhead(0) == '*')
+            {
+                if (TokenizerLookAhead(1) == '*' &&
+                    item is LiteralStringTokenItem)
+                {
+                    this.PopAhead();
+                    ((LiteralStringTokenItem)(item)).SiblingAmbiguity = true;
+                }
+                else
+                {
+                    item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
+                    this.PopAhead();
+                }
+            }
+            else if (TokenizerLookAhead(0) == '{')
+            {
+                this.PopAhead();
+                var numberOp = this.GetAhead(2);
+                //Either min unbounded or error.
+                if (!(SeriesMatch(numberOp, GDTokenType.NumberLiteral, GDTokenType.Operator) ||
+                      SeriesMatch(numberOp, GDTokenType.Operator, GDTokenType.NumberLiteral)))
+                {
+                    //Error of some kind.
+                    if (numberOp[0].TokenType == GDTokenType.NumberLiteral)
+                        ExpectOperator(numberOp[1], GDTokens.OperatorType.Minus | GDTokens.OperatorType.Comma, true);
+                    else
+                        Expect("Number or ','", numberOp[0].Position);
+                }
+                if (numberOp[0].TokenType == GDTokenType.Operator)
+                {
+                    GDTokens.OperatorToken op = numberOp[0] as GDTokens.OperatorToken;
+                    if (op.Type == GDTokens.OperatorType.Comma)
+                        item.RepeatOptions = new ScannableEntryItemRepeatInfo(null, ((GDTokens.NumberLiteral)(numberOp[1])).GetCleanValue());
+                    else
+                        Expect("Number or ','", numberOp[0].Position);
+                    ExpectOperator(this.PopAhead(), GDTokens.OperatorType.RightCurlyBrace, true);
+                }
+                else
+                {
+                    GDTokens.NumberLiteral num = numberOp[0] as GDTokens.NumberLiteral;
+                    GDTokens.OperatorToken op = numberOp[1] as GDTokens.OperatorToken;
+                    if (op.Type == GDTokens.OperatorType.Comma)
+                    {
+                        var max = this.PopAhead();
+                        if (max.TokenType == GDTokenType.NumberLiteral)
+                        {
+                            var maxNumber = max as GDTokens.NumberLiteral;
+                            var maxTail = this.PopAhead();
+                            if (maxTail.TokenType == GDTokenType.Operator &&
+                                ((GDTokens.OperatorToken)(maxTail)).Type == GDTokens.OperatorType.RightCurlyBrace)
+                                item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), maxNumber.GetCleanValue());
+                            else
+                                ExpectOperator(maxTail, GDTokens.OperatorType.RightCurlyBrace, true);
+                        }
+                        else if (max.TokenType == GDTokenType.Operator)
+                        {
+                            var maxTail = max as GDTokens.OperatorToken;
+                            if (maxTail.Type != GDTokens.OperatorType.RightCurlyBrace)
+                                Expect("Number or }", max.Position);
+                            else
+                                item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), null);
+                        }
+                        else
+                            Expect("Number or }", max.Position);
+                    }
+                    else if (op.Type == GDTokens.OperatorType.RightCurlyBrace)
+                    {
+                        int cl = num.GetCleanValue();
+                        item.RepeatOptions = new ScannableEntryItemRepeatInfo(cl, cl);
+                    }
+                    else
+                        ExpectOperator(op, GDTokens.OperatorType.RightCurlyBrace | GDTokens.OperatorType.Comma, true);
+                }
+            }
+            if (itemIsRuleItem)
+                if (TokenizerLookAhead(0) == '@')
+                {
+                    item.RepeatOptions |= ScannableEntryItemRepeatInfo.AnyOrder;
+                    this.PopAhead();
+                }
+
         }
 
         private ICharRangeTokenItem ParseTokenCharacterRange()
@@ -3015,7 +2969,7 @@ namespace Oilexer.Parser
             {
             nextSet:
                 commandExpressionSets.Add(ParseTokenExpressionSeries());
-                if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.TemplatePartsSeparator, false))
+                if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.Comma, false))
                 {
                     PopAhead();
                     goto nextSet;
@@ -3104,13 +3058,13 @@ namespace Oilexer.Parser
             return false;
         }
 
-        private bool SeriesMatch(ITokenStream its, params GDTokenType[] gdtt)
+        private bool SeriesMatch(ITokenStream<IGDToken> its, params GDTokenType[] gdtt)
         {
             for (int i = 0; i < its.Count; i++)
                 if (i >= gdtt.Length)
                     break;
                 else
-                    if (((IGDToken)its[i]).TokenType != gdtt[i])
+                    if (its[i].TokenType != gdtt[i])
                         return false;
 
             return its.Count >= gdtt.Length;

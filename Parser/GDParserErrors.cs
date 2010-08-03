@@ -59,5 +59,6 @@ namespace Oilexer.Parser
         InvalidStartDefined,
         RuleNeverUsed,
         LanguageDefinedError = 0x1000,
+        ReferenceError = 0x2000,
     }
 }

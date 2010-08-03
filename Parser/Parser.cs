@@ -8,7 +8,7 @@ namespace Oilexer.Parser
     public abstract class Parser :
         IParser
     {
-        private ITokenStream lookaheadStream = null;
+        //private ITokenStream lookaheadStream = null;
         protected IList<IToken> originalFormTokens = null;
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Oilexer.Parser
             if (originalFormTokens == null)
                 originalFormTokens = new List<IToken>();
             this.originalFormTokens = originalFormTokens;
-            this.lookaheadStream = new TokenStream(this.originalFormTokens);
+            //this.lookaheadStream = new TokenStream(this.originalFormTokens);
         }
 
         #region IParser Members
@@ -143,13 +143,15 @@ namespace Oilexer.Parser
             get { return this.originalFormTokens.Count; }
         }
 
-        public virtual ITokenStream GetAhead(int count)
+        public virtual ITokenStream<T> GetAhead<T>(int count)
+            where T :
+                IToken
         {
-            List<IToken> streamItems = new List<IToken>();
+            List<T> streamItems = new List<T>();
 
             for (int i = 0; i < count; i++)
             {
-                IToken it = LookAhead(i);
+                T it = (T)LookAhead(i);
                 if (it != null)
                     streamItems.Add(it);
             }
@@ -159,7 +161,7 @@ namespace Oilexer.Parser
                 IToken t = streamItems[streamItems.Count - 1];
                 StreamPosition = t.Position + t.Length;
             }
-            return new TokenStream(streamItems);
+            return new TokenStream<T>(streamItems);
         }
 
         #endregion

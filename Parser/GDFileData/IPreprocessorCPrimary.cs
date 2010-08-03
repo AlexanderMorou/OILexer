@@ -18,9 +18,10 @@ namespace Oilexer.Parser.GDFileData
         /// 5 - Number</remarks>
         int Rule { get; }
         GDTokens.IdentifierToken Identifier { get; }
-        string String { get; }
-        char? Char { get; }
+        GDTokens.StringLiteralToken String { get; }
+        GDTokens.CharLiteralToken Char { get; }
         IPreprocessorCLogicalOrConditionExp PreCLogicalOrExp { get; }
-        int? Number { get; }
+        GDTokens.NumberLiteral Number { get; }
+        IGDToken Token { get; }
     }
 }

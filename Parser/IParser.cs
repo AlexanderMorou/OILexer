@@ -41,7 +41,9 @@ namespace Oilexer.Parser
         /// <returns></returns>
         IToken LookAhead(int howFar);
 
-        ITokenStream GetAhead(int count);
+        ITokenStream<T> GetAhead<T>(int count)
+            where T :
+                IToken;
 
         /// <summary>
         /// Returns a <see cref="System.Char"/> after the last token in the <see cref="LookAhead(int)"/> 

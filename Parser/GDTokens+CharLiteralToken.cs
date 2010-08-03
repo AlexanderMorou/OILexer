@@ -93,6 +93,14 @@ namespace Oilexer.Parser
             {
                 get { return true; }
             }
+
+            public string Value
+            {
+                get
+                {
+                    return this.charDef;
+                }
+            }
         }
     }
 }

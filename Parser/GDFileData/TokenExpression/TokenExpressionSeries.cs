@@ -8,7 +8,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
     /// <summary>
     /// Provides a base implementation of <see cref="ITokenExpressionSeries"/> which provides
     /// a series of <see cref="ITokenExpression"/> instances declared in an <see cref="IGDFile"/>
-    /// implementation segmented by <see cref="GDTokens.OperatorType.LeafSeparator"/>
+    /// implementation segmented by <see cref="GDTokens.OperatorType.Pipe"/>
     /// </summary>
     public class TokenExpressionSeries :
         ReadOnlyCollection<ITokenExpression>,

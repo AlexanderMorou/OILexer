@@ -40,7 +40,8 @@ namespace Oilexer
             IIntermediateProject iip = new IntermediateProject(this.RootDeclaration);
             if (this.RootDeclaration.ParentTarget != null)
                 iip.ParentTarget = this.RootDeclaration.ParentTarget;
-            this.baseCollection.Add(iip);
+            lock (this.baseCollection)
+                this.baseCollection.Add(iip);
             return iip;
         }
 
@@ -48,7 +49,8 @@ namespace Oilexer
         {
             IIntermediateProject iip = new IntermediateProject(this.RootDeclaration);
             iip.ParentTarget = parentTarget;
-            this.baseCollection.Add(iip);
+            lock (this.baseCollection)
+                this.baseCollection.Add(iip);
             return iip;
         }
 

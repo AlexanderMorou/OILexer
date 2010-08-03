@@ -123,7 +123,8 @@ namespace Oilexer.Utilities.Collections
         /// the <see cref="ControlledStateCollection{T}"/>.</returns>
         public virtual IEnumerator<T> GetEnumerator()
         {
-            return this.baseCollection.GetEnumerator();
+            lock (this.baseCollection)
+                return this.baseCollection.GetEnumerator();
         }
 
         #endregion

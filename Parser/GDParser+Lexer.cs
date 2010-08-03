@@ -986,12 +986,12 @@ namespace Oilexer.Parser
                     case ':':
                         c = LookAhead(1);
                         if (c == '=')
-                            ot = GDTokens.OperatorType.TokenSeparator;
+                            ot = GDTokens.OperatorType.ColonEquals;
                         else if (c == ':')
                         {
                             if (LookAhead(2) == '=')
                             {
-                                ot = GDTokens.OperatorType.ProductionRuleSeparator;
+                                ot = GDTokens.OperatorType.ColonColonEquals;
                             }
                             else
                                 return new NextTokenResults(_Internal.GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
@@ -1007,36 +1007,36 @@ namespace Oilexer.Parser
                             ot = GDTokens.OperatorType.ZeroOrMore;
                         break;
                     case '+':
-                        ot = GDTokens.OperatorType.OneOrMore;
+                        ot = GDTokens.OperatorType.Plus;
                         break;
                     case '?':
                         ot = GDTokens.OperatorType.ZeroOrOne;
                         break;
                     case '<':
-                        ot = GDTokens.OperatorType.TemplatePartsStart;
+                        ot = GDTokens.OperatorType.LessThan;
                         break;
                     case '|':
                         c = LookAhead(1);
                         if (c == '|')
                             ot = GDTokens.OperatorType.PipePipe;
                         else
-                            ot = GDTokens.OperatorType.LeafSeparator;
+                            ot = GDTokens.OperatorType.Pipe;
                         break;
                     case ';':
-                        ot = GDTokens.OperatorType.EntryTerminal;
+                        ot = GDTokens.OperatorType.SemiColon;
                         break;
                     case '>':
-                        ot = GDTokens.OperatorType.TemplatePartsEnd;
+                        ot = GDTokens.OperatorType.GreaterThan;
                         break;
                     case '!':
                         c = LookAhead(1);
                         if (c == '=')
                             ot = GDTokens.OperatorType.ExclaimEqual;
                         else
-                            ot = GDTokens.OperatorType.ProductionRuleFlag;
+                            ot = GDTokens.OperatorType.Exclaim;
                         break;
                     case ',':
-                        ot = GDTokens.OperatorType.TemplatePartsSeparator;
+                        ot = GDTokens.OperatorType.Comma;
                         break;
                     case '.':
                         ot = GDTokens.OperatorType.Period;
@@ -1046,7 +1046,7 @@ namespace Oilexer.Parser
                         if (c == '=')
                             ot = GDTokens.OperatorType.EqualEqual;
                         else
-                            ot = GDTokens.OperatorType.ErrorSeparator;
+                            ot = GDTokens.OperatorType.Equals;
                         break;
                     case '{':
                         ot = GDTokens.OperatorType.LeftCurlyBrace;

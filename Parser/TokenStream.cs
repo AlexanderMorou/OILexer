@@ -5,23 +5,21 @@ using Oilexer.Utilities.Collections;
 
 namespace Oilexer.Parser
 {
-    public class TokenStream :
-        ControlledStateCollection<IToken>,
-        ITokenStream
+    public class TokenStream<T> :
+        ControlledStateCollection<T>,
+        ITokenStream<T>
+        where T :
+            IToken
     {
-        public TokenStream(IToken[] tokens)
+        public TokenStream(T[] tokens)
         {
-            foreach (IToken t in tokens)
+            foreach (T t in tokens)
                 this.baseCollection.Add(t);
         }
-        internal TokenStream(ICollection<IToken> baseCopy)
+        internal TokenStream(ICollection<T> baseCopy)
             : base(baseCopy)
         {
         }
 
-        internal T get_Item<T>(int index)
-        {
-            return (T)this[index];
-        }
     }
 }
