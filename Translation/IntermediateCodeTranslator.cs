@@ -79,29 +79,44 @@ namespace Oilexer.Translation
                 TranslateConceptTypeName((ITypeParameterMember)typeRef.TypeInstance, typeRef.TypeParameters);
         }
 
+        public override void TranslateProject(IIntermediateProject project)
+        {
+            if (this.Options.Formatter != null)
+            {
+                string opening = this.options.Formatter.FormatBeginFile();
+                if (opening != null)
+                    this.Write(opening, TranslatorFormatterTokenType.Preformatted);
+                this.TranslateProjectInner(project);
+                string closing = this.options.Formatter.FormatEndFile();
+                if (closing != null)
+                    this.Write(closing, TranslatorFormatterTokenType.Preformatted);
+            }
+            else
+                this.TranslateProjectInner(project);
+        }
+
+        protected abstract void TranslateProjectInner(IIntermediateProject project);
+
         public abstract void TranslateConceptNotInstantiableClass(IClassType classType);
 
         public abstract void TranslateConceptNotInheritableClass(IClassType classType);
 
         public abstract void TranslateConceptNotInheritableOrInstantiableClass(IClassType classType);
 
-        public virtual void TranslateConceptIdentifier(IDeclaration decl)
+        public virtual void TranslateConceptIdentifier(IDeclaration decl, bool declarePoint)
         {
             string name = GetConceptIdentifier(decl);
-            if (decl is IMethodMember)
-                this.Write(name, TranslatorFormatterMemberType.Method);
-            else if (decl is IMethodSignatureMember)
-                this.Write(name, TranslatorFormatterMemberType.MethodSignature);
-            else if (decl is IPropertyMember)
-                this.Write(name, TranslatorFormatterMemberType.Property);
-            else if (decl is IPropertySignatureMember)
-                this.Write(name, TranslatorFormatterMemberType.PropertySignature);
-            else if (decl is IFieldMember)
-                this.Write(name, TranslatorFormatterMemberType.Field);
+            if (decl is IMethodMember || decl is IMethodSignatureMember ||
+                decl is IPropertyMember || decl is IPropertySignatureMember ||
+                decl is IFieldMember || decl is IStatementBlockLocalMember ||
+                decl is IMethodParameterMember || decl is IMethodSignatureMember ||
+                decl is IIndexerParameterMember || decl is IIndexerSignatureParameterMember ||
+                decl is IConstructorParameterMember)
+                this.Write(name, (IMember)decl, declarePoint);
             else if (decl is INameSpaceDeclaration)
                 this.Write(name, TranslatorFormatterTokenType.NameSpace);
             else if (decl is IDeclaredType)
-                this.Write(name, (IType)decl);
+                this.Write(name, (IType)decl, declarePoint);
             else
                 this.Write(name, TranslatorFormatterTokenType.Other);
         }
@@ -115,6 +130,27 @@ namespace Oilexer.Translation
                 name = decl.Name;
             if (this.IsKeyword(name))
                 name = EscapeIdentifier(name);
+            return name;
+        }
+
+        public virtual void TranslateConceptIdentifier(string identifierBase, ILabelStatement label, bool declarePoint)
+        {
+            string name = null;
+            if (options.NameHandler.HandlesName(identifierBase))
+                name = options.NameHandler.HandleName(identifierBase);
+            else
+                name = identifierBase;
+            if (this.IsKeyword(name))
+                name = EscapeIdentifier(name);
+            name = this.GetFormat(name, label, declarePoint);
+            this.Write(name, TranslatorFormatterTokenType.Preformatted);
+        }
+
+        private string GetFormat(string name, ILabelStatement label, bool declarePoint)
+        {
+            if (this.options != null &&
+                this.options.Formatter != null)
+                name = this.options.Formatter.FormatLabelToken(name, label, this.Options, declarePoint);
             return name;
         }
 
@@ -151,7 +187,7 @@ namespace Oilexer.Translation
                 name = identifierBase;
             if (this.IsKeyword(name))
                 name = EscapeIdentifier(name);
-            this.Write(name, type);
+            this.Write(name, type, type is IDeclaredType);
         }
 
         protected virtual string GetConceptIdentifier(string identifierBase)
@@ -521,7 +557,20 @@ namespace Oilexer.Translation
             string result = GetFormat(token, memberType);
             target.Write(result);
         }
+        protected virtual void Write(string token, IMember member, bool declarePoint)
+        {
+            string result = GetFormat(token, member, declarePoint);
+            target.Write(result);
+        }
 
+        protected string GetFormat(string token, IMember member, bool declarePoint)
+        {
+            IIntermediateCodeTranslatorFormatter formatter = options.Formatter;
+            string result = token;
+            if (formatter != null)
+                result = formatter.FormatMemberNameToken(token, member, Options, declarePoint);
+            return result;
+        }
         protected string GetFormat(string token, TranslatorFormatterMemberType memberType)
         {
             IIntermediateCodeTranslatorFormatter formatter = options.Formatter;
@@ -550,27 +599,33 @@ namespace Oilexer.Translation
             return result;
         }
 
-        protected virtual void WriteLine(string typeToken, IType typeToWrite)
+        protected virtual void WriteLine(string typeToken, IType typeToWrite, bool declarePoint)
         {
-            this.Write(typeToken, typeToWrite);
+            this.Write(typeToken, typeToWrite, declarePoint);
             this.WriteLine();
         }
-        protected virtual void Write(string typeToken, IType typeToWrite)
+        protected virtual void Write(string typeToken, IType typeToWrite, bool declarePoint)
         {
-            string result = GetFormat(typeToken, typeToWrite);
+            string result = GetFormat(typeToken, typeToWrite, declarePoint);
             target.Write(result);
         }
 
-        protected string GetFormat(string typeToken, IType typeToWrite)
+        protected string GetFormat(string typeToken, IType typeToWrite, bool declarePoint)
         {
             IIntermediateCodeTranslatorFormatter formatter = options.Formatter;
             string result = typeToken;
             if (formatter != null)
-                result = formatter.FormatTypeNameToken(typeToken, typeToWrite);
+                result = formatter.FormatTypeNameToken(typeToken, typeToWrite, Options, declarePoint);
             return result;
         }
 
         protected virtual void Write(string token, TranslatorFormatterTokenType tokenType)
+        {
+            string result = GetFormat(token, tokenType);
+            target.Write(result);
+        }
+
+        protected virtual void Write(string token, TranslatorFormatterTokenType tokenType, ILabelStatement label, bool declarePoint)
         {
             string result = GetFormat(token, tokenType);
             target.Write(result);

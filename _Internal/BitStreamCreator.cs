@@ -43,6 +43,7 @@ namespace Oilexer._Internal
         public static CharStreamClass CreateBitStream(ITypeParent parent)
         {
             IClassType result = parent.Classes.AddNew("CharStream");
+            
             result.AccessLevel = DeclarationAccessLevel.Internal;
             IFieldMember charBuffer = result.Fields.AddNew(new TypedName("buffer", typeof(char[])));
             charBuffer.AccessLevel = DeclarationAccessLevel.Internal;

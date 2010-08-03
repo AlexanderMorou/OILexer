@@ -33,6 +33,8 @@ namespace Oilexer.Translation
         /// </summary>
         INameSpaceDeclaration CurrentNameSpace { get; set; }
 
+        IDeclaredType CurrentType { get; set; }
+
         /// <summary>
         /// Returns the trail of entities being generated.
         /// </summary>

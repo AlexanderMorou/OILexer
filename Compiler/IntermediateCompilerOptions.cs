@@ -39,20 +39,6 @@ namespace Oilexer.Compiler
 
         /// <summary>
         /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
-        /// <paramref name="generateXMLDocs"/>, and <paramref name="target"/> provided.
-        /// </summary>
-        /// <param name="optimize">Whether to optimize the code in the resulted assembly.</param>
-        /// <param name="generateXMLDocs">Whether to generate XML documentation with the
-        /// resulted assembl.</param>
-        /// <param name="target">The file name for the resulted <see cref="System.Reflection.Assembly"/>.</param>
-        public IntermediateCompilerOptions(bool optimize, bool generateXMLDocs, string target)
-            : this(optimize, false, false, generateXMLDocs, target, DebugSupport.Full)
-        {
-
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
         /// <paramref name="comVisible"/>, <paramref name="allowUnsafeCode"/>,
         /// <paramref name="generateXMLDocs"/>, and <paramref name="target"/> provided.
         /// </summary>
@@ -63,122 +49,18 @@ namespace Oilexer.Compiler
         /// <param name="generateXMLDocs">Whether to generate XML documentation with the
         /// resulted assembl.</param>
         /// <param name="target">The file name for the resulted <see cref="System.Reflection.Assembly"/>.</param>
-        public IntermediateCompilerOptions(bool optimize, bool comVisible, bool allowUnsafeCode,
-            bool generateXMLDocs, string target)
-            : this(optimize, comVisible, allowUnsafeCode, generateXMLDocs, false, DebugSupport.Full)
+        /// <param name="debugSupport">The level of support to give to a debugger.</param>
+        public IntermediateCompilerOptions(string target, bool optimize = false, bool comVisible = false, bool allowUnsafeCode = false,
+            bool generateXMLDocs = false, bool inMemory = false, bool keepTempFiles = false, DebugSupport debugSupport = Oilexer.DebugSupport.Full)
         {
+            this.KeepTempFiles = keepTempFiles;
             this.target = target;
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
-        /// <paramref name="comVisible"/>, <paramref name="allowUnsafeCode"/>,
-        /// <paramref name="generateXMLDocs"/>, and <paramref name="inMemory"/> provided.
-        /// </summary>
-        /// <param name="optimize">Whether to optimize the code in the resulted assembly.</param>
-        /// <param name="comVisible">Whether the assembly is visible to COM targets.</param>
-        /// <param name="allowUnsafeCode">Whether the assembly resulted will allow unsafe code to be
-        /// generated.</param>
-        /// <param name="generateXMLDocs">Whether to generate XML documentation with the
-        /// resulted assembl.</param>
-        /// <param name="inMemory">Whether the resulted assembly is strictly limited to a build in memory.</param>
-        public IntermediateCompilerOptions(bool optimize, bool comVisible, bool allowUnsafeCode,
-            bool generateXMLDocs, bool inMemory)
-            : this(optimize, comVisible, allowUnsafeCode, generateXMLDocs, inMemory, DebugSupport.Full)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
-        /// <paramref name="comVisible"/>, <paramref name="allowUnsafeCode"/>, and
-        /// <paramref name="generateXMLDocs"/> provided.
-        /// </summary>
-        /// <param name="optimize">Whether to optimize the code in the resulted assembly.</param>
-        /// <param name="comVisible">Whether the assembly is visible to COM targets.</param>
-        /// <param name="allowUnsafeCode">Whether the assembly resulted will allow unsafe code to be
-        /// generated.</param>
-        /// <param name="generateXMLDocs">Whether to generate XML documentation with the
-        /// resulted assembl.</param>
-        public IntermediateCompilerOptions(bool optimize, bool comVisible, bool allowUnsafeCode,
-            bool generateXMLDocs)
-            : this(optimize, comVisible, allowUnsafeCode, generateXMLDocs, DebugSupport.Full)
-        {
-        }
-        /// <summary>
-        /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
-        /// <paramref name="generateXMLDocs"/>, and <paramref name="target"/> provided.
-        /// </summary>
-        /// <param name="optimize">Whether to optimize the code in the resulted assembly.</param>
-        /// <param name="generateXMLDocs">Whether to generate XML documentation with the
-        /// resulted assembl.</param>
-        /// <param name="target">The file name for the resulted <see cref="System.Reflection.Assembly"/>.</param>
-        /// <param name="debugSupport">The level of support to give to a debugger.</param>
-        public IntermediateCompilerOptions(bool optimize, bool generateXMLDocs, string target, DebugSupport debugSupport)
-            : this(optimize, false, false, generateXMLDocs, target, debugSupport)
-        {
-
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
-        /// <paramref name="comVisible"/>, <paramref name="allowUnsafeCode"/>,
-        /// <paramref name="generateXMLDocs"/>, and <paramref name="target"/> provided.
-        /// </summary>
-        /// <param name="optimize">Whether to optimize the code in the resulted assembly.</param>
-        /// <param name="comVisible">Whether the assembly is visible to COM targets.</param>
-        /// <param name="allowUnsafeCode">Whether the assembly resulted will allow unsafe code to be
-        /// generated.</param>
-        /// <param name="generateXMLDocs">Whether to generate XML documentation with the
-        /// resulted assembl.</param>
-        /// <param name="target">The file name for the resulted <see cref="System.Reflection.Assembly"/>.</param>
-        /// <param name="debugSupport">The level of support to give to a debugger.</param>
-        public IntermediateCompilerOptions(bool optimize, bool comVisible, bool allowUnsafeCode,
-            bool generateXMLDocs, string target, DebugSupport debugSupport)
-            : this(optimize, comVisible, allowUnsafeCode, generateXMLDocs, false, debugSupport)
-        {
-            this.target = target;
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
-        /// <paramref name="comVisible"/>, <paramref name="allowUnsafeCode"/>,
-        /// <paramref name="generateXMLDocs"/>, and <paramref name="inMemory"/> provided.
-        /// </summary>
-        /// <param name="optimize">Whether to optimize the code in the resulted assembly.</param>
-        /// <param name="comVisible">Whether the assembly is visible to COM targets.</param>
-        /// <param name="allowUnsafeCode">Whether the assembly resulted will allow unsafe code to be
-        /// generated.</param>
-        /// <param name="generateXMLDocs">Whether to generate XML documentation with the
-        /// resulted assembl.</param>
-        /// <param name="inMemory">Whether the resulted assembly is strictly limited to a build in memory.</param>
-        /// <param name="debugSupport">The level of support to give to a debugger.</param>
-        public IntermediateCompilerOptions(bool optimize, bool comVisible, bool allowUnsafeCode,
-            bool generateXMLDocs, bool inMemory, DebugSupport debugSupport)
-        {
             this.optimize = optimize;
             this.comVisible = COMVisible;
             this.allowUnsafeCode = allowUnsafeCode;
             this.generateXMLDocs = generateXMLDocs;
             this.inMemory = inMemory;
             this.debugSupport = debugSupport;
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="IntermediateCompilerOptions"/> instance with the <paramref name="optimize"/>,
-        /// <paramref name="comVisible"/>, <paramref name="allowUnsafeCode"/>, 
-        /// <paramref name="generateXMLDocs"/>, and <paramref name="debugSupport"/> provided.
-        /// </summary>
-        /// <param name="optimize">Whether to optimize the code in the resulted assembly.</param>
-        /// <param name="comVisible">Whether the assembly is visible to COM targets.</param>
-        /// <param name="allowUnsafeCode">Whether the assembly resulted will allow unsafe code to be
-        /// generated.</param>
-        /// <param name="generateXMLDocs">Whether to generate XML documentation with the
-        /// resulted assembl.</param>
-        /// <param name="debugSupport">The level of support to give to a debugger.</param>
-        public IntermediateCompilerOptions(bool optimize, bool comVisible, bool allowUnsafeCode,
-            bool generateXMLDocs, DebugSupport debugSupport)
-            : this(optimize, comVisible, allowUnsafeCode, generateXMLDocs, true, debugSupport)
-        {
         }
 
         #region IIntermediateCompilerOptions Members
@@ -304,6 +186,9 @@ namespace Oilexer.Compiler
                 yield break;
             }
         }
+
+
+        public bool KeepTempFiles { get; set; }
 
         public void AddFile(string file)
         {

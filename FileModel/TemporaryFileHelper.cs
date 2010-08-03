@@ -113,7 +113,7 @@ namespace Oilexer.FileModel
                 TemporaryPaths.Add(fullPath, new TemporaryDirectory(fullPath, keep));
             return TemporaryPaths[fullPath];            
         }
-        public static TemporaryDirectory GetNonStandardTempDirectory(string path, string dirName)
+        public static TemporaryDirectory GetNonStandardTempDirectory(string path, string dirName, bool keep = true)
         {
             if (dirName == "." || dirName.Contains(".."))
                 throw new ArgumentException("Cannot refer to temp dir or parent.", "dirName");
@@ -126,7 +126,7 @@ namespace Oilexer.FileModel
             if (fullPath.Substring(fullPath.Length - 1) != @"\")
                 fullPath += @"\";
             if (!TemporaryFileHelper.TemporaryPaths.ContainsKey(fullPath))
-                TemporaryPaths.Add(fullPath, new TemporaryDirectory(fullPath, true));
+                TemporaryPaths.Add(fullPath, new TemporaryDirectory(fullPath, keep));
             return TemporaryPaths[fullPath];
         }
     }

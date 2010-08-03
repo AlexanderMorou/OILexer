@@ -22,5 +22,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         /// <returns>A new <see cref="ILiteralTokenItem{T}"/> with the data
         /// members of the current <see cref="ILiteralTokenItem{T}"/>.</returns>
         new ILiteralTokenItem<T> Clone();
+
+        GDTokens.IdentifierToken IsFlagToken { get; }
     }
 }

@@ -1174,7 +1174,10 @@ namespace Oilexer.Parser
 
         private void ParseFlagOption(IScannableEntryItem item)
         {
-            if (item is LiteralCharTokenItem || item is LiteralStringTokenItem)
+
+            bool isCharItem;
+            if ((isCharItem = (item is LiteralCharTokenItem)) ||
+                item is LiteralStringTokenItem)
             {
                 if (LookAhead(0).TokenType == GDTokenType.Identifier &&
                     LookAhead(1).TokenType == GDTokenType.Operator &&
@@ -1188,11 +1191,22 @@ namespace Oilexer.Parser
                         ExpectBoolean(LookAhead(2), true) &&
                         ExpectOperator(LookAhead(3), GDTokens.OperatorType.SemiColon, true))
                     {
-                        if (item is LiteralCharTokenItem)
-                            ((LiteralCharTokenItem)(item)).IsFlag = bool.Parse(((GDTokens.IdentifierToken)(LookAhead(2))).Name);
+                        var aheadFour = GetAhead(4);
+                        var thirdAhead = (GDTokens.IdentifierToken)aheadFour[2];
+                        if (isCharItem)
+                        {
+                            var charItem = item as LiteralCharTokenItem;
+                            charItem.IsFlag = bool.Parse(thirdAhead.Name);
+                            charItem.IsFlagToken = thirdAhead;
+                        }
                         else//LiteralStringTokenItem
-                            ((LiteralStringTokenItem)(item)).IsFlag = bool.Parse(((GDTokens.IdentifierToken)(LookAhead(2))).Name);
-                        GetAhead(4);
+                        {
+                            var stringItem = item as LiteralStringTokenItem;
+                            stringItem.IsFlag = bool.Parse(thirdAhead.Name);
+                            stringItem.IsFlagToken = thirdAhead;
+                        }
+                        DefineKeywordIdentifier((GDTokens.IdentifierToken)aheadFour[0]);
+                        DefineKeywordIdentifier(thirdAhead);
                     }
                 }
             }
@@ -2389,7 +2403,7 @@ namespace Oilexer.Parser
         protected virtual void DefineCommandIdentifier(GDTokens.IdentifierToken commandIdentifier)
         {
         }
-        protected virtual void DefineBooleanIdentifier(GDTokens.IdentifierToken booleanIdentifier)
+        protected virtual void DefineKeywordIdentifier(GDTokens.IdentifierToken keywordIdentifier)
         {
         }
 
@@ -3001,6 +3015,8 @@ namespace Oilexer.Parser
                                         value = true;
                                     else if (softRef.PrimaryName.ToLower() != "false")
                                         Expect("true or false", softRef.Position);
+                                    if (softRef.PrimaryToken != null)
+                                        this.DefineKeywordIdentifier(softRef.PrimaryToken);
                                     return new ScanCommandTokenItem(commandExpressionSets[0], value, id.Column, id.Line, id.Position);
                                 }
                             }
@@ -3050,7 +3066,7 @@ namespace Oilexer.Parser
                 (ExpectIdentifier(boolIDToken, "true", StringComparison.InvariantCultureIgnoreCase, false) ||
                  ExpectIdentifier(boolIDToken, "false", StringComparison.InvariantCultureIgnoreCase, false)))
             {
-                this.DefineBooleanIdentifier(boolID);
+                this.DefineKeywordIdentifier(boolID);
                 return true;
             }
             else if (error)

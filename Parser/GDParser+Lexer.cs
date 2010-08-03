@@ -188,7 +188,7 @@ namespace Oilexer.Parser
                                         break;
                                     }
                                 }
-                                else if (c == ':') // L (
+                                else if (c == ':') // L
                                 {
                                     lookAhead += 3;
                                     categories.Add(UnicodeCategory.UppercaseLetter);

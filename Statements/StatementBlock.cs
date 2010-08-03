@@ -87,6 +87,15 @@ namespace Oilexer.Statements
             return ibs;
         }
 
+        protected override void InsertItem(int index, IStatement statement)
+        {
+            statement.SourceBlock = this;
+
+            base.InsertItem(index, statement);
+            if (statement is IBreakTargetStatement)
+                base.Add(((IBreakTargetStatement)statement).ExitLabel);
+        }
+
         public IEnumeratorStatement Enumerate(IMemberParentExpression enumeratorSource, ITypeReference itemType)
         {
             IEnumeratorStatement enumStatement = new EnumeratorStatement(this);
@@ -278,9 +287,6 @@ namespace Oilexer.Statements
         private new void Add(IStatement statement)
         {
             base.Add(statement);
-            statement.SourceBlock = this;
-            if (statement is IBreakTargetStatement)
-                base.Add(((IBreakTargetStatement)statement).ExitLabel);
         }
 
 

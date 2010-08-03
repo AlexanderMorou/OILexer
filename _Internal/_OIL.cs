@@ -34,6 +34,14 @@ namespace Oilexer._Internal
                 result[i] = c;
             return new string(result);
         }
+        public static string Repeat(this string s, int length)
+        {
+            char[] result = new char[s.Length * length];
+            for (int j = 0, k = 0; j < length; j++)
+                for (int i = 0; i < s.Length; i++)
+                    result[k++] = s[i];
+            return new string(result);
+        }
 
         internal unsafe static SlotType[] ObtainFiniteSeries(this BitArray characters, int FullSetLength)
         {

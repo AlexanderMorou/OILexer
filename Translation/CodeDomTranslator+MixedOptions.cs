@@ -44,6 +44,8 @@ namespace Oilexer.Translation
 
             #region IIntermediateCodeTranslatorOptions Members
 
+            public Func<IType, string> GetFileNameOf { get; set; }
+
             public IIntermediateCodeTranslatorFormatter Formatter
             {
                 get
@@ -138,6 +140,8 @@ namespace Oilexer.Translation
             {
                 get { return this.options.BuildTrail; }
             }
+
+            public IDeclaredType CurrentType { get; set; }
 
             public AutoRegionAreas AutoRegions
             {

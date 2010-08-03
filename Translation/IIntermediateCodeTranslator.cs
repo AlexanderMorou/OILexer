@@ -82,7 +82,7 @@ namespace Oilexer.Translation
         void TranslateConceptTypeName(IDeclaredTypeReference type, ITypeReferenceCollection typeParameters);
         void TranslateConceptTypeName(ITypeParameterMember type, ITypeReferenceCollection typeParameters);
         void TranslateConceptIdentifier(string identifierBase, TranslatorFormatterMemberType memberType);
-        void TranslateConceptIdentifier(IDeclaration decl);
+        void TranslateConceptIdentifier(IDeclaration decl, bool declarePoint);
         void TranslateConceptIdentifier(string identifierBase);
         void TranslateConceptKeyword(int keyWord);
 

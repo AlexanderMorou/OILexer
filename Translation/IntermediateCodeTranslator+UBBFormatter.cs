@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Oilexer.Types;
+using Oilexer.Types.Members;
+using Oilexer.Statements;
 
 namespace Oilexer.Translation
 {
@@ -44,7 +46,7 @@ namespace Oilexer.Translation
                 return string.Format("[color=#808080][font=courier new]{0}[/font][/color]", nameSpacePath);
             }
 
-            public string FormatTypeNameToken(string identifierToken, IType type)
+            public string FormatTypeNameToken(string identifierToken, IType type, IIntermediateCodeTranslatorOptions options, bool declarePoint)
             {
                 string color = "";
                 bool bold = false;
@@ -127,6 +129,71 @@ namespace Oilexer.Translation
             public string DenoteNewLine()
             {
                 return String.Empty;
+            }
+
+            public string FormatMemberNameToken(string token, IMember member, IIntermediateCodeTranslatorOptions options, bool declarePoint)
+            {
+                TranslatorFormatterMemberType memberType = TranslatorFormatterMemberType.Local;
+                if (member is IMethodMember)
+                    memberType = TranslatorFormatterMemberType.Method;
+                else if (member is IMethodSignatureMember)
+                    memberType = TranslatorFormatterMemberType.MethodSignature;
+                else if (member is IPropertyMember || member is IIndexerMember)
+                    memberType = TranslatorFormatterMemberType.Property;
+                else if (member is IPropertySignatureMember || member is IIndexerSignatureMember)
+                    memberType = TranslatorFormatterMemberType.PropertySignature;
+                else if (member is IMethodParameterMember ||
+                         member is IMethodSignatureParameterMember ||
+                         member is IIndexerParameterMember ||
+                         member is IIndexerSignatureParameterMember ||
+                         member is IConstructorParameterMember)
+                    memberType = TranslatorFormatterMemberType.Parameter;
+                else if (member is IFieldMember)
+                    memberType = TranslatorFormatterMemberType.Field;
+                else if (member is IStatementBlockLocalMember)
+                    memberType = TranslatorFormatterMemberType.Local;
+                return FormatMemberNameToken(token, memberType);
+            }
+
+
+            public string FormatBeginType(IDeclaredType type)
+            {
+                return string.Empty;
+            }
+
+            public string FormatEndType()
+            {
+                return string.Empty;
+            }
+
+            public string FormatBeginNamespace(INameSpaceDeclaration target)
+            {
+                return string.Empty;
+            }
+
+            public string FormatBeginNamespace()
+            {
+                return string.Empty;
+            }
+
+            public string FormatBeginFile()
+            {
+                return string.Empty;
+            }
+
+            public string FormatEndFile()
+            {
+                return string.Empty;
+            }
+
+            #endregion
+
+            #region IIntermediateCodeTranslatorFormatter Members
+
+
+            public string FormatLabelToken(string labelName, ILabelStatement label, IIntermediateCodeTranslatorOptions options, bool declarePoint)
+            {
+                return labelName;
             }
 
             #endregion

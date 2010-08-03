@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
 using Oilexer.Types;
 using Oilexer.Types.Members;
 using Oilexer.Expression;
@@ -67,7 +68,7 @@ namespace Oilexer.Translation
             base.Write(" ", TranslatorFormatterTokenType.Other);
 
             //Name
-            this.TranslateConceptIdentifier(classType);
+            this.TranslateConceptIdentifier(classType, true);
 
             //Type-parameter list.
             if (classType.TypeParameters != null && classType.TypeParameters.Count > 0)
@@ -165,7 +166,7 @@ namespace Oilexer.Translation
             this.TranslateConceptAccessModifiers(enumeratorType);
             this.TranslateConceptKeyword(Keywords.Enum);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            this.TranslateConceptIdentifier(enumeratorType);
+            this.TranslateConceptIdentifier(enumeratorType, true);
             switch (enumeratorType.BaseType)
             {
                 case EnumeratorBaseType.UByte:
@@ -222,7 +223,7 @@ namespace Oilexer.Translation
             else
                 TranslateConceptTypeName(delegateType.ReturnType);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            TranslateConceptIdentifier(delegateType);
+            TranslateConceptIdentifier(delegateType, true);
             if (delegateType.TypeParameters.Count > 0)
                 TranslateTypeParameters((ITypeParameterMembers)delegateType.TypeParameters);
             TranslateParameters(delegateType.Parameters);
@@ -252,7 +253,7 @@ namespace Oilexer.Translation
             this.TranslateConceptPartial(interfaceType);
             this.TranslateConceptKeyword(Keywords.Interface);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            this.TranslateConceptIdentifier(interfaceType);
+            this.TranslateConceptIdentifier(interfaceType, true);
             if (interfaceType.TypeParameters.Count > 0)
                 this.TranslateTypeParameters((ITypeParameterMembers)interfaceType.TypeParameters);
             //--Implements list.
@@ -317,7 +318,7 @@ namespace Oilexer.Translation
             base.Write(" ", TranslatorFormatterTokenType.Other);
 
             //Name
-            this.TranslateConceptIdentifier(structureType);
+            this.TranslateConceptIdentifier(structureType, true);
 
             //Type-parameter list.
             if (structureType.TypeParameters.Count > 0)
@@ -377,6 +378,13 @@ namespace Oilexer.Translation
             base.WriteLine("}", TranslatorFormatterTokenType.Operator);
         }
 
+        public override void TranslateType(IDeclaredType declaredType)
+        {
+            this.Options.CurrentType = declaredType;
+            base.TranslateType(declaredType);
+            this.Options.CurrentType = this.Options.BuildTrail.FirstOrDefault(p=>p is IDeclaredType) as IDeclaredType;
+        }
+
         /// <summary>
         /// Translates an <see cref="IIntermediateProject"/> as a whole or 
         /// partial by partial.
@@ -384,7 +392,7 @@ namespace Oilexer.Translation
         /// <param name="project">The <see cref="IIntermediateProject"/> to translate.</param>
         /// <remarks>Depending on the <see cref="Options"/>, this will translate all declared namespaces 
         /// or just those on the current partial.</remarks>
-        public override void TranslateProject(IIntermediateProject project)
+        protected override void TranslateProjectInner(IIntermediateProject project)
         {
             if (((!(base.Options.AllowPartials)) && (project.IsPartial)))
                 return;
@@ -471,11 +479,11 @@ namespace Oilexer.Translation
                     var newSet = new Stack<INameSpaceDeclaration>(namespaceForward);
                     foreach (var forward in newSet)
                     {
-                        this.TranslateConceptIdentifier(forward);
+                        this.TranslateConceptIdentifier(forward, true);
                         base.Write(".", TranslatorFormatterTokenType.Operator);
                     }
                 }
-                this.TranslateConceptIdentifier(nameSpace);
+                this.TranslateConceptIdentifier(nameSpace, true);
                 base.WriteLine();
                 base.WriteLine("{", TranslatorFormatterTokenType.Operator);
                 base.IncreaseIndent();
@@ -512,7 +520,7 @@ namespace Oilexer.Translation
                         TranslateConceptComment(GetRemarksDocumentComment(ifm.Remarks), true);
                 }
                 this.TranslateAttributes(ifm, ifm.Attributes);
-                this.TranslateConceptIdentifier(ifm);
+                this.TranslateConceptIdentifier(ifm, true);
                 if (ifm.InitializationExpression != null)
                 {
                     base.Write(" = ", TranslatorFormatterTokenType.Operator);
@@ -586,7 +594,7 @@ namespace Oilexer.Translation
                 base.Write(".", TranslatorFormatterTokenType.Operator);
             }
             //Emit the typename.
-            this.TranslateConceptIdentifier(ambigMethodSigMember);
+            this.TranslateConceptIdentifier(ambigMethodSigMember, true);
             //Emit the type-parameter names, if necessary.
             if (ambigMethodSigMember.TypeParameters.Count > 0)
                 this.TranslateTypeParameters((ITypeParameterMembers)ambigMethodSigMember.TypeParameters);
@@ -786,7 +794,7 @@ namespace Oilexer.Translation
             }
 
             //Write the name of the property, adjust accordingly if the type is a reserved name.
-            this.TranslateConceptIdentifier(ambigPropertySigMember);
+            this.TranslateConceptIdentifier(ambigPropertySigMember, true);
 
             //If it's not a signature.
             if (ipm != null && !ipm.IsAbstract)
@@ -850,7 +858,7 @@ namespace Oilexer.Translation
             }
             this.TranslateConceptTypeName(fieldMember.FieldType);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            this.TranslateConceptIdentifier(fieldMember);
+            this.TranslateConceptIdentifier(fieldMember, true);
             if (fieldMember.InitializationExpression != null)
             {
                 base.Write(" = ", TranslatorFormatterTokenType.Operator);
@@ -880,7 +888,7 @@ namespace Oilexer.Translation
             }
             else
                 this.TranslateConceptAccessModifiers(constructorMember);
-            this.TranslateConceptIdentifier(constructorMember.ParentTarget);
+            this.TranslateConceptIdentifier(constructorMember.ParentTarget, true);
             this.TranslateParameters(constructorMember.Parameters);
             this.IncreaseIndent();
             base.WriteLine();
@@ -929,13 +937,13 @@ namespace Oilexer.Translation
             }
             this.TranslateConceptTypeName(ambigParamMember.ParameterType);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            this.TranslateConceptIdentifier(ambigParamMember);
+            this.TranslateConceptIdentifier(ambigParamMember, true);
 
         }
 
         public override void TranslateMember<TDom, TParent>(ITypeParameterMember<TDom, TParent> typeParamMember)
         {
-            this.TranslateConceptIdentifier(typeParamMember);
+            this.TranslateConceptIdentifier(typeParamMember, true);
         }
 
         /// <summary>
@@ -1062,7 +1070,7 @@ namespace Oilexer.Translation
             base.Write(" (", TranslatorFormatterTokenType.Operator);
             this.TranslateConceptTypeName(enumStatement.CurrentMember.LocalType);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            this.TranslateConceptIdentifier(enumStatement.CurrentMember);
+            this.TranslateConceptIdentifier(enumStatement.CurrentMember, true);
             base.Write(" ", TranslatorFormatterTokenType.Other);
             this.TranslateConceptKeyword(Keywords.In);
             base.Write(" ", TranslatorFormatterTokenType.Other);
@@ -1134,7 +1142,7 @@ namespace Oilexer.Translation
             IStatementBlockLocalMember isblm = localDeclare.ReferencedMember;
             this.TranslateConceptTypeName(isblm.LocalType);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            this.TranslateConceptIdentifier(isblm);
+            this.TranslateConceptIdentifier(isblm, true);
             if (isblm.InitializationExpression != null)
             {
                 base.Write(" = ", TranslatorFormatterTokenType.Operator);
@@ -1710,7 +1718,7 @@ namespace Oilexer.Translation
                 base.Write(".", TranslatorFormatterTokenType.Operator);
             }
             if (fieldRefExpression is FieldMember.ReferenceExpression)
-                this.TranslateConceptIdentifier(((FieldMember.ReferenceExpression)fieldRefExpression).referencePoint);
+                this.TranslateConceptIdentifier(((FieldMember.ReferenceExpression)fieldRefExpression).referencePoint, false);
             else
                 this.TranslateConceptIdentifier(fieldRefExpression.Name, TranslatorFormatterMemberType.Field);
         }
@@ -1731,9 +1739,7 @@ namespace Oilexer.Translation
         public override void TranslateExpression(ILocalReferenceExpression localRefExpression)
         {
             if (localRefExpression is StatementBlockLocalMember.ReferenceExpression)
-            {
-                this.TranslateConceptIdentifier(((StatementBlockLocalMember.ReferenceExpression)localRefExpression).referencePoint);
-            }
+                this.TranslateConceptIdentifier(((StatementBlockLocalMember.ReferenceExpression)localRefExpression).referencePoint, false);
             else
                 this.TranslateConceptIdentifier(localRefExpression.Name, TranslatorFormatterMemberType.Local);
         }
@@ -1773,7 +1779,7 @@ namespace Oilexer.Translation
                         base.Write(".", TranslatorFormatterTokenType.Operator);
                     }
                 }
-                this.TranslateConceptIdentifier(((MethodMember.ReferenceExpression)methodRefExpression).referencePoint);
+                this.TranslateConceptIdentifier(((MethodMember.ReferenceExpression)methodRefExpression).referencePoint, false);
             }
             else
             {
@@ -1795,9 +1801,9 @@ namespace Oilexer.Translation
         public override void TranslateExpression(IParameterReferenceExpression paramRefExpression)
         {
             if (paramRefExpression is MethodParameterMember.ReferenceExpression)
-                this.TranslateConceptIdentifier(((MethodParameterMember.ReferenceExpression)paramRefExpression).referencePoint);
+                this.TranslateConceptIdentifier(((MethodParameterMember.ReferenceExpression)paramRefExpression).referencePoint, false);
             else if (paramRefExpression is IndexerParameterMember.ReferenceExpression)
-                this.TranslateConceptIdentifier(((IndexerParameterMember.ReferenceExpression)paramRefExpression).referencePoint);
+                this.TranslateConceptIdentifier(((IndexerParameterMember.ReferenceExpression)paramRefExpression).referencePoint, false);
             else
                 this.TranslateConceptIdentifier(paramRefExpression.Name, TranslatorFormatterMemberType.Parameter);
         }
@@ -1943,7 +1949,7 @@ namespace Oilexer.Translation
                         base.Write(".", TranslatorFormatterTokenType.Operator);
                     }
                 }
-                this.TranslateConceptIdentifier(((PropertyMember.ReferenceExpression)propRefExpression).referencePoint);
+                this.TranslateConceptIdentifier(((PropertyMember.ReferenceExpression)propRefExpression).referencePoint, false);
             }
             else
             {
@@ -2181,7 +2187,7 @@ namespace Oilexer.Translation
                         flag = false;
                     else
                         base.Write(".", TranslatorFormatterTokenType.Operator);
-                    this.TranslateConceptIdentifier(hierarchy[j]);
+                    this.TranslateConceptIdentifier(hierarchy[j], false);
                     if (idt.IsGeneric && idt is IParameteredDeclaredType)
                     {
                         IParameteredDeclaredType ipdt = ((IParameteredDeclaredType)(idt));
@@ -2220,7 +2226,7 @@ namespace Oilexer.Translation
 
         public override sealed void TranslateConceptTypeName(ITypeParameterMember type, ITypeReferenceCollection typeParameters)
         {
-            this.TranslateConceptIdentifier(type);
+            this.TranslateConceptIdentifier(type, false);
         }
 
         public override void TranslateConstraints<TDom, TParent>(ITypeParameterMember<TDom, TParent> ambigTypeParamMember)
@@ -2548,7 +2554,8 @@ namespace Oilexer.Translation
         {
             this.TranslateConceptKeyword(Keywords.Goto);
             base.Write(" ", TranslatorFormatterTokenType.Other);
-            this.TranslateConceptIdentifier(gotoLabelStatement.LabelStatement.Name);
+            //this.TranslateConceptIdentifier(gotoLabelStatement.LabelStatement.Name);
+            this.TranslateConceptIdentifier(gotoLabelStatement.LabelStatement.Name, gotoLabelStatement.LabelStatement, false);
             base.WriteLine(";", TranslatorFormatterTokenType.Operator);
         }
 
@@ -2559,7 +2566,7 @@ namespace Oilexer.Translation
         public override void TranslateStatement(ILabelStatement labelStatement)
         {
             base.DecreaseIndent();
-            TranslateConceptIdentifier(labelStatement.Name);
+            TranslateConceptIdentifier(labelStatement.Name, labelStatement, true);
             base.WriteLine(":", TranslatorFormatterTokenType.Operator);
             base.IncreaseIndent();
         }

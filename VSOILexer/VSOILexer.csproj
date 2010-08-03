@@ -130,6 +130,7 @@
     <Compile Include="GDTagSpan.cs" />
     <Compile Include="GDTokenTag.cs" />
     <Compile Include="Guids.cs" />
+    <Compile Include="ReclassificationKind.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

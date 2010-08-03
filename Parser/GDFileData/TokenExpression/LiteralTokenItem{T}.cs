@@ -34,11 +34,22 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
 
         #endregion
 
+        protected internal override void CloneData(IScannableEntryItem target)
+        {
+            base.CloneData(target);
+            var myTarget = target as LiteralTokenItem<T>;
+            if (myTarget != null)
+            {
+                myTarget.IsFlag = isFlag;
+                myTarget.IsFlagToken = this.IsFlagToken;
+            }
+        }
+
         #region ILiteralTokenItem<T> Members
 
         public new ILiteralTokenItem<T> Clone()
         {
-            return ((ILiteralTokenItem<T>)(base.Clone()));
+            return ((LiteralTokenItem<T>)(base.Clone()));
         }
 
         #endregion
@@ -62,14 +73,14 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
             internal set { this.isFlag = value; }
         }
 
+        public GDTokens.IdentifierToken IsFlagToken { get; internal set; }
+
         #endregion
 
         protected override string ToStringFurtherOptions()
         {
             if (this.isFlag.HasValue)
-            {
                 return string.Format("Flag={0};", this.isFlag.Value);
-            }
             return null;
         }
     }
