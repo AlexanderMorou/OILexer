@@ -8,7 +8,7 @@ namespace Oilexer.Parser.GDFileData
         IEntry
     {
         /// <summary>
-        /// Returns the pathExplorationComment the <see cref="ICommentEntry"/> represents.
+        /// Returns the comment the <see cref="ICommentEntry"/> represents.
         /// </summary>
         string Comment { get; }
     }

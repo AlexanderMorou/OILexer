@@ -66,5 +66,6 @@ namespace Oilexer.Parser
         new TToken PopAhead(bool move);
         new TToken PopAhead();
 
+        ITokenStream<TToken> GetAhead(int count);
     }
 }

@@ -144,6 +144,9 @@
     <None Include="Build CSharp.bat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Samples\CSharp.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Samples\CSharp\Attributes.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -153,7 +156,9 @@
     <None Include="Samples\CSharp\Expressions\Array.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\CSharp\Expressions\LINQ.oilexer" />
+    <None Include="Samples\CSharp\Expressions\LINQ.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Samples\CSharp\Expressions\Math.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

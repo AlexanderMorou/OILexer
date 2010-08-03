@@ -11,9 +11,9 @@ namespace Oilexer.VSIntegration
         GDFileHandlerBase
     {
         private GDFileBufferedHandler rootHandler;
-        public IDictionary<string, GDFileStoredHandler> RelativeScopeFiles { get; private set; }
+        public IDictionary<string, GDFileHandlerBase> RelativeScopeFiles { get; private set; }
 
-        public GDFileStoredHandler(string filename, GDFileBufferedHandler rootHandler, IDictionary<string, GDFileStoredHandler> relativeScopeFiles)
+        public GDFileStoredHandler(string filename, GDFileBufferedHandler rootHandler, IDictionary<string, GDFileHandlerBase> relativeScopeFiles)
         {
             
             this.rootHandler = rootHandler;
@@ -57,5 +57,7 @@ namespace Oilexer.VSIntegration
             var currentBuffer = new StringStream(this.BufferText);
             Lexer.SetStream(currentBuffer);
         }
+
+
     }
 }

@@ -20,7 +20,8 @@ using Oilexer.Parser.GDFileData.ProductionRuleExpression;
 
 namespace Oilexer.VSIntegration
 {
-    internal abstract class GDFileHandlerBase
+    internal abstract class GDFileHandlerBase :
+        IDisposable
     {
         private Dictionary<IGDToken, GDTokenType> reclassifications = new Dictionary<IGDToken, GDTokenType>();
 
@@ -147,6 +148,16 @@ namespace Oilexer.VSIntegration
 
         protected abstract void SetBuffer();
 
+        public virtual void Dispose()
+        {
+            this.bufferText = null;
+            this.reclassifications = null;
+            if (this.ParserEnabled)
+                this.parser = null;
+            if (this.lexer != null)
+                this.lexer = null;
+        }
+
         public class BaseParser : 
             GDParser
         {
@@ -180,5 +191,6 @@ namespace Oilexer.VSIntegration
             }
 
         }
+
     }
 }

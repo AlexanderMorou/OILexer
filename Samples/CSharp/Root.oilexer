@@ -36,7 +36,7 @@ UsingAliasDirective                       ::=
 UsingNamespaceDirective                   ::=
     "using" NamespaceName:Target;           ;
 
-NamespaceOrTypeName ::=
+NamespaceOrTypeName                       ::=
     (
         QualifiedAliasMember:AliasPart;     |
         SimpleName:Names;

@@ -17,18 +17,18 @@ namespace Oilexer.Parser
             /// used by the production rule.
             /// </summary>
             /// <remarks>Literal value: '::='</remarks>
-            ProductionRuleSeparator = 0x1,
+            ColonColonEquals = 0x1,
             /// <summary>
             /// The operator used for the name of the token and the expression used
             /// by the token.
             /// </summary>
             /// <remarks>Literal value: ':='</remarks>
-            TokenSeparator = 0x2,
+            ColonEquals = 0x2,
             /// <summary>
             /// The operator used to segment the token/production rule parts.
             /// </summary>
             /// <remarks>Literal value: '|'</remarks>
-            LeafSeparator = 0x4,
+            Pipe = 0x4,
             LeftCurlyBrace = 0x8,
             LeftParenthesis = 0x10,
             RightParenthesis = 0x20,
@@ -39,15 +39,15 @@ namespace Oilexer.Parser
             /// </summary>
             /// <remarks>Literal value: '#'</remarks>
             CounterNotification = 0x100,
-            TemplatePartsStart = 0x200,
-            TemplatePartsEnd = 0x400,
-            TemplatePartsSeparator = 0x800,
+            LessThan = 0x200,
+            GreaterThan = 0x400,
+            Comma = 0x800,
             /// <summary>
             /// The operator used to terminate a token/production rule declaration.
             /// </summary>
             /// <remarks>Literal value: ';'</remarks>
-            EntryTerminal = 0x1000,
-            OneOrMore = 0x2000,
+            SemiColon = 0x1000,
+            Plus = 0x2000,
             ZeroOrMore = 0x4000,
             ZeroOrOne = 0x8000,
             /// <summary>
@@ -55,9 +55,9 @@ namespace Oilexer.Parser
             /// or to denote an option at the start of a line outside of a declaration.
             /// </summary>
             Period = 0x10000,
-            ErrorSeparator = 0x20000,
+            Equals = 0x20000,
             Minus = 0x40000,
-            ProductionRuleFlag = 0x080000,
+            Exclaim = 0x080000,
             ForcedStringForm = 0x100000,
             AndAnd = 0x200000,
             PipePipe = 0x400000,
@@ -90,32 +90,32 @@ namespace Oilexer.Parser
                 {
                     switch (type)
                     {
-                        case OperatorType.ProductionRuleSeparator:
+                        case OperatorType.ColonColonEquals:
                             return 3;
                         case OperatorType.AsteriskAsterisk:
-                        case OperatorType.TokenSeparator:
+                        case OperatorType.ColonEquals:
                         case OperatorType.ExclaimEqual:
                         case OperatorType.EqualEqual:
                         case OperatorType.AndAnd:
                         case OperatorType.PipePipe:
                             return 2;
-                        case OperatorType.LeafSeparator:
+                        case OperatorType.Pipe:
                         case OperatorType.LeftCurlyBrace:
                         case OperatorType.LeftParenthesis:
                         case OperatorType.RightParenthesis:
                         case OperatorType.RightCurlyBrace:
                         case OperatorType.OptionsSeparator:
-                        case OperatorType.TemplatePartsStart:
-                        case OperatorType.TemplatePartsEnd:
-                        case OperatorType.TemplatePartsSeparator:
-                        case OperatorType.EntryTerminal:
-                        case OperatorType.OneOrMore:
+                        case OperatorType.LessThan:
+                        case OperatorType.GreaterThan:
+                        case OperatorType.Comma:
+                        case OperatorType.SemiColon:
+                        case OperatorType.Plus:
                         case OperatorType.ZeroOrMore:
                         case OperatorType.ZeroOrOne:
                         case OperatorType.Period:
-                        case OperatorType.ErrorSeparator:
+                        case OperatorType.Equals:
                         case OperatorType.Minus:
-                        case OperatorType.ProductionRuleFlag:
+                        case OperatorType.Exclaim:
                         case OperatorType.CounterNotification:
                         case OperatorType.ForcedStringForm:
                         case OperatorType.AtSign:
@@ -140,7 +140,7 @@ namespace Oilexer.Parser
             {
                 switch (this.Type)
                 {
-                    case OperatorType.ProductionRuleSeparator:
+                    case OperatorType.ColonColonEquals:
                         return "::=";
                     case OperatorType.AndAnd:
                         return "&&";
@@ -148,11 +148,11 @@ namespace Oilexer.Parser
                         return "**";
                     case OperatorType.PipePipe:
                         return "||";
-                    case OperatorType.TokenSeparator:
+                    case OperatorType.ColonEquals:
                         return ":=";
                     case  OperatorType.OptionsSeparator:
                         return ":";
-                    case OperatorType.LeafSeparator:
+                    case OperatorType.Pipe:
                         return "|";
                     case OperatorType.LeftCurlyBrace:
                         return "{";
@@ -170,15 +170,15 @@ namespace Oilexer.Parser
                         return "!=";
                     case OperatorType.AtSign:
                         return "@";
-                    case OperatorType.TemplatePartsStart:
+                    case OperatorType.LessThan:
                         return "<";
-                    case OperatorType.TemplatePartsEnd:
+                    case OperatorType.GreaterThan:
                         return ">";
-                    case OperatorType.TemplatePartsSeparator:
+                    case OperatorType.Comma:
                         return ",";
-                    case OperatorType.EntryTerminal:
+                    case OperatorType.SemiColon:
                         return ";";
-                    case OperatorType.OneOrMore:
+                    case OperatorType.Plus:
                         return "+";
                     case OperatorType.ZeroOrMore:
                         return "*";
@@ -186,11 +186,11 @@ namespace Oilexer.Parser
                         return "?";
                     case OperatorType.Period:
                         return ".";
-                    case OperatorType.ErrorSeparator:
+                    case OperatorType.Equals:
                         return "=";
                     case OperatorType.Minus:
                         return "-";
-                    case OperatorType.ProductionRuleFlag:
+                    case OperatorType.Exclaim:
                         return "!";
                     case OperatorType.ForcedStringForm:
                         return "$";

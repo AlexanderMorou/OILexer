@@ -78,6 +78,7 @@ namespace Oilexer.VSIntegration
         /// Data member for <see cref="Classifier"/>.
         /// </summary>
         private GDClassifier classifier;
+
         /// <summary>
         /// Returns the <see cref="GDClassifier"/> which associates classifications
         /// to the tokens within a <see cref="Buffer"/>.
@@ -533,6 +534,8 @@ namespace Oilexer.VSIntegration
             get
             {
 #if WINDOWS
+                if (this.Document == null)
+                    return null;
                 return this.Document.FilePath.ToLower();
 #else
                 return this.Document.FilePath;
@@ -540,9 +543,9 @@ namespace Oilexer.VSIntegration
             }
         }
 
-        public IDictionary<string, GDFileStoredHandler> RelativeScopeFiles { get; private set; }
+        public IDictionary<string, GDFileHandlerBase> RelativeScopeFiles { get; private set; }
 
-        public GDFileBufferedHandler(ITextBuffer buffer, ITextDocumentFactoryService documentFactory, ITextBufferFactoryService bufferFactory, IClassificationTypeRegistryService classificationRegistry, IContentTypeRegistryService contentTypeRegistry)
+        public GDFileBufferedHandler(ITextBuffer buffer, IClassificationTypeRegistryService classificationRegistry)
         {
             /* *
              * Initialize enumerator caches
@@ -566,7 +569,7 @@ namespace Oilexer.VSIntegration
             /* *
              * Includes cache dictionary.
              * */
-            this.RelativeScopeFiles = new Dictionary<string, GDFileStoredHandler>(); 
+            this.RelativeScopeFiles = new Dictionary<string, GDFileHandlerBase>(); 
             /* *
              * Content/classification registries, buffer factory, and so on.
              * */
@@ -579,12 +582,7 @@ namespace Oilexer.VSIntegration
             }
             catch (KeyNotFoundException)
             {
-                this.Document = buffer.Properties.GetOrCreateSingletonProperty<ITextDocument>(() =>
-                {
-                    ITextDocument result;
-                    documentFactory.TryGetTextDocument(this.Buffer, out result);
-                    return result;
-                });
+                this.Document = null;
             }
             this.Buffer.ChangedLowPriority += new EventHandler<TextContentChangedEventArgs>(Buffer_ChangedLowPriority);
         }
@@ -607,10 +605,11 @@ namespace Oilexer.VSIntegration
         #region IDisposable Members
 
         private bool disposed;
-        public void Dispose()
+        public override void Dispose()
         {
             if (disposed)
                 return;
+            base.Dispose();
             if (this.resolutionAssistant != null)
             {
                 this.resolutionAssistant.handler = null;
@@ -631,7 +630,7 @@ namespace Oilexer.VSIntegration
                     this.Document = null;
                 }
             }
-            var relativeHelperCopy = new Dictionary<string, GDFileStoredHandler>(RelativeScopeFiles);
+            var relativeHelperCopy = new Dictionary<string, GDFileHandlerBase>(RelativeScopeFiles);
             RelativeScopeFiles.Clear();
             foreach (var helperFile in relativeHelperCopy.Keys)
                     relativeHelperCopy[helperFile].Dispose();

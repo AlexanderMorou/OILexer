@@ -5,8 +5,10 @@ using Oilexer.Utilities.Collections;
 
 namespace Oilexer.Parser
 {
-    public interface ITokenStream :
-        IControlledStateCollection<IToken>
+    public interface ITokenStream<T> :
+        IControlledStateCollection<T>
+        where T :
+            IToken
     {
         
     }

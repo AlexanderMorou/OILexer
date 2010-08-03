@@ -449,11 +449,11 @@ namespace Oilexer._Internal
                 {
                     if (expression.Rule == 1)
                     {
-                        return expression.PreCPrimary.Number == argumentLookup.Index;
+                        return expression.PreCPrimary.Number.GetCleanValue() == argumentLookup.Index;
                     }
                     else if (expression.Rule == 2)
                     {
-                        return expression.PreCPrimary.Number != argumentLookup.Index;
+                        return expression.PreCPrimary.Number.GetCleanValue() != argumentLookup.Index;
                     }
                 }
             }
@@ -557,7 +557,7 @@ namespace Oilexer._Internal
         {
             string[] errorData = new string[directive.Arguments.Length];
             int index = 0;
-
+            List<Tuple<string, int, int>> errorLocations = new List<Tuple<string, int, int>>();
             foreach (var item in directive.Arguments)
             {
                 if (item.TokenType == GDTokenType.Identifier)
@@ -575,11 +575,15 @@ namespace Oilexer._Internal
                         if (parameterDataSeries.Count == 1 &&
                             parameterDataSeries[0].Count == 1)
                         {
-                            var parameterData = parameterDataSeries[0][0];
+                            var pd0 = parameterDataSeries[0];
+                            var parameterData = pd0[0];
                             if (parameterData is ISoftReferenceProductionRuleItem)
                             {
+                                
                                 var specificData = (ISoftReferenceProductionRuleItem)parameterData;
                                 errorData[index] = specificData.PrimaryName;
+                                errorLocations.Add(new Tuple<string,int,int>(pd0.FileName, specificData.Line, specificData.Column));
+                                //errors.Add(new CompilerError(pd0.FileName, specificData.Line, specificData.Column, string.Format(GrammarCore.GrammarParserErrorFormat, (int)GDParserErrors.ReferenceError), string.Format("Location related to error {3}:\r\n\tLanguage defined error in:\r\n\t\t{0} ({1}:{2}).", entry.FileName, directive.Line, directive.Column, directive.Reference.Number)));
                             }
                         }
                     }
@@ -590,7 +594,11 @@ namespace Oilexer._Internal
                     errorData[index] = ((GDTokens.StringLiteralToken)(item)).GetCleanValue();
                 index++;
             }
-            errors.Add(new CompilerError(entry.FileName, directive.Line, directive.Column, string.Format(GrammarCore.GrammarParserErrorFormat, (int)GDParserErrors.LanguageDefinedError), string.Format("Language defined error ({0}):\r\n{1}", directive.Reference.Number, string.Format(directive.Reference.Message, errorData))));
+            if (errorLocations.Count > 0)
+                foreach (var errorLocation in errorLocations)
+                    errors.Add(new CompilerError(errorLocation.Item1, errorLocation.Item2, errorLocation.Item3, string.Format(GrammarCore.GrammarParserErrorFormat, (int)GDParserErrors.LanguageDefinedError), string.Format("Language defined error ({0}):\r\n{1}", directive.Reference.Number, string.Format(directive.Reference.Message, errorData))));
+            else
+                errors.Add(new CompilerError(entry.FileName, directive.Line, directive.Column, string.Format(GrammarCore.GrammarParserErrorFormat, (int)GDParserErrors.LanguageDefinedError), string.Format("Language defined error ({0}):\r\n{1}", directive.Reference.Number, string.Format(directive.Reference.Message, errorData))));
         }
 
         internal static IProductionRuleItem Expand(this IPreprocessorConditionalReturnDirective directive, ProductionRuleTemplateArgumentSeries argumentLookup, IProductionRuleTemplateEntry entry, GDFile file, CompilerErrorCollection errors)

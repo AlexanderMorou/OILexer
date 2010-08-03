@@ -26,21 +26,21 @@ MultiplicitiveExpression                  ::=
         MultiplicitiveExpression,
         ('/' | '*' | '%'):Operator;,
         UnaryExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 AdditiveExpression                        ::=
     BinaryOperationExpression<
         AdditiveExpression,
         ('+' | '-'):Operator;,
         MultiplicitiveExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 ShiftExpression                           ::=
     BinaryOperationExpression<
         ShiftExpression,
         ("<<" | ">>"):Operator;,
         AdditiveExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 RelationalExpression                     ::=>
     TypeRelationalExpression                |
@@ -51,7 +51,7 @@ ValueRelationalExpression                 ::=
         RelationalExpression,
         ('<' | '>' | "<=" | ">="):Operator;,
         ShiftExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 TypeRelationalExpression                  ::=
     RelationalExpression:Left;
@@ -66,49 +66,49 @@ EqualityExpression                        ::=
         EqualityExpression,
         ("==" | "!="):Operator;,
         RelationalExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 AndExpression                             ::=
     BinaryOperationExpression<
         AndExpression,
         '&',
         EqualityExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 ExclusiveOrExpression                     ::=
     BinaryOperationExpression<
         ExclusiveOrExpression,
         '^',
         AndExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 InclusiveOrExpression                     ::=
     BinaryOperationExpression<
         InclusiveOrExpression,
         '|',
         ExclusiveOrExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 ConditionalAndExpression                  ::=
     BinaryOperationExpression<
         ConditionalAndExpression,
         "&&",
         InclusiveOrExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 ConditionalOrExpression                   ::=
     BinaryOperationExpression<
         ConditionalOrExpression,
         "||",
         ConditionalAndExpression,
-        Left>                               ;
+        PrecedenceAssociation.Left>         ;
 
 NullCoalescingExpression                  ::=
     BinaryOperationExpression<
         NullCoalescingExpression,
         "??",
         ConditionalOrExpression,
-        Right>                              ;
+        PrecedenceAssociation.Right>        ;
 
 ConditionalExpression                     ::=
     NullCoalescingExpression:Term;
@@ -136,7 +136,7 @@ AssignmentExpression                      ::=
             ">>="
         ):Operator;,
         UnaryExpression,
-        Right>                              ;
+        PrecedenceAssociation.Right>        ;
 
 NonAssignmentExpression                  ::=>
     ConditionalExpression                   |

@@ -77,5 +77,10 @@ namespace Oilexer.Parser
         }
 
         #endregion
+
+        public ITokenStream<TToken> GetAhead(int count)
+        {
+            return base.GetAhead<TToken>(count);
+        }
     }
 }

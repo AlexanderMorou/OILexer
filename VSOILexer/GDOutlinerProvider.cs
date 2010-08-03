@@ -20,20 +20,11 @@ namespace Oilexer.VSIntegration
         [Import]
         internal IClassificationTypeRegistryService ClassificationTypeRegistry = null;
 
-        [Import]
-        internal ITextDocumentFactoryService documentFactory = null;
-
-        [Import]
-        internal ITextBufferFactoryService bufferFactory = null;
-
-        [Import]
-        internal IContentTypeRegistryService contentTypeRegistry = null;
-
         #region ITaggerProvider Members
 
         public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag
         {
-            var handler = buffer.Properties.GetOrCreateSingletonProperty<GDFileBufferedHandler>(() => new GDFileBufferedHandler(buffer, documentFactory, bufferFactory, ClassificationTypeRegistry, contentTypeRegistry));
+            var handler = buffer.Properties.GetOrCreateSingletonProperty<GDFileBufferedHandler>(() => new GDFileBufferedHandler(buffer, ClassificationTypeRegistry));
             
             return handler.CreateOutliner() as ITagger<T>;
         }

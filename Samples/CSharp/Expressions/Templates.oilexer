@@ -15,5 +15,5 @@ BinaryOperationExpression
 #elif Associativity == Right
     #return Lower:Left; (Operators Current:Right;)?;
 #else
-    #throw InvalidAssociation, Association;
+    #throw InvalidAssociation, Associativity;
 #endif;

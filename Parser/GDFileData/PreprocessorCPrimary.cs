@@ -11,10 +11,11 @@ namespace Oilexer.Parser.GDFileData
     {
         private int rule;
         private GDTokens.IdentifierToken identifier;
-        private string @string;
-        private char? @char;
+        private GDTokens.StringLiteralToken @string;
+        private GDTokens.CharLiteralToken @char;
+        private GDTokens.OperatorToken openingParenthesis;
         private IPreprocessorCLogicalOrConditionExp preCLogicalOrExp;
-        private int? number;
+        private GDTokens.NumberLiteral number;
 
         /// <summary>
         /// Creates a new <see cref="PreprocessorCExp"/> with the <paramref name="string"/>,
@@ -26,7 +27,7 @@ namespace Oilexer.Parser.GDFileData
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(string @string, int column, int line, long position)
+        public PreprocessorCPrimary(GDTokens.StringLiteralToken @string, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 1;
@@ -43,7 +44,7 @@ namespace Oilexer.Parser.GDFileData
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(char @char, int column, int line, long position)
+        public PreprocessorCPrimary(GDTokens.CharLiteralToken @char, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 2;
@@ -60,10 +61,11 @@ namespace Oilexer.Parser.GDFileData
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(IPreprocessorCLogicalOrConditionExp preCLogicalOrExp, int column, int line, long position)
+        public PreprocessorCPrimary(GDTokens.OperatorToken openingParenthesis, IPreprocessorCLogicalOrConditionExp preCLogicalOrExp, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 3;
+            this.openingParenthesis = openingParenthesis;
             this.preCLogicalOrExp = preCLogicalOrExp;
         }
 
@@ -94,7 +96,7 @@ namespace Oilexer.Parser.GDFileData
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(int number, int column, int line, long position)
+        public PreprocessorCPrimary(GDTokens.NumberLiteral number, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 5;
@@ -113,12 +115,12 @@ namespace Oilexer.Parser.GDFileData
             get { return this.identifier; }
         }
 
-        public string String
+        public GDTokens.StringLiteralToken String
         {
             get { return this.@string; }
         }
 
-        public char? Char
+        public GDTokens.CharLiteralToken Char
         {
             get { return this.@char;}
         }
@@ -128,11 +130,33 @@ namespace Oilexer.Parser.GDFileData
             get { return preCLogicalOrExp; }
         }
 
-        public int? Number
+        public GDTokens.NumberLiteral Number
         {
             get
             {
                 return this.number;
+            }
+        }
+
+
+        public IGDToken Token
+        {
+            get
+            {
+                switch (this.rule)
+                {
+                    case 1:
+                        return this.@string;
+                    case 2:
+                        return this.@char;
+                    case 3:
+                        return this.openingParenthesis;
+                    case 4:
+                        return this.identifier;
+                    case 5:
+                        return this.number;
+                }
+                return null;
             }
         }
 
@@ -143,19 +167,15 @@ namespace Oilexer.Parser.GDFileData
             switch (rule)
             {
                 case 1:
-                    return this.String.Encode();
+                    return this.String.Value;
                 case 2:
-                    if (this.Char.HasValue)
-                        return string.Format("'{0}'", this.Char.Value.ToString());
-                    break;
+                    return this.Char.Value;
                 case 3:
                     return string.Format("({0})", this.preCLogicalOrExp.ToString());
                 case 4:
                     return this.identifier.Name;
                 case 5 :
-                    if (this.Number.HasValue)
-                        return this.Number.ToString();
-                    break;
+                    return this.Number.Value;
             }
             return "<null>";
         }

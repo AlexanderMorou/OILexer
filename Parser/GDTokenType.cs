@@ -10,7 +10,7 @@ namespace Oilexer.Parser
     public enum GDTokenType
     {
         /// <summary>
-        /// The token represents a pathExplorationComment.
+        /// The token represents a comment.
         /// </summary>
         Comment,
         /// <summary>

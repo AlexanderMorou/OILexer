@@ -4,7 +4,6 @@
 #include "Math.oilexer";
 #include "LINQ.oilexer";
 #include "Templates.oilexer";
-
 /* B.2.4: Expressions */
 /* Grammar rewrite begins with expressions */
 ArgumentList<Left, Right>                 ::=

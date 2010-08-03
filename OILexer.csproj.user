@@ -26,10 +26,10 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <StartWorkingDirectory>C:\Projects\Code\C#\OILexer\bin\x86\Debug\Samples\CSharp</StartWorkingDirectory>
-    <StartArguments>"Root.oilexer" -ae:".cs" -a:"C:\Projects\Code\C#\CSharper\CSharpParser+Scanner.cs" -ex:dll</StartArguments>
+    <StartArguments>"Root.oilexer" -ae:".cs" -a:"C:\Projects\Code\C#\CSharper\CSharpParser+Scanner.cs"</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <StartWorkingDirectory>C:\Projects\Code\C#\OILexer\bin\x86\Release\Samples\CSharp\</StartWorkingDirectory>
-    <StartArguments>"root.oilexer" -ae:".cs" -a:"C:\Projects\Code\C#\CSharper\CSharpParser+Scanner.cs"</StartArguments>
+    <StartWorkingDirectory>C:\Projects\Code\C#\OILexer\bin\x86\Release\Samples\CSharp</StartWorkingDirectory>
+    <StartArguments>"Root.oilexer" -ae:".cs" -a:"C:\Projects\Code\C#\CSharper\CSharpParser+Scanner.cs"</StartArguments>
   </PropertyGroup>
 </Project>
