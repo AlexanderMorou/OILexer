@@ -187,12 +187,10 @@ namespace Oilexer.Compiler
                     foreach (IMethodParameterMember impm in entryPoint.Parameters.Values)
                         imie.ArgumentExpressions.Add(impm.GetReference());
                     if (!(coverPoint.ReturnType.Equals(typeof(void).GetTypeReference())))
-                    {
                         coverPoint.Return(imie);
-                    }
                     else
                         coverPoint.CallMethod(imie);
-                    string entryFile = WriteFile(td, tfc, partialCompletions, entryPointCover);
+                    string entryFile = ProjectTranslator.WriteFile(this.Project, this.Translator, td, tfc, partialCompletions, entryPointCover, ".cs", "    ");
                     moduleFiles[Project.RootModule].Add(entryFile);
                     files.Add(entryFile);
                     commandSequences.Add(module.GetEntryPointCommand(coverPoint, this.Options));
@@ -261,158 +259,9 @@ namespace Oilexer.Compiler
 
         private void TranslateSource(out TemporaryDirectory td, out TempFileCollection tfc, out List<string> files, out Stack<IIntermediateProject> partialCompletions, out Dictionary<IIntermediateModule, List<string>> moduleFiles)
         {
-            td = TemporaryFileHelper.GetTemporaryDirectory("Oilexer", false).Directories.GetTemporaryDirectory(this.Project.Name);
-            tfc = new TempFileCollection(td.Path, td.Keep);
-            files = new List<string>();
-            partialCompletions = new Stack<IIntermediateProject>();
-            moduleFiles = new Dictionary<IIntermediateModule, List<string>>();
-            bool attributesOverride = !this.Translator.Options.AllowPartials;
-            if (!attributesOverride)
-                foreach (IIntermediateModule iim in this.Project.Modules.Values)
-                {
-                    moduleFiles.Add(iim, new List<string>());
-                    foreach (IDeclaredType idt in iim.DeclaredTypes)
-                    {
-                        string currentFile = string.Empty;
-                        IDeclaredType target = (idt is ISegmentableDeclaredType) ? ((ISegmentableDeclaredType)idt).GetRootDeclaration() : idt;
-                        currentFile = WriteFile(td, tfc, partialCompletions, target);
-                        if (currentFile != null)
-                        {
-                            files.Add(currentFile);
-                            moduleFiles[iim].Add(currentFile);
-                        }
-                        //Don't forget to include the partials...
-                        if (target is ISegmentableDeclaredType)
-                            foreach (IDeclaredType partial in ((ISegmentableDeclaredType)idt).Partials)
-                            {
-                                currentFile = WriteFile(td, tfc, partialCompletions, partial);
-                                if (currentFile != null)
-                                {
-                                    files.Add(currentFile);
-                                    moduleFiles[iim].Add(currentFile);
-                                }
-                            }
-                    }
-                }
-            if (this.Project.Attributes.Count > 0 || attributesOverride)
-            {
-                if (attributesOverride)
-                    moduleFiles.Add(project.RootModule, new List<string>());
-                string attrFile = null;
-                /* *
-                 * Only add it if there are no types in the 
-                 * root declaration of the project.
-                 * */
-                var p = this.Project;
-                if (!p.IsRoot)
-                    p = p.GetRootDeclaration();
-                if (!partialCompletions.Contains(this.Project))
-                {
-                    attrFile = WriteAttributeFile(td, tfc, partialCompletions);
-                    if (attrFile != null)
-                        moduleFiles[project.RootModule].Add(attrFile);
-                }
-            }
-
+            ProjectTranslator.WriteProject(this.Project, this.Translator, Path.Combine(TemporaryFileHelper.GetTemporaryPath(), "Oilexer"), out td, out tfc, out files, out partialCompletions, out moduleFiles, options.KeepTempFiles, this.translator.Options.AllowPartials);
         }
 
-        private string WriteAttributeFile(TemporaryDirectory td, TempFileCollection tfc, Stack<IIntermediateProject> partialCompletions)
-        {
-            if (td == null)
-                throw new ArgumentNullException("td");
-            var root = this.Project;
-            if (!root.IsRoot)
-                root = root.GetRootDeclaration();
-            if (!partialCompletions.Contains(root))
-            {
-                bool autoResolveRefs = this.Translator.Options.AutoResolveReferences;
-                this.Translator.Options.AutoResolveReferences = false;
-                TemporaryFile tf = td.Directories.GetTemporaryDirectory(root.RootModule.Name).Files.GetTemporaryFile(string.Format("AssemblyInfo.cs"));
-                tfc.AddFile(tf.FileName, false);
-                this.Translator.Options.AutoResolveReferences = autoResolveRefs;
-                tf.OpenStream(FileMode.Create);
-                this.Translator.Target = new IndentedTextWriter(new StreamWriter(tf.FileStream));
-                this.Translator.TranslateProject(root);
-                this.Translator.Target.Flush();
-                partialCompletions.Push(root);
-                tf.CloseStream();
-                return tf.FileName;
-            }
-            return null;
-        }
-
-        private string WriteFile(TemporaryDirectory td, TempFileCollection tfc, Stack<IIntermediateProject> partialCompletions, IDeclaredType target)
-        {
-            if (td == null)
-                throw new ArgumentNullException("td");
-            if (!partialCompletions.Contains(target.Project))
-            {
-                bool autoResolveRefs = this.Translator.Options.AutoResolveReferences;
-                this.Translator.Options.AutoResolveReferences = false;
-                var folderName = GetFolderName(target);
-                var tempDir = td;
-                string[] folders = folderName.Split(new char[] { '\\' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var item in folders)
-                    tempDir = tempDir.Directories.GetTemporaryDirectory(item);
-                TemporaryFile tf = tempDir.Files.GetTemporaryFile(string.Format("{0}.cs", GetTargetFullName(target)));
-                tfc.AddFile(tf.FileName, false);
-                this.Translator.Options.AutoResolveReferences = autoResolveRefs;
-                //If it's segmentable, there's going to be multiple files...
-                tf.OpenStream(FileMode.Create);
-                this.Translator.Target = new IndentedTextWriter(new StreamWriter(tf.FileStream));
-                this.Translator.TranslateProject(target.Project);
-                this.Translator.Target.Flush();
-                tf.CloseStream();
-                partialCompletions.Push(target.Project);
-                return tf.FileName;
-            }
-            return null;
-        }
-
-        private string GetFolderName(IDeclaredType target)
-        {
-            if (target.ParentTarget is IDeclaredType)
-            {
-                return GetFolderName((IDeclaredType)target.ParentTarget);
-            }
-            else if (target.ParentTarget is INameSpaceDeclaration)
-            {
-                Stack<INameSpaceDeclaration> sources = new Stack<INameSpaceDeclaration>();
-                var project = target.Project;
-                var dns = project.DefaultNameSpace.GetRootDeclaration();
-                INameSpaceDeclaration current = (INameSpaceDeclaration)target.ParentTarget;
-                while (current != null)
-                {
-                    if (current.ParentTarget is INameSpaceDeclaration)
-                    {
-                        if (current == project.DefaultNameSpace.GetRootDeclaration())
-                        {
-                            goto combineName;
-                        }
-                        else
-                            sources.Push(current);
-                        current = (current.ParentTarget as INameSpaceDeclaration).GetRootDeclaration();
-                    }
-                    else if (current.ParentTarget is IIntermediateProject)
-                        goto combineName;
-                }
-            combineName: 
-                string name = target.Module.Name;
-                foreach (var item in sources)
-                {
-                    name += @"\" + item.Name;
-                }
-                return name;
-            }
-            return target.Module.Name;
-        }
-
-        private string GetTargetFullName(IDeclaredType target)
-        {
-            if (target.ParentTarget is IDeclaredType)
-                return string.Format("{0}+{1}", GetTargetFullName((IDeclaredType)target.ParentTarget), target.Name);
-            return target.Name;
-        }
 
         public IIntermediateProject Project
         {

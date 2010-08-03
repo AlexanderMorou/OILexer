@@ -42,7 +42,6 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         protected override object OnClone()
         {
             LiteralStringTokenItem lsti = new LiteralStringTokenItem(base.Value, this.CaseInsensitive, base.Column, base.Line, base.Position, siblingAmbiguity);
-            
             base.CloneData((IScannableEntryItem)lsti);
             return lsti;
         }
@@ -78,10 +77,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
 
         public override string ToString()
         {
-            if (CaseInsensitive)
-                return string.Format("@{0}{1}{2}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.siblingAmbiguity ? "**" : string.Empty);
-            else
-                return string.Format("{0}{1}{2}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.siblingAmbiguity ? "**" : string.Empty);
+            return string.Format("@{3}{0}{1}{2}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.siblingAmbiguity ? "**" : string.Empty, this.CaseInsensitive ? "@" : string.Empty);
         }
 
     }

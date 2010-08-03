@@ -123,6 +123,21 @@ namespace Oilexer.VSIntegration
                 reclassifications.Add(identifierToken, GDTokenType.StringLiteral);
         }
 
+        internal void ReclassifyToken(GDTokens.IdentifierToken identifier, ReclassificationKind reclassificationKind)
+        {
+            if (reclassifications.ContainsKey(identifier))
+                return;
+            switch (reclassificationKind)
+            {
+                case ReclassificationKind.Keyword:
+                case ReclassificationKind.NativeMethod:
+                    reclassifications.Add(identifier, GDTokenType.Keyword);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         internal void ReclassifyToken(GDTokens.IdentifierToken identifierToken, IProductionRuleTemplatePart item)
         {
             if (reclassifications.ContainsKey(identifierToken))

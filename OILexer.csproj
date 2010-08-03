@@ -144,9 +144,6 @@
     <None Include="Build CSharp.bat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\CSharp.oilexer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="Samples\CSharp\Attributes.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -256,6 +253,21 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Left Recursion\Root.Oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\OILexer\Lexical Grammar\Keywords.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\OILexer\Lexical Grammar\Operators.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\OILexer\Lexical Grammar\OtherTokens.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\OILexer\Lexical Grammar\Root.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\OILexer\Root.Oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

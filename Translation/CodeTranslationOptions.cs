@@ -209,6 +209,8 @@ namespace Oilexer.Translation
             }
         }
 
+        public IDeclaredType CurrentType { get; set; }
+
         public bool AutoComments
         {
             get

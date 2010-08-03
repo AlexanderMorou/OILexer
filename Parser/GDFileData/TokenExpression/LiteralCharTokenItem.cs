@@ -67,10 +67,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         #endregion
         public override string ToString()
         {
-            if (CaseInsensitive)
-                return string.Format("@{0}{1}", GrammarCore.EncodePrim(this.Value), base.ToString());
-            else
-                return GrammarCore.EncodePrim(this.Value) + base.ToString();
+            return string.Format("{2}{0}{1}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.CaseInsensitive ? "@" : string.Empty);
         }
 
     }

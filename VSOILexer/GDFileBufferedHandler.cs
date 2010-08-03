@@ -809,22 +809,20 @@ namespace Oilexer.VSIntegration
                 this.Handler.ReclassifyToken(id, currentPart);
             }
 
-
             protected override void DefineRuleSoftReference(GDTokens.IdentifierToken primary, GDTokens.IdentifierToken secondary = null)
             {
                 primary.SetTokenType(GDTokenType.SoftReference);
                 if (secondary != null)
                     secondary.SetTokenType(GDTokenType.SoftReference);
             }
-
-            protected override void DefineBooleanIdentifier(GDTokens.IdentifierToken booleanIdentifier)
+            protected override void DefineKeywordIdentifier(GDTokens.IdentifierToken keywordIdentifier)
             {
-                booleanIdentifier.SetTokenType(GDTokenType.Keyword);
+                this.Handler.ReclassifyToken(keywordIdentifier, ReclassificationKind.Keyword);
             }
 
             protected override void DefineCommandIdentifier(GDTokens.IdentifierToken commandIdentifier)
             {
-                commandIdentifier.SetTokenType(GDTokenType.Keyword);
+                this.Handler.ReclassifyToken(commandIdentifier, ReclassificationKind.NativeMethod);
             }
 
         }

@@ -87,7 +87,11 @@ namespace Oilexer.Translation
         /// <summary>
         /// The member is a statement block local.
         /// </summary>
-        Local
+        Local,
+        /// <summary>
+        /// The member is a statement block label.
+        /// </summary>
+        Label,
     }
 
     /// <summary>
@@ -98,7 +102,7 @@ namespace Oilexer.Translation
     {
         string FormatKeywordToken(string keywordToken);
         string FormatNameSpace(string nameSpacePath);
-        string FormatTypeNameToken(string identifierToken, IType type);
+        string FormatTypeNameToken(string identifierToken, IType type, IIntermediateCodeTranslatorOptions options, bool declarePoint);
         string FormatCommentToken(string commentToken);
         string FormatStringToken(string strToken);
         string FormatOperatorToken(string oprToken);
@@ -115,5 +119,15 @@ namespace Oilexer.Translation
 
         string FormatMemberNameToken(string memberToken, TranslatorFormatterMemberType memberType);
         string DenoteNewLine();
+
+        string FormatMemberNameToken(string token, IMember member, IIntermediateCodeTranslatorOptions options, bool declarePoint);
+        string FormatBeginType(IDeclaredType type);
+        string FormatEndType();
+        string FormatBeginNamespace(INameSpaceDeclaration target);
+        string FormatBeginNamespace();
+        string FormatBeginFile();
+        string FormatEndFile();
+
+        string FormatLabelToken(string labelName, Statements.ILabelStatement label, IIntermediateCodeTranslatorOptions options, bool declarePoint);
     }
 }

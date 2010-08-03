@@ -21,6 +21,7 @@ using Oilexer.FiniteAutomata.Rules;
 using Oilexer.Parser.GDFileData.ProductionRuleExpression;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer._Internal.Inlining;
+using Oilexer.Translation;
 /* *
  * Old Release Post-build command:
  * "$(ProjectDir)PostBuild.bat" "$(ConfigurationName)" "$(TargetPath)"
@@ -418,8 +419,12 @@ namespace Oilexer
                     }
                     goto __CheckErrorAgain;
                 }
-
-                if ((options & ValidOptions.ExportDLL) == ValidOptions.ExportDLL ||
+                if ((options & ValidOptions.ExportTraversalHTML) == ValidOptions.ExportTraversalHTML)
+                {
+                    SetAttributes(iprs, resultsOfBuild);
+                    ProjectTranslator.WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(iprs.Result.Files), true, true, IntermediateCodeTranslator.HTMLFormatter, ".html", "&nbsp;".Repeat(4));
+                }
+                else if ((options & ValidOptions.ExportDLL) == ValidOptions.ExportDLL ||
                     (options & ValidOptions.ExportEXE) == ValidOptions.ExportEXE)
                 {
                     try
@@ -434,16 +439,9 @@ namespace Oilexer
                         if (bPath.Length < rootPath.Length)
                             rootPath = bPath;
                     }
-                    resultsOfBuild.Project.AssemblyInformation.Company = "None";
-                    resultsOfBuild.Project.AssemblyInformation.AssemblyName = iprs.Result.Options.AssemblyName;
-                    /* *
-                     * Culture specifier here.
-                     * */
-                    resultsOfBuild.Project.AssemblyInformation.Culture = CultureIdentifiers.English_UnitedStates;
-                    resultsOfBuild.Project.AssemblyInformation.Description = string.Format("Language parser for {0}.", iprs.Result.Options.GrammarName);
-                    resultsOfBuild.Project.Attributes.AddNew(typeof(AssemblyVersionAttribute).GetTypeReference(), new AttributeConstructorParameter(new PrimitiveExpression("1.0.0.*")));
+                    SetAttributes(iprs, resultsOfBuild);
                     rootPath += string.Format("{0}.dll", iprs.Result.Options.AssemblyName);
-                    IIntermediateCompiler intermediateCompiler = new CSharpIntermediateCompiler(resultsOfBuild.Project, new IntermediateCompilerOptions(true, true, rootPath, DebugSupport.None));
+                    IIntermediateCompiler intermediateCompiler = new CSharpIntermediateCompiler(resultsOfBuild.Project, new IntermediateCompilerOptions(rootPath, true, generateXMLDocs: true, debugSupport: DebugSupport.None));
                     intermediateCompiler.Translator.Options.AutoResolveReferences = true;
                     intermediateCompiler.Translator.Options.AllowPartials = false;
                     intermediateCompiler.Translator.Options.AutoComments = true;
@@ -465,7 +463,7 @@ namespace Oilexer
                         else
                             compileSuccess = string.Format("{0} : {1}", compileSuccess, compileFailure);
                         compileSuccess = string.Format("{0}{1}", compileSuccess, ' '.Repeat(longestLineLength - compileSuccess.Length));
-                        Console.WriteLine("│ {0} │",compileSuccess);
+                        Console.WriteLine("│ {0} │", compileSuccess);
                     }
                     compileResults.TemporaryFiles.KeepFiles = true;
                 }
@@ -502,6 +500,18 @@ namespace Oilexer
             }
             catch (IOException) { }
             Console.ReadKey(true);
+        }
+
+        private static void SetAttributes(IParserResults<IGDFile> iprs, ParserBuilderResults resultsOfBuild)
+        {
+            resultsOfBuild.Project.AssemblyInformation.Company = "None";
+            resultsOfBuild.Project.AssemblyInformation.AssemblyName = iprs.Result.Options.AssemblyName;
+            /* *
+             * Culture specifier here.
+             * */
+            resultsOfBuild.Project.AssemblyInformation.Culture = CultureIdentifiers.English_UnitedStates;
+            resultsOfBuild.Project.AssemblyInformation.Description = string.Format("Language parser for {0}.", iprs.Result.Options.GrammarName);
+            resultsOfBuild.Project.Attributes.AddNew(typeof(AssemblyVersionAttribute).GetTypeReference(), new AttributeConstructorParameter(new PrimitiveExpression("1.0.0.*")));
         }
 
         private static void DisplayTailInformation(int maxLength, IParserResults<IGDFile> iprs)
@@ -600,28 +610,7 @@ namespace Oilexer
         private static void ShowSyntax(IParserResults<IGDFile> iprs)
         {
             var files = iprs.Result.Files.ToArray();
-            var parts = (from f in files
-                         let ePath = Path.GetDirectoryName(f)
-                         orderby ePath.Length descending
-                         select ePath).First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries);
-            /* *
-             * Breakdown the longest filename and rebuild it part by part,
-             * where all elements from the error set contain the current path,
-             * select that path, then select the longest common path.
-             * *
-             * If the longest file doesn't contain anything in common, then there
-             * is no group relative path and the paths will be shown in full.
-             * */
-            string relativeRoot = null;
-            for (int i = 0; i < parts.Length; i++)
-            {
-                string currentRoot = string.Join(@"\", parts, 0, parts.Length - i);
-                if (iprs.Result.Files.All(p => p.Contains(currentRoot)))
-                {
-                    relativeRoot = currentRoot;
-                    break;
-                }
-            }
+            string relativeRoot = ProjectTranslator.GetRelativeRoot(files);
 
             var folderQuery = (from file in files
                                select Path.GetDirectoryName(file)).Distinct();
@@ -650,16 +639,7 @@ namespace Oilexer
             foreach (var folder in folderEntries)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
-                string rPath = null;
-                if (relativeRoot != null)
-                {
-                    if (folder.Path == relativeRoot)
-                        rPath = @".\";
-                    else
-                        rPath = string.Format(".{0}", folder.Path.Substring(relativeRoot.Length));
-                }
-                else
-                    rPath = folder.Path;
+                string rPath = ProjectTranslator.GetExtensionFromRelativeRoot(folder.Path, relativeRoot);
                 var entryTerm = folder.EntryCount == 1 ? "entry" : "entries";
                 var fileTerm = folder.FileCount == 1 ? "file" : "files";
                 Console.WriteLine("//{2} {3} within {1} {4} in {0}", rPath, folder.FileCount, folder.EntryCount, entryTerm, fileTerm);

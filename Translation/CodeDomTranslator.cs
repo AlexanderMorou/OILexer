@@ -53,7 +53,7 @@ namespace Oilexer.Translation
             this.Provider.GenerateCodeFromType(structureType.GenerateCodeDom(this.Options), base.Target, this.Options.Options);
         }
 
-        public override void TranslateProject(IIntermediateProject project)
+        protected override void TranslateProjectInner(IIntermediateProject project)
         {
             this.Provider.GenerateCodeFromCompileUnit(project.GenerateCodeDom(this.Options), base.Target, this.Options.Options);
         }

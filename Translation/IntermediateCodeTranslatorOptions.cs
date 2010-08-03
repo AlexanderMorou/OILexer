@@ -135,6 +135,8 @@ namespace Oilexer.Translation
             }
         }
 
+        public Func<IType, string> GetFileNameOf { get; set; }
+
         #endregion
     }
 }

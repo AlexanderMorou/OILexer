@@ -613,6 +613,7 @@
     <Compile Include="Translation\IntermediateCodeTranslator.cs" />
     <Compile Include="Translation\IntermediateCodeTranslatorOptions.cs" />
     <Compile Include="Translation\IntermediateTranslator.cs" />
+    <Compile Include="Translation\ProjectTranslator.cs" />
     <Compile Include="Translation\TranslationProcessingSource.cs" />
     <Compile Include="Types\AttributeConstructorParameter.cs" />
     <Compile Include="Types\AttributeConstructorParameters.cs" />

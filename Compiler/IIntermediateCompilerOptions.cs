@@ -42,5 +42,6 @@ namespace Oilexer.Compiler
         IEnumerable<string> ExtraFiles { get; }
         void AddFile(string file);
         void RemoveFile(string file);
+        bool KeepTempFiles { get; set; }
     }
 }

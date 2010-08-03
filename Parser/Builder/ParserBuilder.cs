@@ -180,6 +180,7 @@ namespace Oilexer.Parser.Builder
             IIntermediateProject project = new IntermediateProject(Source.Options.AssemblyName, Source.Options.Namespace == null ? "OILexer.DefaultNamespace" : Source.Options.Namespace);
             this.bitStream = BitStreamCreator.CreateBitStream(project.DefaultNameSpace);
             this.Project = project;
+            this.bitStream.BitStream.Module = this.Project.Modules.AddNew("BitStreamModule");
         }
 
         private void BuildStateMachine(InlinedTokenEntry token, IIntermediateProject project, CharStreamClass charStream)
@@ -194,7 +195,13 @@ namespace Oilexer.Parser.Builder
         private void BuildStateMachine(IIntermediateProject project, CharStreamClass charStream, RegularLanguageDFAState tokenDFA, string tokenName)
         {
             //Setup the basic class, access level, and base-type.
-            var stateMachine = project.DefaultNameSpace.Partials.AddNew().Classes.AddNew(string.Format("{0}StateMachine", tokenName));
+            INameSpaceDeclaration targetNamespace;
+            lock (project.DefaultNameSpace.Partials)
+                targetNamespace = project.DefaultNameSpace.Partials.AddNew();
+            IClassType targetType;
+            lock (targetNamespace.Classes)
+                targetType = targetNamespace.Classes.AddNew(string.Format("{0}StateMachine", tokenName));
+            var stateMachine = targetType;
             stateMachine.AccessLevel = DeclarationAccessLevel.Internal;
             stateMachine.BaseType = charStream.BitStream.GetTypeReference();
 
@@ -857,11 +864,9 @@ namespace Oilexer.Parser.Builder
 
         private void BuildCodeModelCaptures()
         {
-            this.Source.GetTokens().AsParallel().ForAll(token =>
-                BuildStateMachine(token, this.Project, bitStream));
+            foreach (var token in this.Source.GetTokens())
+                BuildStateMachine(token, this.Project, bitStream);
         }
-
-
 
         IEnumerator IEnumerable.GetEnumerator()
         {
