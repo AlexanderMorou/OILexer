@@ -1,6 +1,7 @@
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text;
 using System.CodeDom.Compiler;
@@ -10,6 +11,8 @@ using Oilexer.Statements;
 using Oilexer.Expression;
 using Oilexer._Internal;
 using Oilexer.Comments;
+using System.Reflection;
+using System.Text.RegularExpressions;
 namespace Oilexer.Translation
 {
     /// <summary>
@@ -20,9 +23,10 @@ namespace Oilexer.Translation
         IntermediateTranslator,
         IIntermediateCodeTranslator
     {
+        private static Regex docCommentLookup = new Regex(@"@(?<refKind>[PpSsTt]):(?<targetName>[A-Za-z](?:[A-Za-z0-9]|\\u[0-9A-Fa-f]{4})*);", RegexOptions.Compiled);
         private IndentedTextWriter target = null;
         private IIntermediateCodeTranslatorOptions options;
-
+        private string toolVersion;
         /// <summary>
         /// The UBB formatter which appropriately formats all tokens in a popular online 
         /// forum markup.
@@ -81,18 +85,26 @@ namespace Oilexer.Translation
 
         public override void TranslateProject(IIntermediateProject project)
         {
-            if (this.Options.Formatter != null)
+            this.Options.BuildTrail.Push(project);
+            try
             {
-                string opening = this.options.Formatter.FormatBeginFile();
-                if (opening != null)
-                    this.Write(opening, TranslatorFormatterTokenType.Preformatted);
-                this.TranslateProjectInner(project);
-                string closing = this.options.Formatter.FormatEndFile();
-                if (closing != null)
-                    this.Write(closing, TranslatorFormatterTokenType.Preformatted);
+                if (this.Options.Formatter != null)
+                {
+                    string opening = this.options.Formatter.FormatBeginFile(project, this.Options);
+                    if (opening != null)
+                        this.Write(opening, TranslatorFormatterTokenType.Preformatted);
+                    this.TranslateProjectInner(project);
+                    string closing = this.options.Formatter.FormatEndFile();
+                    if (closing != null)
+                        this.Write(closing, TranslatorFormatterTokenType.Preformatted);
+                }
+                else
+                    this.TranslateProjectInner(project);
             }
-            else
-                this.TranslateProjectInner(project);
+            finally
+            {
+                this.Options.BuildTrail.Pop();
+            }
         }
 
         protected abstract void TranslateProjectInner(IIntermediateProject project);
@@ -530,19 +542,70 @@ namespace Oilexer.Translation
 
         #endregion
 
-        protected string GetTerminableDocumentComment(string comment, string tag)
+        protected static string GetSelfTerminableDocumentComment(string tag, string attributeName, string attributeValue)
         {
-            return string.Format("<{0}>\r\n{1}\r\n</{0}>", tag, comment);
+            return string.Format("<{0} {1}=\"{2}\"/>", tag, attributeName, attributeValue);
         }
-        protected string GetSummaryDocumentComment(string summary)
+
+        protected static string ResolveDocumentationCommentLookups(string target)
+        {
+            /* *
+             * A necessary evil.  Because documentation comments are derived
+             * from HTML, it's necessary to encode the actual text from the
+             * comments and strip any un-necessary characters, replacing them
+             * with their unicode or html encoded variants.  Because of this,
+             * type-parameter, parameter, and type/member references, must be
+             * encoded in a different manner; else, users of the system be
+             * required to encode all elements on their own, as well as remember
+             * that characters like '<' and '>' are not valid.
+             * */
+            StringBuilder result = new StringBuilder();
+            int lastStartIndex = 0;
+            foreach (var match in docCommentLookup.MatchSet(target))
+            {
+                result.Append(target.Substring(lastStartIndex, match.Index - lastStartIndex));
+                switch (match.Groups["refKind"].Value[0])
+                {
+                    case 'S':
+                    case 's':
+                        result.Append(GetSelfTerminableDocumentComment("see", "cref", match.Groups["targetName"].Value));
+                        break;
+                    case 'T':
+                    case 't':
+                        result.Append(GetSelfTerminableDocumentComment("typeparamref", "name", match.Groups["targetName"].Value));
+                        break;
+                    case 'P':
+                    case 'p':
+                        result.Append(GetSelfTerminableDocumentComment("paramref", "name", match.Groups["targetName"].Value));
+                        break;
+                    default:
+                        break;
+                }
+                lastStartIndex = match.Index + match.Length;
+            }
+            result.Append(target.Substring(lastStartIndex));
+            return result.ToString();
+        }
+
+        protected static string GetTerminableDocumentComment(string comment, string tag, string attributeName = null, string attributeValue = null)
+        {
+            if (attributeName == null)
+                return string.Format("<{0}>\r\n{1}\r\n</{0}>", tag, comment);
+            else if (attributeValue == null)
+                return string.Format("<{0} {1}>\r\n{2}\r\n</{0}", tag, attributeName, comment);
+            else
+                return string.Format("<{0} {1}=\"{2}\">{3}</{0}>", tag, attributeName, attributeValue, comment);
+        }
+
+        protected static string GetSummaryDocumentComment(string summary)
         {
             return GetTerminableDocumentComment(summary, "summary");
         }
-        protected string GetRemarksDocumentComment(string remarks)
+        protected static string GetRemarksDocumentComment(string remarks)
         {
             return GetTerminableDocumentComment(remarks, "remarks");
         }
-        protected string GetReturnsDocumentComment(string returns)
+        protected static string GetReturnsDocumentComment(string returns)
         {
             return GetTerminableDocumentComment(returns, "returns");
         }
@@ -679,9 +742,7 @@ namespace Oilexer.Translation
             string newLine = "";
             IIntermediateCodeTranslatorFormatter formatter = options.Formatter;
             if (formatter != null)
-            {
-                newLine = formatter.DenoteNewLine();
-            }
+                newLine = formatter.DenoteNewLine(this.options.BuildTrail.FirstOrDefault(p => p is IIntermediateProject) as IIntermediateProject, this.Options);
             target.WriteLine(newLine);
         }
 
@@ -724,7 +785,9 @@ namespace Oilexer.Translation
         {
             get
             {
-                return "1.0.0.0";
+                if (toolVersion == null)
+                    toolVersion = typeof(IntermediateCodeTranslator).Assembly.GetName().Version.ToString();
+                return this.toolVersion;
             }
         }
 

@@ -1,5 +1,6 @@
 using Microsoft.CSharp;
 using System;
+using System.Linq;
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections;
@@ -14,6 +15,7 @@ using Oilexer.Types;
 using Oilexer.Utilities.Collections;
 using Oilexer.Types.Members;
 using Oilexer.Translation;
+using System.Text.RegularExpressions;
 namespace Oilexer._Internal
 {
     partial class _OIL
@@ -330,7 +332,6 @@ namespace Oilexer._Internal
                 }
             }
 
-
             internal static void GetDeclaredHierarchy(IDeclaredTypeReference typeReference, ITypeReferenceCollection typeParameters, out List<IDeclaredType> hierarchy, out Stack<ITypeReference> typeParamsStack)
             {
                 IDeclaredType type = typeReference.TypeInstance;
@@ -346,36 +347,38 @@ namespace Oilexer._Internal
 
             internal static string GetBoxedCommentText(string commentBase)
             {
-                string[] commentLines = commentBase.Split(new string[] { "\r\n" }, StringSplitOptions.None);
-                int highLen = 0;
-                for (int i = 0; i < commentLines.Length; i++)
-                {
-                    commentLines[i] = string.Format(" |  {0}", commentLines[i]);
-                    if (commentLines[i].Length > highLen)
-                        highLen = commentLines[i].Length;
+                string[] commentLines = (from line in commentBase.Split(new string[] { "\r\n" }, StringSplitOptions.None)
+                                         select string.Format(" |  {0}", line)).ToArray();
 
-                }
+                int maximumLength = commentLines.Max(p => p.Length);
+                //for (int i = 0; i < commentLines.Length; i++)
+                //{
+                //    commentLines[i] = string.Format(" |  {0}", commentLines[i]);
+                //    if (commentLines[i].Length > maximumLength)
+                //        maximumLength = commentLines[i].Length;
+
+                //}
                 StringBuilder sb = new StringBuilder();
-                highLen += 4;
+                maximumLength += 4;
                 sb.Append(" /* ");
-                sb.Append('-', highLen - 6);
+                sb.Append('-', maximumLength - 6);
                 sb.AppendLine("\\");
                 foreach (string s in commentLines)
                 {
                     if (s == " |  -")
                     {
                         sb.Append(" |");
-                        sb.Append('-', highLen - 4);
+                        sb.Append('-', maximumLength - 4);
                     }
                     else
                     {
                         sb.Append(s);
-                        sb.Append(' ', highLen - (s.Length + 2));
+                        sb.Append(' ', maximumLength - (s.Length + 2));
                     }
                     sb.AppendLine("|");
                 }
                 sb.Append(" \\");
-                sb.Append('-', highLen - 6);
+                sb.Append('-', maximumLength - 6);
                 sb.Append(" */");
                 return sb.ToString();
             }
@@ -405,7 +408,7 @@ namespace Oilexer._Internal
                     }
                     else
                     {
-                        result = string.Format("// {0}", commentBase);
+                        result = string.Format("/// {0}", commentBase);
                     }
                 }
                 else if (commentBase.Contains("\r\n"))
@@ -601,7 +604,5 @@ namespace Oilexer._Internal
                 return string.Format(_CommentConstants.SeeCrefTag, string.Format("{0}.{1}", parentCref, member.Name));
             }
         }
-
-
     }
 }

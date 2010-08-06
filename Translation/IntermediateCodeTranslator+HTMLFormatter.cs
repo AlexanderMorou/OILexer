@@ -6,6 +6,7 @@ using Oilexer.Types;
 using Oilexer.Types.Members;
 using Oilexer.Statements;
 using System.CodeDom;
+using Oilexer._Internal;
 
 namespace Oilexer.Translation
 {
@@ -21,15 +22,15 @@ namespace Oilexer.Translation
                 foreach (KeyValuePair<TranslatorFormatterMemberType, string> kvpItem in
                     new KeyValuePair<TranslatorFormatterMemberType, string>[] 
                         { 
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Method, "#7070FF"),
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.MethodSignature, "#7070FF"),
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Property, "#FF7070"),
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.PropertySignature, "#FF7070"),
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Event, "#70FF70"),
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.EventSignature, "#70FF70") ,
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Field, "#C070C0"), 
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Parameter, "#808080"), 
-                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Local, "#008080"),
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Method, "#C03080"),
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.MethodSignature, "#C03080"),
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Property, "#3080C0"),
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.PropertySignature, "#3080C0"),
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Event, "#50FF50"),
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.EventSignature, "#50FF50") ,
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Field, "#800000"), 
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Parameter, "#000080"), 
+                            new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Local, "#008000"),
                             new KeyValuePair<TranslatorFormatterMemberType, string>(TranslatorFormatterMemberType.Label, "#808080") 
                         })
                 {
@@ -41,12 +42,12 @@ namespace Oilexer.Translation
 
             public string FormatKeywordToken(string keywordToken)
             {
-                return string.Format("<span style=\"color:blue;font-family:Courier New;\">{0}</span>", keywordToken);
+                return string.Format("<span style=\"color:blue;\">{0}</span>", keywordToken);
             }
 
             public string FormatNameSpace(string nameSpacePath)
             {
-                return string.Format("<span style=\"color:#808080;font-family:Courier New;\">{0}</span>", nameSpacePath);
+                return string.Format("<span style=\"color:#808080;\">{0}</span>", nameSpacePath);
             }
 
             public string FormatTypeNameToken(string identifierToken, IType type, IIntermediateCodeTranslatorOptions options, bool declarePoint)
@@ -54,34 +55,28 @@ namespace Oilexer.Translation
                 string color = "";
                 bool bold = false;
                 if (type.IsDelegate)
-                {
                     color = "DarkCyan";
-                }
                 else if (type.IsClass)
                 {
                     color = "purple";
                     bold = true;
                 }
                 else if (type.IsInterface)
-                {
                     color = "Magenta";
-                }
                 else if (type.IsEnumerator)
                 {
                     color = "#C08080";
                     bold = true;
                 }
                 else if (type.IsStructure)
-                {
                     color = "Dark Yellow";
-                }
                 string result = identifierToken;
                 if (declarePoint && type is IDeclaredType)
                     result = string.Format("<a name=\"t:{1}\"></a>{0}", result, type.GetTypeName(options, true));
                 if (bold)
-                    result = string.Format("<span style=\"color:{0};font-family:Courier New;font-weight:bolder;\">{1}</span>", color, result);
+                    result = string.Format("<span style=\"color:{0};font-weight:bolder;\">{1}</span>", color, result);
                 else
-                    result = string.Format("<span style=\"color:{0};font-family:Courier New;\">{1}</span>", color, result);
+                    result = string.Format("<span style=\"color:{0};\">{1}</span>", color, result);
                 if (!declarePoint && options.GetFileNameOf != null && type is IDeclaredType)
                     result = string.Format("<a style=\"text-decoration:none;\" href=\"{1}#t:{2}\">{0}</a>", result, options.GetFileNameOf(type), type.GetTypeName(options, true));
                 return result;
@@ -89,87 +84,56 @@ namespace Oilexer.Translation
 
             public string FormatCommentToken(string commentToken)
             {
-                return string.Format("<span style=\"color:green;font-family:Courier New;\">{0}</span>", HTMLEncode(commentToken));
-            }
-
-            private static string HTMLEncode(string toEncode)
-            {
-                StringBuilder sb = new StringBuilder();
-                foreach (char c in toEncode)
-                {
-                    switch (c)
-                    {
-                        case '<':
-                            sb.Append("&lt;");
-                            break;
-                        case '>':
-                            sb.Append("&gt;");
-                            break;
-                        case '&':
-                            sb.Append("&amp;");
-                            break;
-                        case ' ':
-                            sb.Append("&nbsp;");
-                            break;
-                        default:
-                            if (c <= 0xFF)
-                                sb.Append(c);
-                            else
-                                sb.AppendFormat("&#{0:000#};", (int)c);
-                            break;
-                    }
-                }
-                return sb.ToString();
+                return string.Format("<span style=\"color:green;\">{0}</span>", commentToken.HTMLEncode());
             }
 
             public string FormatStringToken(string strToken)
             {
-                return string.Format("<span style=\"color:green;font-family:Courier New;\">{0}</span>", HTMLEncode(strToken));
+                return string.Format("<span style=\"color:green;\">{0}</span>", strToken.HTMLEncode());
             }
 
             public string FormatOperatorToken(string oprToken)
             {
-                return string.Format("<span style=\"color:#C080C0;font-family:Courier New;\">{0}</span>", HTMLEncode(oprToken));
+                return string.Format("<span style=\"color:#C080C0;\">{0}</span>", oprToken.HTMLEncode());
             }
 
             public string FormatNumberToken(string numberToken)
             {
-                return string.Format("<span style=\"color:red;font-family:Courier New;\">{0}</span>", HTMLEncode(numberToken));
+                return string.Format("<span style=\"color:red;\">{0}</span>", numberToken.HTMLEncode());
             }
 
             public string FormatOtherToken(string otherToken)
             {
-                return string.Format("<span style=\"color:black;font-family:Courier New;\">{0}</span>", HTMLEncode(otherToken));
+                return string.Format("<span style=\"color:black;\">{0}</span>", otherToken.HTMLEncode());
             }
 
             public string FormatMemberNameToken(string memberToken, TranslatorFormatterMemberType memberType, IType parent)
             {
-                bool italic = false;
+                bool italic = ((memberType == TranslatorFormatterMemberType.MethodSignature) || (memberType == TranslatorFormatterMemberType.PropertySignature) || (memberType == TranslatorFormatterMemberType.EventSignature));
+                bool bold = ((memberType == TranslatorFormatterMemberType.Method) || (memberType == TranslatorFormatterMemberType.MethodSignature));
 
-
-                italic = ((memberType == TranslatorFormatterMemberType.MethodSignature) || (memberType == TranslatorFormatterMemberType.PropertySignature) || (memberType == TranslatorFormatterMemberType.EventSignature));
-
-                if (italic)
-                    return string.Format("<span style=\"color:{0};font-family:Courier New;text-decoration:italic\">{1}</span>", memberTypeColorTable[memberType], memberToken);
-                else
-                    return string.Format("<span style=\"color:{0};font-family:Courier New;\">{1}</span>", memberTypeColorTable[memberType], memberToken);
+                return string.Format("<span style=\"color:{0};{2}{3}\">{1}</span>", memberTypeColorTable[memberType], memberToken, italic ? "text-decoration:italic;" : string.Empty, bold ? "font-weight:bolder;" : string.Empty);
             }
 
             public string FormatMemberNameToken(string memberToken, TranslatorFormatterMemberType memberType)
             {
                 //string color = memberTypeColorTable[memberType];
-                return string.Format("<span style=\"color:{0};font-family:Courier New;\">{1}</span>", memberTypeColorTable[memberType], memberToken);
+                bool italic = ((memberType == TranslatorFormatterMemberType.MethodSignature) || (memberType == TranslatorFormatterMemberType.PropertySignature) || (memberType == TranslatorFormatterMemberType.EventSignature));
+                bool bold = ((memberType == TranslatorFormatterMemberType.Method) || (memberType == TranslatorFormatterMemberType.MethodSignature));
+                return string.Format("<span style=\"color:{0};{2}{3}\">{1}</span>", memberTypeColorTable[memberType], memberToken, italic ? "text-decoration:italic;" : string.Empty, bold ? "font-weight:bolder;" : string.Empty);
             }
 
-            public string DenoteNewLine()
+            public string DenoteNewLine(IIntermediateProject project, IIntermediateCodeTranslatorOptions options)
             {
-                return "<br/>";
+                if (options.GetLineNumber == null)
+                    return "<br/>";
+                else
+                    return string.Format("</td></tr>{0}", FormatLineStart(project, options));
             }
 
             #endregion
 
             #region IIntermediateCodeTranslatorFormatter Members
-
 
             public string FormatLabelToken(string labelName, ILabelStatement label, IIntermediateCodeTranslatorOptions options, bool declarePoint)
             {
@@ -196,9 +160,7 @@ namespace Oilexer.Translation
                 string titleText = string.Format("(label) {0}", labelName);
                 result = FormatMemberNameToken(result, TranslatorFormatterMemberType.Label);
                 if (!declarePoint)
-                {
                     result = string.Format("<a style=\"text-decoration:none;\" {3}href=\"{0}#{1}\">{2}</a>", options.GetFileNameOf(activeType), uniqueIdentifier, result, string.IsNullOrEmpty(titleText) ? string.Empty : string.Format("title=\"{0}\" ", titleText));
-                }
                 return result;
             }
 
@@ -271,7 +233,7 @@ namespace Oilexer.Translation
                     memberType = TranslatorFormatterMemberType.Local;
                 }
                 var activeType = options.BuildTrail.FirstOrDefault(p => p is IDeclaredType) as IDeclaredType;
-                string result = HTMLEncode(token);
+                string result = token.HTMLEncode();
                 if (declarePoint)
                 {
                     string targetName = string.Format("m:{0}::{1}", activeType.GetTypeName(options, true), GetMemberUniqueIdentifier(member).Replace("<", "[").Replace(">", "]"));
@@ -360,9 +322,21 @@ namespace Oilexer.Translation
                 return string.Empty;
             }
 
-            public string FormatBeginFile()
+            public string FormatBeginFile(IIntermediateProject project, IIntermediateCodeTranslatorOptions options)
             {
-                return "<html><body style=\"font-family:Courier New;font-size:10pt;\">";
+                if (options.GetLineNumber == null)
+                    return "<html><body style=\"font-family:Courier New;font-size:10pt;\">";
+                else
+                    return string.Format("<html><body style=\"margin:0px;\"><table cellpadding=\"0\" cellspacing=\"0\" style=\"font-family:Courier New;font-size:10pt;border:none;white-space:nowrap;width:100%;\"><tbody>{0}", FormatLineStart(project, options));
+            }
+
+            private static string FormatLineStart(IIntermediateProject project, IIntermediateCodeTranslatorOptions options)
+            {
+                int lineIndex = options.GetLineNumber(project);
+                string lineColor = "#FFFFFF";
+                if (lineIndex % 2 == 0)
+                    lineColor = "#EFEFFF";
+                return string.Format("<tr><td style=\"text-align:right;background-color:#E0E0E0;padding-right:4px;padding-left:4px;\">{0}</td><td style=\"padding-left:20px;background-color:{1};width:100%;\">", lineIndex, lineColor);
             }
 
             public string FormatEndFile()

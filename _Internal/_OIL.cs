@@ -21,12 +21,47 @@ using Oilexer.Parser.GDFileData;
 using Oilexer._Internal.Inlining;
 using Oilexer.FiniteAutomata.Tokens;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 
 namespace Oilexer._Internal
 {
     internal static partial class _OIL
     {
+
+        public static string HTMLEncode(this string toEncode, bool encodeSpaces = true)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in toEncode)
+            {
+                switch (c)
+                {
+                    case '<':
+                        sb.Append("&lt;");
+                        break;
+                    case '>':
+                        sb.Append("&gt;");
+                        break;
+                    case '&':
+                        sb.Append("&amp;");
+                        break;
+                    case ' ':
+                        if (encodeSpaces)
+                            sb.Append("&nbsp;");
+                        else
+                            sb.Append(" ");
+                        break;
+                    default:
+                        if (c <= 0xFF)
+                            sb.Append(c);
+                        else
+                            sb.AppendFormat("&#{0:000#};", (int)c);
+                        break;
+                }
+            }
+            return sb.ToString();
+        }
+
         public static string Repeat(this char c, int length)
         {
             char[] result = new char[length];
@@ -157,5 +192,24 @@ namespace Oilexer._Internal
                 return set.Contains(token);
             }
         }
+
+        private static IEnumerable<Match> AsEnumerable(this Match target)
+        {
+            while (target != null && target.Success)
+            {
+                yield return target;
+                target = target.NextMatch();
+            }
+        }
+
+        public static IEnumerable<Match> MatchSet(this Regex target, string text)
+        {
+            if (target == null)
+                throw new ArgumentNullException("target");
+            if (text == null)
+                throw new ArgumentNullException("text");
+            return target.Match(text).AsEnumerable();
+        }
+
     }
 }

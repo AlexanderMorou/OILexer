@@ -180,7 +180,6 @@ namespace Oilexer.Parser.Builder
             IIntermediateProject project = new IntermediateProject(Source.Options.AssemblyName, Source.Options.Namespace == null ? "OILexer.DefaultNamespace" : Source.Options.Namespace);
             this.bitStream = BitStreamCreator.CreateBitStream(project.DefaultNameSpace);
             this.Project = project;
-            this.bitStream.BitStream.Module = this.Project.Modules.AddNew("BitStreamModule");
         }
 
         private void BuildStateMachine(InlinedTokenEntry token, IIntermediateProject project, CharStreamClass charStream)
@@ -201,6 +200,10 @@ namespace Oilexer.Parser.Builder
             IClassType targetType;
             lock (targetNamespace.Classes)
                 targetType = targetNamespace.Classes.AddNew(string.Format("{0}StateMachine", tokenName));
+            if (this.Project.Modules.ContainsKey("Lexer"))
+                targetType.Module = this.Project.Modules["Lexer"];
+            else
+                targetType.Module = this.Project.Modules.AddNew("Lexer");
             var stateMachine = targetType;
             stateMachine.AccessLevel = DeclarationAccessLevel.Internal;
             stateMachine.BaseType = charStream.BitStream.GetTypeReference();
@@ -209,9 +212,12 @@ namespace Oilexer.Parser.Builder
              * Setup the 'next character' state movement method,
              * the state and exit-length variables.
              * */
+            
             var nextMethod = stateMachine.Methods.AddNew(new TypedName("Next", typeof(bool)));
             nextMethod.AccessLevel = DeclarationAccessLevel.Public;
-            var nextChar = nextMethod.Parameters.AddNew(new TypedName("c", typeof(char)));
+            var nextChar = nextMethod.Parameters.AddNew(new TypedName("currentChar", typeof(char)));
+            nextMethod.Summary = string.Format("Moves the state machine into its next state with the @p:{0};.", nextChar.Name);
+            nextChar.DocumentationComment = "The next character used as the condition for state->state transitions.";
             var stateField = stateMachine.Fields.AddNew(new TypedName("state", typeof(int)));
             stateField.InitializationExpression = PrimitiveExpression.NumberZero;
             stateField.Summary = "The state machine's current state, determining the logic path to follow for the next character.";

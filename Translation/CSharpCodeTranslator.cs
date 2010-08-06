@@ -16,6 +16,7 @@ using Oilexer.Properties;
 //using System.Windows.Forms;
 using System.Diagnostics;
 using Oilexer.Comments;
+using System.Text.RegularExpressions;
 
 namespace Oilexer.Translation
 {
@@ -23,9 +24,9 @@ namespace Oilexer.Translation
         IntermediateCodeTranslator
     {
         private bool suppressLineTerminator=false;
-        
         private static Dictionary<int, Dictionary<int, string>> keywordLookup = new Dictionary<int, Dictionary<int, string>>();
         private Stack<INameSpaceDeclaration> namespaceForward = new Stack<INameSpaceDeclaration>();
+        private string subToolVersion;
         static CSharpCodeTranslator()
         {
             for (int i = 2; i <= 10; i++)
@@ -400,7 +401,6 @@ namespace Oilexer.Translation
              * Indicate that in the build process, the current file/partial/etc of the project
              * is in the build trail.
              * */
-            base.Options.BuildTrail.Push(project);
             Stopwatch sw = new Stopwatch();
             StringBuilder typesUsed;
             sw.Start();
@@ -433,7 +433,7 @@ namespace Oilexer.Translation
             {
                 TranslateAttributes(AttributeTargets.Assembly, project, project.Attributes);
                 if (project.Attributes.Count > 0)
-                    base.Write(" ", TranslatorFormatterTokenType.Other);
+                    base.WriteLine();
             }
 
             Options.ImportList.Clear();
@@ -451,7 +451,6 @@ namespace Oilexer.Translation
             /* *
              * Remove the intermediate project file/partial from the build trail.
              * */
-            base.Options.BuildTrail.Pop();
         }
 
         /// <summary>
@@ -529,10 +528,32 @@ namespace Oilexer.Translation
             }
             base.WriteLine();
         }
+        private string GetAmbigMethodComments<TParameter, TTypeParameter, TSignatureDom, TParent>(IMethodSignatureMember<TParameter, TTypeParameter, TSignatureDom, TParent> ambigMethodSigMember)
+            where TParameter :
+                IParameteredParameterMember<TParameter, TSignatureDom, TParent>
+            where TTypeParameter :
+                IMethodSignatureTypeParameterMember<TParameter, TTypeParameter, TSignatureDom, TParent>
+            where TSignatureDom :
+                CodeMemberMethod,
+                new()
+            where TParent :
+                IDeclarationTarget
+        {
+            if (Options.AutoComments)
+            {
+                StringBuilder result = new StringBuilder();
+                foreach (var param in ambigMethodSigMember.Parameters.Values)
+                    if (!string.IsNullOrEmpty(param.DocumentationComment))
+                        result.Append(ResolveDocumentationCommentLookups(GetTerminableDocumentComment(param.DocumentationComment.HTMLEncode(false), "param", "name", param.Name)));
+                return result.ToString();
+            }
+            else
+                return string.Empty;
+        }
 
         public override void TranslateMember<TParameter, TTypeParameter, TSignatureDom, TParent>(IMethodSignatureMember<TParameter, TTypeParameter, TSignatureDom, TParent> ambigMethodSigMember)
         {
-            TranslateAutoComments(ambigMethodSigMember);
+            TranslateAutoComments(ambigMethodSigMember, ()=>GetAmbigMethodComments<TParameter, TTypeParameter, TSignatureDom, TParent>(ambigMethodSigMember));
             //Only emit the modifiers if it's part of an instanciable type.
             this.TranslateAttributes(ambigMethodSigMember, ambigMethodSigMember.Attributes);
             if (ambigMethodSigMember is IMethodMember)
@@ -867,14 +888,20 @@ namespace Oilexer.Translation
             base.WriteLine(";", TranslatorFormatterTokenType.Operator);
         }
 
-        private void TranslateAutoComments(IAutoCommentMember autoCommentMember)
+        private void TranslateAutoComments(IAutoCommentMember autoCommentMember, Func<string> innerComment=null)
         {
             if (base.Options.AutoComments)
             {
                 if (autoCommentMember.Summary != null && autoCommentMember.Summary != string.Empty)
-                    TranslateConceptComment(GetSummaryDocumentComment(autoCommentMember.Summary), true);
+                    TranslateConceptComment(ResolveDocumentationCommentLookups(GetSummaryDocumentComment(autoCommentMember.Summary.HTMLEncode(false))), true);
+                if (innerComment != null)
+                {
+                    var innerCommentValue = innerComment();
+                    if (!string.IsNullOrEmpty(innerCommentValue))
+                        TranslateConceptComment(innerCommentValue, true);
+                }
                 if (autoCommentMember.Remarks != null && autoCommentMember.Remarks != string.Empty)
-                    TranslateConceptComment(GetRemarksDocumentComment(autoCommentMember.Remarks), true);
+                    TranslateConceptComment(ResolveDocumentationCommentLookups(GetRemarksDocumentComment(autoCommentMember.Remarks.HTMLEncode(false))), true);
             }
         }
 
@@ -1958,7 +1985,7 @@ namespace Oilexer.Translation
                     this.TranslateExpression(propRefExpression.Reference);
                     base.Write(".", TranslatorFormatterTokenType.Operator);
                 }
-                this.TranslateConceptIdentifier(propRefExpression.Name, TranslatorFormatterMemberType.Method);
+                this.TranslateConceptIdentifier(propRefExpression.Name, TranslatorFormatterMemberType.Property);
             }
         }
 
@@ -2298,7 +2325,9 @@ namespace Oilexer.Translation
         {
             get
             {
-                return "1.0.0.0";
+                if (subToolVersion == null)
+                    subToolVersion = typeof(CSharpCodeTranslator).Assembly.GetName().Version.ToString();
+                return this.subToolVersion;
             }
         }
 
