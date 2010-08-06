@@ -126,7 +126,7 @@ namespace Oilexer.Translation
                 return string.Format("[color={0}][font=Courier New]{1}[/font][/color]", memberTypeColorTable[memberType], memberToken);
             }
 
-            public string DenoteNewLine()
+            public string DenoteNewLine(IIntermediateProject project, IIntermediateCodeTranslatorOptions options)
             {
                 return String.Empty;
             }
@@ -176,7 +176,7 @@ namespace Oilexer.Translation
                 return string.Empty;
             }
 
-            public string FormatBeginFile()
+            public string FormatBeginFile(IIntermediateProject project, IIntermediateCodeTranslatorOptions options)
             {
                 return string.Empty;
             }

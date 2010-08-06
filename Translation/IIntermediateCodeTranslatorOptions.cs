@@ -18,5 +18,6 @@ namespace Oilexer.Translation
         IIntermediateCodeTranslatorFormatter Formatter { get; set; }
 
         Func<IType, string> GetFileNameOf { get; set; }
+        Func<IIntermediateProject, int> GetLineNumber { get; set; }
     }
 }

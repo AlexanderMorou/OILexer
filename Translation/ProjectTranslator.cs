@@ -9,33 +9,17 @@ using System.IO;
 using Oilexer._Internal;
 namespace Oilexer.Translation
 {
-    public static class ProjectTranslator
+    internal static class ProjectTranslator
     {
-
-        public static void WriteProject(IIntermediateProject project, string temporaryDirectory, bool keepFiles = true, bool allowPartials = true, IIntermediateCodeTranslatorFormatter formatter = null, string extension = ".cs", string tabString = "    ")
-        {
-            CSharpCodeTranslator translator = new CSharpCodeTranslator();
-            if (formatter != null)
-                translator.Options = new IntermediateCodeTranslatorOptions(true, formatter);
-            else
-                translator.Options = new IntermediateCodeTranslatorOptions(true);
-            translator.Options.GetFileNameOf =
-                (type) => GetFileNameFor((IDeclaredType)type, temporaryDirectory, project, extension, translator.Options, true); ;
-            translator.Options.AutoComments = true;
-            TemporaryDirectory td;
-            TempFileCollection tfc;
-            List<string> files;
-            Stack<IIntermediateProject> partialCompletions;
-            Dictionary<IIntermediateModule, List<string>> moduleFiles;
-            WriteProject(project, translator, temporaryDirectory, out td, out tfc, out files, out partialCompletions, out moduleFiles, keepFiles, allowPartials, extension, true, tabString);
-        }
-        private static string GetFileNameFor(IDeclaredType type, string relativeRoot, IIntermediateProject project, string extension, IIntermediateCodeTranslatorOptions options, bool invertSeparator)
+        internal static string GetFileNameFor(IDeclaredType type, string relativeRoot, IIntermediateProject project, string extension, IIntermediateCodeTranslatorOptions options, bool invertSeparator)
         {
             var bt = options.CurrentType;
             var currentFile = ObtainTypeFileName(bt, relativeRoot,project, extension);
             var targetFile = ObtainTypeFileName(type, relativeRoot, project, extension);
+            if (currentFile == targetFile)
+                return string.Empty;
             var actualRelativeRoot = GetRelativeRoot(new string[] { currentFile, targetFile });
-            var uptrail = "../".Repeat(Path.GetDirectoryName(targetFile).Substring(actualRelativeRoot.Length).Split(new Char[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries).Length);
+            var uptrail = @"..\".Repeat(Path.GetDirectoryName(targetFile).Substring(actualRelativeRoot.Length).Split(new Char[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries).Length);
             if (invertSeparator)
                 return GetExtensionFromRelativeRoot(targetFile, actualRelativeRoot, uptrail).Replace(@"\", "/");
             else
@@ -46,6 +30,7 @@ namespace Oilexer.Translation
         {
             return string.Format("{0}\\{1}\\{2}\\{3}{4}", relativeRoot, project.Name, GetFolderName(type), GetTargetFullName(type), extension);
         }
+
         public static void WriteProject(IIntermediateProject project, IIntermediateCodeTranslator translator, string temporaryDirectory, out TemporaryDirectory td, out TempFileCollection tfc, out List<string> files, out Stack<IIntermediateProject> partialCompletions, out Dictionary<IIntermediateModule, List<string>> moduleFiles, bool keepTempFiles, bool allowPartials, string extension = ".cs", bool purgeTempDir=false, string tabString = "    ")
         {
             td = TemporaryFileHelper.GetNonStandardTempDirectory(temporaryDirectory, project.Name, keepTempFiles);

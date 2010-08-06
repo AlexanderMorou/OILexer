@@ -137,6 +137,8 @@ namespace Oilexer.Translation
 
         public Func<IType, string> GetFileNameOf { get; set; }
 
+        public Func<IIntermediateProject, int> GetLineNumber { get; set; }
+
         #endregion
     }
 }

@@ -118,14 +118,14 @@ namespace Oilexer.Translation
         string FormatMemberNameToken(string memberToken, TranslatorFormatterMemberType memberType, IType parent);
 
         string FormatMemberNameToken(string memberToken, TranslatorFormatterMemberType memberType);
-        string DenoteNewLine();
+        string DenoteNewLine(IIntermediateProject project, IIntermediateCodeTranslatorOptions options);
 
         string FormatMemberNameToken(string token, IMember member, IIntermediateCodeTranslatorOptions options, bool declarePoint);
         string FormatBeginType(IDeclaredType type);
         string FormatEndType();
         string FormatBeginNamespace(INameSpaceDeclaration target);
         string FormatBeginNamespace();
-        string FormatBeginFile();
+        string FormatBeginFile(IIntermediateProject project, IIntermediateCodeTranslatorOptions options);
         string FormatEndFile();
 
         string FormatLabelToken(string labelName, Statements.ILabelStatement label, IIntermediateCodeTranslatorOptions options, bool declarePoint);

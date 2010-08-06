@@ -12,7 +12,7 @@ namespace Oilexer._Internal
             {
                 internal const string SummaryTag = "<summary>{0}</summary>";
                 internal const string RemarksTag = "<remarks>{0}</remarks>";
-                internal const string SeeCrefTag = "<see cref=\"{0}\"/>";
+                internal const string SeeCrefTag = "@s:{0};";
                 internal const string SeeAlsoTag = "<seealso cref=\"{0}\"/>";
                 internal const string ParamTag = "<param name=\"{0}\">{1}</param>";
                 internal const string ParamRefTag = "<paramref name=\"{0}\"/>";

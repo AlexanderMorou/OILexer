@@ -22,6 +22,7 @@ using Oilexer.Parser.GDFileData.ProductionRuleExpression;
 using Oilexer.Parser.GDFileData.TokenExpression;
 using Oilexer._Internal.Inlining;
 using Oilexer.Translation;
+using Oilexer.FileModel;
 /* *
  * Old Release Post-build command:
  * "$(ProjectDir)PostBuild.bat" "$(ConfigurationName)" "$(TargetPath)"
@@ -422,7 +423,12 @@ namespace Oilexer
                 if ((options & ValidOptions.ExportTraversalHTML) == ValidOptions.ExportTraversalHTML)
                 {
                     SetAttributes(iprs, resultsOfBuild);
-                    ProjectTranslator.WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(iprs.Result.Files), true, true, IntermediateCodeTranslator.HTMLFormatter, ".html", "&nbsp;".Repeat(4));
+                    WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(iprs.Result.Files), ".html", "&nbsp;".Repeat(4), true);
+                }
+                else if ((options & ValidOptions.ExportCSharp) == ValidOptions.ExportCSharp)
+                {
+                    SetAttributes(iprs, resultsOfBuild);
+                    WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(iprs.Result.Files));
                 }
                 else if ((options & ValidOptions.ExportDLL) == ValidOptions.ExportDLL ||
                     (options & ValidOptions.ExportEXE) == ValidOptions.ExportEXE)
@@ -443,7 +449,7 @@ namespace Oilexer
                     rootPath += string.Format("{0}.dll", iprs.Result.Options.AssemblyName);
                     IIntermediateCompiler intermediateCompiler = new CSharpIntermediateCompiler(resultsOfBuild.Project, new IntermediateCompilerOptions(rootPath, true, generateXMLDocs: true, debugSupport: DebugSupport.None));
                     intermediateCompiler.Translator.Options.AutoResolveReferences = true;
-                    intermediateCompiler.Translator.Options.AllowPartials = false;
+                    intermediateCompiler.Translator.Options.AllowPartials = true;
                     intermediateCompiler.Translator.Options.AutoComments = true;
                     Stopwatch compileTimer = new Stopwatch();
                     compileTimer.Start();
@@ -500,6 +506,36 @@ namespace Oilexer
             }
             catch (IOException) { }
             Console.ReadKey(true);
+        }
+
+        public static void WriteProject(IIntermediateProject project, string targetDirectory, string fileExtension = ".cs", string tabString = "    ", bool htmlExportMode = false)
+        {
+            //Create the translator to use.
+            CSharpCodeTranslator translator = new CSharpCodeTranslator();
+
+            if (htmlExportMode)
+            {
+                var projectLineCounts = new Dictionary<IIntermediateProject, int>();
+                translator.Options = new IntermediateCodeTranslatorOptions(true, IntermediateCodeTranslator.HTMLFormatter)
+                {
+                    GetFileNameOf =
+                        (type) => ProjectTranslator.GetFileNameFor((IDeclaredType)type, targetDirectory, project, fileExtension, translator.Options, true),
+                    GetLineNumber = p =>{
+                        if (!projectLineCounts.ContainsKey(p))
+                            projectLineCounts.Add(p, 0);
+                        return ++projectLineCounts[p];
+                    }
+                };
+            }
+            else
+                translator.Options = new IntermediateCodeTranslatorOptions(true);
+            translator.Options.AutoComments = true;
+            TemporaryDirectory td;
+            TempFileCollection tfc;
+            List<string> files;
+            Stack<IIntermediateProject> partialCompletions;
+            Dictionary<IIntermediateModule, List<string>> moduleFiles;
+            ProjectTranslator.WriteProject(project, translator, targetDirectory, out td, out tfc, out files, out partialCompletions, out moduleFiles, true, true, fileExtension, true, tabString);
         }
 
         private static void SetAttributes(IParserResults<IGDFile> iprs, ParserBuilderResults resultsOfBuild)
