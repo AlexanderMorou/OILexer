@@ -424,7 +424,8 @@ namespace Oilexer.Types
                 result.Add(stack.Pop());
             return result;
         }
-        private INameSpaceDeclaration GetNamespace()
+
+        public INameSpaceDeclaration GetNamespace()
         {
             IDeclarationTarget current = this;
             while (!((current is INameSpaceDeclaration) || (current == null)))
