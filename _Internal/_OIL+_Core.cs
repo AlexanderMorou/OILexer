@@ -458,53 +458,34 @@ namespace Oilexer._Internal
             internal static StringBuilder GetTypesUsedComment(ref ProjectDependencyReport pdr, IIntermediateCodeTranslatorOptions options)
             {
                 StringBuilder typesUsed;
-                bool firstItem = true;
-                int index = 0;
                 typesUsed = new StringBuilder();
                 typesUsed.AppendLine(String.Format("There were {0} types used by this file", pdr.SourceData.Count));
-                foreach (ITypeReference itr in pdr.SourceData)
-                {
-                    if (itr.TypeInstance is ITypeParameterMember)
-                        continue;
-                    else if (itr.TypeInstance is IExternType && ((IExternType)(itr.TypeInstance)).Type.IsGenericParameter)
-                        continue;
-                    if (firstItem)
-                        firstItem = false;
-                    else
-                    {
-                        typesUsed.Append(", ");
-                        if (index % 3 == 0)
-                        {
-                            index = 0;
-                            typesUsed.AppendLine();
-                        }
-                    }
-                    typesUsed.Append(itr.TypeInstance.GetTypeName(options, itr.TypeParameters.ToArray()));
-                    index++;
-                }
+                var typesUsedListing = (from reference in pdr.SourceData
+                                        let externType = reference.TypeInstance as IExternType
+                                        let declType = reference.TypeInstance as IDeclaredType
+                                        let nameSpace = externType == null ?
+                                                            declType == null ?
+                                                                string.Empty :
+                                                                declType.GetNamespace().FullName :
+                                                            externType.Type.Namespace
+                                        let typeName = reference.ToString(options)
+                                        let realTypeName = typeName.Contains(nameSpace) ?
+                                                           typeName.Substring(nameSpace.Length+1) :
+                                                           typeName
+                                        orderby nameSpace ascending,
+                                                realTypeName ascending
+                                        select realTypeName).ToArray().FixedJoinSeries(", ");
+                typesUsed.Append(typesUsedListing);
                 if (pdr.CompiledAssemblyReferences.Count > 0)
                 {
                     typesUsed.AppendLine();
                     typesUsed.AppendLine("-");
                     typesUsed.AppendLine(string.Format("There were {0} assemblies referenced:", pdr.CompiledAssemblyReferences.Count));
-                    firstItem = true;
-                    index = 0;
-                    foreach (Assembly a in pdr.CompiledAssemblyReferences)
-                    {
-                        if (firstItem)
-                            firstItem = false;
-                        else
-                        {
-                            typesUsed.Append(", ");
-                            if (index % 3 == 0)
-                            {
-                                index = 0;
-                                typesUsed.AppendLine();
-                            }
-                        }
-                        typesUsed.Append(a.GetName().Name);
-                        index++;
-                    }
+                    var compiledAssembliesUsedListing = (from assembly in pdr.CompiledAssemblyReferences
+                                                         let name = assembly.GetName().Name
+                                                         orderby name
+                                                         select name).ToArray().FixedJoinSeries(", ");
+                    typesUsed.Append(compiledAssembliesUsedListing);
                 }
                 return typesUsed;
             }

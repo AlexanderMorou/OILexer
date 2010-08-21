@@ -21,5 +21,6 @@ namespace Oilexer.Types
         /// belongs to.
         /// </summary>
         IIntermediateProject Project { get; }
+        INameSpaceDeclaration GetNamespace();
     }
 }

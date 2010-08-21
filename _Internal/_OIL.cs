@@ -28,7 +28,35 @@ namespace Oilexer._Internal
 {
     internal static partial class _OIL
     {
-
+        public static string FixedJoinSeries(this string[] series, string jointElement, int maxWidth = 80)
+        {
+            int jointElementLength = jointElement.Length;
+            int maxLengthAllowed = Math.Max(series.Max(element => element.Length), maxWidth) + jointElementLength;
+            StringBuilder resultBuilder = new StringBuilder();
+            bool firstElement = true;
+            int currentLength = 0;
+            int maxActual = maxLengthAllowed - jointElement.Length;
+            foreach (var element in series)
+            {
+                if (firstElement)
+                    firstElement = false;
+                else
+                {
+                    resultBuilder.Append(jointElement);
+                    currentLength += jointElementLength;
+                }
+                int newLength = currentLength + element.Length;
+                if (newLength >= maxActual)
+                {
+                    resultBuilder.AppendLine();
+                    currentLength = element.Length;
+                }
+                else
+                    currentLength = newLength;
+                resultBuilder.Append(element);
+            }
+            return resultBuilder.ToString();
+        }
         public static string HTMLEncode(this string toEncode, bool encodeSpaces = true)
         {
             StringBuilder sb = new StringBuilder();

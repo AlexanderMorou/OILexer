@@ -197,7 +197,6 @@ namespace Oilexer
                         options = (options & ~ValidOptions.VerboseMode) | ValidOptions.QuietMode;
                     else if (s.ToLower() == Verbose)
                         options = (options & ~ValidOptions.QuietMode) | ValidOptions.VerboseMode;
-                    //Ignored rule, redefined default.
                     else if (s.ToLower().Substring(0, StreamAnalysis.Length) == StreamAnalysis)
                     {
                         var streamFile = s.ToLower().Substring(StreamAnalysis.Length);
@@ -224,13 +223,9 @@ namespace Oilexer
                         file = s;
                     }
                 if (!string.IsNullOrEmpty(extension))
-                {
-                    List<string> streamAnalysisFiles = new List<string>();
-                    foreach (var analysisFile in StreamAnalysisFiles)
-                        if (analysisFile.EndsWith(extension))
-                            streamAnalysisFiles.Add(analysisFile);
-                    StreamAnalysisFiles = streamAnalysisFiles;
-                }
+                    StreamAnalysisFiles = (from analysisFile in StreamAnalysisFiles
+                                           where analysisFile.EndsWith(extension)
+                                           select analysisFile).ToList();
                 if (!exists)
                 {
                     if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
@@ -259,7 +254,7 @@ namespace Oilexer
             GDParser gp = new GDParser();
             //GDBuilder igdb = new GDBuilder();
             Stopwatch sw = new Stopwatch();
-            IParserResults<IGDFile> iprs = null;
+            IParserResults<IGDFile> resultsOfParse = null;
             try
             {
                 Console.Clear();
@@ -276,8 +271,9 @@ namespace Oilexer
             if ((options & ValidOptions.NoLogo) != ValidOptions.NoLogo)
                 DisplayLogo();
             sw.Start();
-            iprs = gp.Parse(file);
-            var tLenMax = (from e in iprs.Result
+            resultsOfParse = gp.Parse(file);
+            sw.Stop();
+            var tLenMax = (from e in resultsOfParse.Result
                            let scannableEntry = e as IScannableEntry
                            where scannableEntry != null
                            select scannableEntry.Name.Length).Max();
@@ -290,9 +286,8 @@ namespace Oilexer
                 FinishLogo(oldestLongest, Console.CursorTop, Console.CursorLeft);
             else if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
                 Console.WriteLine("╒═{0}═╕", '═'.Repeat(longestLineLength));
-            sw.Stop();
-            if (iprs.Successful)
-                baseTitle = string.Format("{0}: {1}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location), Path.GetFileName(string.IsNullOrEmpty(iprs.Result.Options.AssemblyName) ? iprs.Result.Options.ParserName : iprs.Result.Options.AssemblyName));
+            if (resultsOfParse.Successful)
+                baseTitle = string.Format("{0}: {1}", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location), Path.GetFileName(string.IsNullOrEmpty(resultsOfParse.Result.Options.AssemblyName) ? resultsOfParse.Result.Options.ParserName : resultsOfParse.Result.Options.AssemblyName));
             try
             {
                 Console.Title = baseTitle;
@@ -306,14 +301,14 @@ namespace Oilexer
              * If the parser succeeds, build the project and check 
              * potential errors again.
              * */
-            if (iprs.Successful)
+            if (resultsOfParse.Successful)
             {
                 try
                 {
                     Console.Title = string.Format("{0} Linking project...", baseTitle);
                 }
                 catch (IOException) { }
-                ParserBuilderResults resultsOfBuild = Build(iprs);
+                ParserBuilderResults resultsOfBuild = Build(resultsOfParse);
                 if (resultsOfBuild == null)
                     goto errorChecker;
                 
@@ -328,12 +323,12 @@ namespace Oilexer
                      * Obtain a series of elements which indicate the name, state count, and token status of 
                      * the entries in the parsed file.
                      * */
-                    var toks = (from t in iprs.Result.GetTokens()
+                    var toks = (from t in resultsOfParse.Result.GetTokens()
                                 let state = t.DFAState
                                 where state != null
                                 let stateCount = t.DFAState.CountStates()
                                 select new { Name = t.Name, StateCount = stateCount, IsToken = true}).ToArray();
-                    var rules = (from rule in iprs.Result.GetRules()
+                    var rules = (from rule in resultsOfParse.Result.GetRules()
                                  let state = resultsOfBuild.RuleStateMachines.ContainsKey(rule) ? resultsOfBuild.RuleStateMachines[rule] : null
                                  where state != null
                                  let stateCount = state.CountStates()
@@ -422,13 +417,13 @@ namespace Oilexer
                 }
                 if ((options & ValidOptions.ExportTraversalHTML) == ValidOptions.ExportTraversalHTML)
                 {
-                    SetAttributes(iprs, resultsOfBuild);
-                    WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(iprs.Result.Files), ".html", "&nbsp;".Repeat(4), true);
+                    SetAttributes(resultsOfParse, resultsOfBuild);
+                    WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(resultsOfParse.Result.Files), ".html", "&nbsp;".Repeat(4), true);
                 }
                 else if ((options & ValidOptions.ExportCSharp) == ValidOptions.ExportCSharp)
                 {
-                    SetAttributes(iprs, resultsOfBuild);
-                    WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(iprs.Result.Files));
+                    SetAttributes(resultsOfParse, resultsOfBuild);
+                    WriteProject(resultsOfBuild.Project, ProjectTranslator.GetRelativeRoot(resultsOfParse.Result.Files));
                 }
                 else if ((options & ValidOptions.ExportDLL) == ValidOptions.ExportDLL ||
                     (options & ValidOptions.ExportEXE) == ValidOptions.ExportEXE)
@@ -439,14 +434,14 @@ namespace Oilexer
                     }
                     catch (IOException) { }
                     string rootPath = string.Empty;
-                    foreach (var cFile in iprs.Result.Files)
+                    foreach (var cFile in resultsOfParse.Result.Files)
                     {
                         string bPath = Path.GetDirectoryName(cFile);
                         if (bPath.Length < rootPath.Length)
                             rootPath = bPath;
                     }
-                    SetAttributes(iprs, resultsOfBuild);
-                    rootPath += string.Format("{0}.dll", iprs.Result.Options.AssemblyName);
+                    SetAttributes(resultsOfParse, resultsOfBuild);
+                    rootPath += string.Format("{0}.dll", resultsOfParse.Result.Options.AssemblyName);
                     IIntermediateCompiler intermediateCompiler = new CSharpIntermediateCompiler(resultsOfBuild.Project, new IntermediateCompilerOptions(rootPath, true, generateXMLDocs: true, debugSupport: DebugSupport.None));
                     intermediateCompiler.Translator.Options.AutoResolveReferences = true;
                     intermediateCompiler.Translator.Options.AllowPartials = true;
@@ -475,11 +470,11 @@ namespace Oilexer
                 }
                 goto ShowParseTime;
             __CheckErrorAgain:
-                if (iprs.Errors.HasErrors)
-                    Program.ShowErrors(iprs);
+                if (resultsOfParse.Errors.HasErrors)
+                    Program.ShowErrors(resultsOfParse);
             }
             else
-                Program.ShowErrors(iprs);
+                Program.ShowErrors(resultsOfParse);
         ShowParseTime:
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -487,7 +482,7 @@ namespace Oilexer
             if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
             {
                 Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
-                DisplayTailInformation(maxLength, iprs);
+                DisplayTailInformation(maxLength, resultsOfParse);
                 Console.WriteLine("╘═{0}═╛", '═'.Repeat(longestLineLength));
             }
             if ((options & ValidOptions.ShowSyntax) == ValidOptions.ShowSyntax)
@@ -497,7 +492,7 @@ namespace Oilexer
                     Console.Title = string.Format("{0} - Expanded grammar.", baseTitle);
                 }
                 catch (IOException) { }
-                ShowSyntax(iprs);
+                ShowSyntax(resultsOfParse);
             
             }
             try
@@ -861,7 +856,7 @@ namespace Oilexer
          *  <param name="series">The <typeparamref name="TSeries"/> instance which represents the group.</param>
          *  <param name="startingLine">Whether the next element written starts the line.</param>
          *  <param name="depth">The tabbing depth threshold.</param>
-         * */
+         **/
         private static void DisplayGroupSyntax<TItem, TExpression, TSeries>(TSeries series, ref bool startingLine, int depth)
             where TItem :
                 IScannableEntryItem
@@ -890,12 +885,9 @@ namespace Oilexer
             Console.ForegroundColor = consoleColor;
             DisplaySeriesSyntax<TItem, TExpression, TSeries>(series, ref startingLine, depth + 1);
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            if (!startingLine)
-            {
-                if (needLine)
-                    Console.WriteLine();
-            }
-            else
+            if (!startingLine && needLine)
+                Console.WriteLine();
+            else if (startingLine)
                 startingLine = false;
             if (needLine)
                 Console.Write("{0})", ' '.Repeat((depth + 1) * 4));
@@ -1224,14 +1216,9 @@ namespace Oilexer
 
         private static ParserBuilderResults Build(IParserResults<IGDFile> iprs)
         {
-            ParserBuilderResults resultsOfBuild = iprs.Result.Build(StreamAnalysisFiles, iprs.Errors, phase =>
-            {
-                try
-                {
-                    Console.Title = string.Format("{0} - {1}...", Program.baseTitle, GetPhaseSubString(phase));
-                }
-                catch (IOException) { }
-            });
+            ParserBuilderResults resultsOfBuild = iprs.Result.Build(StreamAnalysisFiles, iprs.Errors, 
+                phase =>
+                    Console.Title = string.Format("{0} - {1}...", Program.baseTitle, GetPhaseSubString(phase)));
             return resultsOfBuild;
         }
 

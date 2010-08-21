@@ -83,5 +83,7 @@ namespace Oilexer.Types
 
         ICreateNewObjectExpression GetNewExpression(IExpressionCollection arguments);
         TypeReferenceResolveOptions ResolutionOptions { get; set; }
+
+        string ToString(ICodeTranslationOptions options);
     }
 }

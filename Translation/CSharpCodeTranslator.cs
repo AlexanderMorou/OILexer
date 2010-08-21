@@ -381,9 +381,20 @@ namespace Oilexer.Translation
 
         public override void TranslateType(IDeclaredType declaredType)
         {
+            /* *
+             * Cache the current type, in the event that the declaredType
+             * is nested, then denote, to the formatter, which type is the
+             * actively translated type.
+             * */
+            var currentType = this.Options.CurrentType;
             this.Options.CurrentType = declaredType;
             base.TranslateType(declaredType);
-            this.Options.CurrentType = this.Options.BuildTrail.FirstOrDefault(p=>p is IDeclaredType) as IDeclaredType;
+            /* *
+             * For the sake of nesting, restore the previous 'currentType'
+             * to whatever it was before, either null or the parent type
+             * of declaredType.
+             * */
+            this.Options.CurrentType = currentType;
         }
 
         /// <summary>
@@ -397,10 +408,6 @@ namespace Oilexer.Translation
         {
             if (((!(base.Options.AllowPartials)) && (project.IsPartial)))
                 return;
-            /* *
-             * Indicate that in the build process, the current file/partial/etc of the project
-             * is in the build trail.
-             * */
             Stopwatch sw = new Stopwatch();
             StringBuilder typesUsed;
             sw.Start();

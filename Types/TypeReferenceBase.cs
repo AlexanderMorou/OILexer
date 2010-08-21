@@ -263,6 +263,13 @@ namespace Oilexer.Types
 
         public override string ToString()
         {
+            return this.ToString(null);
+        }
+
+        public string ToString(ICodeTranslationOptions options)
+        {
+            if (options == null)
+                options = CodeGeneratorHelper.DefaultDomOptions;
             if (this.ArrayElementType != null)
             {
                 List<int> arrayRanks = new List<int>();
@@ -287,10 +294,10 @@ namespace Oilexer.Types
             {
                 for (int i = 0; i < this.TypeParameters.Count; i++)
                     typeParamNames[i] = TypeParameters[i].ToString();
-                return String.Format("{0}<{1}>{2}{3}", this.typeInstance.GetTypeName(CodeGeneratorHelper.DefaultDomOptions), String.Join(",", typeParamNames), Nullable ? "?" : string.Empty, pointer);
+                return String.Format("{0}<{1}>{2}{3}", this.typeInstance.GetTypeName(options), String.Join(",", typeParamNames), Nullable ? "?" : string.Empty, pointer);
             }
             else
-                return string.Format("{0}{1}{2}",this.typeInstance.GetTypeName(CodeGeneratorHelper.DefaultDomOptions), Nullable ? "?" : string.Empty, pointer);
+                return string.Format("{0}{1}{2}", this.typeInstance.GetTypeName(options), Nullable ? "?" : string.Empty, pointer);
         }
 
         private static string GetArrayRankText(int arrayRank)

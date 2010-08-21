@@ -118,6 +118,13 @@ namespace Oilexer.Parser.Builder
             this.Source.GetTokens().AsParallel()
               .ForAll(token =>
                 token.BuildDFA());
+            var idToken = this.Source.GetTokens().FirstOrDefault(t => t.Name == "Identifier");
+            if (idToken != null)
+            {
+                var second = idToken.DFAState.OutTransitions.Checks.Skip(1).First();
+                var secondCount = second.CountTrue();
+                var unicodeRanges = Breakdown(second, RegularLanguageSet.CompleteSet);
+            }
         }
 
         private void ReduceTokenDFA()
