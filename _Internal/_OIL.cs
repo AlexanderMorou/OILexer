@@ -31,7 +31,10 @@ namespace Oilexer._Internal
         public static string FixedJoinSeries(this string[] series, string jointElement, int maxWidth = 80)
         {
             int jointElementLength = jointElement.Length;
-            int maxLengthAllowed = Math.Max(series.Max(element => element.Length), maxWidth) + jointElementLength;
+            int seriesMax = 0;
+            if (series.Length > 0)
+                seriesMax = series.Max(element => element.Length);
+            int maxLengthAllowed = Math.Max(seriesMax, maxWidth) + jointElementLength;
             StringBuilder resultBuilder = new StringBuilder();
             bool firstElement = true;
             int currentLength = 0;

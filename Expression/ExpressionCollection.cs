@@ -19,6 +19,10 @@ namespace Oilexer.Expression
         {
             this.AddRange(expressions);
         }
+        public ExpressionCollection(IEnumerable<IExpression> expressions)
+        {
+            this.AddRange(expressions);
+        }
         #region IExpressionCollection<TItem,TDom> Members
 
         public CodeExpression[] GenerateCodeDom(ICodeDOMTranslationOptions options)

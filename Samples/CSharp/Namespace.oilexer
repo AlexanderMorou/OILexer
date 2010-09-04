@@ -15,11 +15,11 @@ QualifiedIdentifier ::=
 
 QualifiedAliasMember ::=
     Identifier:AliasName; "::" 
-	SimpleName:TypeOrNamespaceName;          ;
+    SimpleName:TypeOrNamespaceName;          ;
 
 NamespaceBody                              ::=
-	CParametered<
-		ExternAliasDirective:Externs;*
+    CParametered<
+        ExternAliasDirective:Externs;*
         UsingDirective:Usings;*
         NamespaceMemberDeclaration:Members;*>;
 

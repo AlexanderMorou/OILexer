@@ -919,7 +919,6 @@
     <Compile Include="_Internal\LinkerCore %28Stage 2%29.cs" />
     <Compile Include="_Internal\LinkerCore %28Stage 3%29.cs" />
     <Compile Include="_Internal\LinkerCore+ProductionRuleTemplateArgumentSeries.cs" />
-    <Compile Include="_Internal\Tuple{T1}.cs" />
     <Compile Include="_Internal\_GDResolutionAssistant.cs" />
     <Compile Include="_Internal\_OIL+_Core+CommentConstants.cs" />
     <Compile Include="_Internal\_OIL+_Core+MaintenanceResources.cs" />
