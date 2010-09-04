@@ -153,6 +153,12 @@ namespace Oilexer.Translation
         {
             if (target.ParentTarget is IDeclaredType)
                 return string.Format("{0}+{1}", GetTargetFullName((IDeclaredType)target.ParentTarget), target.Name);
+            if (target.IsGeneric)
+            {
+                var genericType = target as IParameteredDeclaredType;
+                if (genericType.TypeParameters.Count > 0)
+                    return string.Format("{0}`{1}", target.Name, genericType.TypeParameters.Count);
+            }
             return target.Name;
         }
 

@@ -143,6 +143,8 @@ namespace Oilexer
         /// call site.</param>
         private static void Main(string[] args)
         {
+            BuildTupleSamples();
+            return;
             //Console.BackgroundColor = ConsoleColor.DarkBlue;
             //Console.ForegroundColor = ConsoleColor.White;
             var consoleTitle = Console.Title;
@@ -244,6 +246,113 @@ namespace Oilexer
                 catch (IOException) {
                 }
             }
+        }
+
+        private static void BuildTupleSamples()
+        {
+            int minTuple = 9;
+            int maxTuple = 20;
+            IType eightTupleType = typeof(Tuple<,,,,,,,>).GetTypeReference().TypeInstance;
+            IIntermediateProject result = new IntermediateProject("TupleProject", "AllenCopeland.Abstraction.Utilities.Tuples");
+            var tupleHelperClass = result.DefaultNameSpace.Partials.AddNew().Classes.AddNew("TupleHelper");
+            for (int i = minTuple; i <= maxTuple; i++)
+            {
+                TypeConstrainedName[] names = new TypeConstrainedName[i];
+                for (int j = 0; j < i; j++)
+                    names[j] = new TypeConstrainedName(string.Format("T{0}", j + 1));
+                var currentType = result.DefaultNameSpace/*.Partials.AddNew()*/.Classes.AddNew("Tuple", names);
+                TypedName[] parameterInfo = new TypedName[i];
+                for (int j = 0; j < i; j++)
+                    parameterInfo[j] = new TypedName(string.Format("item{0}", j + 1), currentType.TypeParameters[j].GetTypeReference());
+                var currentTupleHelper = tupleHelperClass.Methods.AddNew(new TypedName("GetTuple", currentType.GetTypeReference()), parameterInfo, names);
+                var mainConstructor = currentType.Constructors.AddNew(parameterInfo);
+                for (int j = 0; j < i; j++)
+                    currentTupleHelper.Parameters.Values[j].ParameterType = currentTupleHelper.TypeParameters.Values[j].GetTypeReference();
+                LinkedList<ITypeReferenceCollection> sevenTupleSets = new LinkedList<ITypeReferenceCollection>();
+                LinkedList<IVariableReferenceExpression[]> sevenParameterSets = new LinkedList<IVariableReferenceExpression[]>();
+                int sevenTupleSetCount = (int)Math.Ceiling(((double)(i)) / 7);
+                for (int j = 0; j < sevenTupleSetCount; j++)
+                {
+                    var currentSetRange = new Tuple<int, int>((j * 7), Math.Min(((j + 1) * 7), i));
+                    var currentTupleSet = new TypeReferenceCollection();
+                    List<IVariableReferenceExpression> currentParamRefs = new List<IVariableReferenceExpression>();
+                    for (int k = currentSetRange.Item1; k < currentSetRange.Item2; k++)
+                    {
+                        currentTupleSet.Add(currentType.TypeParameters[k].GetTypeReference());
+                        currentParamRefs.Add(mainConstructor.Parameters[k].GetReference());
+                    }
+                    sevenParameterSets.AddLast(currentParamRefs.ToArray());
+                    sevenTupleSets.AddLast(currentTupleSet);
+                }
+                var current = sevenTupleSets.Last;
+                ITypeReference currentTypeBase = null;
+                ICreateNewObjectExpression trailingCascadeParameter = null;
+                var currentParamSet = sevenParameterSets.Last;
+                while (current != null)
+                {
+                    if (currentTypeBase == null)
+                    {
+                        switch (current.Value.Count)
+                        {
+                            case 1:
+                                currentTypeBase = typeof(System.Tuple<>).GetTypeReference(current.Value);
+                                break;
+                            case 2:
+                                currentTypeBase = typeof(System.Tuple<,>).GetTypeReference(current.Value);
+                                break;
+                            case 3:
+                                currentTypeBase = typeof(System.Tuple<,,>).GetTypeReference(current.Value);
+                                break;
+                            case 4:
+                                currentTypeBase = typeof(System.Tuple<,,,>).GetTypeReference(current.Value);
+                                break;
+                            case 5:
+                                currentTypeBase = typeof(System.Tuple<,,,,>).GetTypeReference(current.Value);
+                                break;
+                            case 6:
+                                currentTypeBase = typeof(System.Tuple<,,,,,>).GetTypeReference(current.Value);
+                                break;
+                            case 7:
+                                currentTypeBase = typeof(System.Tuple<,,,,,,>).GetTypeReference(current.Value);
+                                break;
+                        }
+                        trailingCascadeParameter = new CreateNewObjectExpression(currentTypeBase);
+                        foreach (var parameterRef in currentParamSet.Value)
+                            trailingCascadeParameter.Arguments.Add(parameterRef);
+                    }
+                    else
+                    {
+                        var tempTypeBase = eightTupleType.GetTypeReference(current.Value);
+                        tempTypeBase.TypeParameters.Add(currentTypeBase);
+                        if (currentParamSet != sevenParameterSets.First)
+                        {
+                            var tempCascadeParameter = new CreateNewObjectExpression(tempTypeBase);
+                            foreach (var parameterRef in currentParamSet.Value)
+                                tempCascadeParameter.Arguments.Add(parameterRef);
+                            tempCascadeParameter.Arguments.Add(trailingCascadeParameter);
+                            trailingCascadeParameter = tempCascadeParameter;
+                        }
+                        else
+                            foreach (var parameterRef in currentParamSet.Value)
+                                mainConstructor.CascadeMembers.Add(parameterRef);
+                        currentTypeBase = tempTypeBase;
+                    }
+                    current = current.Previous;
+                    currentParamSet = currentParamSet.Previous;
+                }
+                currentType.BaseType = currentTypeBase;
+                mainConstructor.CascadeExpressionsTarget = Types.Members.ConstructorCascadeTarget.Base;
+                currentTupleHelper.Return(new CreateNewObjectExpression(currentTupleHelper.ReturnType, new ExpressionCollection((from parameter in currentTupleHelper.Parameters.Values
+                                                                                                                                 select parameter.GetReference()))));
+                currentTupleHelper.AccessLevel = DeclarationAccessLevel.Public;
+                currentTupleHelper.IsStatic = true;
+                mainConstructor.CascadeMembers.Add(trailingCascadeParameter);
+                mainConstructor.AccessLevel = DeclarationAccessLevel.Public;
+            }
+
+            WriteProject(result, @"C:\Projects\Code\C#\OILexer\");
+            //WriteProject(result, @"C:\Projects\Code\C#\OILexer\", ".html", "&nbsp;".Repeat(4), true);
+
         }
 
         private static void ParseFile(string file)

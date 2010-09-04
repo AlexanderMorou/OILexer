@@ -25,13 +25,19 @@ namespace Oilexer.Expression
         private IExpressionCollection arguments;
 
         public CreateNewObjectExpression(ITypeReference newType, IExpressionCollection arguments)
+            : this(newType, (IEnumerable<IExpression>)(arguments))
+        {
+        }
+
+        public CreateNewObjectExpression(ITypeReference newType, params IExpression[] arguments)
+            : this(newType, (IEnumerable<IExpression>)(arguments))
+        {
+        }
+
+        public CreateNewObjectExpression(ITypeReference newType, IEnumerable<IExpression> arguments)
         {
             this.newType = newType;
-            this.arguments = arguments;
-        }
-        public CreateNewObjectExpression(ITypeReference newType, params IExpression[] arguments)
-            : this(newType, new ExpressionCollection(arguments))
-        {
+            this.arguments = new ExpressionCollection(arguments);
         }
 
         protected CreateNewObjectExpression(SerializationInfo info, StreamingContext context)

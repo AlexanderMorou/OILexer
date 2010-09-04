@@ -93,7 +93,7 @@ ClassType                                ::=>
     TypeName                                |
     StringType                              |
     ObjectType                              ;
-	
+    
 StringType                                ::=
     "string"                                ;
     
