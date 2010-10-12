@@ -44,7 +44,7 @@ namespace Oilexer.Types.Members
             IStatementBlockLocalMember local = new StatementBlockLocalMember(nameAndType, this.TargetDeclaration);
             local.InitializationExpression = initializationExpression;
             local.AutoDeclare = true;
-            base.Add(local.GetUniqueIdentifier(), local);
+            this._Add(local.GetUniqueIdentifier(), local);
             return local;
         }
 

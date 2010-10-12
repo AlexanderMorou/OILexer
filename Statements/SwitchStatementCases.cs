@@ -28,21 +28,21 @@ namespace Oilexer.Statements
         public ISwitchStatementCase AddNew(IExpression caseTarget)
         {
             ISwitchStatementCase @case = new SwitchStatementCase(this.sourceBlock, caseTarget);
-            this.baseCollection.Add(@case);
+            this.baseList.Add(@case);
             return @case;
         }
 
         public ISwitchStatementCase AddNew()
         {
             ISwitchStatementCase @case = new SwitchStatementCase(this.sourceBlock);
-            this.baseCollection.Add(@case);
+            this.baseList.Add(@case);
             return @case;
         }
 
         public ISwitchStatementCase AddNew(bool lastIsDefaultCase, IExpressionCollection caseTargets)
         {
             ISwitchStatementCase @case = new SwitchStatementCase(this.sourceBlock, caseTargets, lastIsDefaultCase);
-            this.baseCollection.Add(@case);
+            this.baseList.Add(@case);
             return @case;
         }
 

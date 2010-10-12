@@ -48,7 +48,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         public TokenExpressionSeries(ITokenExpression[] expressions, int line, int column, long position, string fileName)
         {
             foreach (ITokenExpression ite in expressions)
-                this.baseCollection.Add(ite);
+                this.baseList.Add(ite);
             this.column = column; 
             this.line = line;
             this.position = position;
@@ -96,7 +96,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         {
             StringBuilder sb = new StringBuilder();
             bool first = true;
-            foreach (ITokenExpression ite in this.baseCollection)
+            foreach (ITokenExpression ite in this.baseList)
             {
                 if (first)
                     first = false;
@@ -112,7 +112,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
 
         internal void Add(ITokenExpression ite)
         {
-            this.baseCollection.Add(ite);
+            this.baseList.Add(ite);
         }
 
         public string GetBodyString()

@@ -40,8 +40,8 @@ namespace Oilexer
             IIntermediateProject iip = new IntermediateProject(this.RootDeclaration);
             if (this.RootDeclaration.ParentTarget != null)
                 iip.ParentTarget = this.RootDeclaration.ParentTarget;
-            lock (this.baseCollection)
-                this.baseCollection.Add(iip);
+            lock (this.baseList)
+                this.baseList.Add(iip);
             return iip;
         }
 
@@ -49,8 +49,8 @@ namespace Oilexer
         {
             IIntermediateProject iip = new IntermediateProject(this.RootDeclaration);
             iip.ParentTarget = parentTarget;
-            lock (this.baseCollection)
-                this.baseCollection.Add(iip);
+            lock (this.baseList)
+                this.baseList.Add(iip);
             return iip;
         }
 
@@ -81,8 +81,8 @@ namespace Oilexer
         {
             foreach (IIntermediateProject iip in this)
                 iip.Dispose();
-            this.baseCollection.Clear();
-            this.baseCollection = null;
+            this.baseList.Clear();
+            this.baseList = null;
             this.rootDeclaration = null;
         }
 
@@ -107,7 +107,7 @@ namespace Oilexer
             if (this.Contains(partial))
             {
                 partial.Dispose();
-                this.baseCollection.Remove(partial);
+                this.baseList.Remove(partial);
             }
         }
 

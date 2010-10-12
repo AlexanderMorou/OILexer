@@ -14,8 +14,8 @@ namespace Oilexer.Types
         {
         }
 
-        public EnumeratorTypes(ITypeParent targetDeclaration, IDictionary<string, IEnumeratorType> basePartialMembers)
-            : base(targetDeclaration, basePartialMembers)
+        public EnumeratorTypes(ITypeParent targetDeclaration, EnumeratorTypes sibling)
+            : base(targetDeclaration, sibling)
         {
         }
         public override IEnumeratorType AddNew(string name)
@@ -40,7 +40,7 @@ namespace Oilexer.Types
 
         public IEnumeratorTypes GetPartialClone(ITypeParent partialTarget)
         {
-            return new EnumeratorTypes(partialTarget, this.dictionaryCopy);
+            return new EnumeratorTypes(partialTarget, this);
         }
 
         #endregion

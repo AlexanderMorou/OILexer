@@ -16,7 +16,7 @@ namespace Oilexer.FiniteAutomata.Rules
         public SyntacticalFollowInfo Follow(SyntacticalDFAState origin, SyntacticalDFAState continuesAt)
         {
             SyntacticalFollowInfo result = new SyntacticalFollowInfo(origin, continuesAt);
-            base.Add(origin, result);
+            base._Add(origin, result);
             return result;
         }
 

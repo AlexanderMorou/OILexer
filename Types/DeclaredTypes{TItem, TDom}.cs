@@ -49,12 +49,8 @@ namespace Oilexer.Types
         {
             Initialize(targetDeclaration);
         }
-        protected DeclaredTypes(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-        public DeclaredTypes(ITypeParent targetDeclaration, IDictionary<string, TItem> basePartialMembers) :
-            base(basePartialMembers)
+        public DeclaredTypes(ITypeParent targetDeclaration, DeclaredTypes<TItem, TDom> sibling) :
+            base(sibling)
         {
             Initialize(targetDeclaration);
         }
@@ -117,7 +113,7 @@ namespace Oilexer.Types
 
         public void Add(TItem declaredType)
         {
-            this.Add(declaredType.GetUniqueIdentifier(), declaredType);
+            this._Add(declaredType.GetUniqueIdentifier(), declaredType);
         }
 
         #endregion
@@ -130,34 +126,18 @@ namespace Oilexer.Types
             get { return this.TargetDeclaration; }
         }
 
-        protected override void Add(string uniqueIdentifier, TItem value)
+        protected internal override void _Add(string uniqueIdentifier, TItem value)
         {
             value.DeclarationChange += new EventHandler<DeclarationChangeArgs>(OnItemChanged);
-            lock (base.baseCollection)
-            {
-                base.Add(uniqueIdentifier, value);
-            }
-            
+            base._Add(uniqueIdentifier, value);
         }
 
         void OnItemChanged(object sender, DeclarationChangeArgs e)
         {
             if (!(e.Declaration is TItem))
                 return;
-            Special.RekeyDictionaryItem(base.dictionaryCopy, (TItem)e.Declaration, (string)e.Declaration.GetUniqueIdentifier());
-        }
-
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            foreach (TItem t in this.Values)
-            {
-                t.DeclarationChange -= new EventHandler<DeclarationChangeArgs>(OnItemChanged);
-            }
-            base.GetObjectData(info, context);
-            foreach (TItem t in this.Values)
-            {
-                t.DeclarationChange += new EventHandler<DeclarationChangeArgs>(OnItemChanged);
-            }
+            int index = this.Values.IndexOf((TItem)e.Declaration);
+            this.Keys[index] = e.Declaration.GetUniqueIdentifier();
         }
 
         /// <summary>
@@ -167,7 +147,7 @@ namespace Oilexer.Types
         public new virtual void Remove(string name)
         {
             this[name].DeclarationChange -= new EventHandler<DeclarationChangeArgs>(OnItemChanged);
-            base.Remove(name);
+            this._Remove(name);
         }
 
         /// <summary>
@@ -177,7 +157,7 @@ namespace Oilexer.Types
         {
             foreach (TItem ti in this.Values)
                 ti.DeclarationChange -= new EventHandler<DeclarationChangeArgs>(OnItemChanged);
-            base.Clear();
+            this._Clear();
         }
 
         public new TItem this[int index]

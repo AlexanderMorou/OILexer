@@ -41,7 +41,7 @@ namespace Oilexer.Parser.GDFileData
             internal PartCollection()
             {
             }
-            internal PartCollection(ICollection<IProductionRuleTemplatePart> prtp)
+            internal PartCollection(IList<IProductionRuleTemplatePart> prtp)
                 : base(prtp)
             {
                 

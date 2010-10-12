@@ -68,6 +68,7 @@ namespace Oilexer._Internal.Inlining
                 else
                     nfaState.Union(expression.NFAState);
             }
+            nfaState.Enumerate();
         }
 
         /// <summary>
@@ -94,6 +95,17 @@ namespace Oilexer._Internal.Inlining
             this.captureType = this.DetermineKind();
             this.dfaState.Reduce(this.captureType.Value);
             this.dfaState.Enumerate();
+        }
+
+        public RegularCaptureType CaptureKind
+        {
+            get
+            {
+                if (captureType.HasValue)
+                    return this.captureType.Value;
+                else
+                    return RegularCaptureType.Undecided;
+            }
         }
 
         public RegularCaptureType DetermineKind()

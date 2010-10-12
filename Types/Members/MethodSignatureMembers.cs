@@ -18,15 +18,10 @@ namespace Oilexer.Types.Members
         {
         }
 
-        public MethodSignatureMembers(ISignatureMemberParentType targetDeclaration, IDictionary<string, IMethodSignatureMember<IMethodSignatureParameterMember, IMethodSignatureTypeParameterMember, CodeMemberMethod, ISignatureMemberParentType>> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
+        public MethodSignatureMembers(ISignatureMemberParentType targetDeclaration, MethodSignatureMembers sibling)
+            : base(targetDeclaration, sibling)
         {
         }
-        protected MethodSignatureMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-
         #region IMethodSignatureMembers Members
 
         public IMethodSignatureMember FindBySig(string name, int typeParamCount, params Type[] parameterTypes)
@@ -56,7 +51,7 @@ namespace Oilexer.Types.Members
 
         public new IMethodSignatureMembers GetPartialClone(ISignatureMemberParentType parent)
         {
-            return new MethodSignatureMembers(parent, this.dictionaryCopy);
+            return new MethodSignatureMembers(parent, this);
         }
 
         public IMethodSignatureMember AddNew(string name, ITypeReference returnType)
@@ -84,7 +79,7 @@ namespace Oilexer.Types.Members
             IMethodSignatureMember methodMember = new MethodSignatureMember(nameAndReturn, this.TargetDeclaration, parameters, typeParameters);
             if (this.ContainsKey(methodMember.GetUniqueIdentifier()))
                 throw new InvalidOperationException("method signature exists");
-            this.Add(methodMember.GetUniqueIdentifier(), methodMember);
+            this._Add(methodMember.GetUniqueIdentifier(), methodMember);
             return methodMember;
         }
 
@@ -99,7 +94,6 @@ namespace Oilexer.Types.Members
         }
 
         #endregion
-
 
         protected override IMembers<IMethodSignatureMember<IMethodSignatureParameterMember, IMethodSignatureTypeParameterMember, CodeMemberMethod, ISignatureMemberParentType>, ISignatureMemberParentType, CodeMemberMethod> OnGetPartialClone(ISignatureMemberParentType parent)
         {

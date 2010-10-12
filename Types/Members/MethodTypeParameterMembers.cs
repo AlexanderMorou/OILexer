@@ -17,10 +17,6 @@ namespace Oilexer.Types.Members
             :base (targetDeclaration)
         {
         }
-        protected MethodTypeParameterMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
 
         public override IMethodTypeParameterMember AddNew(string name)
         {
@@ -84,7 +80,7 @@ namespace Oilexer.Types.Members
             result.Constraints.AddRange(constraints.ToArray());
             result.SpecialCondition = specialCondition;
             result.RequiresConstructor = requiresConstructor;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             this.OnSignatureChanged();
             return result;
         }

@@ -21,10 +21,6 @@ namespace Oilexer.Types
                 : base(parent)
             {
             }
-            protected TypeParameterMembers(SerializationInfo info, StreamingContext context)
-                : base(info, context)
-            {
-            }
         }
     }
 }

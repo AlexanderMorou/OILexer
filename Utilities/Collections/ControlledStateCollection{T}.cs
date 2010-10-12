@@ -11,23 +11,24 @@ namespace Oilexer.Utilities.Collections
     /// <typeparam name="T">The type of elements in the <see cref="ControlledStateCollection{T}"/></typeparam>
     public class ControlledStateCollection<T> :
         IControlledStateCollection<T>,
-        IControlledStateCollection
+        IControlledStateCollection,
+        IEnumerable<T>
     {
         /// <summary>
-        /// The collection to wrap.
+        /// The list to wrap.
         /// </summary>
-        internal protected ICollection<T> baseCollection;
+        internal protected IList<T> baseList;
 
         #region ControlledStateCollection Constructors
 
         /// <summary>
         /// Creates a new instance of <see cref="ControlledStateCollection{T}"/> with the 
-        /// collection to wrap provided.
+        /// <paramref name="baseList"/> to wrap provided.
         /// </summary>
-        /// <param name="baseCollection">The Collection to wrap.</param>
-        public ControlledStateCollection(ICollection<T> baseCollection)
+        /// <param name="baseList">The list to wrap.</param>
+        public ControlledStateCollection(IList<T> baseList)
         {
-            this.baseCollection = baseCollection;
+            this.baseList = baseList;
         }
 
         /// <summary>
@@ -42,21 +43,6 @@ namespace Oilexer.Utilities.Collections
         #endregion
 
         #region IControlledStateCollection<T> Members
-        public int IndexOf(T element)
-        {
-            int index = -1;
-            int i = 0;
-            foreach (var currentElement in this.baseCollection)
-                if (currentElement.Equals(element))
-                {
-                    index = i;
-                    break;
-                }
-                else
-                    i++;
-            return index;
-        }
-
         /// <summary>:
         /// Gets the number of elements contained in the <see cref="ControlledStateCollection{T}"/>.
         /// </summary>
@@ -66,7 +52,7 @@ namespace Oilexer.Utilities.Collections
         /// </returns>
         public virtual int Count
         {
-            get { return this.baseCollection.Count; }
+            get { return this.baseList.Count; }
         }
 
         /// <summary>
@@ -80,7 +66,7 @@ namespace Oilexer.Utilities.Collections
         /// </returns>
         public virtual bool Contains(T item)
         {
-            return baseCollection.Contains(item);
+            return baseList.Contains(item);
         }
 
         /// <summary>
@@ -107,11 +93,15 @@ namespace Oilexer.Utilities.Collections
         /// end of the destination <paramref name="array"/>.-or-Type <typeparamref name="T"/> 
         /// cannot be cast automatically to the type of the destination
         /// <paramref name="array"/>.</exception>
-        public void CopyTo(T[] array, int arrayIndex)
+        public virtual void CopyTo(T[] array, int arrayIndex)
         {
-            this.baseCollection.CopyTo(array, arrayIndex);
+            this.baseList.CopyTo(array, arrayIndex);
         }
 
+        public int IndexOf(T element)
+        {
+            return baseList.IndexOf(element);
+        }
         #endregion
 
         #region IEnumerable<T> Members
@@ -123,8 +113,7 @@ namespace Oilexer.Utilities.Collections
         /// the <see cref="ControlledStateCollection{T}"/>.</returns>
         public virtual IEnumerator<T> GetEnumerator()
         {
-            lock (this.baseCollection)
-                return this.baseCollection.GetEnumerator();
+            return this.baseList.GetEnumerator();
         }
 
         #endregion
@@ -148,6 +137,13 @@ namespace Oilexer.Utilities.Collections
             this.CopyTo((T[])array, index);
         }
 
+
+        int IControlledStateCollection.IndexOf(object element)
+        {
+            if (element is T)
+                return this.IndexOf((T)element);
+            return -1;
+        }
         #endregion
 
         /// <summary>
@@ -177,21 +173,11 @@ namespace Oilexer.Utilities.Collections
         /// <paramref name="index"/> is  beyond the range of the 
         /// <see cref="ControlledStateCollection{T}"/>.
         /// </exception>
-        public T this[int index]
+        public virtual T this[int index]
         {
             get
             {
-                if (index < 0 || index >= this.Count)
-                    throw new ArgumentOutOfRangeException("index");
-                int i = 0;
-                foreach (T t in this)
-                    if (i == index)
-                        return t;
-                    else
-                        i++;
-
-                //...?
-                return default(T);
+                return this.baseList[index];
             }
         }
         #endregion
@@ -219,5 +205,20 @@ namespace Oilexer.Utilities.Collections
         }
 
         #endregion
+
+        protected virtual void AddImpl(T expression)
+        {
+            lock (baseList)
+                this.baseList.Add(expression);
+        }
+
+        protected virtual void InsertItem(int index, T item)
+        {
+            lock (baseList)
+            {
+                this.baseList.Insert(index, item);
+            }
+        }
+
     }
 }

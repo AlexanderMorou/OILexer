@@ -1,19 +1,25 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using System.Collections;
+ /*---------------------------------------------------------------------\
+ | Copyright © 2010 Allen Copeland Jr.                                  |
+ |----------------------------------------------------------------------|
+ | The Abstraction Project's code is provided under a contract-release  |
+ | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
+ \-------------------------------------------------------------------- */
 
 namespace Oilexer.Utilities.Collections
 {
     public class ReadOnlyCollectionGroup<TCollection, TItem> : 
         IReadOnlyCollection<TItem>
         where TCollection :
-            IControlledStateCollection<TItem>
+            IControlledStateCollection
     {
-        private IList<IControlledStateCollection<TItem>> collections;
-        public ReadOnlyCollectionGroup(IControlledStateCollection<TItem>[] collections)
+        private IList<IControlledStateCollection> collections;
+        public ReadOnlyCollectionGroup(IControlledStateCollection[] collections)
         {
-            this.collections = new List<IControlledStateCollection<TItem>>(collections);
+            this.collections = new List<IControlledStateCollection>(collections);
         }
         #region IControlledStateCollection<TItem> Members
 
@@ -48,7 +54,7 @@ namespace Oilexer.Utilities.Collections
 
         public TItem this[int index]
         {
-            get 
+            get
             {
                 for (
                         int i = 0,
@@ -68,6 +74,17 @@ namespace Oilexer.Utilities.Collections
             }
         }
 
+        public int IndexOf(TItem element)
+        {
+            for (int i = 0, offset = 0; i < this.collections.Count; offset += this.collections[i++].Count)
+            {
+                int index = this.collections[i].IndexOf(element);
+                if (index == -1)
+                    continue;
+                return offset + index;
+            }
+            return -1;
+        }
         #endregion
 
         #region IEnumerable<TItem> Members
@@ -93,20 +110,11 @@ namespace Oilexer.Utilities.Collections
 
         public TItem[] ToArray()
         {
-            throw new NotSupportedException();
+            TItem[] result = new TItem[this.Count];
+            for (int i = 0, offset = 0; i < this.collections.Count; offset += this.collections[i++].Count)
+                this.collections[i].CopyTo(result, offset);
+            return result;
         }
 
-        #region IControlledStateCollection<TItem> Members
-
-
-        public int IndexOf(TItem element)
-        {
-            for (int i = 0, j = 0; i < this.Count; j += this.collections[i].Count, i++)
-                if (this.collections[i].Contains(element))
-                    return j + this.collections[i].IndexOf(element);
-            return -1;
-        }
-
-        #endregion
     }
 }

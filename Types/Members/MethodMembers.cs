@@ -33,20 +33,15 @@ namespace Oilexer.Types.Members
             InitializeValuesCollection();
         }
 
-        public MethodMembers(IMemberParentType targetDeclaration, IDictionary<string, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
-        {
-            InitializeValuesCollection();
-        }
-        protected MethodMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
+        public MethodMembers(IMemberParentType targetDeclaration, MethodMembers sibling)
+            : base(targetDeclaration, sibling)
         {
             InitializeValuesCollection();
         }
 
         private void InitializeValuesCollection()
         {
-            this.valuesCollection = new ValuesCollection(this.dictionaryCopy.Values);
+            this.valuesCollection = new ValuesCollection(base.Values);
         }
 
         #region IMethodMembers Members
@@ -54,7 +49,7 @@ namespace Oilexer.Types.Members
         [DebuggerHidden]
         public new IMethodMembers GetPartialClone(IMemberParentType parent)
         {
-            return new MethodMembers(parent, this.dictionaryCopy);
+            return new MethodMembers(parent, this);
         }
 
         [DebuggerHidden]
@@ -104,14 +99,13 @@ namespace Oilexer.Types.Members
             base.CheckIndexingStatus();
             if (this.ContainsKey(methodMember.GetUniqueIdentifier()))
                 throw new InvalidOperationException("method signature exists");
-            this.Add(methodMember.GetUniqueIdentifier(), methodMember);
+            this._Add(methodMember.GetUniqueIdentifier(), methodMember);
             return methodMember;
         }
-
-        protected override void Add(string key, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType> value)
+        protected internal override void _Add(string key, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType> value)
         {
             value.IsOverload = IsOverload(value.Name);
-            base.Add(key, value);
+            base._Add(key, value);
         }
 
         private bool IsOverload(string name)
@@ -189,7 +183,7 @@ namespace Oilexer.Types.Members
 
         public new IEnumerator<KeyValuePair<string, IMethodMember>> GetEnumerator()
         {
-            foreach (KeyValuePair<string, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>> item in base.dictionaryCopy)
+            foreach (KeyValuePair<string, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>> item in (this as IEnumerable<KeyValuePair<string, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>>>))
                 yield return new KeyValuePair<string, IMethodMember>(item.Key, (IMethodMember)item.Value);
             yield break;
         }

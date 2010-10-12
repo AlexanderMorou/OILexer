@@ -14,8 +14,8 @@ namespace Oilexer.Types.Members
         {
 
         }
-        public ExpressionCoercionMembers(IMemberParentType targetDeclaration, IDictionary<string, IExpressionCoercionMember> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
+        public ExpressionCoercionMembers(IMemberParentType targetDeclaration, ExpressionCoercionMembers sibling)
+            : base(targetDeclaration, sibling)
         {
 
         }
@@ -38,7 +38,7 @@ namespace Oilexer.Types.Members
         public new IExpressionCoercionMembers GetPartialClone(IMemberParentType parent)
         {
             if (this.TargetDeclaration is ISegmentableDeclaredType)
-                return new ExpressionCoercionMembers(parent, this.dictionaryCopy);
+                return new ExpressionCoercionMembers(parent, this);
             else
                 throw new NotSupportedException("The parent type is non-segmentable.");
         }
@@ -58,7 +58,7 @@ namespace Oilexer.Types.Members
             if (!(side == BinaryOperatorOverloadContainingSide.Both && otherSide == null))
                 binOpOvrMember.OtherSide = otherSide;
             binOpOvrMember.Operator = overloadedOperator;
-            base.Add(binOpOvrMember.GetUniqueIdentifier(), binOpOvrMember);
+            this._Add(binOpOvrMember.GetUniqueIdentifier(), binOpOvrMember);
             return binOpOvrMember;
         }
 
@@ -106,7 +106,7 @@ namespace Oilexer.Types.Members
         {
             IUnaryOperatorOverloadMember unaryOp = new UnaryOperatorOverloadMember(this.TargetDeclaration);
             unaryOp.Operator = overloadedOperator;
-            base.Add(unaryOp.GetUniqueIdentifier(), unaryOp);
+            this._Add(unaryOp.GetUniqueIdentifier(), unaryOp);
             return unaryOp;
         }
 
@@ -126,7 +126,7 @@ namespace Oilexer.Types.Members
             typeConv.CoercionType = coercionType;
             typeConv.Requirement = requirement;
             typeConv.Direction = direction;
-            base.Add(typeConv.GetUniqueIdentifier(), typeConv);
+            this._Add(typeConv.GetUniqueIdentifier(), typeConv);
             return typeConv;
         }
 

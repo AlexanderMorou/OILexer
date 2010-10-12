@@ -15,18 +15,13 @@ namespace Oilexer.Types.Members
         Members<IFieldMember, IFieldParentType, CodeMemberField>,
         IFieldMembers
     {
-        protected FieldMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-
         public FieldMembers(IFieldParentType targetDeclaration)
             : base(targetDeclaration)
         {
 
         }
-        public FieldMembers(IFieldParentType targetDeclaration, IDictionary<string, IFieldMember> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
+        public FieldMembers(IFieldParentType targetDeclaration, FieldMembers sibling)
+            : base(targetDeclaration, sibling)
         {
 
         }
@@ -40,7 +35,7 @@ namespace Oilexer.Types.Members
         public new IFieldMembers GetPartialClone(IFieldParentType parent)
         {
             if (this.TargetDeclaration is ISegmentableDeclaredType)
-                return new FieldMembers(parent, this.dictionaryCopy);
+                return new FieldMembers(parent, this);
             else
                 throw new NotSupportedException("The parent type is non-segmentable.");
         }
@@ -66,7 +61,7 @@ namespace Oilexer.Types.Members
             IFieldMember result = new FieldMember(nameAndType, this.TargetDeclaration);
             if (initializationExpression != null)
                 result.InitializationExpression = initializationExpression;
-            this.Add(result.Name, result);
+            this._Add(result.Name, result);
             return result;
         }
 

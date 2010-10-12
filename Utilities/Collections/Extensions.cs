@@ -7,6 +7,12 @@ namespace Oilexer.Utilities.Collections
 {
     public static class Extensions
     {
+        public static IReadOnlyCollection<TLower> GetCovariant<TLower, THigher>(this IReadOnlyCollection<THigher> source)
+            where THigher :
+                TLower
+        {
+            return new CovariantReadOnlyCollection<TLower, THigher>(source);
+        }
 
         /// <summary>
         /// Performs <paramref name="f"/> on all <typeparamref name="T"/> intances in <paramref name="e"/>.

@@ -39,5 +39,17 @@ namespace Oilexer.FiniteAutomata.Rules
         {
             return this.Source.Name;
         }
+
+        #region IGrammarSymbol Members
+
+        public string ElementName
+        {
+            get
+            {
+                return this.Source.Name;
+            }
+        }
+
+        #endregion
     }
 }

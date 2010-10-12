@@ -20,7 +20,7 @@ namespace Oilexer.Types
         {
             if (attributeType.TypeInstance.IsGeneric)
                 throw new ArgumentException("Attributes cannot be generic.");
-            foreach (IAttributeDeclaration iad in this.baseCollection)
+            foreach (IAttributeDeclaration iad in this.baseList)
                 if (iad.AttributeType.Equals(iad))
                     return true;
             return false;
@@ -47,63 +47,63 @@ namespace Oilexer.Types
         public IAttributeDeclaration AddNew(ITypeReference attributeType)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(IType attributeType)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(Type attributeType)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(ITypeReference attributeType, params IAttributeConstructorParameter[] parameters)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType, parameters);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(IType attributeType, params IAttributeConstructorParameter[] parameters)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType, parameters);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(Type attributeType, params IAttributeConstructorParameter[] parameters)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType, parameters);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(ITypeReference attributeType, IAttributeConstructorParameter[] parameters, IAttributePropertyParameter[] namedParameters)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType, parameters, namedParameters);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(IType attributeType, IAttributeConstructorParameter[] parameters, IAttributePropertyParameter[] namedParameters)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType, parameters, namedParameters);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeDeclaration AddNew(Type attributeType, IAttributeConstructorParameter[] parameters, IAttributePropertyParameter[] namedParameters)
         {
             IAttributeDeclaration item = new AttributeDeclaration(attributeType, parameters, namedParameters);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 

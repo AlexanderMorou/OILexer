@@ -57,5 +57,13 @@ namespace Oilexer.FiniteAutomata.Rules
         {
             return string.Format("{0} ({1})", base.ToString(), this.SourceItem.Name);
         }
+
+        public override string ElementName
+        {
+            get
+            {
+                return this.SourceItem.Name;
+            }
+        }
     }
 }

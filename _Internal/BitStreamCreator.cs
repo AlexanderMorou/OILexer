@@ -195,7 +195,7 @@ namespace Oilexer._Internal
         {
             IMethodMember purgeMethod = result.Methods.AddNew(new TypedName("Purge", typeof(void)));
             purgeMethod.AccessLevel = DeclarationAccessLevel.Public;
-//          actualSize = 0;
+//          this.actualSize = 0;
             purgeMethod.Assign(charBufferSize.GetReference(), PrimitiveExpression.NumberZero);
             return purgeMethod;
         }
@@ -204,12 +204,12 @@ namespace Oilexer._Internal
         {
             /* *
              * Full Method:
-             * if (buffer == null)
+             * if (this.buffer == null)
              *     GrowBuffer(2);
-             * else if (buffer.Length < actualSize + 1)
-             *     GrowBuffer(actualSize + 1);
-             * buffer[actualSize] = c;
-             * actualSize++;
+             * else if (this.buffer.Length < this.actualSize + 1)
+             *     GrowBuffer(this.actualSize + 1);
+             * buffer[this.actualSize] = c;
+             * this.actualSize++;
              * */
             IMethodMember pushMethod = result.Methods.AddNew(new TypedName("Push", typeof(void)));
             pushMethod.AccessLevel = DeclarationAccessLevel.Public;

@@ -18,11 +18,7 @@ namespace Oilexer.Types
             : base(targetDeclaration)
         {
         }
-        protected DelegateTypeParameterMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-    #endregion
+        #endregion
 
         protected override IMembers<IDelegateTypeParameterMember, IParameteredDeclaration<IDelegateTypeParameterMember, CodeTypeDelegate, ITypeParent>, CodeParameterDeclarationExpression> OnGetPartialClone(IParameteredDeclaration<IDelegateTypeParameterMember, CodeTypeDelegate, ITypeParent> parent)
         {
@@ -39,7 +35,7 @@ namespace Oilexer.Types
         public IDelegateTypeParameterMember AddNew(TypedName data)
         {
             IDelegateTypeParameterMember result = new DelegateTypeParameterMember(data, (IDelegateType)this.TargetDeclaration);
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 

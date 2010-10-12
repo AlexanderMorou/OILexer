@@ -72,6 +72,7 @@ namespace Oilexer
         private const string PhaseName_TokenCaptureConstruction     = "Token Capture Construction";
         private const string PhaseName_TokenEnumConstruction        = "Token Enum Construction";
         private const string PhaseName_RuleStructureConstruction    = "Rule Structure Construction";
+        private const string PhaseName_Parsing                      = "Parsing";
         //TitleSequence_CharacterSetCache.Length, TitleSequence_CharacterSetComputations.Length, TitleSequence_VocabularyCache.Length, TitleSequence_VocabularyComputations.Length, TitleSequence_NumberOfRules.Length, TitleSequence_NumberOfTokens.Length, PhaseName_Linking.Length, PhaseName_ExpandingTemplates.Length, PhaseName_Deliteralization.Length, PhaseName_InliningTokens.Length, PhaseName_TokenNFAConstruction.Length , PhaseName_TokenDFAConstruction.Length , PhaseName_TokenDFAReduction.Length, PhaseName_RuleNFAConstruction.Length  , PhaseName_RuleDFAConstruction.Length  , PhaseName_CallTreeAnalysis.Length , PhaseName_ObjectModelConstruction.Length  , PhaseName_TokenCaptureConstruction.Length , PhaseName_TokenEnumConstruction.Length, PhaseName_RuleStructureConstruction.Length
         /// <summary>
         /// Defines the valid options for the <see cref="Program"/>.
@@ -143,8 +144,6 @@ namespace Oilexer
         /// call site.</param>
         private static void Main(string[] args)
         {
-            BuildTupleSamples();
-            return;
             //Console.BackgroundColor = ConsoleColor.DarkBlue;
             //Console.ForegroundColor = ConsoleColor.White;
             var consoleTitle = Console.Title;
@@ -382,6 +381,7 @@ namespace Oilexer
             sw.Start();
             resultsOfParse = gp.Parse(file);
             sw.Stop();
+            var parseTime = sw.Elapsed;
             var tLenMax = (from e in resultsOfParse.Result
                            let scannableEntry = e as IScannableEntry
                            where scannableEntry != null
@@ -418,6 +418,7 @@ namespace Oilexer
                 }
                 catch (IOException) { }
                 ParserBuilderResults resultsOfBuild = Build(resultsOfParse);
+                resultsOfBuild.PhaseTimes._AddInternal(ParserBuilderPhase.Parsing, parseTime);
                 if (resultsOfBuild == null)
                     goto errorChecker;
                 
@@ -1318,6 +1319,9 @@ namespace Oilexer
                     break;
                 case ParserBuilderPhase.ObjectModelRuleStructureConstruction:
                     op = PhaseName_RuleStructureConstruction;
+                    break;
+                case ParserBuilderPhase.Parsing:
+                    op = PhaseName_Parsing;
                     break;
             }
             return op;

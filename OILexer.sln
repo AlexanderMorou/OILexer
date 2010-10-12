@@ -11,14 +11,14 @@ Global
 		SccNumberOfProjects = 4
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs04
+		SccProjectUniqueName0 = OILexerParser.csproj
 		SccLocalPath0 = .
-		SccProjectUniqueName1 = OILexer.csproj
-		SccLocalPath1 = .
-		SccProjectUniqueName2 = OILexerParser.csproj
+		SccProjectUniqueName1 = VSOILexer\\VSOILexer.csproj
+		SccProjectName1 = VSOILexer
+		SccLocalPath1 = VSOILexer
+		SccProjectUniqueName2 = OILexer.csproj
 		SccLocalPath2 = .
-		SccProjectUniqueName3 = VSOILexer\\VSOILexer.csproj
-		SccProjectName3 = VSOILexer
-		SccLocalPath3 = VSOILexer
+		SccLocalPath3 = .
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

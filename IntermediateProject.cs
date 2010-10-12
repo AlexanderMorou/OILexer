@@ -134,6 +134,8 @@ namespace Oilexer
         /// <see cref="IntermediateProject"/>.</returns>
         public IIntermediateProject GetRootDeclaration()
         {
+            if (this.baseDeclaration == null)
+                return this;
             return this.baseDeclaration;
         }
 

@@ -18,7 +18,7 @@ namespace Oilexer.Types.Members
         {
 
         }
-        public ConstructorMembers(IMemberParentType targetDeclaration, IDictionary<string, IConstructorMember> partialBaseMembers)
+        public ConstructorMembers(IMemberParentType targetDeclaration, ConstructorMembers partialBaseMembers)
             : base(targetDeclaration, partialBaseMembers)
         {
 
@@ -33,7 +33,7 @@ namespace Oilexer.Types.Members
 
         public new IConstructorMembers GetPartialClone(IMemberParentType parent)
         {
-            return new ConstructorMembers(parent, this.dictionaryCopy);
+            return new ConstructorMembers(parent, this);
         }
 
         public IConstructorMember AddNew(IExpressionCollection cascadeMembers, ConstructorCascadeTarget cascadeExpressionsTarget, params TypedName[] parameters)
@@ -45,7 +45,7 @@ namespace Oilexer.Types.Members
                 foreach (IExpression cascParam in cascadeMembers)
                     result.CascadeMembers.Add(cascParam);
             result.CascadeExpressionsTarget = cascadeExpressionsTarget;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 
@@ -56,7 +56,7 @@ namespace Oilexer.Types.Members
 
         public new void Add(IConstructorMember constructor)
         {
-            this.dictionaryCopy.Add(constructor.GetUniqueIdentifier(), constructor);
+            this._Add(constructor.GetUniqueIdentifier(), constructor);
         }
         #endregion
 

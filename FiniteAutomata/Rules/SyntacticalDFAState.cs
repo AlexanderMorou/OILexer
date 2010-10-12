@@ -28,10 +28,7 @@ namespace Oilexer.FiniteAutomata.Rules
 
         protected override bool SourceSetPredicate(IProductionRuleSource source)
         {
-            if (!(source is IProductionRuleItem))
-                return false;
-            var tSource = (IProductionRuleItem)source;
-            return !string.IsNullOrEmpty(tSource.Name);
+            return source is IProductionRuleItem;
         }
 
         public bool ContainsRule(IProductionRuleEntry rule)

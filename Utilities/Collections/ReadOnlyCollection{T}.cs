@@ -1,7 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Collections.ObjectModel;
+using System.Text;
+ /*---------------------------------------------------------------------\
+ | Copyright © 2010 Allen Copeland Jr.                                  |
+ |----------------------------------------------------------------------|
+ | The Abstraction Project's code is provided under a contract-release  |
+ | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
+ \-------------------------------------------------------------------- */
 
 namespace Oilexer.Utilities.Collections
 {
@@ -14,8 +20,8 @@ namespace Oilexer.Utilities.Collections
         {
 
         }
-        public ReadOnlyCollection(ICollection<T> baseCollection)
-            : base(baseCollection)
+        public ReadOnlyCollection(IList<T> baseList)
+            : base(baseList)
         {
 
         }
