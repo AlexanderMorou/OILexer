@@ -4,7 +4,7 @@ UnaryExpression                          ::=>
     UnaryOperators:Operators;*
     PrimaryExpression:Operand;              ;
 
-UnaryOperators                            ::=>
+UnaryOperators                           ::=>
     CastOperator                            |
     UnaryOperator                           ;
 
@@ -120,23 +120,21 @@ ConditionalExpression                     ::=
     )?                                      ;
 
 AssignmentExpression                      ::=
-    BinaryOperationExpression<
-        AssignmentExpression,
-        (
-            '='                             | 
-            "+="                            | 
-            "-="                            | 
-            "*="                            | 
-            "/="                            | 
-            "%="                            | 
-            "&="                            | 
-            "|="                            | 
-            "^="                            | 
-            "<<="                           | 
-            ">>="
-        ):Operator;,
-        UnaryExpression,
-        PrecedenceAssociation.Right>        ;
+    UnaryExpression:Target;
+    (
+        '='                                 | 
+        "+="                                | 
+        "-="                                | 
+        "*="                                | 
+        "/="                                | 
+        "%="                                | 
+        "&="                                | 
+        "|="                                | 
+        "^="                                | 
+        "<<="                               | 
+        ">>="
+    ):Operator;                         
+    Expression:Continuation;                ;
 
 NonAssignmentExpression                  ::=>
     ConditionalExpression                   |

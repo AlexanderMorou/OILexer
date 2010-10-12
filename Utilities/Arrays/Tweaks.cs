@@ -157,5 +157,21 @@ namespace Oilexer.Utilities.Arrays
             followers.CopyTo(result, 1);
             return result;
         }
+
+        public static T[][] Chunk<T>(this T[] series, int chunkSize)
+        {
+            int chunkCount = (int)Math.Ceiling(((double)series.Length) / chunkSize);
+            T[][] result = new T[chunkCount][];
+            for (int i = 0; i < chunkCount; i++)
+            {
+                int min = i * chunkSize;
+                int max = Math.Min((i + 1) * chunkSize, series.Length);
+                int size = max - min;
+                T[] current = result[i] = new T[size];
+                for (int j = 0; j < size; j++)
+                    current[j] = series[min + j];
+            }
+            return result;
+        }
     }
 }

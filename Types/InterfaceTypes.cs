@@ -22,9 +22,8 @@ namespace Oilexer.Types
         {
         }
 
-        internal InterfaceTypes(ITypeParent parent, IDictionary<string, IInterfaceType> basePartialMembers)
-            :
-            base(parent, basePartialMembers)
+        internal InterfaceTypes(ITypeParent parent, InterfaceTypes sibling)
+            : base(parent, sibling)
         {
 
         }
@@ -48,7 +47,7 @@ namespace Oilexer.Types
             IInterfaceType ict = new InterfaceType(name, this.TargetDeclaration);
             foreach (TypeConstrainedName tcn in typeParameters)
                 ict.TypeParameters.AddNew(tcn.Name, tcn.TypeReferences, tcn.RequiresConstructor);
-            base.Add(ict.GetUniqueIdentifier(), ict);
+            this._Add(ict.GetUniqueIdentifier(), ict);
             return ict;
         }
 
@@ -61,7 +60,7 @@ namespace Oilexer.Types
 
         public IInterfaceTypes GetPartialClone(ITypeParent partialTarget)
         {
-            return new InterfaceTypes(partialTarget, this.dictionaryCopy);
+            return new InterfaceTypes(partialTarget, this);
         }
 
         #endregion

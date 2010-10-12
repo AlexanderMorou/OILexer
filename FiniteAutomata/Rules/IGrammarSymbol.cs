@@ -10,5 +10,10 @@ namespace Oilexer.FiniteAutomata.Rules
     /// </summary>
     public interface IGrammarSymbol
     {
+        /// <summary>
+        /// Returns the <see cref="String"/> value which
+        /// represents the symbol's name.
+        /// </summary>
+        string ElementName { get; }
     }
 }

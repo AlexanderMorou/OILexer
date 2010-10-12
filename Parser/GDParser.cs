@@ -2457,12 +2457,12 @@ namespace Oilexer.Parser
         {
             if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.LessThan, true))
             {
-                List<ICollection<IProductionRule>> serii = new List<ICollection<IProductionRule>>();
+                List<IList<IProductionRule>> serii = new List<IList<IProductionRule>>();
                 PopAhead();
                 templateDepth++;
                 while (true)
                 {
-                    ICollection<IProductionRule> current = new Collection<IProductionRule>();
+                    IList<IProductionRule> current = new List<IProductionRule>();
                     ParseProductionRule(current, container);
                     ClearAhead();
                     serii.Add(current);

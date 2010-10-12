@@ -172,13 +172,13 @@ namespace Oilexer.Translation
             {
                 Stack<INameSpaceDeclaration> sources = new Stack<INameSpaceDeclaration>();
                 var project = target.Project;
-                var dns = project.DefaultNameSpace.GetRootDeclaration();
+                var dns = project.GetRootDeclaration().DefaultNameSpace;
                 INameSpaceDeclaration current = (INameSpaceDeclaration)target.ParentTarget;
                 while (current != null)
                 {
                     if (current.ParentTarget is INameSpaceDeclaration)
                     {
-                        if (current == project.DefaultNameSpace.GetRootDeclaration())
+                        if (current == project.GetRootDeclaration().DefaultNameSpace)
                         {
                             goto combineName;
                         }

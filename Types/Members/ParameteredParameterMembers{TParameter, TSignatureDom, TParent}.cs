@@ -24,16 +24,6 @@ namespace Oilexer.Types.Members
         {
         }
 
-        public ParameteredParameterMembers(IParameteredDeclaration<TParameter, TSignatureDom, TParent> targetDeclaration, IDictionary<string, TParameter> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
-        {
-
-        }
-        protected ParameteredParameterMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-
         #endregion
 
 
@@ -47,7 +37,7 @@ namespace Oilexer.Types.Members
         public TParameter AddNew(TypedName data)
         {
             TParameter result = GetParameterMember(data);
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 

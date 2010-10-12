@@ -1,7 +1,13 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using System.Collections;
+ /*---------------------------------------------------------------------\
+ | Copyright © 2010 Allen Copeland Jr.                                  |
+ |----------------------------------------------------------------------|
+ | The Abstraction Project's code is provided under a contract-release  |
+ | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
+ \-------------------------------------------------------------------- */
 
 namespace Oilexer.Utilities.Collections
 {
@@ -15,11 +21,9 @@ namespace Oilexer.Utilities.Collections
     {
         /// <summary>:
         /// Gets the number of elements contained in the <see cref="IControlledStateCollection{T}"/>.</summary>
-        ///
         /// <returns>
         /// The number of elements contained in the <see cref="IControlledStateCollection{T}"/>.</returns>
         int Count { get; }
-
 
         /// <summary>
         /// Determines whether the <see cref="IControlledStateCollection{T}"/> contains a specific 
@@ -31,6 +35,7 @@ namespace Oilexer.Utilities.Collections
         /// otherwise, false.
         /// </returns>
         bool Contains(T item);
+
         /// <summary>
         /// Copies the elements of the <see cref="IControlledStateCollection{T}"/> to an
         /// <see cref="System.Array"/>, starting at a particular <see cref="System.Array"/> 
@@ -52,15 +57,13 @@ namespace Oilexer.Utilities.Collections
         /// is equal to or greater than the length of <paramref name="array"/>.-or-The 
         /// number of elements in the source <see cref="IControlledStateCollection{T}"/> is greater 
         /// than the available space from <paramref name="arrayIndex"/> to the 
-        /// end of the destination <paramref name="array"/>.-or-Type <typeparamref name="T"/> 
-        /// cannot be cast automatically to the type of the destination
-        /// <paramref name="array"/>.</exception>
-        void CopyTo(T[] array, int arrayIndex);
+        /// end of the destination <paramref name="array"/>.</exception>
+        void CopyTo(T[] array, int arrayIndex = 0);
 
         /// <summary>
         /// Returns the element at the index provided
         /// </summary>
-        /// <param name="index">The index of the member to find.</param>
+        /// <param name="index">The index of the element to get.</param>
         /// <returns>The instance of <typeparamref name="T"/> at the index provided.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">
         /// <paramref name="index"/> is  beyond the range of the 
@@ -75,6 +78,16 @@ namespace Oilexer.Utilities.Collections
         /// <returns>A new <see cref="System.Array"/> of <typeparamref name="T"/> instances.</returns>
         T[] ToArray();
 
+        /// <summary>
+        /// Returns the <see cref="Int32"/> ordinal index of the 
+        /// <paramref name="element"/> provided.
+        /// </summary>
+        /// <param name="element">The <typeparamref name="T"/>
+        /// instance to find within the <see cref="IControlledStateCollection{T}"/>.</param>
+        /// <returns>-1 if the <paramref name="element"/> was not found within
+        /// the <see cref="IControlledStateCollection{T}"/>; a positive <see cref="Int32"/>
+        /// value indicating the ordinal index of <paramref name="element"/>
+        /// otherwise.</returns>
         int IndexOf(T element);
     }
 }

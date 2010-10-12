@@ -33,7 +33,7 @@ namespace Oilexer.Types
                 newNameSpace = new NameSpaceDeclaration(this.RootDeclaration, ((IIntermediateProject)this.RootDeclaration.ParentTarget).Partials.AddNew());
             else
                 newNameSpace = new NameSpaceDeclaration(this.RootDeclaration, this.RootDeclaration.ParentTarget);
-            this.baseCollection.Add(newNameSpace);
+            this.baseList.Add(newNameSpace);
             return newNameSpace;
         }
 
@@ -42,7 +42,7 @@ namespace Oilexer.Types
             if ((parentTarget is ISegmentableDeclarationTarget && this.RootDeclaration.ParentTarget is ISegmentableDeclarationTarget && ((ISegmentableDeclarationTarget)parentTarget).GetRootDeclaration().Equals(((ISegmentableDeclarationTarget)(this.RootDeclaration.ParentTarget)).GetRootDeclaration())) || parentTarget == this.RootDeclaration.ParentTarget)
             {
                 INameSpaceDeclaration partial = new NameSpaceDeclaration(this.RootDeclaration, parentTarget);
-                base.baseCollection.Add(partial);
+                base.baseList.Add(partial);
                 return partial;
             }
             throw new InvalidOperationException("Type-hierarchy must be identical to the root declaration");
@@ -86,10 +86,10 @@ namespace Oilexer.Types
             {
                 foreach (INameSpaceDeclaration insd in this)
                     insd.Dispose();
-                this.baseCollection.Clear();
+                this.baseList.Clear();
             }
             this.rootDeclaration = null;
-            this.baseCollection = null;
+            this.baseList = null;
         }
 
         #endregion
@@ -99,10 +99,10 @@ namespace Oilexer.Types
 
         public void Remove(INameSpaceDeclaration partial)
         {
-            if (!base.baseCollection.Contains(partial))
+            if (!base.baseList.Contains(partial))
                 return;
             partial.Dispose();
-            base.baseCollection.Remove(partial);
+            base.baseList.Remove(partial);
         }
 
         #endregion

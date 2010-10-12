@@ -19,15 +19,10 @@ namespace Oilexer.Types
             : base(targetDeclaration)
         {
         }
-        internal StructTypes(ITypeParent partialTarget, IDictionary<string, IStructType> basePartialMembers)
-            : base(partialTarget, basePartialMembers)
+        internal StructTypes(ITypeParent partialTarget, StructTypes sibling)
+            : base(partialTarget, sibling)
         {
         }
-        protected StructTypes(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-
         /// <summary>
         /// Adds a new instance of the <see cref="IStructType"/> to the <see cref="StructTypes"/>, given
         /// the <paramref name="name"/> provided.
@@ -46,7 +41,7 @@ namespace Oilexer.Types
             IStructType ist = new StructType(name, this.TargetDeclaration);
             foreach (TypeConstrainedName tcn in typeParameters)
                 ist.TypeParameters.AddNew(tcn.Name, tcn.TypeReferences, tcn.RequiresConstructor);
-            base.Add(ist.GetUniqueIdentifier(), ist);
+            base._Add(ist.GetUniqueIdentifier(), ist);
             return ist;
         }
 
@@ -69,7 +64,7 @@ namespace Oilexer.Types
 
         public IStructTypes GetPartialClone(ITypeParent partialTarget)
         {
-            return new StructTypes(partialTarget, this.dictionaryCopy);
+            return new StructTypes(partialTarget, this);
         }
 
         #endregion

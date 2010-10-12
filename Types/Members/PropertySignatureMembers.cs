@@ -22,8 +22,8 @@ namespace Oilexer.Types.Members
         {
         }
 
-        public PropertySignatureMembers(ISignatureMemberParentType targetDeclaration, IDictionary<string, IPropertySignatureMember> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
+        public PropertySignatureMembers(ISignatureMemberParentType targetDeclaration, PropertySignatureMembers sibling)
+            : base(targetDeclaration, sibling)
         {
         }
 
@@ -49,7 +49,7 @@ namespace Oilexer.Types.Members
                 result.Parameters.AddNew(tn);
             result.HasGet = hasGet;
             result.HasSet = hasSet;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 
@@ -67,13 +67,13 @@ namespace Oilexer.Types.Members
                 result.Parameters.AddNew(tn);
             result.HasGet = hasGet;
             result.HasSet = hasSet;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 
         public new IPropertySignatureMembers GetPartialClone(ISignatureMemberParentType parent)
         {
-            return new PropertySignatureMembers(parent, this.dictionaryCopy);
+            return new PropertySignatureMembers(parent, this);
         }
 
         #endregion
@@ -105,20 +105,13 @@ namespace Oilexer.Types.Members
             IPropertySignatureMember result = new PropertySignatureMember(nameAndType, this.TargetDeclaration);
             result.HasGet = hasGet;
             result.HasSet = hasSet;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 
-
-        #endregion
-
-
-
-        #region IPropertySignatureMembers<IPropertySignatureMember,ISignatureMemberParentType> Members
-
         public new void Add(IPropertySignatureMember ipm)
         {
-            base.Add(ipm.GetUniqueIdentifier(), ipm);
+            base._Add(ipm.GetUniqueIdentifier(), ipm);
         }
 
         #endregion

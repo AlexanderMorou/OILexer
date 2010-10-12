@@ -52,7 +52,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
         public TemplateReferenceProductionRuleItem(IProductionRuleTemplateEntry reference, ICollection<IProductionRuleSeries> parts, int column, int line, long position)
         {
             foreach (IProductionRuleSeries iprs in parts)
-                baseCollection.Add(iprs);
+                baseList.Add(iprs);
             this.column = column;
             this.line = line;
             this.position = position;
@@ -64,7 +64,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             this.ConditionalConstraints = new ReadOnlyDictionary<string, string>(constraints);
             
             foreach (IProductionRuleSeries iprs in parts)
-                baseCollection.Add(iprs);
+                baseList.Add(iprs);
             this.column = column;
             this.line = line;
             this.position = position;

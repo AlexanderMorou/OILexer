@@ -169,7 +169,7 @@ namespace Oilexer.Parser.GDFileData
 
             internal void Add(IPreprocessorDirective directive)
             {
-                baseCollection.Add(directive);
+                baseList.Add(directive);
             }
         }
 

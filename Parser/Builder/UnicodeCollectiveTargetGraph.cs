@@ -15,7 +15,7 @@ namespace Oilexer.Parser.Builder
 
         public void Add(IUnicodeTargetGraph graph)
         {
-            base.baseCollection.Add(graph);
+            base.baseList.Add(graph);
         }
 
         public IUnicodeTargetGraph Find(IUnicodeTargetGraph duplicate)

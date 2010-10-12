@@ -162,10 +162,8 @@ namespace Oilexer.FiniteAutomata
             this.Enumerate(ref state, enumStack);
             var edges = this.ObtainEdges();
             foreach (var edge in edges)
-            {
                 if (edge.StateValue == -1)
                     edge.StateValue = state++;
-            }
         }
 
         /// <summary>

@@ -38,7 +38,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             this.position = position;
             foreach (IProductionRuleSeries iprs in serii)
                 foreach (IProductionRule ipr in iprs)
-                    this.baseCollection.Add(ipr);
+                    this.baseList.Add(ipr);
         }
 
         public ProductionRuleGroupItem(IProductionRule[] items, int column, int line, long position)
@@ -47,7 +47,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             this.column = column;
             this.position = position;
             foreach (IProductionRule ipr in items)
-                baseCollection.Add(ipr);
+                baseList.Add(ipr);
         }
         public ProductionRuleGroupItem(Dictionary<string, string> constraints, IProductionRule[] items, int column, int line, long position)
             : this(items, column, line, position)
@@ -160,7 +160,7 @@ namespace Oilexer.Parser.GDFileData.ProductionRuleExpression
             bool first = true;
             if (appendExtra)
                 sb.Append("(");
-            foreach (IProductionRule ite in this.baseCollection)
+            foreach (IProductionRule ite in this.baseList)
             {
                 if (first)
                     first = false;

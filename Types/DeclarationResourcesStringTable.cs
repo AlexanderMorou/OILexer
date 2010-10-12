@@ -20,8 +20,8 @@ namespace Oilexer.Types
             this.resources = resources;
         }
 
-        internal DeclarationResourcesStringTable(IDictionary<string, IDeclarationResourcesStringTableEntry> basePartials, IDictionary<string, string> originalKeys, IDeclarationResources resources)
-            : base(basePartials)
+        internal DeclarationResourcesStringTable(DeclarationResourcesStringTable sibling, IDictionary<string, string> originalKeys, IDeclarationResources resources)
+            : base(sibling)
         {
             this.originalKeys = originalKeys;
             this.resources = resources;
@@ -36,7 +36,7 @@ namespace Oilexer.Types
             if (!(this.originalKeys.ContainsKey(name) || base.ContainsKey(name.ToLower())))
             {
                 originalKeys.Add(name, newKey);
-                base.Add(newKey, entry);
+                base._Add(newKey, entry);
             }
             else if (!this.originalKeys.ContainsKey(name))
             {
@@ -44,18 +44,15 @@ namespace Oilexer.Types
                 while (base.ContainsKey(newKey))
                     newKey = string.Format("{0}{1}", name.ToLower(), i);
                 originalKeys.Add(name, newKey);
-                base.Add(newKey, entry);
+                base._Add(newKey, entry);
                 entry.Name = newKey;
             }
             return entry;
         }
 
-        public override sealed IDeclarationResourcesStringTableEntry this[string key]
+        protected override IDeclarationResourcesStringTableEntry OnGetThis(string key)
         {
-            get
-            {
-                return this.dictionaryCopy[originalKeys[key]];
-            }
+            return base[originalKeys[key]];
         }
 
         public override sealed bool ContainsKey(string key)
@@ -66,12 +63,12 @@ namespace Oilexer.Types
         public new void Remove(string name)
         {
             this[name].Dispose();
-            base.Remove(name);
+            base._Remove(name);
         }
 
         public new void Clear()
         {
-            base.Clear();
+            base._Clear();
         }
 
         public void Rebuild()
@@ -88,7 +85,7 @@ namespace Oilexer.Types
 
         public IDeclarationResourcesStringTable GetPartialClone(IDeclarationResources targetDeclaration)
         {
-            return new DeclarationResourcesStringTable(this.dictionaryCopy, this.originalKeys, targetDeclaration);
+            return new DeclarationResourcesStringTable(this, this.originalKeys, targetDeclaration);
         }
 
         #endregion

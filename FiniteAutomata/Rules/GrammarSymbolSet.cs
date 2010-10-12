@@ -80,7 +80,7 @@ namespace Oilexer.FiniteAutomata.Rules
             sorted.Sort(new GrammarSymbolComparer());
 
             foreach (var item in sorted)
-                base.baseCollection.Add(item);
+                base.baseList.Add(item);
         }
 
         private void InjectTokenLiteralSet(InlinedTokenEntry token, ICollection<IGrammarSymbol> sorted)

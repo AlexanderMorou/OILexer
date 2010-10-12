@@ -42,8 +42,8 @@ namespace Oilexer.Types
             this.targetDeclaration = targetDeclaration;
         }
 
-        internal NameSpaceDeclarations(INameSpaceParent targetDeclaration, IDictionary<string, INameSpaceDeclaration> basePartialMembers)
-            : base(basePartialMembers)
+        internal NameSpaceDeclarations(INameSpaceParent targetDeclaration, NameSpaceDeclarations sibling)
+            : base(sibling)
         {
             this.targetDeclaration = targetDeclaration;
         }
@@ -94,13 +94,12 @@ namespace Oilexer.Types
         public INameSpaceDeclaration AddNew(string name)
         {
             INameSpaceDeclaration result = new NameSpaceDeclaration(name, this.targetDeclaration);
-            this.Add(name, result);
+            this._Add(name, result);
             return result;
         }
-
-        protected override void Add(string key, INameSpaceDeclaration value)
+        protected internal override void _Add(string key, INameSpaceDeclaration value)
         {
-            base.Add(key, value);
+            base._Add(key, value);
             this.OnItemAdded(value);
         }
 
@@ -117,7 +116,7 @@ namespace Oilexer.Types
             if (this.ContainsKey(nameSpace.Name))
                 throw new InvalidOperationException("namespace exists");
             else
-                this.Add(nameSpace.Name, nameSpace);
+                this._Add(nameSpace.Name, nameSpace);
         }
 
         #endregion
@@ -128,7 +127,7 @@ namespace Oilexer.Types
         public new void Remove(string name)
         {
             INameSpaceDeclaration removedItem = this[name];
-            base.Remove(name);
+            base._Remove(name);
             this.OnItemRemoved(removedItem);
         }
 
@@ -142,7 +141,7 @@ namespace Oilexer.Types
 
         public new void Clear()
         {
-            base.Clear();
+            this._Clear();
         }
         
         public new INameSpaceDeclaration this[int index]
@@ -200,7 +199,7 @@ namespace Oilexer.Types
 
         public INameSpaceDeclarations GetPartialClone(INameSpaceParent basePartial)
         {
-            return new NameSpaceDeclarations(basePartial,this.dictionaryCopy);
+            return new NameSpaceDeclarations(basePartial, this);
         }
 
         #endregion

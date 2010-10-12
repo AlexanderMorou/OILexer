@@ -102,5 +102,6 @@ namespace Oilexer.Parser.Builder
         /// The parser builder is compiling the project.
         /// </summary>
         Compiling = 0x101001,
+        Parsing =   0x102002,
     }
 }

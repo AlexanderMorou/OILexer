@@ -17,10 +17,7 @@ namespace Oilexer.FiniteAutomata.Tokens
 
         protected override bool SourceSetPredicate(ITokenSource source)
         {
-            if (!(source is ITokenItem))
-                return false;
-            var tSource = (ITokenItem)source;
-            return !string.IsNullOrEmpty(tSource.Name);
+            return source is ITokenItem;
         }
 
         protected override IFiniteAutomataTransitionTable<RegularLanguageSet, RegularLanguageDFAState, RegularLanguageDFAState> InitializeOutTransitionTable()

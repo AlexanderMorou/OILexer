@@ -20,10 +20,6 @@ namespace Oilexer.Types.Members
             : base(targetDeclaration)
         {
         }
-        protected ConstructorParameterMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
         #endregion
 
         protected override IMembers<IConstructorParameterMember, IParameteredDeclaration<IConstructorParameterMember, CodeConstructor, IMemberParentType>, CodeParameterDeclarationExpression> OnGetPartialClone(IParameteredDeclaration<IConstructorParameterMember, CodeConstructor, IMemberParentType> parent)

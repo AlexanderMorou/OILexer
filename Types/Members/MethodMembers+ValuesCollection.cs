@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using Oilexer.Utilities.Collections;
 using System.CodeDom;
 using Oilexer.Utilities.Arrays;
@@ -8,22 +9,22 @@ using System.Collections;
 
 namespace Oilexer.Types.Members
 {
-	partial class MethodMembers
-	{
+    partial class MethodMembers
+    {
         new public class ValuesCollection :
             IReadOnlyCollection<IMethodMember>
         {
             /// <summary>
             /// Private reference of the <see cref="ValuesCollection"/> data source.
             /// </summary>
-            private ICollection<IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>> baseCollection;
+            private Members<IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>, IMemberParentType, CodeMemberMethod>.ValuesCollection baseList;
             /// <summary>
             /// Creates a new instance of the values collection.
             /// </summary>
-            /// <param name="baseCollection">The base collection which contains the original typed entries.</param>
-            internal ValuesCollection(ICollection<IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>> baseCollection)
+            /// <param name="baseList">The base collection which contains the original typed entries.</param>
+            internal ValuesCollection(Members<IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>, IMemberParentType, CodeMemberMethod>.ValuesCollection baseList)
             {
-                this.baseCollection = baseCollection;
+                this.baseList = baseList;
             }
 
             #region IReadOnlyCollection<IMethodMember> Members
@@ -36,7 +37,7 @@ namespace Oilexer.Types.Members
             /// <returns>True if the <paramref name="item"/> exists within the <see cref="ValuesCollection"/>.</returns>
             public bool Contains(IMethodMember item)
             {
-                return baseCollection.Contains(item);
+                return baseList.Contains(item);
             }
 
             /// <summary>
@@ -47,7 +48,7 @@ namespace Oilexer.Types.Members
             /// <param name="arrayIndex">The point at which to start the copy.</param>
             public void CopyTo(IMethodMember[] array, int arrayIndex)
             {
-                IMethodMember[] resultItems = Tweaks.CastArray<IMethodMember, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>>(Special.GetCollectionItems(this.baseCollection));
+                IMethodMember[] resultItems = this.baseList.Cast<IMethodMember>().ToArray();
                 resultItems.CopyTo(array, arrayIndex);
                 resultItems = null;
             }
@@ -58,7 +59,7 @@ namespace Oilexer.Types.Members
             /// </summary>
             public int Count
             {
-                get { return this.baseCollection.Count; }
+                get { return this.baseList.Count; }
             }
 
             /// <summary>
@@ -68,7 +69,7 @@ namespace Oilexer.Types.Members
             /// <returns>A series of <see cref="IMethodMember"/> instance implementations as a <see cref="System.Array"/>.</returns>
             public IMethodMember[] ToArray()
             {
-                return Tweaks.CastArray<IMethodMember, IMethodSignatureMember<IMethodParameterMember, IMethodTypeParameterMember, CodeMemberMethod, IMemberParentType>>(Special.GetCollectionItems(this.baseCollection));
+                return baseList.Cast<IMethodMember>().ToArray();
             }
 
             /// <summary>
@@ -82,11 +83,7 @@ namespace Oilexer.Types.Members
                 {
                     if (index < 0)
                         throw new ArgumentOutOfRangeException("index", "below zero");
-                    int i = 0;
-                    foreach (IMethodMember imm in this.baseCollection)
-                        if (i++ == index)
-                            return imm;
-                    throw new ArgumentOutOfRangeException("index", "beyond last item");
+                    return this.baseList[index] as IMethodMember;
                 }
             }
 
@@ -102,7 +99,7 @@ namespace Oilexer.Types.Members
             /// can iterate the <see cref="ValuesCollection"/>.</returns>
             public IEnumerator<IMethodMember> GetEnumerator()
             {
-                foreach (IMethodMember imm in this.baseCollection)
+                foreach (IMethodMember imm in this.baseList)
                     yield return imm;
                 yield break;
             }
@@ -123,20 +120,10 @@ namespace Oilexer.Types.Members
 
             public int IndexOf(IMethodMember element)
             {
-                int index = -1;
-                int i = 0;
-                foreach (var currentElement in this.baseCollection)
-                    if (currentElement.Equals(element))
-                    {
-                        index = i;
-                        break;
-                    }
-                    else
-                        i++;
-                return index;
+                return this.baseList.IndexOf(element);
             }
 
             #endregion
         }
-	}
+    }
 }

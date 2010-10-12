@@ -70,7 +70,7 @@ namespace Oilexer.Types
             if ((parentTarget is ISegmentableDeclarationTarget && this.RootDeclaration.ParentTarget is ISegmentableDeclarationTarget && ((ISegmentableDeclarationTarget)parentTarget).GetRootDeclaration().Equals(((ISegmentableDeclarationTarget)(this.RootDeclaration.ParentTarget)).GetRootDeclaration())) || parentTarget == this.RootDeclaration.ParentTarget)
             {
                 TItem partial = this.GetNewPartial(parentTarget);
-                base.baseCollection.Add(partial);
+                base.baseList.Add(partial);
                 return partial;
             }
             throw new InvalidOperationException("Type-hierarchy must be identical to the root declaration");
@@ -87,7 +87,7 @@ namespace Oilexer.Types
                 newItem = this.GetNewPartial((ITypeParent)((ISegmentableDeclaredType)this.RootDeclaration.ParentTarget).Partials.AddNew());
             else
                 newItem = this.GetNewPartial(this.RootDeclaration.ParentTarget);
-            base.baseCollection.Add(newItem);
+            base.baseList.Add(newItem);
             return newItem;
         }
 
@@ -139,10 +139,10 @@ namespace Oilexer.Types
             {
                 foreach (TItem item in this)
                     item.Dispose();
-                this.baseCollection.Clear();
+                this.baseList.Clear();
             }
             this.rootDeclaration = default(TItem);
-            this.baseCollection = null;
+            this.baseList = null;
         }
 
         #endregion
@@ -152,10 +152,10 @@ namespace Oilexer.Types
 
         public void Remove(TItem partial)
         {
-            if (base.baseCollection.Contains(partial))
+            if (base.baseList.Contains(partial))
             {
                 partial.Dispose();
-                this.baseCollection.Remove(partial);
+                this.baseList.Remove(partial);
             }
         }
 

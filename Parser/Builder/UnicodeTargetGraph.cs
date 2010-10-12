@@ -24,7 +24,7 @@ namespace Oilexer.Parser.Builder
         public IUnicodeTarget Add(RegularLanguageDFAState target, bool targetIsOrigin)
         {
             UnicodeTarget result = new UnicodeTarget(target, targetIsOrigin);
-            base.dictionaryCopy.Add(target, result);
+            this._Add(target, result);
             return result;
         }
 

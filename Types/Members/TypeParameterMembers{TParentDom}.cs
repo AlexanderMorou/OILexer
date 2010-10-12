@@ -29,13 +29,8 @@ namespace Oilexer.Types.Members
             : base(targetDeclaration)
         {
         }
-        protected TypeParameterMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-
-        public TypeParameterMembers(IDeclaredType<TParentDom> targetDeclaration, IDictionary<string, ITypeParameterMember<TParentDom>> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
+        public TypeParameterMembers(IDeclaredType<TParentDom> targetDeclaration, TypeParameterMembers<TParentDom> sibling)
+            : base(targetDeclaration, sibling)
         {
         }
         #region TypeParameterMembers<ITypeParameterMember<TParentDom>,TParentDom> Members
@@ -153,7 +148,7 @@ namespace Oilexer.Types.Members
             item.RequiresConstructor = requiresConstructor;
             item.Constraints.AddRange(constraints.ToArray());
             item.SpecialCondition = specialCondition;
-            this.Add(item.Name, item);
+            this._Add(item.Name, item);
             return item;
         }
 
@@ -182,7 +177,7 @@ namespace Oilexer.Types.Members
         {
             if (!(parent is IDeclaredType<TParentDom>))
                 throw new ArgumentException("must be of type IDeclaredType<TParentDom>", "parent");
-            return new TypeParameterMembers<TParentDom>((IDeclaredType<TParentDom>)parent, this.dictionaryCopy);
+            return new TypeParameterMembers<TParentDom>((IDeclaredType<TParentDom>)parent, this);
         }
 
         protected override IMembers<ITypeParameterMember<TParentDom>, IDeclaredType<TParentDom>, CodeTypeParameter> OnGetPartialClone(IDeclaredType<TParentDom> parent)

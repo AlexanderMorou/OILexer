@@ -31,15 +31,10 @@ namespace Oilexer.Types.Members
             : base(targetDeclaration)
         {
         }
-        public TypeParameterMembers(TParent targetDeclaration, IDictionary<string, TItem> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
+        public TypeParameterMembers(TParent targetDeclaration, TypeParameterMembers<TItem, TDom, TParent> sibling)
+            : base(targetDeclaration, sibling)
         {
         }
-        protected TypeParameterMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-
         #region ITypeParameterMembers<TItem,TDom,TParent> Members
 
         /// <summary>

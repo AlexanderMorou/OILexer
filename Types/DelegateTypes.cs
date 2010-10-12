@@ -20,14 +20,9 @@ namespace Oilexer.Types
             base(parent)
         {
         }
-        protected DelegateTypes(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
 
-        public DelegateTypes(ITypeParent parent, IDictionary<string, IDelegateType> basePartialMembers)
-            :
-            base(parent, basePartialMembers)
+        public DelegateTypes(ITypeParent parent, DelegateTypes sibling)
+            : base(parent, sibling)
         {
 
         }
@@ -50,7 +45,7 @@ namespace Oilexer.Types
             IDelegateType ict = new DelegateType(name, this.TargetDeclaration);
             foreach (TypeConstrainedName tcn in typeParameters)
                 ict.TypeParameters.AddNew(tcn.Name, tcn.TypeReferences, tcn.RequiresConstructor);
-            base.Add(ict.GetUniqueIdentifier(), ict);
+            this._Add(ict.GetUniqueIdentifier(), ict);
             return ict;
         }
 
@@ -73,7 +68,7 @@ namespace Oilexer.Types
 
         public IDelegateTypes GetPartialClone(ITypeParent partialTarget)
         {
-            return new DelegateTypes(partialTarget, this.dictionaryCopy);
+            return new DelegateTypes(partialTarget, this);
         }
 
         #endregion

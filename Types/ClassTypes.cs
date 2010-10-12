@@ -19,13 +19,9 @@ namespace Oilexer.Types
             base(parent)
         {
         }
-        protected ClassTypes(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
 
-        public ClassTypes(ITypeParent parent, IDictionary<string, IClassType> basePartialMembers) :
-            base(parent, basePartialMembers)
+        public ClassTypes(ITypeParent parent, ClassTypes sibling) :
+            base(parent, sibling)
         {
             
         }
@@ -49,7 +45,7 @@ namespace Oilexer.Types
 
             foreach (TypeConstrainedName tcn in typeParameters)
                 ict.TypeParameters.AddNew(tcn.Name, tcn.TypeReferences, tcn.RequiresConstructor);
-            this.Add(ict.GetUniqueIdentifier(), ict);
+            this._Add(ict.GetUniqueIdentifier(), ict);
             return ict;
         }
 
@@ -71,7 +67,7 @@ namespace Oilexer.Types
 
         public IClassTypes GetPartialClone(ITypeParent partialTarget)
         {
-            return new ClassTypes(partialTarget, this.dictionaryCopy);
+            return new ClassTypes(partialTarget, this);
         }
 
         /// <summary>

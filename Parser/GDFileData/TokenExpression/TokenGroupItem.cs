@@ -39,7 +39,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         {
             this.FileName = fileName;
             foreach (ITokenExpression ipr in items)
-                baseCollection.Add(ipr);
+                baseList.Add(ipr);
             this.column = column;
             this.line = line;
             this.position = position;
@@ -153,20 +153,20 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
                     sb.Append("()");
                 goto ExitPoint;
             }
-            foreach (ITokenExpression ite in this.baseCollection)
+            foreach (ITokenExpression ite in this.baseList)
             {
                 string s = ite.ToString();
                 if (first)
                 {
                     if (appendExtra)
                     {
-                        if (baseCollection.Count > 1 || s.Contains("\r\n"))
+                        if (baseList.Count > 1 || s.Contains("\r\n"))
                         {
                             sb.Append("\r\n");
                             lastCarriage = true;
                         }
                         sb.Append("(");
-                        if (baseCollection.Count > 1)
+                        if (baseList.Count > 1)
                         {
                             sb.AppendLine();
                             sb.Append("\t");
@@ -182,7 +182,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
                 sb.Append(s.Replace("\r\n", "\r\n\t"));
             }
             if (appendExtra)
-                if (baseCollection.Count > 1 || lastCarriage)
+                if (baseList.Count > 1 || lastCarriage)
                 {
                     sb.AppendLine();
                     sb.Append(")");

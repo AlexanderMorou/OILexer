@@ -18,10 +18,6 @@ namespace Oilexer.Types.Members
         {
 
         }
-        protected MethodParameterMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
 
         protected override IMembers<IMethodParameterMember, IParameteredDeclaration<IMethodParameterMember, CodeMemberMethod, IMemberParentType>, CodeParameterDeclarationExpression> OnGetPartialClone(IParameteredDeclaration<IMethodParameterMember, CodeMemberMethod, IMemberParentType> parent)
         {

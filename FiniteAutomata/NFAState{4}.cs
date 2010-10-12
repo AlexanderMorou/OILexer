@@ -299,7 +299,7 @@ namespace Oilexer.FiniteAutomata
                     if (!result.Contains(subState))
                     {
                         result.Add(subState);
-                        FlatlineState(state, result);
+                        FlatlineState(subState, result);
                     }
         }
 

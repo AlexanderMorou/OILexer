@@ -48,7 +48,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
             this.line = line;
             this.position = position;
             foreach (ITokenItem iti in items)
-                this.baseCollection.Add(iti);
+                this.baseList.Add(iti);
         }
         #region IScannableEntryItem Members
 
@@ -103,7 +103,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         {
             StringBuilder sb = new StringBuilder();
             bool first = true;
-            foreach (ITokenItem ite in this.baseCollection)
+            foreach (ITokenItem ite in this.baseList)
             {
                 if (first)
                     first = false;
@@ -118,7 +118,7 @@ namespace Oilexer.Parser.GDFileData.TokenExpression
         {
             get
             {
-                return base.baseCollection;
+                return base.baseList;
             }
         }
     }

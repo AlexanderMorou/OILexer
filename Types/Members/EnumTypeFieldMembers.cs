@@ -53,7 +53,7 @@ namespace Oilexer.Types.Members
         public IFieldMember AddNew(string name)
         {
             IFieldMember ifm = new FieldMember(new TypedName(name, EnumType), this.TargetDeclaration);
-            this.Add(ifm.GetUniqueIdentifier(), ifm);
+            this._Add(ifm.GetUniqueIdentifier(), ifm);
             ifm.IsConstant = true;
             return ifm;
         }

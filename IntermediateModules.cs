@@ -52,7 +52,7 @@ namespace Oilexer
                 throw new ArgumentException("Module does not belong to the same project.", "module");
             if (this.IsModuleRegistered(module))
                 return;
-            this.Add(module.Name, module);
+            this._Add(module.Name, module);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Oilexer
         public IIntermediateModule AddNew(string name)
         {
             IIntermediateModule result = new IntermediateModule(this.Project, name);
-            this.Add(result.Name, result);
+            this._Add(result.Name, result);
             return result;
         }
 

@@ -24,14 +24,14 @@ namespace Oilexer.Parser.Builder
         public IUnicodeTargetCategory Add(UnicodeCategory category)
         {
             UnicodeTargetCategory result = new UnicodeTargetCategory(category);
-            base.dictionaryCopy.Add(category, result);
+            this._Add(category, result);
             return result;
         }
 
         public IUnicodeTargetPartialCategory Add(UnicodeCategory category, RegularLanguageSet negativeAssertion)
         {
             UnicodeTargetPartialCategory result = new UnicodeTargetPartialCategory(category, negativeAssertion);
-            base.dictionaryCopy.Add(category, result);
+            this._Add(category, result);
             return result;
         }
 

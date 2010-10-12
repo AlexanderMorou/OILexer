@@ -21,13 +21,9 @@ namespace Oilexer.Types.Members
             : base(targetDeclaration)
         {
         }
-        protected PropertyMembers(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
 
-        public PropertyMembers(IMemberParentType targetDeclaration, IDictionary<string, IPropertyMember> partialBaseMembers)
-            : base(targetDeclaration, partialBaseMembers)
+        public PropertyMembers(IMemberParentType targetDeclaration, PropertyMembers sibling)
+            : base(targetDeclaration, sibling)
         {
         }
 
@@ -40,7 +36,7 @@ namespace Oilexer.Types.Members
 
         public new IPropertyMembers GetPartialClone(IMemberParentType parent)
         {
-            return new PropertyMembers(parent, this.dictionaryCopy);
+            return new PropertyMembers(parent, this);
         }
 
         public IIndexerMember AddNew(ITypeReference indexerType, params TypedName[] parameters)
@@ -57,7 +53,7 @@ namespace Oilexer.Types.Members
                 result.Parameters.AddNew(tn);
             result.HasGet = hasGet;
             result.HasSet = hasSet;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 
@@ -75,7 +71,7 @@ namespace Oilexer.Types.Members
                 result.Parameters.AddNew(tn);
             result.HasGet = hasGet;
             result.HasSet = hasSet;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 
@@ -89,11 +85,6 @@ namespace Oilexer.Types.Members
             return this.GetPartialClone(parent);
         }
 
-        #endregion
-
-        #region IPropertySignatureMembers<IPropertyMember,IMemberParentType> Members
-
-
         public IPropertyMember AddNew(string name, ITypeReference propertyType, bool hasGet, bool hasSet)
         {
             return this.AddNew(new TypedName(name, propertyType), hasGet, hasSet);
@@ -104,7 +95,7 @@ namespace Oilexer.Types.Members
             IPropertyMember result = new PropertyMember(nameAndType, this.TargetDeclaration);
             result.HasGet = hasGet;
             result.HasSet = hasSet;
-            this.Add(result.GetUniqueIdentifier(), result);
+            this._Add(result.GetUniqueIdentifier(), result);
             return result;
         }
 
@@ -118,14 +109,10 @@ namespace Oilexer.Types.Members
             return this.AddNew(nameAndType, true, true);
         }
 
-        #endregion
-
-        #region IPropertySignatureMembers<IPropertyMember,IMemberParentType> Members
-
 
         public new void Add(IPropertyMember ipm)
         {
-            this.dictionaryCopy.Add(ipm.GetUniqueIdentifier(), ipm);
+            this._Add(ipm.GetUniqueIdentifier(), ipm);
         }
 
         #endregion

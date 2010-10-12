@@ -68,35 +68,9 @@ namespace Oilexer.Types.Members
         {
             this.targetDeclaration = targetDeclaration;
         }
-        protected Members(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            foreach (TItem t in this.Values)
-            {
-                t.DeclarationChange -= new EventHandler<DeclarationChangeArgs>(Item_DeclarationChange);
-            }
 
-            base.GetObjectData(info, context);
-
-            foreach (TItem t in this.Values)
-            {
-                t.DeclarationChange += new EventHandler<DeclarationChangeArgs>(Item_DeclarationChange);
-            }
-        }
-        public override void OnDeserialization(object sender)
-        {
-            base.OnDeserialization(sender);
-            foreach (TItem t in this.Values)
-            {
-                t.DeclarationChange += new EventHandler<DeclarationChangeArgs>(Item_DeclarationChange);
-            }
-        }
-
-        public Members(TParent targetDeclaration, IDictionary<string, TItem> partialBaseMembers)
-            : base(partialBaseMembers)
+        public Members(TParent targetDeclaration, Members<TItem, TParent, TDom> sibling)
+            : base(sibling)
         {
             this.targetDeclaration = targetDeclaration;
         }
@@ -146,7 +120,7 @@ namespace Oilexer.Types.Members
         {
             foreach (TItem item in this.Values)
                 item.DeclarationChange -= new EventHandler<DeclarationChangeArgs>(Item_DeclarationChange);
-            base.Clear();
+            this._Clear();
         }
 
         #endregion
@@ -245,40 +219,42 @@ namespace Oilexer.Types.Members
             for (int i = 0; i < this.Count; i++)
             {
                 this[0].Dispose();
-                this.Remove(0);
+                this._Remove(0);
             }
             this.targetDeclaration = default(TParent);
         }
 
         #endregion
         
-        protected override void Add(string key, TItem value)
+        protected internal override void _Add(string key, TItem value)
         {
             if (reindexing)
                 return;
             if (needsReindexed)
                 Reindex();
             value.DeclarationChange += new EventHandler<DeclarationChangeArgs>(Item_DeclarationChange);
-            base.Add(key, value);
+            base._Add(key, value);
             if (this.MembersChanged != null)
                 this.MembersChanged(this, null);
             OnItemAdded(value);
         }
 
-        protected override void Remove(int index)
+        protected internal override bool _Remove(int index)
         {
+            bool result;
             TItem removedItem = this[index];
-            base.Remove(index);
+            result = base._Remove(index);
             OnItemRemoved(removedItem);
+            return result;
         }
-
+        
         public new virtual void Remove(string uniqueIdentifier)
         {
             if (reindexing)
                 return;
             TItem removedItem = this[uniqueIdentifier];
             removedItem.DeclarationChange -= new EventHandler<DeclarationChangeArgs>(Item_DeclarationChange);
-            base.Remove(uniqueIdentifier);
+            base._Remove(uniqueIdentifier);
             this.OnItemRemoved(removedItem);
         }
 
@@ -303,13 +279,13 @@ namespace Oilexer.Types.Members
             this.needsReindexed = false;
             TItem[] copy = new TItem[this.Count];
             this.Values.CopyTo(copy, 0);
-            base.Clear();
+            base._Clear();
             foreach (TItem item in copy)
             {
                 if (base.ContainsKey(item.GetUniqueIdentifier()))
                     item.Dispose();
                 else
-                    base.Add(item.GetUniqueIdentifier(), item);
+                    base._Add(item.GetUniqueIdentifier(), item);
             }
             if (this.MembersChanged != null)
                 MembersChanged(this, EventArgs.Empty);
@@ -436,7 +412,7 @@ namespace Oilexer.Types.Members
         {
             if (this.ContainsKey(item.GetUniqueIdentifier()))
                 throw new InvalidOperationException("item containing the same identifier exists.");
-            base.Add(item.GetUniqueIdentifier(), item);
+            base._Add(item.GetUniqueIdentifier(), item);
         }
     }
 }

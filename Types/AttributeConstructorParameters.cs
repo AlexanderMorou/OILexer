@@ -30,27 +30,27 @@ namespace Oilexer.Types
         public IAttributePropertyParameter AddNew(string name, IExpression value)
         {
             IAttributePropertyParameter item = new AttributePropertyParameter(name, value);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public IAttributeConstructorParameter AddNew(IExpression value)
         {
             IAttributeConstructorParameter item = new AttributeConstructorParameter(value);
-            this.baseCollection.Add(item);
+            this.baseList.Add(item);
             return item;
         }
 
         public void AddRange(params IAttributeConstructorParameter[] parameters)
         {
             foreach (IAttributeConstructorParameter param in parameters)
-                this.baseCollection.Add(param);
+                this.baseList.Add(param);
         }
 
         public void AddRange(params IAttributePropertyParameter[] parameters)
         {
             foreach (IAttributeConstructorParameter param in parameters)
-                this.baseCollection.Add(param);
+                this.baseList.Add(param);
         }
 
         #endregion
@@ -81,17 +81,17 @@ namespace Oilexer.Types
 
         public void Clear()
         {
-            this.baseCollection.Clear();
+            this.baseList.Clear();
         }
 
         public void Remove(IAttributeConstructorParameter parameter)
         {
-            this.baseCollection.Remove(parameter);
+            this.baseList.Remove(parameter);
         }
 
         public void Remove(IAttributePropertyParameter parameter)
         {
-            this.baseCollection.Remove(parameter);
+            this.baseList.Remove(parameter);
         }
 
         #endregion

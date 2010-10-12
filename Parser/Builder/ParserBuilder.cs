@@ -18,6 +18,7 @@ using Oilexer.Statements;
 using Oilexer.Types;
 using Oilexer.Types.Members;
 using Oilexer.Utilities.Collections;
+using System.Text;
 namespace Oilexer.Parser.Builder
 {
     /// <summary>
@@ -80,6 +81,7 @@ namespace Oilexer.Parser.Builder
         public IReadOnlyCollection<string> StreamAnalysisFiles { get; private set; }
 
         private CharStreamClass bitStream;
+        private GDFileObjectRelationalMap fileRelationalMap;
 
         public ParserBuilder(IGDFile source, CompilerErrorCollection errors, List<string> streamAnalysisFiles)
         {
@@ -99,10 +101,11 @@ namespace Oilexer.Parser.Builder
              *      2. Order tokens via precedence.
              *      3. Construct general NFA from inlined tokens.
              * */
-            this.Source.GetTokens().AsParallel().ForAll(token =>
-                token.BuildNFA());
-            //foreach (var token in this.Source.GetTokens())
-            //    token.BuildNFA();
+
+            //this.Source.GetTokens().AsParallel().ForAll(token =>
+            //    token.BuildNFA());
+            foreach (var token in this.Source.GetTokens())
+                token.BuildNFA();
         }
 
         private void ConstructTokenDFA()
@@ -118,13 +121,6 @@ namespace Oilexer.Parser.Builder
             this.Source.GetTokens().AsParallel()
               .ForAll(token =>
                 token.BuildDFA());
-            var idToken = this.Source.GetTokens().FirstOrDefault(t => t.Name == "Identifier");
-            if (idToken != null)
-            {
-                var second = idToken.DFAState.OutTransitions.Checks.Skip(1).First();
-                var secondCount = second.CountTrue();
-                var unicodeRanges = Breakdown(second, RegularLanguageSet.CompleteSet);
-            }
         }
 
         private void ReduceTokenDFA()
@@ -187,23 +183,37 @@ namespace Oilexer.Parser.Builder
             IIntermediateProject project = new IntermediateProject(Source.Options.AssemblyName, Source.Options.Namespace == null ? "OILexer.DefaultNamespace" : Source.Options.Namespace);
             this.bitStream = BitStreamCreator.CreateBitStream(project.DefaultNameSpace);
             this.Project = project;
+            this.fileRelationalMap = new GDFileObjectRelationalMap(this.Source, this.RuleDFAStates, this.Project);
         }
 
-        private void BuildStateMachine(InlinedTokenEntry token, IIntermediateProject project, CharStreamClass charStream)
+        private void BuildStateMachine(InlinedTokenEntry token, CharStreamClass charStream)
         {
             var tokenDFA = token.DFAState;
             var tokenName = token.Name;
             if (tokenDFA == null)
                 return;
-            BuildStateMachine(project, charStream, tokenDFA, tokenName);
+            switch (token.CaptureKind)
+            {
+                case RegularCaptureType.Recognizer:
+                    BuildRecognizerMachine(tokenDFA, tokenName);
+                    break;
+                case RegularCaptureType.Capturer:
+                    BuildRecognizerMachine(tokenDFA, tokenName);
+                    break;
+                case RegularCaptureType.Transducer:
+                    BuildTransducerMachine(tokenDFA, tokenName);
+                    break;
+                case RegularCaptureType.Undecided:
+                    break;
+            }
         }
 
-        private void BuildStateMachine(IIntermediateProject project, CharStreamClass charStream, RegularLanguageDFAState tokenDFA, string tokenName)
+        private void BuildRecognizerMachine(RegularLanguageDFAState tokenDFA, string tokenName)
         {
             //Setup the basic class, access level, and base-type.
             INameSpaceDeclaration targetNamespace;
-            lock (project.DefaultNameSpace.Partials)
-                targetNamespace = project.DefaultNameSpace.Partials.AddNew();
+            lock (this.Project.DefaultNameSpace.Partials)
+                targetNamespace = this.Project.DefaultNameSpace.Partials.AddNew();
             IClassType targetType;
             lock (targetNamespace.Classes)
                 targetType = targetNamespace.Classes.AddNew(string.Format("{0}StateMachine", tokenName));
@@ -213,7 +223,7 @@ namespace Oilexer.Parser.Builder
                 targetType.Module = this.Project.Modules.AddNew("Lexer");
             var stateMachine = targetType;
             stateMachine.AccessLevel = DeclarationAccessLevel.Internal;
-            stateMachine.BaseType = charStream.BitStream.GetTypeReference();
+            stateMachine.BaseType = bitStream.BitStream.GetTypeReference();
 
             /* *
              * Setup the 'next character' state movement method,
@@ -272,6 +282,7 @@ namespace Oilexer.Parser.Builder
             int unicodeGraphCount = 0;
             var sourceSet = tokenDFA.SourceSet.Cast<ITokenItem>().ToArray();
             var sourceNames = (from s in sourceSet
+                               where !string.IsNullOrEmpty(s.Name)
                                select s.Name).Distinct().ToArray();
             var sources = sourceNames.ToDictionary(p => p, p => (from s in sourceSet
                                                                  where s.Name == p
@@ -282,9 +293,11 @@ namespace Oilexer.Parser.Builder
                 ILabelStatement graphLabel = null;
                 ILabelStatement label = null;
                 IUnicodeTargetGraph graph = null;
-                //var activeNamedSources = (from s in state.Sources
-                //                          where sourceSet.Contains(s.Item1)
-                //                          select s).ToDictionary(p => (ITokenItem)p.Item1, p => p.Item2);
+                var activeNamedSources = (from s in state.Sources
+                                          let source = s.Item1 as ITokenItem
+                                          where source != null && !string.IsNullOrEmpty(source.Name)
+                                          where sourceSet.Contains(source)
+                                          select s).ToDictionary(p => (ITokenItem)p.Item1, p => p.Item2);
 
                 Dictionary<RegularLanguageSet, RegularLanguageDFAState> finalTransitionTable = null;
                 if (state.OutTransitions.Count == 0)
@@ -370,12 +383,11 @@ namespace Oilexer.Parser.Builder
                 else
                     graph = null;
                 stateCase = stateSwitch.Cases.AddNew(new PrimitiveExpression(state.StateValue));
-                //if (activeNamedSources.Count > 0)
-                //{
-                //    stateCase.Statements.Add(new CommentStatement("Sources: "));
-                //    foreach (var source in activeNamedSources)
-                //        stateCase.Statements.Add(new CommentStatement(source.Key.Name));
-                //}
+
+                if (activeNamedSources.Count > 0)
+                    stateCase.Statements.Add(new CommentStatement("Sources:\r\n" +
+                        (from source in activeNamedSources
+                         select string.Format("{0} ({1})", source.Key.Name, source.Value)).ToArray().FixedJoinSeries(", ")));
             skipGraph:
                 if (state.InTransitions.Count > 0)
                     if (!(state.InTransitions.Count == 1 && state.InTransitions[0].Value.Count == 1 && state.InTransitions[0].Value[0] == state))
@@ -404,7 +416,7 @@ namespace Oilexer.Parser.Builder
                         IExpression finalExpression = null;
                         var target = transitionTable[check];
                         var targetLabel = stateCodeData[target].Label;
-                        DiscernForwardTarget(charStream, nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, target, ref targetLabel);
+                        DiscernForwardTarget(nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, target, ref targetLabel);
                         foreach (var rangeElement in check.GetRange())
                         {
                             IExpression currentExpression = null;
@@ -425,20 +437,43 @@ namespace Oilexer.Parser.Builder
                                 finalExpression = new BinaryOperationExpression(finalExpression, CodeBinaryOperatorType.BooleanOr, currentExpression);
                         }
                         var currentCondition = currentTarget.IfThen(finalExpression);
+                        var destNamedSources = (from s in target.Sources
+                                                let source = s.Item1 as ITokenItem
+                                                where source != null && !string.IsNullOrEmpty(source.Name)
+                                                where sourceSet.Contains(source)
+                                                select s).ToDictionary(p => (ITokenItem)p.Item1, p => p.Item2);
+                        currentCondition.Statements.Add(new CommentStatement("Sources:\r\n" +
+                            (from source in destNamedSources
+                             select string.Format("{0} ({1})", source.Key.Name, source.Value)).ToArray().FixedJoinSeries(", ")));
+
                         currentCondition.Statements.Add(targetLabel.GetGoTo(currentCondition.Statements));
                         currentTarget = currentCondition.FalseBlock;
                     }
+                /* *
+                 * If the state graph for the current state isn't null, then
+                 * construct a state->state transition based upon the unicode
+                 * coverage of the current state's transitions.
+                 * */
                 if (stateGraph != null)
                 {
                     if (stateGraph.Count == 1)
                     {
+                        /* *
+                         * In the event that each and every unicode
+                         * category is covered by one single target,
+                         * construct a simple negative assertion which
+                         * points towards the target of the transition.
+                         * *
+                         * Cases where this occurs are negative sets such as:
+                         * [^A-Za-z]
+                         * */
                         var first = stateGraph[0].Key;
                         var firstTarget = stateGraph[first];
                         if (ParserCompilerExtensions.unicodeCategoryData.Keys.All(
                             p => firstTarget.Keys.Contains(p)))
                         {
                             ILabelStatement targetLabel = stateCodeData[first].Label;
-                            DiscernForwardTarget(charStream, nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, first, ref targetLabel);
+                            DiscernForwardTarget(nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, first, ref targetLabel);
 
                             RegularLanguageSet negativeSet = null;
                             foreach (var category in firstTarget.Values)
@@ -458,7 +493,12 @@ namespace Oilexer.Parser.Builder
 
                             goto FullUnicodeCoverage;
                         }
+                        /* *
+                         * If fall-through is hit, it's because not every category 
+                         * was encountered.
+                         * */
                     }
+
                     currentTarget.Add(graphLabel.GetGoTo(nextMethod.Statements));
                     if (!insertedGraphs.Contains(stateGraph))
                     {
@@ -467,6 +507,10 @@ namespace Oilexer.Parser.Builder
                         var categoryGetExpr = typeof(char).GetTypeReferenceExpression().GetMethod("GetUnicodeCategory").Invoke(nextChar.GetReference());
                         var graphSwitch = nextMethod.SelectCase(categoryGetExpr);
                         nextMethod.Return(PrimitiveExpression.FalseValue);
+                        /* *
+                         * For every target, construct a series of unicode graphs
+                         * relative to 
+                         * */
                         foreach (var target in stateGraph.Keys)
                         {
                             var currentGraphTarget = stateGraph[target];
@@ -478,7 +522,7 @@ namespace Oilexer.Parser.Builder
                                 else
                                     fullCategories.Add(currentGraphTarget[category]);
                             ILabelStatement targetLabel = stateCodeData[target].Label;
-                            DiscernForwardTarget(charStream, nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, target, ref targetLabel);
+                            DiscernForwardTarget(nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, target, ref targetLabel);
                             var fullCategory = graphSwitch.Cases.AddNew();
                             fullCategory.LastIsDefaultCase = false;
 
@@ -501,7 +545,41 @@ namespace Oilexer.Parser.Builder
             }
         }
 
-        private void DiscernForwardTarget(CharStreamClass charStream, IMethodMember nextMethod, IMethodParameterMember nextChar, IFieldMember stateField, IFieldMember exitLength, ref ILabelStatement terminalExit, ref ILabelStatement nominalExit, ref ILabelStatement commonMove, List<RegularLanguageDFAState> insertedStates, RegularLanguageDFAState activeState, RegularLanguageDFAState destinationState, ref ILabelStatement targetLabel)
+        private void BuildCapturingMachine(RegularLanguageDFARootState tokenDFA, string tokenName)
+        {
+            INameSpaceDeclaration targetNamespace;
+            lock (this.Project.DefaultNameSpace.Partials)
+                targetNamespace = this.Project.DefaultNameSpace.Partials.AddNew();
+            IClassType targetType;
+            lock (targetNamespace.Classes)
+                targetType = targetNamespace.Classes.AddNew(string.Format("{0}StateMachine", tokenName));
+            if (this.Project.Modules.ContainsKey("Lexer"))
+                targetType.Module = this.Project.Modules["Lexer"];
+            else
+                targetType.Module = this.Project.Modules.AddNew("Lexer");
+            var stateMachine = targetType;
+            stateMachine.AccessLevel = DeclarationAccessLevel.Internal;
+            stateMachine.BaseType = bitStream.BitStream.GetTypeReference();
+
+            /* *
+             * Setup the 'next character' state movement method,
+             * the state and exit-length variables.
+             * */
+
+            var nextMethod = stateMachine.Methods.AddNew(new TypedName("Next", typeof(bool)));
+            nextMethod.AccessLevel = DeclarationAccessLevel.Public;
+            var nextChar = nextMethod.Parameters.AddNew(new TypedName("currentChar", typeof(char)));
+            nextMethod.Summary = string.Format("Moves the state machine into its next state with the @p:{0};.", nextChar.Name);
+            nextChar.DocumentationComment = "The next character used as the condition for state->state transitions.";
+
+        }
+
+        private void BuildTransducerMachine(RegularLanguageDFARootState tokenDFA, string tokenName)
+        {
+            
+        }
+
+        private void DiscernForwardTarget(IMethodMember nextMethod, IMethodParameterMember nextChar, IFieldMember stateField, IFieldMember exitLength, ref ILabelStatement terminalExit, ref ILabelStatement nominalExit, ref ILabelStatement commonMove, List<RegularLanguageDFAState> insertedStates, RegularLanguageDFAState activeState, RegularLanguageDFAState destinationState, ref ILabelStatement targetLabel)
         {
             /* *
              * The target transition label is normal, it targets 
@@ -531,14 +609,14 @@ namespace Oilexer.Parser.Builder
             switch (targetLabelKind)
             {
                 case TARGET_NORMAL:
-                    ImplementStateMoveCheck(charStream, nextMethod, nextChar, targetLabel, insertedStates, destinationState, ref commonMove, ref nominalExit, ref terminalExit, exitLength, stateField);
+                    ImplementStateMoveCheck(nextMethod, nextChar, targetLabel, insertedStates, destinationState, ref commonMove, ref nominalExit, ref terminalExit, exitLength, stateField);
                     break;
                 case TARGET_COMMON:
-                    ImplementCommonMoveCheck(charStream, nextMethod, nextChar, ref commonMove);
+                    ImplementCommonMoveCheck(nextMethod, nextChar, ref commonMove);
                     targetLabel = commonMove;
                     break;
                 case TARGET_NOMINAL:
-                    ImplementNominalExitCheck(charStream, nextMethod, nextChar, ref nominalExit, exitLength);
+                    ImplementNominalExitCheck(nextMethod, nextChar, ref nominalExit, exitLength);
                     targetLabel = nominalExit;
                     break;
             }
@@ -570,7 +648,7 @@ namespace Oilexer.Parser.Builder
         }
 
 
-        private void ImplementStateMoveCheck(CharStreamClass charStream, IMethodMember nextMethod, IMethodParameterMember nextChar, ILabelStatement targetLabel, List<RegularLanguageDFAState> insertedStates, RegularLanguageDFAState target, ref ILabelStatement commonMove, ref ILabelStatement nominalExit, ref ILabelStatement terminalExit, IFieldMember exitLength, IFieldMember stateField)
+        private void ImplementStateMoveCheck(IMethodMember nextMethod, IMethodParameterMember nextChar, ILabelStatement targetLabel, List<RegularLanguageDFAState> insertedStates, RegularLanguageDFAState target, ref ILabelStatement commonMove, ref ILabelStatement nominalExit, ref ILabelStatement terminalExit, IFieldMember exitLength, IFieldMember stateField)
         {
             if (!insertedStates.Contains(target))
             {
@@ -579,18 +657,18 @@ namespace Oilexer.Parser.Builder
                 {
                     if (target.OutTransitions.Count == 0)
                     {
-                        ImplementTerminalExitCheck(charStream, nextMethod, nextChar, ref terminalExit, exitLength);
+                        ImplementTerminalExitCheck(nextMethod, nextChar, ref terminalExit, exitLength);
                         followUp = terminalExit;
                     }
                     else
                     {
-                        ImplementNominalExitCheck(charStream, nextMethod, nextChar, ref nominalExit, exitLength);
+                        ImplementNominalExitCheck(nextMethod, nextChar, ref nominalExit, exitLength);
                         followUp = nominalExit;
                     }
                 }
                 else
                 {
-                    ImplementCommonMoveCheck(charStream, nextMethod, nextChar, ref commonMove);
+                    ImplementCommonMoveCheck(nextMethod, nextChar, ref commonMove);
                     followUp = commonMove;
                 }
                 nextMethod.Statements.Add(targetLabel);
@@ -600,37 +678,37 @@ namespace Oilexer.Parser.Builder
             }
         }
 
-        private static void ImplementNominalExitCheck(CharStreamClass charStream, IMethodMember nextMethod, IMethodParameterMember nextChar, ref ILabelStatement nominalExit, IFieldMember exitLength)
+        private void ImplementNominalExitCheck(IMethodMember nextMethod, IMethodParameterMember nextChar, ref ILabelStatement nominalExit, IFieldMember exitLength)
         {
             if (nominalExit == null)
             {
                 nominalExit = new LabelStatement("NominalExit");
                 nextMethod.Statements.Add(nominalExit);
-                nextMethod.CallMethod(charStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
-                nextMethod.Assign(exitLength.GetReference(), charStream.ActualSize.GetReference());
+                nextMethod.CallMethod(bitStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
+                nextMethod.Assign(exitLength.GetReference(), bitStream.ActualSize.GetReference());
                 nextMethod.Return(PrimitiveExpression.TrueValue);
             }
         }
 
-        private static void ImplementTerminalExitCheck(CharStreamClass charStream, IMethodMember nextMethod, IMethodParameterMember nextChar, ref ILabelStatement terminalExit, IFieldMember exitLength)
+        private void ImplementTerminalExitCheck(IMethodMember nextMethod, IMethodParameterMember nextChar, ref ILabelStatement terminalExit, IFieldMember exitLength)
         {
             if (terminalExit == null)
             {
                 terminalExit = new LabelStatement("TerminalExit");
                 nextMethod.Statements.Add(terminalExit);
-                nextMethod.CallMethod(charStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
-                nextMethod.Assign(exitLength.GetReference(), charStream.ActualSize.GetReference());
+                nextMethod.CallMethod(bitStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
+                nextMethod.Assign(exitLength.GetReference(), bitStream.ActualSize.GetReference());
                 nextMethod.Return(PrimitiveExpression.FalseValue);
             }
         }
 
-        private static void ImplementCommonMoveCheck(CharStreamClass charStream, IMethodMember nextMethod, IMethodParameterMember nextChar, ref ILabelStatement commonMove)
+        private void ImplementCommonMoveCheck(IMethodMember nextMethod, IMethodParameterMember nextChar, ref ILabelStatement commonMove)
         {
             if (commonMove == null)
             {
                 commonMove = new LabelStatement("CommonMove");
                 nextMethod.Statements.Add(commonMove);
-                nextMethod.CallMethod(charStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
+                nextMethod.CallMethod(bitStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
                 nextMethod.Return(PrimitiveExpression.TrueValue);
             }
         }
@@ -878,7 +956,7 @@ namespace Oilexer.Parser.Builder
         private void BuildCodeModelCaptures()
         {
             foreach (var token in this.Source.GetTokens())
-                BuildStateMachine(token, this.Project, bitStream);
+                BuildStateMachine(token, bitStream);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
