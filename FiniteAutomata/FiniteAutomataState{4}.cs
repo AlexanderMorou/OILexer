@@ -242,7 +242,12 @@ namespace Oilexer.FiniteAutomata
         protected void UnifySources(TState target)
         {
             foreach (TSourceElement source in target.sources.Keys)
-                this.sources.Add(source, target.sources[source]);
+            {
+                if (!this.sources.ContainsKey(source))
+                    this.sources.Add(source, target.sources[source]);
+                else
+                    this.sources[source] |= target.sources[source];
+            }
         }
 
         internal void ReplicateSourcesToAlt<TState2, TForwardNodeTarget>(TState2 altTarget)

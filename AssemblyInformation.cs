@@ -5,7 +5,7 @@ using System.Reflection;
 using System.ComponentModel;
 using System.Resources;
 using Oilexer.Utilities.Arrays;
-
+using System.Linq;
 namespace Oilexer
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
@@ -64,7 +64,7 @@ namespace Oilexer
         private string path;
         public AssemblyInformation(Assembly assembly)
         {
-            AttributeCollection attrC = new AttributeCollection(Tweaks.CastArray<Attribute, object>(assembly.GetCustomAttributes(false)));
+            AttributeCollection attrC = new AttributeCollection(assembly.GetCustomAttributes(false).Cast<Attribute>().ToArray());
             if (attrC[typeof(AssemblyTitleAttribute)] != null)
                 this.title = ((AssemblyTitleAttribute)attrC[typeof(AssemblyTitleAttribute)]).Title;
             if (attrC[typeof(AssemblyCompanyAttribute)] != null)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using System.CodeDom;
 using Oilexer.Utilities.Collections;
 using Oilexer.Utilities.Arrays;
@@ -168,7 +169,7 @@ namespace Oilexer.Types.Members
 
         CodeObject[] IMembers.GenerateCodeDom(ICodeDOMTranslationOptions options)
         {
-            return Tweaks.CastArray<CodeObject, TDom>(this.GenerateCodeDom(options));
+            return this.GenerateCodeDom(options).Cast<CodeObject>().ToArray();
         }
 
         /// <summary>

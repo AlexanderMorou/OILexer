@@ -35,6 +35,11 @@ namespace Oilexer.Parser
             {
             }
 
+            private void ___Test()
+            {
+                Console.WriteLine(this);
+            }
+
             internal Lexer()
                 : base()
             {
@@ -477,6 +482,7 @@ namespace Oilexer.Parser
                                 break;
                             default:
                                 singleTons.Add(':');
+                                lookAhead++;
                                 continue;
                         }
                     }
@@ -541,6 +547,7 @@ namespace Oilexer.Parser
                                 break;
                             case '[': case ']':
                             case '-':
+                            case ':':
                             case '\\':
                                 break;
                             default:

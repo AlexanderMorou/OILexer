@@ -298,6 +298,7 @@ namespace Oilexer._Internal
         {
             IProductionRuleTemplateEntry iprte = null;
             IList<IProductionRuleTemplateEntry> closeMatches = new List<IProductionRuleTemplateEntry>();
+            List<CompilerError> possibleErrors = new List<CompilerError>();
             foreach (IProductionRuleTemplateEntry template in ruleTemplEntries)
             {
                 if (template.Name == item.PrimaryName)
@@ -321,17 +322,22 @@ namespace Oilexer._Internal
                                      * Regardless of the match, according to the template, it has
                                      * invalid argument repeat options.
                                      * */
-                                    errors.Add(GrammarCore.GetParserError(template.FileName, template.Line, template.Column, GDParserErrors.InvalidRepeatOptions));
+                                    possibleErrors.Add(GrammarCore.GetParserError(template.FileName, template.Line, template.Column, GDParserErrors.InvalidRepeatOptions));
                             }
                         }
                         else if (tai.InvalidArguments == 0)
                         {
-                            iprte = template;
-                            closeMatches.Clear();
-                            break;
+                            if (item.Parts.Count == tai.FixedArguments)
+                            {
+                                iprte = template;
+                                closeMatches.Clear();
+                                break;
+                            }
+                            else
+                                closeMatches.Remove(template);
                         }
                         else
-                            errors.Add(GrammarCore.GetParserError(template.FileName, template.Line, template.Column, GDParserErrors.InvalidRepeatOptions));
+                            possibleErrors.Add(GrammarCore.GetParserError(template.FileName, template.Line, template.Column, GDParserErrors.InvalidRepeatOptions));
                     }
                     else
                     {
@@ -340,6 +346,7 @@ namespace Oilexer._Internal
                     }
                 }
             }
+
             if (iprte != null)
             {
                 foreach (IProductionRuleSeries iprs in item.Parts)
@@ -354,10 +361,12 @@ namespace Oilexer._Internal
                 return rResult;
             }
             else if (closeMatches.Count > 0)
+            {
+                errors.AddRange(possibleErrors.ToArray());
                 errors.Add(GrammarCore.GetParserError(entry.FileName, item.Line, item.Column, GDParserErrors.DynamicArgumentCountError));
-            else
-                if (ruleEntries.FindScannableEntry(item.PrimaryName) != null)
-                    errors.Add(GrammarCore.GetParserError(entry.FileName, item.Line, item.Column, GDParserErrors.RuleNotTemplate, item.PrimaryName));
+            }
+            else if (ruleEntries.FindScannableEntry(item.PrimaryName) != null)
+                errors.Add(GrammarCore.GetParserError(entry.FileName, item.Line, item.Column, GDParserErrors.RuleNotTemplate, item.PrimaryName));
             return item;
         }
 

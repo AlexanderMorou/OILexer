@@ -101,5 +101,11 @@ namespace Oilexer.Parser.GDFileData
         public bool ForcedRecognizer { get { return this.forcedRecognizer; } }
 
         #endregion
+
+        public virtual bool IsDeleted
+        {
+            get;
+            internal set;
+        }
     }
 }

@@ -19,32 +19,6 @@ namespace Oilexer.Utilities.Arrays
         {
             return MergeArrays(elements, target);
         }
-        /// <summary>
-        /// Casts an array from the <typeparamref name="originatingType"/> to the <typeparamref name="desiredType"/>
-        /// </summary>
-        /// <typeparam name="desiredType">The desired type of members in the array.</typeparam>
-        /// <typeparam name="originatingType">The originating type of the members in the array.</typeparam>
-        /// <param name="array">The array of members to cast.</param>
-        /// <returns>An array of the desired type of members.</returns>
-        /// <exception cref="System.ArgumentNullException"><paramref name="array"/> is null.</exception>
-        /// <exception cref="System.InvalidCastException">A member from <paramref name="array"/> could not be cast to the <typeparamref name="desiredType"/>.</exception>
-        public static desiredType[] CastArray<desiredType, originatingType>(originatingType[] array)
-        {
-            /* *
-             * Written prior to .NET 3.0
-             * */
-            return TranslateArray<originatingType, desiredType>
-                (
-                    array,
-                    delegate(originatingType item)
-                    {
-                        if (item is desiredType)
-                            return (desiredType)(object)item;
-                        else
-                            throw new InvalidCastException("A member of the source array cannot be cast to the desiredType");
-                    }
-                );
-        }
 
         /// <summary>
         /// Logically filters an array using the iteration-logic delegate provided.

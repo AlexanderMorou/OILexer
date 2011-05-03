@@ -412,7 +412,7 @@ namespace Oilexer.FiniteAutomata
                          * post DFA conversion but again, err on the side 
                          * of caution.
                          * */
-                        var kTransition = currentState.OutTransitions.ElementAt(k);
+                        var kTransition = currentState.OutTransitions[k];
                         /* *
                          * Obtain the transition for the target state,
                          * use the transition key vs. the index

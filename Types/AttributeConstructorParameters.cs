@@ -6,6 +6,7 @@ using Oilexer.Expression;
 using Oilexer.Utilities.Arrays;
 using System.CodeDom;
 using Oilexer.Translation;
+using System.Linq;
 
 namespace Oilexer.Types
 {
@@ -17,8 +18,12 @@ namespace Oilexer.Types
 
         public CodeAttributeArgumentCollection GenerateCodeDom(ICodeDOMTranslationOptions options)
         {
-            IAttributeConstructorParameter[] normal = Tweaks.FilterArray<IAttributeConstructorParameter>(this.ToArray(), delegate(IAttributeConstructorParameter param) { return (!(param is IAttributePropertyParameter)); });
-            IAttributeConstructorParameter[] named = Tweaks.FilterArray<IAttributeConstructorParameter>(this.ToArray(), delegate(IAttributeConstructorParameter param) { return (param is IAttributePropertyParameter); });
+            IAttributeConstructorParameter[] normal = (from a in this
+                                                       where (!(a is IAttributePropertyParameter))
+                                                       select a).ToArray();
+            IAttributeConstructorParameter[] named = (from a in this
+                                                      where (a is IAttributePropertyParameter)
+                                                      select a).ToArray();
             List<CodeAttributeArgument> result = new List<CodeAttributeArgument>();
             foreach (IAttributeConstructorParameter param in normal)
                 result.Add(param.GenerateCodeDom(options));

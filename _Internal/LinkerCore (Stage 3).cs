@@ -123,6 +123,12 @@ namespace Oilexer._Internal
                         continue;
                     else
                         unusedTokens.Add(entry);
+            foreach (var token in unusedTokens)
+            {
+                var internalToken = token as TokenEntry;
+                if (internalToken != null)
+                    internalToken.IsDeleted = true;
+            }
             file.ExpungeType(unusedTokens);
         }
 
