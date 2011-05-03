@@ -1,0 +1,49 @@
+#include "Root.oilexer";
+
+ArrayCreationExpression                  ::=>
+    ArraySizeCreationExpression             |
+    ArrayInitializerCreationExpression      ;
+//    ArrayRankInitializerCreationExpression;
+    
+ArraySizeCreationExpression               ::=
+    "new" NonArrayType:Type;
+    BracketExpressionList:SizeInitializers; 
+    RankSpecifier:Ranks;* 
+    ArrayInitializer:Initializer;           ;
+
+ArrayInitializerCreationExpression        ::=
+    "new" ArrayType:Type;
+    ArrayInitializer:Initializer;           ;
+
+RankSpecifier                             ::=
+    '[' ',':Rank;* ']';
+
+ArrayType                                 ::=
+    NonArrayType:ElementType; 
+        RankSpecifier:Ranks;+               ;
+
+NonArrayType ::=
+    ValueType                               |
+    NonArrayReferenceType                   |
+    TypeParameter                           |
+/* B.3. Grammar extensions for unsafe code */
+#ifdef UNSAFECONTEXT
+    PointerType
+#endif                                      ;
+
+NonArrayReferenceType                    ::=>
+    ClassType                               |
+    InterfaceOrDelegateType                 ;
+
+ArrayInitializer                         ::=>
+    '{'
+        (
+            DelimitedList<VariableInitializer:Values;, ','>
+            ','?
+        )?
+    '}';
+
+VariableInitializer                      ::=>
+    Expression                              |
+    ArrayInitializer                        ;
+

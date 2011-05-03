@@ -1,0 +1,84 @@
+#include                      "Root.oilexer";
+
+/* --------------------------------------- *\
+|*            B.2.10: Interfaces           *|
+\* --------------------------------------- */
+
+InterfaceIndexerDeclaration               ::=
+    Attributes:Attributes;
+    "new"!:IsNew;?
+    Type:IndexerType;
+    (Identifier:Name; | "this")
+    '[' FormalParameterList:Parameters;? ']'
+    '{'
+        LeftOrRight<
+            AbstractGet:GetPart;,
+            AbstractSet:SetPart;>
+    '}'                                     ;
+
+
+TypeParameterIndexerDeclaration           ::=
+    Attributes:Attributes;
+    Type:IndexerType;
+    (Identifier:Name; | "this")
+    '[' FormalParameterList:Parameters;? ']'
+    '{'
+        LeftOrRight<
+            AbstractGet:GetPart;,
+            AbstractSet:SetPart;>
+    '}'                                     ;
+
+/* --------------------------------------- *\
+|*              B.2.7: Classes             *|
+\* --------------------------------------- */
+
+IndexerDeclaration                       ::=>
+    ConcreteIndexerDeclaration              |
+    AbstractIndexerDeclaration              ;
+
+ConcreteIndexerDeclaration                ::=
+    Attributes:Attributes;?
+    (
+        "new" |
+        "public"|
+        "protected"|
+        "internal"|
+        "private"|
+        "virtual"|
+        "sealed"|
+        "override"|
+        "extern"
+    ):Modifiers;*
+    Type:IndexerType;
+    IndexerMemberName:Name;
+    '[' FormalParameterList:Parameters; ']'
+    '{'
+        LeftOrRight<
+            ConcreteGet:GetPart;,
+            ConcreteSet:SetPart;>
+    '}'                                     ;
+
+AbstractIndexerDeclaration                ::=
+    Attributes:Attributes;?
+    SetInject<(
+        "new" |
+        "public"|
+        "protected"|
+        "internal"|
+        "private"|
+    ):Modifiers;,"abstract">
+    Type:IndexerType;
+    (Identifier:Name; | "this")
+    '[' FormalParameterList:Parameters; ']'
+    '{'
+        LeftOrRight<
+            AbstractGet:GetPart;,
+            AbstractSet:SetPart;>
+    '}'                                     ;
+
+IndexerMemberName                         ::=
+    (
+        Type:Interface; 
+        '.'
+    )?     (Identifier:Name; | "this")      ;
+

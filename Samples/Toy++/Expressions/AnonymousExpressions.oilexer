@@ -1,0 +1,52 @@
+#include "Root.oilexer";
+
+LambdaExpression                          ::= 
+    AnonymousFunctionSignature:Signature;
+    "=>"
+    AnonymousFunctionBody:Body;             ;
+
+AnonymousMethodExpression                 ::=
+    "delegate" 
+    ExplicitAnonymousFunctionSignature:Signature;?
+    Block:Body;                             ;
+
+AnonymousFunctionSignature               ::=>
+    ExplicitAnonymousFunctionSignature      |
+    ImplicitAnonymousFunctionSignature      ;
+
+AnonymousFunctionBody                    ::=>
+    Expression                              | 
+    Block                                   ;
+
+ExplicitAnonymousFunctionSignature      ::=
+    '(' DelimitedList<ExplicitAnonymousFunctionParameter:Parameters;, ','>? ')';
+
+ExplicitAnonymousFunctionParameter        ::=
+    ("ref" | "out"):Modifier;? Type:Type;
+    Identifier:Name;                        ;
+
+ImplicitAnonymousFunctionSignature       ::=>
+    Identifier                              |
+    ImplicitAnonymousFunctionParameterList  ;
+
+ImplicitAnonymousFunctionParameterList    ::=
+    '(' DelimitedList<Identifier:Names;, ','>? ')';
+
+AnonymousObjectCreationExpression         ::=
+    "new" AnonymousObjectInitializer:Type;  ;
+
+AnonymousObjectInitializer                ::=
+    '{'
+        (
+            DelimitedList<MemberDeclarator:Members;, ','>
+            ','?
+        )?
+    '}';
+
+MemberDeclarator                         ::=>
+    SimpleName                              |
+    MemberAccess                            |
+    MemberAssignmentDeclarator              ;
+
+MemberAssignmentDeclarator                ::=
+    Identifier:Name; '=' Expression:Value;  ;

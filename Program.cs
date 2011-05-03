@@ -710,6 +710,7 @@ namespace Oilexer
                 Console.CursorTop = cy - 3;
             }
             catch (ArgumentOutOfRangeException) { canAdjustConsoleLocale = false; }
+            catch (IOException) { canAdjustConsoleLocale = false; }
             if (canAdjustConsoleLocale)
             {
                 Console.CursorLeft = cx;
@@ -777,6 +778,13 @@ namespace Oilexer
                                 let nameLength = tokenEntry == null ? ruleEntry.Name.Length : tokenEntry.Name.Length
                                 orderby nameLength descending
                                 select nameLength).FirstOrDefault());
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.Write("#Root ");
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.Write("\"{0}\"", iprs.Result.Options.StartEntry);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine(";");
+            Console.ForegroundColor = consoleOriginal;
             foreach (var folder in folderEntries)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
@@ -838,7 +846,7 @@ namespace Oilexer
         }
 
 
-        private static void DisplaySyntax<T>(T item, ref bool startingLine, int depth)
+        private static void DisplaySyntax<T>(T item, ref bool startingLine, int depth, bool isLast = false)
             where T :
                 IScannableEntryItem
         {
@@ -864,10 +872,10 @@ namespace Oilexer
                 DisplaySyntax((ICharRangeTokenItem)item, ref startingLine, depth);
             else if (item is ICommandTokenItem)
                 DisplaySyntax((ICommandTokenItem)item, ref startingLine, depth);
-            DisplayItemInfo(item, ref startingLine, depth);
+            DisplayItemInfo(item, ref startingLine, depth, isLast);
         }
 
-        private static void DisplayItemInfo(IScannableEntryItem item, ref bool startingLine, int depth)
+        private static void DisplayItemInfo(IScannableEntryItem item, ref bool startingLine, int depth, bool isLast)
         {
             var consoleColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -923,8 +931,8 @@ namespace Oilexer
                 }
             }
             Console.ForegroundColor = consoleColor;
-
-            Console.Write(" ");
+            if (!isLast)
+                Console.Write(" ");
             if (startingLine)
                 startingLine = false;
         }
@@ -1044,7 +1052,7 @@ namespace Oilexer
                     Console.ForegroundColor = ConsoleColor.DarkGray;
                     if (!startingLine)
                     {
-                        Console.WriteLine("|");
+                        Console.WriteLine(" |");
                         startingLine = true;
                     }
                     else
@@ -1063,8 +1071,12 @@ namespace Oilexer
             where U :
                 IReadOnlyCollection<T>
         {
-            foreach (var item in expression)
-                DisplaySyntax<T>(item, ref startingLine, depth);
+            var items = expression.ToArray();
+            for (int i = 0; i < items.Length; i++)
+            {
+                var item = expression[i];
+                DisplaySyntax<T>(item, ref startingLine, depth, i == items.Length - 1);
+            }
         }
 
         private static void DisplaySyntax(ILiteralCharReferenceProductionRuleItem charItem, ref bool startingLine, int depth)
@@ -1222,7 +1234,20 @@ namespace Oilexer
                 Console.Write(' '.Repeat((depth + 1) * 4));
                 startingLine = false;
             }
-            Console.Write(item.Source.Reference.Name);
+            if (item.Source.Reference.IsDeleted)
+            {
+                Console.WriteLine("(");
+                startingLine = true;
+                DisplaySeriesSyntax<ITokenItem, ITokenExpression, ITokenExpressionSeries>(item, ref startingLine, depth + 1);
+                if (startingLine)
+                {
+                    Console.Write(' '.Repeat(depth * 4));
+                    startingLine = false;
+                }
+                Console.Write(")");
+            }
+            else
+                Console.Write(item.Source.Reference.Name);
             Console.ForegroundColor = consoleColor;
         }
 
