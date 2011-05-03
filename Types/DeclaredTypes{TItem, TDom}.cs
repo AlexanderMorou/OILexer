@@ -6,7 +6,7 @@ using Oilexer.Utilities.Collections;
 using System.CodeDom;
 using Oilexer.Utilities.Arrays;
 using Oilexer.Translation;
-
+using System.Linq;
 namespace Oilexer.Types
 {
     [Serializable]
@@ -186,12 +186,10 @@ namespace Oilexer.Types
              * This enables elements of the shared partial dictionary to be removed without 
              * an exception of 'collection changed' occurring.
              * */
-            foreach (TItem t in Tweaks.FilterArray<TItem>(this.Values.ToArray(), delegate(TItem check)
-            {
-                if (!(this.targetDeclaration is ISegmentableDeclarationTarget))
-                    return true;
-                return check.ParentTarget == this.targetDeclaration;
-            }))
+            foreach (TItem t in from value in this.Values
+                                where (!(targetDeclaration is ISegmentableDeclarationTarget)) ||
+                                      value.ParentTarget == this.targetDeclaration
+                                select value)
             {
                 this.Remove(t.GetUniqueIdentifier());
                 t.Dispose();

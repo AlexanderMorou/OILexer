@@ -218,6 +218,10 @@ namespace Oilexer.FiniteAutomata.Tokens
                     return @"\0";
                 case '\v':
                     return @"\v";
+                case '\\':
+                    return @"\\";
+                case ']':
+                    return @"\]";
                 default:
                     if (c > 255)
                     {

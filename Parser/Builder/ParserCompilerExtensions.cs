@@ -632,9 +632,13 @@ using Oilexer.FiniteAutomata.Rules;
                 ILiteralTokenItem<T>
         {
             SyntacticalNFAState state = new SyntacticalNFAState(builder);
-            GrammarVocabulary movement = new GrammarVocabulary(symbols, symbols[item.Literal]);
-            var stateEnd = new SyntacticalNFAState(builder);
-            state.MoveTo(movement, stateEnd);
+            var symbol = symbols[item.Literal];
+            if (symbol != null)
+            {
+                GrammarVocabulary movement = new GrammarVocabulary(symbols, symbols[item.Literal]);
+                var stateEnd = new SyntacticalNFAState(builder);
+                state.MoveTo(movement, stateEnd);
+            }
             return state;
         }
 

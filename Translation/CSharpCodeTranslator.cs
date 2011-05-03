@@ -2421,8 +2421,12 @@ namespace Oilexer.Translation
 
         private void TranslateAttributeInternal(IAttributeDeclaration attribute)
         {
-            IAttributeConstructorParameter[] normal = Tweaks.FilterArray<IAttributeConstructorParameter>(attribute.Parameters.ToArray(), delegate(IAttributeConstructorParameter param) { return (!(param is IAttributePropertyParameter)); });
-            IAttributeConstructorParameter[] named = Tweaks.FilterArray<IAttributeConstructorParameter>(attribute.Parameters.ToArray(), delegate(IAttributeConstructorParameter param) { return (param is IAttributePropertyParameter); });
+            IAttributeConstructorParameter[] normal = (from a in attribute.Parameters
+                                                       where (!(a is IAttributePropertyParameter))
+                                                       select a).ToArray();
+            IAttributeConstructorParameter[] named =  (from a in attribute.Parameters
+                                                       where (a is IAttributePropertyParameter)
+                                                       select a).ToArray();
             this.TranslateConceptTypeName(attribute.AttributeType);
             base.Write("(", TranslatorFormatterTokenType.Operator);
             bool firstMember = true;

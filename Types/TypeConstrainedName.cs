@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Oilexer.Types.Members;
 using Oilexer.Utilities.Arrays;
-
+using System.Linq;
 namespace Oilexer.Types
 {
     /// <summary>
@@ -243,7 +243,19 @@ namespace Oilexer.Types
         {
             this.name = name;
             bool valueTypeConstraint = false;
-            this.typeReferences = Tweaks.FilterArray<ITypeReference>(typeReferences, delegate(ITypeReference d)
+            typeReferences.Where(d =>
+                {
+                    bool isValueType = false;
+                    if (d is IExternTypeReference)
+                        if (((IExternTypeReference)d).TypeInstance.Type == typeof(ValueType))
+                            valueTypeConstraint = isValueType = true;
+                        else
+                            return true;
+                    else
+                        return true;
+                    return (!(isValueType));
+                });
+            this.typeReferences = typeReferences.Where(d =>
             {
                 bool isValueType = false;
                 if (d is IExternTypeReference)
@@ -254,7 +266,7 @@ namespace Oilexer.Types
                 else
                     return true;
                 return (!(isValueType));
-            });
+            }).ToArray();
 
             this.requiresConstructor = requiresConstructor;
             if (specialCondition == TypeParameterSpecialCondition.None && valueTypeConstraint)

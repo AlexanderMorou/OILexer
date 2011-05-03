@@ -218,5 +218,17 @@ namespace Oilexer._Internal.Inlining
                 return this.dfaState;
             }
         }
+
+        public override bool IsDeleted
+        {
+            get
+            {
+                return false;
+            }
+            internal set
+            {
+                throw new InvalidOperationException("Cannot change IsDeleted on an inlined token entry.");
+            }
+        }
     }
 }

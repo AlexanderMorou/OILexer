@@ -34,5 +34,10 @@ namespace Oilexer.Parser.GDFileData
         /// a recognizer type token.
         /// </summary>
         bool ForcedRecognizer { get; }
+        /// <summary>
+        /// Returns whether the <see cref="ITokenEntry"/> has been deleted
+        /// due to not being referenced.
+        /// </summary>
+        bool IsDeleted { get; }
     }
 }

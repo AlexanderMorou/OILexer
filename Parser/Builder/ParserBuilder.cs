@@ -131,7 +131,8 @@ namespace Oilexer.Parser.Builder
              *      state machine to its minimal form.
              * */
             var tokensArr = this.Source.GetTokens().ToArray();
-            tokensArr.AsParallel().ForAll(token =>
+            //.AsParallel()
+            tokensArr.OnAll(token =>
                 token.ReduceDFA());
         }
 
@@ -139,7 +140,11 @@ namespace Oilexer.Parser.Builder
         {
             var rulesArr = (from rule in this.Source.GetRules()
                            select this.ruleDFAStates[rule]).ToArray();
-            rulesArr.AsParallel().ForAll(rule => { lock (rule) rule.ReduceDFA(); });
+            rulesArr.AsParallel().ForAll(rule => 
+                { 
+                    lock (rule) 
+                        rule.ReduceDFA(); 
+                });
 
             this.LexicalAnalyzer = new RegularLanguageLexer(this);
         }
@@ -148,24 +153,34 @@ namespace Oilexer.Parser.Builder
         {
             this.GrammarSymbols = new GrammarSymbolSet(this.Source);
             this.ruleNFAStates = new Dictionary<IProductionRuleEntry, SyntacticalNFAState>();
-            this.Source.GetRules().AsParallel().ForAll(rule =>
-                {
-                    lock (this.ruleNFAStates)
-                        this.ruleNFAStates.Add(rule, rule.BuildNFA(new SyntacticalNFARootState(rule, this), this.GrammarSymbols, this));
-                });
+            var rules = (from rule in Source.GetRules()
+                         orderby rule.Name
+                         select rule).ToArray();
+            var result = new SyntacticalNFARootState[rules.Length];
+            int i = 0;
+            rules.OnAll(p => new { Rule = p, Index = i++ }).AsParallel().ForAll(ruleAndIndex => 
+                result[ruleAndIndex.Index] = (SyntacticalNFARootState)ruleAndIndex.Rule.BuildNFA(new SyntacticalNFARootState(ruleAndIndex.Rule, this), this.GrammarSymbols, this));
+            for (i = 0; i < result.Length; i++)
+            {
+                var current = result[i];
+                this.ruleNFAStates.Add(current.Source, current);
+            }
         }
 
         private void ConstructRuleDFA()
         {
             this.ruleDFAStates = new Dictionary<IProductionRuleEntry, SyntacticalDFARootState>();
-            this.Source.GetRules().AsParallel().ForAll(rule =>
-                {
-                    var dfa = (SyntacticalDFARootState)this.ruleNFAStates[rule].DeterminateAutomata();
-                    lock (this.ruleDFAStates)
-                    {
-                        this.ruleDFAStates.Add(rule, dfa);
-                    }
-                });
+            int i = 0;
+            var rules = (from rule in Source.GetRules()
+                         orderby rule.Name
+                         select rule).ToArray();
+            SyntacticalDFARootState[] result = new SyntacticalDFARootState[rules.Length];
+            rules.OnAll(p => new { Rule = p, Index = i++ }).AsParallel().ForAll(ruleAndIndex => result[ruleAndIndex.Index] = (SyntacticalDFARootState)this.ruleNFAStates[ruleAndIndex.Rule].DeterminateAutomata());
+            for (i = 0; i < result.Length; i++)
+            {
+                var current = result[i];
+                ruleDFAStates.Add(current.Entry, current);
+            }
             this.RuleDFAStates = new ReadOnlyDictionary<IProductionRuleEntry, SyntacticalDFARootState>(this.ruleDFAStates);
         }
 
@@ -201,7 +216,8 @@ namespace Oilexer.Parser.Builder
                     BuildRecognizerMachine(tokenDFA, tokenName);
                     break;
                 case RegularCaptureType.Transducer:
-                    BuildTransducerMachine(tokenDFA, tokenName);
+                    BuildRecognizerMachine(tokenDFA, tokenName);
+                    //BuildTransducerMachine(tokenDFA, tokenName);
                     break;
                 case RegularCaptureType.Undecided:
                     break;
@@ -384,10 +400,10 @@ namespace Oilexer.Parser.Builder
                     graph = null;
                 stateCase = stateSwitch.Cases.AddNew(new PrimitiveExpression(state.StateValue));
 
-                if (activeNamedSources.Count > 0)
-                    stateCase.Statements.Add(new CommentStatement("Sources:\r\n" +
-                        (from source in activeNamedSources
-                         select string.Format("{0} ({1})", source.Key.Name, source.Value)).ToArray().FixedJoinSeries(", ")));
+                //if (activeNamedSources.Count > 0)
+                //    stateCase.Statements.Add(new CommentStatement("Sources:\r\n" +
+                //        (from source in activeNamedSources
+                //         select string.Format("{0} ({1})", source.Key.Name, source.Value)).ToArray().FixedJoinSeries(", ")));
             skipGraph:
                 if (state.InTransitions.Count > 0)
                     if (!(state.InTransitions.Count == 1 && state.InTransitions[0].Value.Count == 1 && state.InTransitions[0].Value[0] == state))
@@ -442,9 +458,9 @@ namespace Oilexer.Parser.Builder
                                                 where source != null && !string.IsNullOrEmpty(source.Name)
                                                 where sourceSet.Contains(source)
                                                 select s).ToDictionary(p => (ITokenItem)p.Item1, p => p.Item2);
-                        currentCondition.Statements.Add(new CommentStatement("Sources:\r\n" +
-                            (from source in destNamedSources
-                             select string.Format("{0} ({1})", source.Key.Name, source.Value)).ToArray().FixedJoinSeries(", ")));
+                        //currentCondition.Statements.Add(new CommentStatement("Sources:\r\n" +
+                        //    (from source in destNamedSources
+                        //     select string.Format("{0} ({1})", source.Key.Name, source.Value)).ToArray().FixedJoinSeries(", ")));
 
                         currentCondition.Statements.Add(targetLabel.GetGoTo(currentCondition.Statements));
                         currentTarget = currentCondition.FalseBlock;
