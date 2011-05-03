@@ -1,0 +1,17 @@
+#include                      "Root.oilexer";
+/* --------------------------------------- *\
+|*              B.2.7: Classes             *|
+\* --------------------------------------- */
+ClassDeclaration                          ::=
+	Attributes:Attributes;?
+    (
+        OTuple<"new", ("public" | "private"), ("sealed"| "abstract" | "static")> |
+        OTuple<"new", "protected", "internal", ("sealed"| "abstract" | "static")>
+    ):Modifiers;
+    "partial"!:IsPartial;? 
+	"class" Identifier:Name;
+	ClassOrStructHeader<>
+	'{'
+		ClassMemberDeclaration:Members;*
+	'}' ';'?                                ;
+	

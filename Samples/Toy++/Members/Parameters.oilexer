@@ -1,0 +1,54 @@
+#include                      "Root.oilexer";
+
+/* --------------------------------------- *\
+|*              B.2.7: Classes             *|
+\* --------------------------------------- */
+
+MethodFormalParameterList                ::=>
+    FormalParameterList                     |
+    ExtensionParameterList                  ;
+
+FormalParameterList                       ::=
+    LeftOrRightDelimited<
+        DelimitedList
+        <
+            FixedParameter:Parameters;, 
+            ','
+        >,
+        ',', 
+        ParameterArray:Parameters;>         ;
+
+ExtensionParameterList                    ::=
+    LeftOrRightDelimited<
+        ExtensionParameter:Parameters;,
+        ',',
+        LeftOrRightDelimited<
+            DelimitedList
+            <
+                FixedParameter:Parameters;, 
+                ','
+            >,
+            ',', 
+            ParameterArray:Parameters;>>    ;
+
+FixedParameter                            ::=
+    Attributes:Attributes;?
+    (
+        "ref" | 
+        "out"
+    ):Modifier;?
+    Type:ParameterType;
+    Identifier:Name;                        ;
+
+ParameterArray                            ::=
+    Attributes:Attributes;?
+    "params"
+    ArrayType:ParameterType;
+    Identifier:Name;                        ;
+
+ExtensionParameter                        ::=
+    Attributes:Attributes;?
+    "this"
+    Type:ParameterType;
+    Identifier:Name;                        ;
+

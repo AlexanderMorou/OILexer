@@ -1,0 +1,12 @@
+#ifndef Lexer
+#define Lexer = TPPreprocessor;
+#include        "Preprocessor.oilexer";
+#ParserName     "TPPreprocessor";
+#GrammarName    "T++ Preprocessor";
+#AssemblyName   "TPPreprocessor";
+#LexerName      "TPPrePTokenizer";
+#endif
+
+#include        "Operators.oilexer";
+#include        "Keywords.oilexer";
+#include        "OtherTokens.oilexer";

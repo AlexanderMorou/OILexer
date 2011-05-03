@@ -1,0 +1,36 @@
+#include                      "Root.oilexer";
+
+LanguageTokenMember                      ::=>
+    LanguageEnumTokenMember                 |
+    LanguageCaptureTokenMember              |
+    LanguageRecognizerTokenMember           ;
+
+LanguageEnumTokenMember                   ::=
+    "enum" "token" 
+    "partial"!:IsPartial;? Identifier:Name;
+    '{'
+        (
+            DelimitedList<LanguageEnumTokenMemberItem:Items;, ','>
+            ','?
+        )?
+    '}' ';'?;
+
+LanguageCaptureTokenMember                ::=
+    "capturing" "token" Identifier:Name;     
+    '{'
+       LanguageCaptureTokenMemberItem:Items;*
+    '}' ';'?;
+
+
+LanguageCaptureTokenMemberItem            ::=
+    Identifier:Name; '=' 
+    CaptureExpression:Expression; ';'       ;
+
+LanguageEnumTokenMemberItem               ::=
+    Identifier:Name; '=' String:Value;      ;
+
+LanguageRecognizerTokenMember             ::=
+    "recognizer" "token" Identifier:Name;
+    '{'
+        DelimitedList<RecognizerExpression:Items;, '|'>
+    '}' ';'?;

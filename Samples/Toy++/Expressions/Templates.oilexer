@@ -1,0 +1,19 @@
+#include "Root.oilexer";
+InvalidAssociation = "Invalid association '{0}'.  Expected: Left or Right", 0x100;
+
+PrecedenceAssociation := @"Left":Left; | @"Right":Right;;
+
+BinaryOperationExpression
+    <
+        Current:Expect=Rule;, 
+        Operators:Expect=Token;, 
+        Lower:Expect=Rule;, 
+        Associativity:Expect=PrecedenceAssociation;
+    > ::=
+#if Associativity == Left
+    #return (Current:Left; Operators)? Lower:Right;;
+#elif Associativity == Right
+    #return Lower:Left; (Operators Current:Right;)?;
+#else
+    #throw InvalidAssociation, Associativity;
+#endif;

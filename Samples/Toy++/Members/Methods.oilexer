@@ -1,0 +1,101 @@
+#include                      "Root.oilexer";
+
+/* --------------------------------------- *\
+|*              B.2.7: Classes             *|
+\* --------------------------------------- */
+
+MethodDeclaration                        ::=>
+    AbstractMethodDeclaration               |
+    ConcreteMethodDeclaration               ;
+
+AbstractMethodDeclaration                 ::=
+    Attributes:Attributes;?
+    (
+        Tuple<"abstract", "new"?, "protected"?, "internal"?>
+        Tuple<"abstract", "new"?, "public"?>
+    ):Modifiers;
+    ReturnType:ReturnType;
+    Identifier:Name;
+    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
+    ';'                                     ;
+
+ConcreteMethodDeclaration                ::=>
+    InstanceMethodDeclaration               |
+    StaticMethodDeclaration                 ;
+
+InstanceMethodDeclaration                 ::=
+    Attributes:Attributes;?
+    (
+        OTuple<
+            "new", 
+            (
+                "public"                    | 
+                "private"
+            ), 
+            "virtual", 
+            "extern">                       |
+        OTuple<
+            "new", 
+            (
+                "public"                    | 
+                "private"
+            ), 
+            "override", 
+            "sealed", 
+            "extern">                       |
+        OTuple<
+            "new", 
+            "internal", 
+            "protected", 
+            "virtual", 
+            "extern"> |
+        OTuple<
+            "new", 
+            "internal", 
+            "protected", 
+            "override", 
+            "sealed", 
+            "extern">
+    ):Modifiers;
+    "partial"!:IsPartial;?
+    ReturnType:ReturnType;
+    MemberName:Name;
+    GenericHeader<
+        '(' 
+            FormalParameterList:Parameters;? 
+        ')'>
+    Block:Body;                             ;
+
+StaticMethodDeclaration                   ::=
+    Attributes:Attributes;?
+    (
+        Tuple<"new"?, "protected"?, "internal"?, "extern"?, "static"> |
+        Tuple<"new"?, ("public" | "private")?, "extern"?, "static">
+    ):Modifiers;
+    "partial"!:IsPartial;?
+    ReturnType:ReturnType;
+    MemberName:Name;
+    GenericHeader<'(' MethodFormalParameterList:Parameters;? ')'>
+    Block:Body;                             ;
+
+/* --------------------------------------- *\
+|*            B.2.10: Interfaces           *|
+\* --------------------------------------- */
+
+InterfaceMethodDeclaration                ::=
+    Attributes:Attributes;?
+    "new"!:IsNew;?
+    ReturnType:ReturnType;
+    Identifier:Name;
+    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
+    ';'                                     ;
+
+/* --------------------------------------- *\
+|*     T++ Specific Generic Extensions     *|
+\* --------------------------------------- */
+TypeParameterMethodDeclaration            ::=
+    Attributes:Attributes;?
+    ReturnType:ReturnType;
+    Identifier:Name;
+    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
+    ';'                                     ;

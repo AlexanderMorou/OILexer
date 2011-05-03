@@ -1,0 +1,156 @@
+#include "Root.oilexer";
+
+UnaryExpression                          ::=>
+    UnaryOperators:Operators;*
+    PrimaryExpression:Operand;              ;
+
+UnaryOperators                            ::=>
+    CastOperator                            |
+    UnaryOperator                           ;
+
+UnaryOperator                             ::=
+    (
+        '+'                                 |
+        '-'                                 |
+        '!'                                 |
+        '~'                                 |
+        "++"                                |
+        "--"
+    ):Operator;                             ;
+    
+CastOperator                              ::=
+    '(' Type:Operator; ')'                  ;
+
+MultiplicitiveExpression                  ::=
+    BinaryOperationExpression<
+        MultiplicitiveExpression,
+        ('/' | '*' | '%'):Operator;,
+        UnaryExpression,
+        PrecedenceAssociation.Left>         ;
+
+AdditiveExpression                        ::=
+    BinaryOperationExpression<
+        AdditiveExpression,
+        ('+' | '-'):Operator;,
+        MultiplicitiveExpression,
+        PrecedenceAssociation.Left>         ;
+
+ShiftExpression                           ::=
+    BinaryOperationExpression<
+        ShiftExpression,
+        ("<<" | ">>"):Operator;,
+        AdditiveExpression,
+        PrecedenceAssociation.Left>         ;
+
+RelationalExpression                     ::=>
+    TypeRelationalExpression                |
+    ValueRelationalExpression               ;
+
+ValueRelationalExpression                 ::=
+    BinaryOperationExpression<
+        RelationalExpression,
+        ('<' | '>' | "<=" | ">="):Operator;,
+        ShiftExpression,
+        PrecedenceAssociation.Left>         ;
+
+TypeRelationalExpression                  ::=
+    RelationalExpression:Left;
+    (
+        "is"                                |
+        "as"
+    ):Operator;
+    Type:Right;                             ;
+
+EqualityExpression                        ::=
+    BinaryOperationExpression<
+        EqualityExpression,
+        ("==" | "!="):Operator;,
+        RelationalExpression,
+        PrecedenceAssociation.Left>         ;
+
+AndExpression                             ::=
+    BinaryOperationExpression<
+        AndExpression,
+        '&',
+        EqualityExpression,
+        PrecedenceAssociation.Left>         ;
+
+ExclusiveOrExpression                     ::=
+    BinaryOperationExpression<
+        ExclusiveOrExpression,
+        '^',
+        AndExpression,
+        PrecedenceAssociation.Left>         ;
+
+InclusiveOrExpression                     ::=
+    BinaryOperationExpression<
+        InclusiveOrExpression,
+        '|',
+        ExclusiveOrExpression,
+        PrecedenceAssociation.Left>         ;
+
+ConditionalAndExpression                  ::=
+    BinaryOperationExpression<
+        ConditionalAndExpression,
+        "&&",
+        InclusiveOrExpression,
+        PrecedenceAssociation.Left>         ;
+
+ConditionalOrExpression                   ::=
+    BinaryOperationExpression<
+        ConditionalOrExpression,
+        "||",
+        ConditionalAndExpression,
+        PrecedenceAssociation.Left>         ;
+
+NullCoalescingExpression                  ::=
+    BinaryOperationExpression<
+        NullCoalescingExpression,
+        "??",
+        ConditionalOrExpression,
+        PrecedenceAssociation.Right>        ;
+
+ConditionalExpression                     ::=
+    NullCoalescingExpression:Term;
+    (
+        '?'
+        Expression:TruePart; 
+        ':'
+        Expression:FalsePart;
+    )?                                      ;
+
+AssignmentExpression                      ::=
+    BinaryOperationExpression<
+        Expression,
+        (
+            '='                             | 
+            "+="                            | 
+            "-="                            | 
+            "*="                            | 
+            "/="                            | 
+            "%="                            | 
+            "&="                            | 
+            "|="                            | 
+            "^="                            | 
+            "<<="                           | 
+            ">>="
+        ):Operator;,
+        UnaryExpression,
+        PrecedenceAssociation.Right>        ;
+
+NonAssignmentExpression                  ::=>
+    ConditionalExpression                   |
+    LambdaExpression                        |
+    QueryExpression                         ;
+
+CrementExpression                        ::=>
+    PrecrementExpression                    |
+    PostcrementExpression                   ;
+
+PrecrementExpression                      ::=
+    ("++" | "--"):Operator;
+    UnaryExpression:Term;                   ;
+
+PostcrementExpression                     ::=
+    PrimaryExpression:Term;
+    ("++" | "--"):Operator;                 ;

@@ -1,7 +1,7 @@
 #include                      "Root.oilexer";
 
 #ifdef Lexer
-#if Lexer == "CSPreprocessor"
+#if Lexer == "TPPreprocessor"
 
 Token$ :=
     Identifier                              |
@@ -39,7 +39,7 @@ String :=
 StringChar := 
     CommonEscapes                           | 
     StringEscape                            | 
-    [^"\\\r\n:];
+    [^"\\\r\n];
 
 StringEscape := '\\' '"';
 
@@ -106,14 +106,107 @@ HexByteEscape := 'x' HexChar{2};
 HexShortEscape := 'u' HexChar{4};
 
 DecimalNumber := 
-    [0-9]+;
+    [0-9];
     
+SeptemvigesimalChar := [0-9A-Qa-q];
+
+OctalChar := [0-7];
+
+CharacterRange$                            :=
+    '[' '^':InvertedSet;Flag=true;? 
+    (
+        '-':HasHyphen;Flag=true;? 
+        CharacterRangeEntry:Entries;+       | 
+        CharacterRangeEntry:Entries;+ 
+        '-':HasHyphen;Flag=true;?
+    )
+    ']'                                     ;
+
+CharacterRangeUnicodeSet              :=
+    @":L:":Letter;                          |
+    @":LU:":LetterUpper;                    |
+    @":LL:":LetterLowerCase;                |
+    @":LT:":LetterTitleCase;                |
+    @":LM:":LetterModifier;                 |
+    @":LO:":LetterOther;                    |
+
+    @":M:":Mark;                            |
+    @":MN:":NonSpacing;                     |
+    @":MC:":Combining;                      |
+    @":ME:":Enclosing;                      |
+
+    @":N:":Number;                          |
+    @":ND:":NumberDigit;                    |
+    @":NL:":NumberLetter;                   |
+    @":NO:":NumberOther;                    |
+
+    @":Z:":Separator;                       |
+    @":ZS:":SeparatorSpace;                 |
+    @":ZL:":SeparatorLine;                  |
+    @":ZP:":SeparatorParagraph;             |
+
+    @":C:":Other;                           |
+    @":CC:":OtherControl;                   |
+    @":CF:":OtherFormat;                    |
+    @":CS:":OtherSurrogate;                 |
+    @":CO:":OtherPrivateUse;                |
+    @":CN:":OtherNotAssigned;               |
+
+    @":P:":Punctuation;                     |
+    @":PC:":PunctuationConnector;           |
+    @":PD:":PunctuationDash;                |
+    @":PS:":PunctuationOpenOrStart;         |
+    @":PE:":PunctuationCloseOrEnd;          |
+    @":PI:":PunctuationInitialQuote;        |
+    @":PF:":PunctuationFinalQuote;          |
+    @":PO:":PunctuationOther;               |
+
+    @":S:":Symbol;                          |
+    @":SM:":SymbolMath;                     |
+    @":SC:":SymbolCurrency;                 |
+    @":SK:":SymbolModifier;                 |
+    @":SO:":SymbolOther;                    ;
+
+CharacterRangeEntry                        :=
+    CharacterRangeChar                      |
+    CharacterRangeSet                       |
+    CharacterRangeUnicodeSet                ;
+
+CharacterRangeSet :=
+    CharacterRangeChar:Start; '-' 
+    CharacterRangeChar:End;                 ;
+
+CharacterRangeChar                         :=
+    [^\]\\-:] |
+    '\\' (
+                '\\'                        |
+                ']'                         |
+                '-'                         |
+                ':'                         |
+                HexEscape                   |
+                OctEscape
+             )                              ;
+
 Number := 
-    "0x" HexChar:WholePart;+  
+    /* *
+     * To ensure that the base-27 is parsed right,
+     * it requires the 'U' to always be first.
+     * */
+    "27x" SeptemvigesimalChar:WholePart;+
+    (@'U':Unsigned;? @'L':Long;?):ValueType;|
+    "8x" OctalChar:WholePart;+
+    (
+        @'U':Unsigned; @'L':Long;?          | 
+        @'L':Long; @'U':Unsigned;?          | 
+        @'D':Double;                        | 
+        @'F':Single;                        | 
+        @'M':Decimal;
+    ):ValueType;?                           | 
+    "0x" HexChar:WholePart;+
     (
         @'U':Unsigned; @'L':Long;?          | 
         @'L':Long; @'U':Unsigned;?
-    ):ValueType;? |
+    ):ValueType;?                           |
     DecimalNumber:WholePart;+ 
     (
         (
@@ -144,20 +237,20 @@ Comment :=*
     RangeComment                            ; 
 
 #ifdef Lexer
-#if Lexer == "CSPreprocessor"
+#if Lexer == "TPPreprocessor"
 
 Whitespace :=
     [:Zs:]                                  | 
-    '\u0009'                                | 
+    '\x09'                                  | 
     '\v'                                    | 
     '\t'                                    |
     '\f'                                    ; 
 
-#elif Lexer == "CSParser"
+#elif Lexer == "TPParser"
 Whitespace :=*
     (
         [:Zs:]                              | 
-        '\u0009'                            | 
+        '\x09'                              | 
         '\v'                                | 
         '\t'                                |
         '\f'
@@ -176,7 +269,7 @@ NewLine :=
     '\r'                                    | 
     '\n'                                    | 
     "\r\n"                                  | 
-    '\u0085'                                | 
+    '\x85'                                  | 
     '\u2028'                                | 
     '\u2029'                                ; 
 

@@ -1,0 +1,24 @@
+#include                      "Root.oilexer";
+
+LocalVariableDeclaration                  ::=
+    LocalVariableType:Type; 
+    DelimitedList<LocalVariableDeclarator:Declared;, ','> ';'; 
+    
+LocalConstantDeclaration                 ::=>
+    "const" Type:Type; 
+    DelimitedList<ConstantDeclarator:Declared;, ','> ';';
+
+LocalVariableType                        ::=>
+    Type                                    |
+    ImplicitType                            ;
+
+ImplicitType                              ::=
+    "var"                                   ;
+
+LocalVariableDeclarator ::=
+    Identifier:Name; ('=' 
+    LocalVariableInitializer:Value;)?       ;
+
+LocalVariableInitializer                 ::=>
+    Expression                              |
+    ArrayInitializer                        ;

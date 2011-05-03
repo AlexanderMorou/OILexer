@@ -1,0 +1,150 @@
+#include                  "..\\Root.oilexer";
+
+#include          "ClassDeclaration.oilexer";
+#include       "DelegateDeclaration.oilexer";
+#include           "EnumDeclaration.oilexer";
+#include                  "Generics.oilexer";
+#include      "InterfaceDeclaration.oilexer";
+#include         "StructDeclaration.oilexer";
+#include                 "Templates.oilexer";
+
+/* B.2.1: Basic Concepts */
+TypeName                                 ::=>
+    NamespaceOrTypeName                     ;
+/* ---------------------------------------- *\
+|* B.2.2 Types                              *|
+\* ---------------------------------------- */
+TypeArgumentList ::=
+    '<' Type:Arguments; (',' Type:Arguments;)* '>';
+
+Type                                     ::=>
+    ValueType                               |
+    ReferenceType                           |
+    TypeParameter                           |
+#ifdef UNSAFECONTEXT
+/* --------------------------------------- *\
+|* B.3: Grammar Extensions for unsafe code *|
+\* --------------------------------------- */
+    PointerType
+#endif                                      ;
+    
+ValueType                                ::=>
+    StructType                              |
+    EnumType                                ;
+    
+StructType                               ::=>
+    TypeName                                |
+    SimpleType                              |
+    NullableType                            ;
+
+SimpleType                               ::=>
+    NumericType:Type;                       |
+    BoolType                                ;
+
+BoolType                                  ::=
+    "bool"                                  ;
+
+NumericType                              ::=>
+    IntegralType                            |
+    FloatingPointType                       |
+    DecimalType                             ;
+    
+FloatingPointType                        ::=>
+    FloatType                               |
+    DoubleType                              ;
+
+FloatType                                 ::=
+    "float"                                 ;
+    
+DoubleType                                ::=
+    "double"                                ;
+
+IntegralType ::=
+    (
+        "sbyte"                             | 
+        "byte"                              | 
+        "short"                             | 
+        "ushort"                            | 
+        "int"                               | 
+        "uint"                              | 
+        "long"                              | 
+        "ulong"                             | 
+        "char"
+    ):IntegralPrimitive;                    ; 
+
+DecimalType                               ::=
+    "decimal"                               ;
+ 
+/* *
+ * Changed from Type to ValueType.
+ * */
+NullableType                              ::=
+    ValueType:NonNullableType; '?'          ;
+
+EnumType                                 ::=>
+    TypeName                                ;
+
+ReferenceType                            ::=>
+    ClassType                               |
+    ArrayType                               |
+    InterfaceOrDelegateType                 ;
+
+ClassType                                ::=>
+    TypeName                                |
+    StringType                              |
+    ObjectType                              ;
+    
+StringType                                ::=
+    "string"                                ;
+    
+ObjectType                                ::=
+    "object"                                ;
+    
+InterfaceOrDelegateType                  ::=>
+    TypeName                                ;
+
+/* B.3. Grammar extensions for unsafe code */
+#ifdef UNSAFECONTEXT
+
+PointerType                              ::=>
+    PointableEntity '*'                     ;
+    
+PointableEntity                          ::=>
+    PointerType                             |
+    ValueType                               |
+    VoidType                                ;
+
+#endif
+
+VoidType                                  ::=
+    "void"                                  ;
+
+TypeParameter                            ::=>
+    Identifier                              ;
+
+TypeDeclaration                          ::=>
+    ClassDeclaration                        |
+    StructDeclaration                       |
+    InterfaceDeclaration                    |
+    EnumDeclaration                         |
+    DelegateDeclaration                     ;
+
+/* --------------------------------------- *\
+|*              B.2.7: Classes             *|
+\* --------------------------------------- */
+
+ReturnType                               ::=>
+    VoidType                                |
+    Type                                    ;
+
+CommonTypeModifiers                       ::=
+        "new" "public"?                     |
+        "new" "private"?                    |
+        "new" "internal"? "protected"?      |
+        "new" "protected"? "internal"?      |
+        "public" "new"?                     |
+        "private" "new"?                    |
+        "internal" "new"? "protected"?      |
+        "internal" "protected"? "new"?      |
+        "protected" "new"? "internal"?      |
+        "protected" "internal"? "new"?      ;

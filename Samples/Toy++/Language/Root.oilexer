@@ -1,0 +1,35 @@
+#include                  "..\\Root.oilexer";
+#include                    "Tokens.oilexer";
+#include               "Expressions.oilexer";
+
+LanguageDeclaration                       ::=
+    (
+        "public"                            |
+        "internal" "protected"?             |
+        "protected" "internal"?            
+    )?
+    "partial"!:IsPartial;? "language" 
+    Identifier:Name;
+    LanguageDeclarationPLVariations<>
+    '{'
+        LanguageMember:Members;*
+    '}';
+
+LanguageDeclarationPLVariations<_>        ::=
+    "with" LanguageDeclarationParserName<>
+    "and" LanguageDeclarationLexerName<>    |
+    "with" LanguageDeclarationLexerName<>
+    "and" LanguageDeclarationParserName<>   |
+    "with" LanguageDeclarationParserName<>  |
+    "with" LanguageDeclarationLexerName<>   ;
+
+LanguageDeclarationParserName<_>          ::=
+    'a' "parser" "named" 
+    Identifier:ParserName;;
+
+LanguageDeclarationLexerName<_>           ::=
+    'a' "lexer" "named" 
+    Identifier:LexerName;                   ;
+
+LanguageMember                           ::=>
+    LanguageTokenMember                     ;
