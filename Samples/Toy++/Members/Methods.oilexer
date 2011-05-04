@@ -1,4 +1,4 @@
-#include                      "Root.oilexer";
+#include                   "Members.oilexer";
 
 /* --------------------------------------- *\
 |*              B.2.7: Classes             *|
@@ -26,36 +26,10 @@ ConcreteMethodDeclaration                ::=>
 InstanceMethodDeclaration                 ::=
     Attributes:Attributes;?
     (
-        OTuple<
-            "new", 
-            (
-                "public"                    | 
-                "private"
-            ), 
-            "virtual", 
-            "extern">                       |
-        OTuple<
-            "new", 
-            (
-                "public"                    | 
-                "private"
-            ), 
-            "override", 
-            "sealed", 
-            "extern">                       |
-        OTuple<
-            "new", 
-            "internal", 
-            "protected", 
-            "virtual", 
-            "extern"> |
-        OTuple<
-            "new", 
-            "internal", 
-            "protected", 
-            "override", 
-            "sealed", 
-            "extern">
+        OTuple<"new", ("public" | "private"), "virtual", "extern"> |
+        OTuple<"new", ("public" | "private"), "override", "sealed", "extern"> |
+        OTuple<"new", "internal", "protected", "virtual", "extern"> |
+        OTuple<"new", "internal", "protected", "override", "sealed", "extern">
     ):Modifiers;
     "partial"!:IsPartial;?
     ReturnType:ReturnType;
@@ -91,7 +65,7 @@ InterfaceMethodDeclaration                ::=
     ';'                                     ;
 
 /* --------------------------------------- *\
-|*     T++ Specific Generic Extensions     *|
+|*    T*y++ Specific Generic Extensions    *|
 \* --------------------------------------- */
 TypeParameterMethodDeclaration            ::=
     Attributes:Attributes;?

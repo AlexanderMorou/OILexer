@@ -1,5 +1,5 @@
-#include                      "Root.oilexer";
-#Root                         "Input";
+#include         "TPPLexicalGrammar.oilexer";
+#Root                                "Input";
 /* *
  * Referenced from C# Language Specification
  * Appendix B.1: Lexical Grammar

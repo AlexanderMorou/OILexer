@@ -279,18 +279,18 @@ namespace Oilexer.FiniteAutomata.Tokens
                  * Obtain a series of state machines and a set of flags
                  * which denotes their active status.
                  * */
-                var workingSet = currentTarget.ObtainWorkingStateMachineData(acceptable, this.stateMachines);
+                var workingSet = currentTarget.ObtainWorkingStateMachineData(acceptable, this.stateMachines, p => new { ActiveMachines = p.Item1, Machines = p.Item2.ToArray() });
                 /* *
                  * Unlikely, but if it failed, return.
                  * */
-                if (workingSet.Item1.Length == 0)
+                if (workingSet.ActiveMachines.Length == 0)
                     return new RegularLanguageScanData(this.bufferPosition);
                 bool machinesActive;
                 /* *
                  * Reset all the machines in scope.
                  * */
-                for (int i = 0; i < workingSet.Item1.Length; i++)
-                    workingSet.Item2[i].Reset();
+                for (int i = 0; i < workingSet.ActiveMachines.Length; i++)
+                    workingSet.Machines[i].Reset();
                 do
                 {
                     machinesActive = false;
@@ -298,7 +298,7 @@ namespace Oilexer.FiniteAutomata.Tokens
                      * Iterate through the active machines, stepping through
                      * their states.
                      * */
-                    for (int i = 0; i < workingSet.Item1.Length; i++)
+                    for (int i = 0; i < workingSet.ActiveMachines.Length; i++)
                     {
                         /* *
                          * If the machine is active and the character
@@ -306,15 +306,15 @@ namespace Oilexer.FiniteAutomata.Tokens
                          * character in the state machine, deactivate
                          * that machine.
                          * */
-                        if (workingSet.Item1[i] && !workingSet.Item2[i].Next(currentChar))
-                            workingSet.Item1[i] = false;
+                        if (workingSet.ActiveMachines[i] && !workingSet.Machines[i].Next(currentChar))
+                            workingSet.ActiveMachines[i] = false;
                         /* *
                          * If it hasn't been noted that a machine is active and
                          * the current character is a valid state of the current
                          * machine, note that there is an active machine working
                          * to continue the loop.
                          * */
-                        if (!machinesActive && workingSet.Item1[i])
+                        if (!machinesActive && workingSet.ActiveMachines[i])
                             machinesActive = true;
                     }
                     /* *
@@ -332,7 +332,7 @@ namespace Oilexer.FiniteAutomata.Tokens
                  * token(s) possible.
                  * */
                 int longest = 0;
-                for (int i = 0; i < workingSet.Item2.Length; i++)
+                for (int i = 0; i < workingSet.Machines.Length; i++)
                 {
                     /* *
                      * If the current state machine is in a valid state and its
@@ -340,7 +340,7 @@ namespace Oilexer.FiniteAutomata.Tokens
                      * denote the longest element.
                      * */
                     int currentLength = 0;
-                    if (workingSet.Item2[i].InValidEndState && (currentLength = workingSet.Item2[i].LongestLength) > longest)
+                    if (workingSet.Machines[i].InValidEndState && (currentLength = workingSet.Machines[i].LongestLength) > longest)
                         longest = currentLength;
                 }
                 /* *
@@ -358,9 +358,9 @@ namespace Oilexer.FiniteAutomata.Tokens
                  * length observed and which are in a valid exit state, add their
                  * reults to the scan results observed in this pass.
                  * */
-                for (int i = 0; i < workingSet.Item2.Length; i++)
+                for (int i = 0; i < workingSet.Machines.Length; i++)
                 {
-                    IRegularLanguageStateMachine current = workingSet.Item2[i];
+                    IRegularLanguageStateMachine current = workingSet.Machines[i];
                     if (current.InValidEndState && current.LongestLength == longest)
                         current.AddEntries(result);
                 }

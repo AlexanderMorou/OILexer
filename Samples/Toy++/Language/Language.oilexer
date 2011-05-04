@@ -1,27 +1,24 @@
-#include                  "..\\Root.oilexer";
-#include                    "Tokens.oilexer";
+#include                 "..\\Toy++.oilexer";
+#include            "LanguageTokens.oilexer";
 #include               "Expressions.oilexer";
 
 LanguageDeclaration                       ::=
     (
-        "public"                            |
-        "internal" "protected"?             |
-        "protected" "internal"?            
-    )?
+        "public"?                           |
+        OTuple<"internal", "protected">
+    ):Modifiers;
     "partial"!:IsPartial;? "language" 
     Identifier:Name;
     LanguageDeclarationPLVariations<>
     '{'
         LanguageMember:Members;*
-    '}';
+    '}' ';'?                                ;
 
 LanguageDeclarationPLVariations<_>        ::=
     "with" LanguageDeclarationParserName<>
-    "and" LanguageDeclarationLexerName<>    |
+    ("and" LanguageDeclarationLexerName<>)?  |
     "with" LanguageDeclarationLexerName<>
-    "and" LanguageDeclarationParserName<>   |
-    "with" LanguageDeclarationParserName<>  |
-    "with" LanguageDeclarationLexerName<>   ;
+    ("and" LanguageDeclarationParserName<>)? ;
 
 LanguageDeclarationParserName<_>          ::=
     'a' "parser" "named" 

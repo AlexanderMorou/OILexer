@@ -23,7 +23,7 @@ namespace Oilexer.FiniteAutomata.Tokens
             {
             }
 
-            public Tuple<bool[], IRegularLanguageStateMachine[]> ObtainWorkingStateMachineData(GrammarVocabulary workingSet, Dictionary<InlinedTokenEntry, IRegularLanguageStateMachine> stateMachines)
+            public T ObtainWorkingStateMachineData<T>(GrammarVocabulary workingSet, Dictionary<InlinedTokenEntry, IRegularLanguageStateMachine> stateMachines, Func<Tuple<bool[], List<IRegularLanguageStateMachine>>, T> yielder)
             {
                 var breakdown = workingSet.Breakdown;
                 var resultMachineData = new List<IRegularLanguageStateMachine>();
@@ -48,7 +48,7 @@ namespace Oilexer.FiniteAutomata.Tokens
                 bool[] machineEnabledState = new bool[resultMachineData.Count];
                 for (int i = 0; i < machineEnabledState.Length; i++)
                     machineEnabledState[i] = true;
-                return new Tuple<bool[], IRegularLanguageStateMachine[]>(machineEnabledState, resultMachineData.ToArray());
+                return yielder(new Tuple<bool[], List<IRegularLanguageStateMachine>>(machineEnabledState, resultMachineData));
             }
         }
     }

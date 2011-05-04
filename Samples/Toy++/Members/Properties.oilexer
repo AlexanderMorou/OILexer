@@ -1,4 +1,4 @@
-#include                      "Root.oilexer";
+#include                   "Members.oilexer";
 
 /* --------------------------------------- *\
 |*            B.2.10: Interfaces           *|
@@ -10,7 +10,7 @@ InterfacePropertyDeclaration              ::=
     Type:PropertyType;
     Identifier:Name;
     '{'
-        LeftOrRight<
+        TupleR1<
             AbstractGet:GetPart;, 
             AbstractSet:SetPart;>
     '}';
@@ -20,7 +20,7 @@ TypeParameterPropertyDeclaration          ::=
     Type:PropertyType;
     Identifier:Name;
     '{'
-        LeftOrRight<
+        TupleR1<
             AbstractGet:GetPart;, 
             AbstractSet:SetPart;>
     '}';
@@ -33,70 +33,37 @@ PropertyDeclaration                      ::=>
     AbstractPropertyDeclaration             ;
 
 ConcretePropertyDeclaration              ::=>
-    ExplicitPropertyDeclaration             |
-    AutomaticPropertyDeclaration            ;
+    Attributes:Attributes;?
+    (
+        Tuple<"override", ("public" | "private")?, "sealed"?,"extern"?> |
+        Tuple<"override", "internal"?, "protected"?, "sealed"?, "extern"?> |
+        OTuple<"new", ("public" | "private"), "static", "extern"> |
+        OTuple<"new", ("public" | "private"), "virtual", "extern"> |
+        OTuple<"new", "internal", "protected", "static", "extern"> |
+        OTuple<"new", "internal", "protected", "virtual", "extern">
+    ):Modifiers;
+    Type:PropertyType;
+    MemberName:Name;
+    '{'
+        // (A1 B1? | B1 A1? | A2 B2? | B2 A2?)
+        TupleR1Alt<
+            ConcreteGet:GetPart;, 
+            ConcreteSet:SetPart;, 
+            AbstractGet:GetPart;, 
+            AbstractSet:SetPart;>
+    '}'                                     ;
 
 AbstractPropertyDeclaration               ::=
     Attributes:Attributes;?
-    SetInject<(
-        "new"                               |
-        "public"                            |
-        "protected"                         |
-        "internal"                          |
-        "extern"
-    ):Modifiers;, "abstract">
+    /* *
+     * 144 variations
+     * */
+    ( 
+        Tuple<"abstract", "new"?, ("public"? | "private"?), "extern"?> |
+        Tuple<"abstract", "new"?, "internal"?, "protected"?, "extern"?>
+    ):Modifiers;
     Type:PropertyType;
     Identifier:Name;
     '{'
-        LeftOrRight<
-            AbstractGet:GetPart;,
-            AbstractSet:SetPart;>
-    '}';
-
-ExplicitPropertyDeclaration               ::=
-    Attributes:Attributes;?
-    (
-        "new"                               |
-        "public"                            |
-        "protected"                         |
-        "internal"                          |
-        "private"                           |
-        "static"                            |
-        "virtual"                           |
-        "sealed"                            |
-        "override"                          |
-        "extern"
-    ):Modifiers;*
-    Type:PropertyType;
-    MemberName:Name;
-    '{'
-        LeftOrRight<
-            ConcreteGet:GetPart;,
-            ConcreteSet:SetPart;>
-    '}';
-
-AutomaticPropertyDeclaration              ::=
-    Attributes:Attributes;?
-    (
-        "new"                               |
-        "public"                            |
-        "protected"                         |
-        "internal"                          |
-        "private"                           |
-        "static"                            |
-        "virtual"                           |
-        "sealed"                            |
-        "override"                          |
-        "extern"
-    ):Modifiers;*
-    Type:PropertyType;
-    MemberName:Name;
-    '{'
-        (
-            AbstractGet:GetPart;
-            AbstractSet:SetPart;
-            |
-            AbstractSet:SetPart;
-            AbstractGet:GetPart;
-        )
+        TupleR1<AbstractGet:GetPart;, AbstractSet:SetPart;>
     '}';

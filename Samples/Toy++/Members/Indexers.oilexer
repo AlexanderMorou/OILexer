@@ -1,4 +1,4 @@
-#include                      "Root.oilexer";
+#include                   "Members.oilexer";
 
 /* --------------------------------------- *\
 |*            B.2.10: Interfaces           *|
@@ -11,7 +11,7 @@ InterfaceIndexerDeclaration               ::=
     (Identifier:Name; | "this")
     '[' FormalParameterList:Parameters;? ']'
     '{'
-        LeftOrRight<
+        TupleR1<
             AbstractGet:GetPart;,
             AbstractSet:SetPart;>
     '}'                                     ;
@@ -23,7 +23,7 @@ TypeParameterIndexerDeclaration           ::=
     (Identifier:Name; | "this")
     '[' FormalParameterList:Parameters;? ']'
     '{'
-        LeftOrRight<
+        TupleR1<
             AbstractGet:GetPart;,
             AbstractSet:SetPart;>
     '}'                                     ;
@@ -53,7 +53,7 @@ ConcreteIndexerDeclaration                ::=
     IndexerMemberName:Name;
     '[' FormalParameterList:Parameters; ']'
     '{'
-        LeftOrRight<
+        TupleR1<
             ConcreteGet:GetPart;,
             ConcreteSet:SetPart;>
     '}'                                     ;
@@ -71,7 +71,7 @@ AbstractIndexerDeclaration                ::=
     (Identifier:Name; | "this")
     '[' FormalParameterList:Parameters; ']'
     '{'
-        LeftOrRight<
+        TupleR1<
             AbstractGet:GetPart;,
             AbstractSet:SetPart;>
     '}'                                     ;

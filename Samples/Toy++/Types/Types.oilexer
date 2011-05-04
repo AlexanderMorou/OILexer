@@ -1,4 +1,4 @@
-#include                  "..\\Root.oilexer";
+#include                 "..\\Toy++.oilexer";
 
 #include          "ClassDeclaration.oilexer";
 #include       "DelegateDeclaration.oilexer";
@@ -6,7 +6,6 @@
 #include                  "Generics.oilexer";
 #include      "InterfaceDeclaration.oilexer";
 #include         "StructDeclaration.oilexer";
-#include                 "Templates.oilexer";
 
 /* B.2.1: Basic Concepts */
 TypeName                                 ::=>

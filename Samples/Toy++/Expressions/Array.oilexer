@@ -1,4 +1,4 @@
-#include "Root.oilexer";
+#include "Expressions.oilexer";
 
 ArrayCreationExpression                  ::=>
     ArraySizeCreationExpression             |
@@ -22,7 +22,7 @@ ArrayType                                 ::=
     NonArrayType:ElementType; 
         RankSpecifier:Ranks;+               ;
 
-NonArrayType ::=
+NonArrayType                             ::=>
     ValueType                               |
     NonArrayReferenceType                   |
     TypeParameter                           |

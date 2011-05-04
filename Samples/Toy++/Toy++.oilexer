@@ -1,0 +1,52 @@
+#LexerName                             "TPPTokenizer";
+#ParserName                               "TPPParser";
+#AssemblyName                             "TPPReader";
+#GrammarName                                    "T++";
+#TokenPrefix                                    "TPP";
+#TokenSuffix                                  "Token";
+#RulePrefix                                      "TP";
+#RuleSuffix                                    "Rule";
+#Root                               "CompilationUnit";
+#Namespace            "AllenCopeland.Abstraction.Slf";
+
+#include                         "Attributes.oilexer";
+#include                          "Namespace.oilexer";
+#include           "Expressions\\Expressions.oilexer";
+#include "Lexical Grammar\\TPPLexicalGrammar.oilexer";
+#include                   "Members\\Members.oilexer";
+#include             "Statements\\Statements.oilexer";
+#include                       "Types\\Types.oilexer";
+#include                 "Language\\Language.oilexer";
+#include               "Templates\\Templates.oilexer";
+
+#ifndef Lexer
+#define Lexer = TPParser;
+#endif
+
+ExternAliasDirective                               ::=
+    "extern" "alias" Identifier:AliasName;
+    ';' ;
+
+UsingDirective                                    ::=>
+    UsingAliasDirective                              |
+    UsingNamespaceDirective                          ;
+
+UsingAliasDirective                                ::=
+    "using" Identifier:Alias; '=' 
+        NamespaceOrTypeName:Target; ';'              ;
+
+UsingNamespaceDirective                            ::=
+    "using" NamespaceName:Target; ';'                ;
+
+NamespaceOrTypeName                                ::=
+    (
+        QualifiedAliasMember:AliasPart;              |
+        SimpleName:Names;
+    ) ('.' SimpleName:Names;)*                       ;
+
+CompilationUnit                                    ::=
+    ExternAliasDirective:Externs;*
+    UsingDirective:Usings;*
+    GlobalAttributes:Attributes;?
+    NamespaceMemberDeclaration:Members;*             ;
+
