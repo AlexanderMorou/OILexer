@@ -16,6 +16,7 @@ namespace Oilexer.FiniteAutomata.Rules
         private ParserBuilder builder;
         GrammarVocabulary fullVocab = null;
         GrammarVocabulary eofEntry = null;
+        GrammarVocabulary startRule = null;
         internal SyntacticalParser(ParserBuilder builder)
         {
             this.builder = builder;
@@ -23,14 +24,19 @@ namespace Oilexer.FiniteAutomata.Rules
         public void Parse(string filename)
         {
             var lexicalAnalyzer = builder.LexicalAnalyzer;
-#if FALSE
+//#if FALSE
             lexicalAnalyzer.Open(filename);
             bool hasNext = true;
-            //List<RegularLanguageScanData.Entry> tokens = new List<RegularLanguageScanData.Entry>();
+            List<RegularLanguageScanData.Entry> tokens = new List<RegularLanguageScanData.Entry>();
             if (this.fullVocab == null)
                 this.fullVocab = new GrammarVocabulary(builder.GrammarSymbols, (from symbol in builder.GrammarSymbols
                                                                                 where symbol is IGrammarTokenSymbol
                                                                                 select symbol).ToArray());
+            this.startRule = new GrammarVocabulary(builder.GrammarSymbols, (from symbol in builder.GrammarSymbols
+                                                                            let ruleSymbol = symbol as IGrammarRuleSymbol
+                                                                            where ruleSymbol!=null
+                                                                            where ruleSymbol.Source == builder.StartEntry
+                                                                            select ruleSymbol).FirstOrDefault());
             if (eofEntry == null)
                 eofEntry = new GrammarVocabulary(builder.GrammarSymbols, (from symbol in builder.GrammarSymbols
                                                                           let tokenSymbol = symbol as IGrammarTokenSymbol
@@ -50,13 +56,13 @@ namespace Oilexer.FiniteAutomata.Rules
                     hasNext = false;
                 else
                 {
-                    //if (!((longest.ID.GetSymbols().First() as IGrammarTokenSymbol).Source.Unhinged))
-                    //    tokens.Add(longest);
+                    if (!((longest.ID.GetSymbols().First() as IGrammarTokenSymbol).Source.Unhinged))
+                        tokens.Add(longest);
                     lexicalAnalyzer.MoveTo(currentToken.Location + longest.Length);
                 }
             } while (hasNext);
             lexicalAnalyzer.Close();
-#endif
+//#endif
         }
 
         private static Stack<T> Pusher<T>(T root)

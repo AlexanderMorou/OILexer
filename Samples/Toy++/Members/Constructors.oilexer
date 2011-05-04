@@ -1,21 +1,20 @@
-#include                      "Root.oilexer";
+#include                   "Members.oilexer";
 
 /* --------------------------------------- *\
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
 
-ConstructorDeclaration                    ::=
+ConstructorDeclaration                   ::=>
     InternConstructorDeclaration            |
     ExternConstructorDeclaration            ;
 
 InternConstructorDeclaration              ::=
     Attributes:Attributes;?
     (
-        "public"                            |
-        "protected" "internal"?             |
-        "internal" "protected"?             |
-        "private"
-    ):Modifiers;?
+        "public"?                           |
+        "private"?                          |
+        OTuple<"internal", "protected">
+    ):Modifiers;
     Identifier:Name;
     '(' FormalParameterList:Parameters;? ')'
     ConstructorInitializer:Initializer;?
@@ -29,17 +28,9 @@ ConstructorInitializer                    ::=
 ExternConstructorDeclaration              ::=
     Attributes:Attributes;?
     (
-        "public" "extern"?                  |
-        "extern" "public"?                  |
-        "protected" "internal"? "extern"?   |
-        "internal" "protected"? "extern"?   |
-        "protected" "extern"? "internal"?   |
-        "internal" "extern"? "protected"?   |
-        "extern" "protected"? "internal"?   |
-        "extern" "internal" "protected"?    |
-        "private" "extern"?                 |
-        "extern" "private"?                 
-    ):Modifiers;? Identifier:Name;
+        OTuple<("public" | "private"), "extern"> |
+        OTuple<"internal", "protected", "extern">
+    ):Modifiers; Identifier:Name;
     '(' FormalParameterList:Parameters;? ')'
     ConstructorInitializer:Initializer;?
     ';'                                     ;
@@ -50,17 +41,15 @@ TypeParameterConstructorDeclaration       ::=
     '(' FormalParameterList:Parameters;? ')'
     ';'                                     ;
 
-StaticConstructorDeclaration              ::=
+StaticConstructorDeclaration             ::=>
     ExternStaticConstructorDeclaration      |
     InternStaticConstructorDeclaration      ;
 
 ExternStaticConstructorDeclaration        ::=
     Attributes:Attributes;
-    ("extern" "static" |
-     "static" "extern")
+    Tuple<"extern", "static">
     Identifier:Name;
-    '(' ')'
-    ';'                                     ;
+    '(' ')' ';'                             ;
 
 InternStaticConstructorDeclaration        ::=
     Attributes:Attributes;

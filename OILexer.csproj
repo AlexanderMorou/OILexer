@@ -274,19 +274,16 @@
     <None Include="Samples\Toy++\Expressions\Math.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Expressions\Root.oilexer">
+    <None Include="Samples\Toy++\Expressions\Expressions.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Expressions\Templates.oilexer">
+    <None Include="Samples\Toy++\Templates\Expressions.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\GeneralTemplates.oilexer">
+    <None Include="Samples\Toy++\Language\Language.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Language\Root.oilexer">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Samples\Toy++\Language\Tokens.oilexer">
+    <None Include="Samples\Toy++\Language\LanguageTokens.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Lexical Grammar\Keywords.oilexer">
@@ -301,7 +298,7 @@
     <None Include="Samples\Toy++\Lexical Grammar\Preprocessor.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Lexical Grammar\Root.oilexer">
+    <None Include="Samples\Toy++\Lexical Grammar\TPPLexicalGrammar.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Members\Constructors.oilexer">
@@ -331,22 +328,43 @@
     <None Include="Samples\Toy++\Members\Properties.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Members\Root.oilexer">
+    <None Include="Samples\Toy++\Members\Members.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Namespace.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Root.oilexer">
+    <None Include="Samples\Toy++\Templates\OTuple{6}.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Statements\Root.oilexer">
+    <None Include="Samples\Toy++\Templates\Templates.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\Templates\Tuple{2}.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\Templates\Tuple{3}.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\Templates\Tuple{4}.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\Templates\Tuple{5}.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\Templates\Tuple{6}.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\Toy++.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\Statements\Statements.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Statements\Selection.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Statements\Templates.oilexer">
+    <None Include="Samples\Toy++\Templates\Statements.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Types\ClassDeclaration.oilexer">
@@ -364,13 +382,13 @@
     <None Include="Samples\Toy++\Types\InterfaceDeclaration.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Types\Root.oilexer">
+    <None Include="Samples\Toy++\Types\Types.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Types\StructDeclaration.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Types\Templates.oilexer">
+    <None Include="Samples\Toy++\Templates\Types.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
