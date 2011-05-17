@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Oilexer.VSIntegration {
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Oilexer.VSIntegration {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Oilexer.VSIntegration.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

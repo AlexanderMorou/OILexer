@@ -3,22 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Text;
-using Oilexer.Utilities.Collections;
 using Microsoft.VisualStudio.Text.Classification;
-using Oilexer.Parser;
-using Oilexer.Parser.Builder;
 using Microsoft.VisualStudio.Text.Tagging;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.VisualStudio.Utilities;
 using System.Timers;
 using Microsoft.VisualStudio.Text.Editor;
-using Oilexer._Internal;
-using Oilexer.Parser.GDFileData;
-using Oilexer.Parser.GDFileData.TokenExpression;
-using Oilexer.Parser.GDFileData.ProductionRuleExpression;
+using AllenCopeland.Abstraction.Slf.Parsers;
+using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
+using AllenCopeland.Abstraction.Utilities.Collections;
+using AllenCopeland.Abstraction.Slf.Compilers.Oilexer;
+using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
+using AllenCopeland.Abstraction.Slf.Compilers;
 
-namespace Oilexer.VSIntegration
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     internal class GDFileBufferedHandler :
         GDFileHandlerBase
@@ -176,7 +176,7 @@ namespace Oilexer.VSIntegration
                 return this._classificationTypes;
             }
         }
-
+        private ICompilerErrorCollection CompilationErrors;
 
         private bool createdDocument = false;
         private object synchObject = new object();
@@ -277,7 +277,21 @@ namespace Oilexer.VSIntegration
                 this.ParseIncludes(this.CurrentParseResults.Result.Includes);
                 (from handler in this.RelativeScopeFiles.Values
                  select handler.CurrentParseResults.Result).Union(new IGDFile[] { this.CurrentParseResults.Result }).InitLookups(this.ResolutionAssistant);
-                ((GDFile)this.CurrentParseResults.Result).ResolveTemplates(this.CurrentParseResults.Errors);
+                this.CompilationErrors = new CompilerErrorCollection();
+                ((GDFile)this.CurrentParseResults.Result).ResolveTemplates(this.CompilationErrors);
+                foreach (var ce in (from e in this.CompilationErrors
+                                    let sourceError = e as ICompilerSourceError
+                                    where sourceError != null
+                                    select sourceError))
+                {
+                    foreach (var token in tokens)
+                    {
+                        if (token.Key.Line == ce.Location.Line &&
+                            token.Key.Column == ce.Location.Column)
+                            ReclassifyToken(token.Key, ReclassificationKind.Error);
+                        break;
+                    }
+                }
                 ReclassifyTokens();
                 ParserCompilerExtensions.ClearLookups();
                 if (!creatingOutliner)
@@ -710,7 +724,7 @@ namespace Oilexer.VSIntegration
             internal SimpleParser(GDFileBufferedHandler handler)
                 : base(handler, true)
             {
-                ((Lexer)this.CurrentTokenizer).FileName = this.Handler.FileName;
+                ((OILexerParser.Lexer)this.CurrentTokenizer).FileName = this.Handler.FileName;
             }
 
             protected new GDFileBufferedHandler Handler

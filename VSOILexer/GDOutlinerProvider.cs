@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Tagging;
 
-namespace Oilexer.VSIntegration
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     [Export(typeof(ITaggerProvider))]
     [ContentType("oilexer")]

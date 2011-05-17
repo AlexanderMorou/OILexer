@@ -1,24 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.VisualStudio.Text;
-using Oilexer.Utilities.Collections;
-using Microsoft.VisualStudio.Text.Classification;
-using Oilexer.Parser;
-using Oilexer.Parser.Builder;
-using Microsoft.VisualStudio.Text.Tagging;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.VisualStudio.Utilities;
+using System.Linq;
+using System.Text;
 using System.Timers;
+using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
+using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
+using AllenCopeland.Abstraction.Slf.Parsers;
+using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Editor;
-using Oilexer._Internal;
-using Oilexer.Parser.GDFileData;
-using Oilexer.Parser.GDFileData.TokenExpression;
-using Oilexer.Parser.GDFileData.ProductionRuleExpression;
+using Microsoft.VisualStudio.Text.Tagging;
+using Microsoft.VisualStudio.Utilities;
 
-namespace Oilexer.VSIntegration
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     internal abstract class GDFileHandlerBase :
         IDisposable
@@ -80,14 +77,14 @@ namespace Oilexer.VSIntegration
             return new BaseParser(this);
         }
 
-        private GDParser.Lexer lexer;
+        private OILexerParser.Lexer lexer;
 
-        public GDParser.Lexer Lexer
+        public OILexerParser.Lexer Lexer
         {
             get
             {
                 if (this.lexer == null)
-                    this.lexer = new GDParser.Lexer();
+                    this.lexer = new OILexerParser.Lexer();
                 return this.lexer;
             }
         }
@@ -138,6 +135,20 @@ namespace Oilexer.VSIntegration
             }
         }
 
+        internal void ReclassifyToken(IGDToken token, ReclassificationKind kind)
+        {
+            switch (kind)
+            {
+                case ReclassificationKind.Keyword:
+                case ReclassificationKind.NativeMethod:
+                    reclassifications.Add(token, GDTokenType.Keyword);
+                    break;
+                case ReclassificationKind.Error:
+                    reclassifications.Add(token, GDTokenType.Error);
+                    break;
+            }
+        }
+
         internal void ReclassifyToken(GDTokens.IdentifierToken identifierToken, IProductionRuleTemplatePart item)
         {
             if (reclassifications.ContainsKey(identifierToken))
@@ -174,7 +185,7 @@ namespace Oilexer.VSIntegration
         }
 
         public class BaseParser : 
-            GDParser
+            OILexerParser
         {
             private GDFileHandlerBase handler;
             internal BaseParser(GDFileHandlerBase handler, bool captureRegions = false)

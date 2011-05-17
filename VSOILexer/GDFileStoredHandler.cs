@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Oilexer.Parser;
 using System.IO;
+using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+using AllenCopeland.Abstraction.Slf.Parsers;
 
-namespace Oilexer.VSIntegration
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     internal sealed class GDFileStoredHandler :
         GDFileHandlerBase
@@ -18,13 +19,13 @@ namespace Oilexer.VSIntegration
             
             this.rootHandler = rootHandler;
             this.RelativeScopeFiles = relativeScopeFiles;
-            FileStream fileStream = new FileStream(filename, FileMode.Open);
+            FileStream fileStream = new FileStream(filename, FileMode.Open, FileAccess.Read);
             StreamReader fileReader = new StreamReader(fileStream);
             base.BufferText = fileReader.ReadToEnd();
             fileReader.Dispose();
             fileStream.Dispose();
             this.SetBuffer();
-            ((GDParser.Lexer)this.Parser.CurrentTokenizer).FileName = filename;
+            ((OILexerParser.Lexer)this.Parser.CurrentTokenizer).FileName = filename;
         }
 
 
@@ -38,7 +39,7 @@ namespace Oilexer.VSIntegration
         }
         public bool CurrentlyParsing { get; private set; }
 
-        protected override void PerformReclassification(IGDToken token, Parser.GDTokenType newClassification)
+        protected override void PerformReclassification(IGDToken token, GDTokenType newClassification)
         {
             /* *
              * Reclassifications aren't necessary on the files used to 

@@ -2,7 +2,7 @@
 // MUST match guids.h
 using System;
 
-namespace Oilexer.VSIntegration
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     static class GuidList
     {
