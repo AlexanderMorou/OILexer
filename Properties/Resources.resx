@@ -112,362 +112,14 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="IndexerName" xml:space="preserve">
     <value>Item</value>
     <comment>The standard constant name used by indexers</comment>
-  </data>
-  <data name="CSharpKeyWord_02_As" xml:space="preserve">
-    <value>as</value>
-    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "as".</comment>
-  </data>
-  <data name="CSharpKeyWord_02_Do" xml:space="preserve">
-    <value>do</value>
-    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "do".</comment>
-  </data>
-  <data name="CSharpKeyWord_02_If" xml:space="preserve">
-    <value>if</value>
-    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "if".</comment>
-  </data>
-  <data name="CSharpKeyWord_02_In" xml:space="preserve">
-    <value>in</value>
-    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "in".</comment>
-  </data>
-  <data name="CSharpKeyWord_02_Is" xml:space="preserve">
-    <value>is</value>
-    <comment>A keyword for the CSharp Language 2 characters long. Expressed as "is".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_For" xml:space="preserve">
-    <value>for</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "for".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_Int" xml:space="preserve">
-    <value>int</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "int".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_New" xml:space="preserve">
-    <value>new</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "new".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_Out" xml:space="preserve">
-    <value>out</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "out".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_Ref" xml:space="preserve">
-    <value>ref</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "ref".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_Try" xml:space="preserve">
-    <value>try</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "try".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Base" xml:space="preserve">
-    <value>base</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "base".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Bool" xml:space="preserve">
-    <value>bool</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "bool".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Byte" xml:space="preserve">
-    <value>byte</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "byte".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Case" xml:space="preserve">
-    <value>case</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "case".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Char" xml:space="preserve">
-    <value>char</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "char".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Else" xml:space="preserve">
-    <value>else</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "else".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Enum" xml:space="preserve">
-    <value>enum</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "enum".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Goto" xml:space="preserve">
-    <value>goto</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "goto".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Lock" xml:space="preserve">
-    <value>lock</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "lock".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Long" xml:space="preserve">
-    <value>long</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "long".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Null" xml:space="preserve">
-    <value>null</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "null".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_This" xml:space="preserve">
-    <value>this</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "this".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_True" xml:space="preserve">
-    <value>true</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "true".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Uint" xml:space="preserve">
-    <value>uint</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "uint".</comment>
-  </data>
-  <data name="CSharpKeyWord_04_Void" xml:space="preserve">
-    <value>void</value>
-    <comment>A keyword for the CSharp Language 4 characters long. Expressed as "void".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Break" xml:space="preserve">
-    <value>break</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "break".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Catch" xml:space="preserve">
-    <value>catch</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "catch".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Class" xml:space="preserve">
-    <value>class</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "class".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Const" xml:space="preserve">
-    <value>const</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "const".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Event" xml:space="preserve">
-    <value>event</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "event".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_False" xml:space="preserve">
-    <value>false</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "false".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Fixed" xml:space="preserve">
-    <value>fixed</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "fixed".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Float" xml:space="preserve">
-    <value>float</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "float".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Sbyte" xml:space="preserve">
-    <value>sbyte</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "sbyte".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Short" xml:space="preserve">
-    <value>short</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "short".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Throw" xml:space="preserve">
-    <value>throw</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "throw".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Ulong" xml:space="preserve">
-    <value>ulong</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "ulong".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Using" xml:space="preserve">
-    <value>using</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "using".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Where" xml:space="preserve">
-    <value>where</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "where".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_While" xml:space="preserve">
-    <value>while</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "while".</comment>
-  </data>
-  <data name="CSharpKeyWord_05_Yield" xml:space="preserve">
-    <value>yield</value>
-    <comment>A keyword for the CSharp Language 5 characters long. Expressed as "yield".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Double" xml:space="preserve">
-    <value>double</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "double".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Extern" xml:space="preserve">
-    <value>extern</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "extern".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Object" xml:space="preserve">
-    <value>object</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "object".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Params" xml:space="preserve">
-    <value>params</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "params".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Public" xml:space="preserve">
-    <value>public</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "public".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Sealed" xml:space="preserve">
-    <value>sealed</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "sealed".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Sizeof" xml:space="preserve">
-    <value>sizeof</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "sizeof".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Static" xml:space="preserve">
-    <value>static</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "static".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_String" xml:space="preserve">
-    <value>string</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "string".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Struct" xml:space="preserve">
-    <value>struct</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "struct".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Return" xml:space="preserve">
-    <value>return</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "return".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Switch" xml:space="preserve">
-    <value>switch</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "switch".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Typeof" xml:space="preserve">
-    <value>typeof</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "typeof".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Unsafe" xml:space="preserve">
-    <value>unsafe</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "unsafe".</comment>
-  </data>
-  <data name="CSharpKeyWord_06_Ushort" xml:space="preserve">
-    <value>ushort</value>
-    <comment>A keyword for the CSharp Language 6 characters long. Expressed as "ushort".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Checked" xml:space="preserve">
-    <value>checked</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "checked".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Default" xml:space="preserve">
-    <value>default</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "default".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Finally" xml:space="preserve">
-    <value>finally</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "finally".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Private" xml:space="preserve">
-    <value>private</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "private".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Foreach" xml:space="preserve">
-    <value>foreach</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "foreach".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Decimal" xml:space="preserve">
-    <value>decimal</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "decimal".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Partial" xml:space="preserve">
-    <value>partial</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "partial".</comment>
-  </data>
-  <data name="CSharpKeyWord_07_Virtual" xml:space="preserve">
-    <value>virtual</value>
-    <comment>A keyword for the CSharp Language 7 characters long. Expressed as "virtual".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Continue" xml:space="preserve">
-    <value>continue</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "continue".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Delegate" xml:space="preserve">
-    <value>delegate</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "delegate".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Operator" xml:space="preserve">
-    <value>operator</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "operator".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Explicit" xml:space="preserve">
-    <value>explicit</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "explicit".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Abstract" xml:space="preserve">
-    <value>abstract</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "abstract".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Implicit" xml:space="preserve">
-    <value>implicit</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "implicit".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Internal" xml:space="preserve">
-    <value>internal</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "internal".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Override" xml:space="preserve">
-    <value>override</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "override".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Readonly" xml:space="preserve">
-    <value>readonly</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "readonly".</comment>
-  </data>
-  <data name="CSharpKeyWord_08_Volatile" xml:space="preserve">
-    <value>volatile</value>
-    <comment>A keyword for the CSharp Language 8 characters long. Expressed as "volatile".</comment>
-  </data>
-  <data name="CSharpKeyWord_09___makeref" xml:space="preserve">
-    <value>__makeref</value>
-    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "__makeref".</comment>
-  </data>
-  <data name="CSharpKeyWord_09___reftype" xml:space="preserve">
-    <value>__reftype</value>
-    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "__reftype".</comment>
-  </data>
-  <data name="CSharpKeyWord_09___arglist" xml:space="preserve">
-    <value>__arglist</value>
-    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "__arglist".</comment>
-  </data>
-  <data name="CSharpKeyWord_09_Interface" xml:space="preserve">
-    <value>interface</value>
-    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "interface".</comment>
-  </data>
-  <data name="CSharpKeyWord_09_Protected" xml:space="preserve">
-    <value>protected</value>
-    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "protected".</comment>
-  </data>
-  <data name="CSharpKeyWord_09_Namespace" xml:space="preserve">
-    <value>namespace</value>
-    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "namespace".</comment>
-  </data>
-  <data name="CSharpKeyWord_09_Unchecked" xml:space="preserve">
-    <value>unchecked</value>
-    <comment>A keyword for the CSharp Language 9 characters long. Expressed as "unchecked".</comment>
-  </data>
-  <data name="CSharpKeyWord_10___refvalue" xml:space="preserve">
-    <value>__refvalue</value>
-    <comment>A keyword for the CSharp Language 10 characters long. Expressed as "__refvalue".</comment>
-  </data>
-  <data name="CSharpKeyWord_10_Stackalloc" xml:space="preserve">
-    <value>stackalloc</value>
-    <comment>A keyword for the CSharp Language 10 characters long. Expressed as "stackalloc".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_Get" xml:space="preserve">
-    <value>get</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "get".</comment>
-  </data>
-  <data name="CSharpKeyWord_03_Set" xml:space="preserve">
-    <value>set</value>
-    <comment>A keyword for the CSharp Language 3 characters long. Expressed as "set".</comment>
-  </data>
-  <data name="ResourcesAutoClassName" xml:space="preserve">
-    <value>__Resources__</value>
-    <comment>The name of the resources auto-class.</comment>
   </data>
   <data name="DefaultAssemblyName" xml:space="preserve">
     <value>OILParserAssembly</value>
@@ -506,7 +158,7 @@
     <value>must also be dynamic in length ('+').</value>
   </data>
   <data name="GrammarParserErrors_InvalidStartDefined" xml:space="preserve">
-    <value>The grammar '{0}' has an invalid start point defined.</value>
+    <value>{0} in grammar {1} is not a valid starting rule.</value>
   </data>
   <data name="GrammarParserErrors_NoStartDefined" xml:space="preserve">
     <value>The grammar '{0}' has no start point defined.</value>
@@ -538,8 +190,29 @@
   <data name="GrammarParserErrors_UnknownSymbol" xml:space="preserve">
     <value>Unknown symbol '{0}'.</value>
   </data>
-  <data name="ResourcesAutoClassName1" xml:space="preserve">
-    <value>__Resources__</value>
-    <comment>The name of the resources auto-class.</comment>
+  <data name="GrammarErrors_DuplicateTermDefined" xml:space="preserve">
+    <value>Term '{0}' is already defined.</value>
+  </data>
+  <data name="GrammarErrors_AddRuleTargetUndefined" xml:space="preserve">
+    <value>Cannot add expression ({0}) to rule {1}.  {1} has not been defined.</value>
+  </data>
+  <data name="GrammarCompilerErrors_UnexpectedLiteralEntry" xml:space="preserve">
+    <value>A literal ({0}) was encountered of an unexpected or unknown type.</value>
+  </data>
+  <data name="GrammarCompilerErrors_InvalidPreprocessorCondition" xml:space="preserve">
+    <value>Invalid preprocessor condition ({0}), evaluation failed.</value>
+  </data>
+  <data name="IsDefinedTemplateParameterMustExpectRule" xml:space="preserve">
+    <value>Invalid IsDefined target {0}: must have special expectancy of Rule.</value>
+  </data>
+  <data name="GrammarCompilerErrors_InvalidIsDefinedTarget" xml:space="preserve">
+    <value>Invalid preprocessor 'defined' target ({0}).</value>
+  </data>
+  <data name="GrammarCompilerErrors_LanguageDefinedError" xml:space="preserve">
+    <value>Language defined error ({0}):
+{1}</value>
+  </data>
+  <data name="GrammarCompilerErrors_UnexpectedUndefinedEntry" xml:space="preserve">
+    <value>An unknown reference was discovered. Identity references of type {0} are not supported.</value>
   </data>
 </root>

@@ -69,8 +69,10 @@ ConcreteBlockEventDeclaration             ::=
     '}';
 
 AddBlock                                  ::=
+    Attributes:Attributes;?
     "add" Block:Body;                       ;
 
 RemoveBlock                               ::=
+    Attributes:Attributes;?
     "remove" Block:Body;                    ;
 

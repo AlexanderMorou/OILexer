@@ -9,9 +9,4 @@ Tuple<A, B, C>                            ::=
     B C A                                   ;
 
 OTuple<A, B, C>                           ::=
-    A? B? C?                                |
-    A? C? B?                                |
-    B? A? C?                                |
-    B? C? A?                                |
-    C? A? B?                                |
-    C? B? A?                                ;
+    Tuple<A?, B?, C?>                       ;

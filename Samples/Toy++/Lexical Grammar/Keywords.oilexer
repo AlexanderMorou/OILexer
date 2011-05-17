@@ -80,7 +80,6 @@ Keywords>Identifier,AttributeTargets       :=
                 "select":Select;            |
                 "sizeof":SizeOf;            |
             "stackalloc":StackAlloc;        |
-                "string":String;            |
                 "struct":Struct;            |
                 "switch":Switch;            |
                   "this":This;              |
@@ -128,6 +127,7 @@ IntegralDataTypes                          :=
                 "ushort":UInt16;            |
                  "sbyte":SByte;             |
                  "short":Int16;             |
+                "string":String;            |
                   "void":Void;              ;
 
 #ifdef Lexer

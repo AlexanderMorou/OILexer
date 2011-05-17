@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("None")]
 [assembly: AssemblyProduct("OILexer")]
-[assembly: AssemblyCopyright("Copyright © Allen C. Copeland Jr. 2010")]
+[assembly: AssemblyCopyright("Copyright © Allen C. Copeland Jr. 2008-2011")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Oilexer.Properties {
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Oilexer.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Oilexer.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("AllenCopeland.Abstraction.Slf.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -57,780 +57,6 @@ namespace Oilexer.Properties {
             }
             set {
                 resourceCulture = value;
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to as.
-        /// </summary>
-        internal static string CSharpKeyWord_02_As {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_02_As", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to do.
-        /// </summary>
-        internal static string CSharpKeyWord_02_Do {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_02_Do", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to if.
-        /// </summary>
-        internal static string CSharpKeyWord_02_If {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_02_If", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to in.
-        /// </summary>
-        internal static string CSharpKeyWord_02_In {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_02_In", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to is.
-        /// </summary>
-        internal static string CSharpKeyWord_02_Is {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_02_Is", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to for.
-        /// </summary>
-        internal static string CSharpKeyWord_03_For {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_For", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to get.
-        /// </summary>
-        internal static string CSharpKeyWord_03_Get {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_Get", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to int.
-        /// </summary>
-        internal static string CSharpKeyWord_03_Int {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_Int", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to new.
-        /// </summary>
-        internal static string CSharpKeyWord_03_New {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_New", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to out.
-        /// </summary>
-        internal static string CSharpKeyWord_03_Out {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_Out", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to ref.
-        /// </summary>
-        internal static string CSharpKeyWord_03_Ref {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_Ref", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to set.
-        /// </summary>
-        internal static string CSharpKeyWord_03_Set {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_Set", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to try.
-        /// </summary>
-        internal static string CSharpKeyWord_03_Try {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_03_Try", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to base.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Base {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Base", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to bool.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Bool {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Bool", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to byte.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Byte {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Byte", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to case.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Case {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Case", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to char.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Char {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Char", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to else.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Else {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Else", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to enum.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Enum {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Enum", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to goto.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Goto {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Goto", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to lock.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Lock {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Lock", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to long.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Long {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Long", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to null.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Null {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Null", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to this.
-        /// </summary>
-        internal static string CSharpKeyWord_04_This {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_This", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to true.
-        /// </summary>
-        internal static string CSharpKeyWord_04_True {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_True", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to uint.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Uint {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Uint", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to void.
-        /// </summary>
-        internal static string CSharpKeyWord_04_Void {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_04_Void", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to break.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Break {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Break", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to catch.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Catch {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Catch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to class.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Class {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Class", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to const.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Const {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Const", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to event.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Event {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Event", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to false.
-        /// </summary>
-        internal static string CSharpKeyWord_05_False {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_False", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to fixed.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Fixed {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Fixed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to float.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Float {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Float", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to sbyte.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Sbyte {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Sbyte", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to short.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Short {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Short", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to throw.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Throw {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Throw", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to ulong.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Ulong {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Ulong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to using.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Using {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Using", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to where.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Where {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Where", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to while.
-        /// </summary>
-        internal static string CSharpKeyWord_05_While {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_While", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to yield.
-        /// </summary>
-        internal static string CSharpKeyWord_05_Yield {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_05_Yield", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to double.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Double {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Double", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to extern.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Extern {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Extern", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to object.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Object {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Object", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to params.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Params {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Params", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to public.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Public {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Public", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to return.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Return {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Return", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to sealed.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Sealed {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Sealed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to sizeof.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Sizeof {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Sizeof", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to static.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Static {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Static", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to string.
-        /// </summary>
-        internal static string CSharpKeyWord_06_String {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_String", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to struct.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Struct {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Struct", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to switch.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Switch {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Switch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to typeof.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Typeof {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Typeof", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to unsafe.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Unsafe {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Unsafe", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to ushort.
-        /// </summary>
-        internal static string CSharpKeyWord_06_Ushort {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_06_Ushort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to checked.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Checked {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Checked", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to decimal.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Decimal {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Decimal", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to default.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Default {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Default", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to finally.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Finally {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Finally", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to foreach.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Foreach {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Foreach", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to partial.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Partial {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Partial", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to private.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Private {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Private", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to virtual.
-        /// </summary>
-        internal static string CSharpKeyWord_07_Virtual {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_07_Virtual", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to abstract.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Abstract {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Abstract", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to continue.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Continue {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Continue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to delegate.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Delegate {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Delegate", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to explicit.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Explicit {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Explicit", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to implicit.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Implicit {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Implicit", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to internal.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Internal {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Internal", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to operator.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Operator {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Operator", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to override.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Override {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Override", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to readonly.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Readonly {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Readonly", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to volatile.
-        /// </summary>
-        internal static string CSharpKeyWord_08_Volatile {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_08_Volatile", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to __arglist.
-        /// </summary>
-        internal static string CSharpKeyWord_09___arglist {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_09___arglist", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to __makeref.
-        /// </summary>
-        internal static string CSharpKeyWord_09___makeref {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_09___makeref", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to __reftype.
-        /// </summary>
-        internal static string CSharpKeyWord_09___reftype {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_09___reftype", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to interface.
-        /// </summary>
-        internal static string CSharpKeyWord_09_Interface {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_09_Interface", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to namespace.
-        /// </summary>
-        internal static string CSharpKeyWord_09_Namespace {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_09_Namespace", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to protected.
-        /// </summary>
-        internal static string CSharpKeyWord_09_Protected {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_09_Protected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to unchecked.
-        /// </summary>
-        internal static string CSharpKeyWord_09_Unchecked {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_09_Unchecked", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to __refvalue.
-        /// </summary>
-        internal static string CSharpKeyWord_10___refvalue {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_10___refvalue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to stackalloc.
-        /// </summary>
-        internal static string CSharpKeyWord_10_Stackalloc {
-            get {
-                return ResourceManager.GetString("CSharpKeyWord_10_Stackalloc", resourceCulture);
             }
         }
         
@@ -867,6 +93,70 @@ namespace Oilexer.Properties {
         internal static string DefaultParserName {
             get {
                 return ResourceManager.GetString("DefaultParserName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid preprocessor &apos;defined&apos; target ({0})..
+        /// </summary>
+        internal static string GrammarCompilerErrors_InvalidIsDefinedTarget {
+            get {
+                return ResourceManager.GetString("GrammarCompilerErrors_InvalidIsDefinedTarget", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid preprocessor condition ({0}), evaluation failed..
+        /// </summary>
+        internal static string GrammarCompilerErrors_InvalidPreprocessorCondition {
+            get {
+                return ResourceManager.GetString("GrammarCompilerErrors_InvalidPreprocessorCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language defined error ({0}):
+        ///{1}.
+        /// </summary>
+        internal static string GrammarCompilerErrors_LanguageDefinedError {
+            get {
+                return ResourceManager.GetString("GrammarCompilerErrors_LanguageDefinedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A literal ({0}) was encountered of an unexpected or unknown type..
+        /// </summary>
+        internal static string GrammarCompilerErrors_UnexpectedLiteralEntry {
+            get {
+                return ResourceManager.GetString("GrammarCompilerErrors_UnexpectedLiteralEntry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An unknown reference was discovered. Identity references of type {0} are not supported..
+        /// </summary>
+        internal static string GrammarCompilerErrors_UnexpectedUndefinedEntry {
+            get {
+                return ResourceManager.GetString("GrammarCompilerErrors_UnexpectedUndefinedEntry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot add expression ({0}) to rule {1}.  {1} has not been defined..
+        /// </summary>
+        internal static string GrammarErrors_AddRuleTargetUndefined {
+            get {
+                return ResourceManager.GetString("GrammarErrors_AddRuleTargetUndefined", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Term &apos;{0}&apos; is already defined..
+        /// </summary>
+        internal static string GrammarErrors_DuplicateTermDefined {
+            get {
+                return ResourceManager.GetString("GrammarErrors_DuplicateTermDefined", resourceCulture);
             }
         }
         
@@ -943,7 +233,7 @@ namespace Oilexer.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The grammar &apos;{0}&apos; has an invalid start point defined..
+        ///   Looks up a localized string similar to {0} in grammar {1} is not a valid starting rule..
         /// </summary>
         internal static string GrammarParserErrors_InvalidStartDefined {
             get {
@@ -1051,20 +341,11 @@ namespace Oilexer.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to __Resources__.
+        ///   Looks up a localized string similar to Invalid IsDefined target {0}: must have special expectancy of Rule..
         /// </summary>
-        internal static string ResourcesAutoClassName {
+        internal static string IsDefinedTemplateParameterMustExpectRule {
             get {
-                return ResourceManager.GetString("ResourcesAutoClassName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to __Resources__.
-        /// </summary>
-        internal static string ResourcesAutoClassName1 {
-            get {
-                return ResourceManager.GetString("ResourcesAutoClassName1", resourceCulture);
+                return ResourceManager.GetString("IsDefinedTemplateParameterMustExpectRule", resourceCulture);
             }
         }
     }

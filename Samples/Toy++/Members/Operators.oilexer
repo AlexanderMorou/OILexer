@@ -70,11 +70,9 @@ ExternBinaryOperatorDeclaration           ::=
             ">="
         ):Operator;
         '(' 
-            Type:LeftType; 
-            Identifier:LeftName;
+            TypedName:Left;
             ',' 
-            Type:RightType; 
-            Identifier:RightName;
+            TypedName:Right;
         ')'>                                ;
     
 ExternUnaryOperatorDeclaration            ::=
@@ -94,8 +92,7 @@ ExternUnaryOperatorDeclaration            ::=
             "false"
         ):Operator;
         '('
-            Type:OperandType; 
-            Identifier:OperandName;
+            TypedName:Operand;
         ')'>                                ;
 
 ExternTypeOperatorDeclaration             ::=
@@ -106,6 +103,5 @@ ExternTypeOperatorDeclaration             ::=
         "operator"
         Type:OperatorType;
         '(' 
-            Type:OperandType; 
-            Identifier:OperandName; 
+            TypedName:Operand;
         ')'>                                ;

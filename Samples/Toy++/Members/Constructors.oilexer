@@ -28,8 +28,8 @@ ConstructorInitializer                    ::=
 ExternConstructorDeclaration              ::=
     Attributes:Attributes;?
     (
-        OTuple<("public" | "private"), "extern"> |
-        OTuple<"internal", "protected", "extern">
+        Tuple<("public" | "private")?, "extern"> |
+        Tuple<"internal"?, "protected"?, "extern">
     ):Modifiers; Identifier:Name;
     '(' FormalParameterList:Parameters;? ')'
     ConstructorInitializer:Initializer;?
