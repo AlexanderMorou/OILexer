@@ -10,8 +10,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Oilexer.VSIntegration</RootNamespace>
     <AssemblyName>Oilexer.VSI</AssemblyName>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>AllenCopeland.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Allen Copeland.pfx</AssemblyOriginatorKeyFile>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
@@ -48,6 +48,18 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
+    <Reference Include="_abs.slf.ast.oil">
+      <HintPath>..\..\Abstraction\SLF\AST\Objectified Intermediate Language\bin\x86\Debug\_abs.slf.ast.oil.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.abstract">
+      <HintPath>..\..\Abstraction\SLF\TypeSystems\Abstract\bin\x86\Debug\_abs.slf.typesystems.abstract.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.cli">
+      <HintPath>..\..\Abstraction\SLF\TypeSystems\Common Language Infrastructure\bin\x86\Debug\_abs.slf.typesystems.cli.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util">
+      <HintPath>..\..\Abstraction\Utilities\bin\x86\Debug\_abs.util.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="EnvDTE">
@@ -156,7 +168,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="AllenCopeland.snk" />
+    <None Include="Allen Copeland.pfx" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>

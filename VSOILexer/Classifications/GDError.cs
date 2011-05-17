@@ -5,12 +5,11 @@ using System.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using System.Windows.Media;
 using System.ComponentModel.Composition;
-using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using System.Windows;
 
 
-namespace Oilexer.VSIntegration.Classifications
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration.Classifications
 {
     [ClassificationType(ClassificationTypeNames = "OILexer: Error")]
     [Export(typeof(EditorFormatDefinition))]

@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Text;
 using System.Diagnostics;
 
-namespace Oilexer.VSIntegration
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     internal sealed class GDOutliner :
         ITagger<GDOutliningTag>,

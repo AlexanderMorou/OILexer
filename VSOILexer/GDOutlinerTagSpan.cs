@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Text;
 
-namespace Oilexer.VSIntegration
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     internal sealed class GDOutlinerTagSpan :
         TagSpan<GDOutliningTag>

@@ -8,7 +8,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Oilexer.VSIntegration.Classifications
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration.Classifications
 {
     [ClassificationType(ClassificationTypeNames = "OILexer: Character Range")]
     [Export(typeof(EditorFormatDefinition))]

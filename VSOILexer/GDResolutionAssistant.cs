@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Oilexer._Internal;
-using Oilexer.Parser.GDFileData.ProductionRuleExpression;
-using Oilexer.Parser.GDFileData.TokenExpression;
-using Oilexer.Parser.GDFileData;
-namespace Oilexer.VSIntegration
+using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
+using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
+using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.VSIntegration
 {
     internal class GDResolutionAssistant :
         _GDResolutionAssistant
