@@ -36,21 +36,75 @@ IndexerDeclaration                       ::=>
     ConcreteIndexerDeclaration              |
     AbstractIndexerDeclaration              ;
 
-ConcreteIndexerDeclaration                ::=
+ConcreteIndexerDeclaration               ::=>
+          ExternInterfaceIndexerDeclaration |
+          InternInterfaceIndexerDeclaration |
+                   ExternIndexerDeclaration |
+                   InternIndexerDeclaration ;
+
+ExternInterfaceIndexerDeclaration ::=
     Attributes:Attributes;?
-    (
-        "new" |
-        "public"|
-        "protected"|
-        "internal"|
-        "private"|
-        "virtual"|
-        "sealed"|
-        "override"|
-        "extern"
-    ):Modifiers;*
+    "extern"
     Type:IndexerType;
-    IndexerMemberName:Name;
+    Type:InterfaceType;
+    '.'
+    (Identifier | "this"):Name;
+    '[' FormalParameterList:Parameters; ']'
+    '{'
+        TupleR1<
+            AbstractGet:GetPart;,
+            AbstractSet:SetPart;>
+    '}'                                     ;
+
+InternInterfaceIndexerDeclaration ::=
+    Attributes:Attributes;?
+    Type:IndexerType;
+    Type:InterfaceType;
+    '.'
+    (Identifier | "this"):Name;
+    '[' FormalParameterList:Parameters; ']'
+    '{'
+        TupleR1<
+            ConcreteGet:GetPart;,
+            ConcreteSet:SetPart;>
+    '}'                                     ;
+
+
+ExternIndexerDeclaration    ::=
+    Attributes:Attributes;?
+    /* *
+     * 288 Variations.
+     * */
+    (
+        Tuple<"override", ("public" | "private")?, "sealed"?,"extern"> |
+        Tuple<"override", "internal"?, "protected"?, "sealed"?, "extern"> |
+        Tuple<"new"?, ("public" | "private")?, ("static" | "virtual")?, "extern"> |
+        Tuple<"new"?, "internal", "protected"?, ("static" | "virtual")?, "extern">
+    ):Modifiers;
+    Type:IndexerType;
+    (Identifier | "this"):Name;
+    '[' FormalParameterList:Parameters; ']'
+    '{'
+        TupleR1<
+            AbstractGet:GetPart;,
+            AbstractSet:SetPart;>
+    '}'                                     ;
+
+
+
+InternIndexerDeclaration    ::=
+    Attributes:Attributes;?
+    /* *
+     * 90 Variations.
+     * */
+    (
+        Tuple<"override", ("public" | "private")?, "sealed"?> |
+        Tuple<"override", "internal"?, "protected"?, "sealed"?> |
+        OTuple<"new", ("public" | "private"), ("static" | "virtual")> |
+        OTuple<"new", "internal", "protected", ("static" | "virtual")>
+    ):Modifiers;
+    Type:IndexerType;
+    (Identifier | "this"):Name;
     '[' FormalParameterList:Parameters; ']'
     '{'
         TupleR1<
@@ -60,13 +114,13 @@ ConcreteIndexerDeclaration                ::=
 
 AbstractIndexerDeclaration                ::=
     Attributes:Attributes;?
-    SetInject<(
-        "new" |
-        "public"|
-        "protected"|
-        "internal"|
-        "private"|
-    ):Modifiers;,"abstract">
+    /* *
+     * 30 Variations.
+     * */
+    (
+        Tuple<"new"?, ("public" | "private")?, "abstract"> |
+        Tuple<"new"?, "protected"?, "internal"?, "abstract">
+    ):Modifiers;
     Type:IndexerType;
     (Identifier:Name; | "this")
     '[' FormalParameterList:Parameters; ']'
@@ -75,10 +129,3 @@ AbstractIndexerDeclaration                ::=
             AbstractGet:GetPart;,
             AbstractSet:SetPart;>
     '}'                                     ;
-
-IndexerMemberName                         ::=
-    (
-        Type:Interface; 
-        '.'
-    )?     (Identifier:Name; | "this")      ;
-

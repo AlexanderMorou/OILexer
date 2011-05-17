@@ -33,14 +33,35 @@ PropertyDeclaration                      ::=>
     AbstractPropertyDeclaration             ;
 
 ConcretePropertyDeclaration              ::=>
+    ConcretePropertyExternDeclaration       |
+    ConcretePropertyInternDeclaration       ;
+
+ConcretePropertyExternDeclaration    ::=>
     Attributes:Attributes;?
     (
-        Tuple<"override", ("public" | "private")?, "sealed"?,"extern"?> |
-        Tuple<"override", "internal"?, "protected"?, "sealed"?, "extern"?> |
-        OTuple<"new", ("public" | "private"), "static", "extern"> |
-        OTuple<"new", ("public" | "private"), "virtual", "extern"> |
-        OTuple<"new", "internal", "protected", "static", "extern"> |
-        OTuple<"new", "internal", "protected", "virtual", "extern">
+        Tuple<"override", "sealed"?, ("public" | "private")?, "extern"> |
+        Tuple<"override", "sealed"?, "internal"?, "protected"?, "extern"> |
+        Tuple<"new"?, ("public" | "private")?, "extern"> |
+        Tuple<"new"?, "internal"?, "protected"?, "extern"> |
+        Tuple<"new"?, ("public" | "private")?, ("virtual" | "static")?, "extern"> |
+        Tuple<"new"?, "internal"?, "protected"?, ("virtual" | "static")?, "extern">
+    ):Modifiers;
+    Type:PropertyType;
+    MemberName:Name;
+    '{'
+        // (A1 B1? | B1 A1? | A2 B2? | B2 A2?)
+        TupleR1<
+            AbstractGet:GetPart;, 
+            AbstractSet:SetPart;>
+    '}'                                     ;
+
+ConcretePropertyInternDeclaration  ::=>
+    Attributes:Attributes;?
+    (
+        Tuple<"override", "sealed"?, ("public" | "private")?> |
+        Tuple<"override", "sealed"?, "internal"?, "protected"?> |
+        OTuple<"new", ("public" | "private"), ("virtual" | "static")> |
+        OTuple<"new", "internal", "protected", ("virtual" | "static")>
     ):Modifiers;
     Type:PropertyType;
     MemberName:Name;
@@ -56,11 +77,11 @@ ConcretePropertyDeclaration              ::=>
 AbstractPropertyDeclaration               ::=
     Attributes:Attributes;?
     /* *
-     * 144 variations
+     * 30 variations
      * */
     ( 
-        Tuple<"abstract", "new"?, ("public"? | "private"?), "extern"?> |
-        Tuple<"abstract", "new"?, "internal"?, "protected"?, "extern"?>
+        Tuple<"abstract", "new"?, ("public"? | "private"?)> |
+        Tuple<"abstract", "new"?, "internal"?, "protected"?>
     ):Modifiers;
     Type:PropertyType;
     Identifier:Name;

@@ -3,18 +3,24 @@
 #ifdef Lexer
 #if Lexer == "TPPreprocessor"
 
-Token$ :=
+Token$                                     :=
     Identifier                              |
     Keywords                                |
-    Literal                                 |
+    String                                  |
+    Char                                    |
+    SeptemvigesimalNumber                   |
+    OctalNumber                             |
+    HexadecimalNumber                       |
+    RealNumber                              |
     OperatorOrPunctuator                    |
     IntegralDataTypes                       |
-    Modifiers                               ;
+    Modifiers                               |
+    CharacterRange                          ;
     
 #endif
 #endif 
 
-Literal :=
+Literal                                  ::=>
     Number                                  |
     String                                  |
     Char                                    ;
@@ -55,21 +61,28 @@ CommonEscapes :=
           OctEscape /* Octal Escape */      |
           ErrEscape /* Errored escape */)   ;
 
-Identifier := 
-    '@'? IdentifierOrKeyword;
+#if Lexer == "TPPreprocessor"
+Identifier                                 := 
+    '@'? IdentifierOrKeyword                ;
+#else
+Identifier                                 := 
+    Subtract(IdentifierOrKeyword, Keywords) |
+    '@' IdentifierOrKeyword                 ;
+#endif
 
 UnicodeEscapeSequence :=
     "\\u" HexChar{4};
 
-IdentifierOrKeyword :=
-    IdentifierStartCharacter IdentifierPartCharacter*;
+IdentifierOrKeyword                        :=
+    IdentifierStartCharacter 
+    IdentifierPartCharacter*                ;
 
-IdentifierStartCharacter :=
+IdentifierStartCharacter                   :=
     LetterCharacter                         |
     '_'                                     |
     UnicodeEscapeSequence                   ;
 
-IdentifierPartCharacter :=
+IdentifierPartCharacter                    :=
     LetterCharacter                         |
     CombiningCharacter                      |
     DecimalDigitCharacter                   |
@@ -78,28 +91,29 @@ IdentifierPartCharacter :=
     FormattingCharacter                     |
     UnicodeEscapeSequence                   ;
 
-LetterCharacter :=
-    [:Lu::Ll::Lt::Lm::Lo::Nl:];
+LetterCharacter                            :=
+    [:Lu::Ll::Lt::Lm::Lo::Nl:]              ;
 
-CombiningCharacter :=
-    [:Mn::Mc:];
+CombiningCharacter                         :=
+    [:Mn::Mc:]                              ;
 
-DecimalDigitCharacter :=
-    [:Nd:];
+DecimalDigitCharacter                      :=
+    [:Nd:]                                  ;
 
-ConnectingCharacter :=
-    [:Pc:];
+ConnectingCharacter                        :=
+    [:Pc:]                                  ;
 
-FormattingCharacter :=
-    [:Cf:];
+FormattingCharacter                        :=
+    [:Cf:]                                  ;
     
-ErrEscape := [^fvntrux\\"']:ECapt; /*{ThrowError(InvalidEscape, ECapt);}*/; 
+ErrEscape := [^fvntrux\\"']:ECapt;          ; 
 
 OctEscape := [0-7]{3};
 
 HexChar := [0-9A-Fa-f];
 
-HexEscape := HexByteEscape | HexShortEscape;
+HexEscape                                  :=
+    HexByteEscape | HexShortEscape          ;
 
 HexByteEscape := 'x' HexChar{2};
 
@@ -122,7 +136,14 @@ CharacterRange$                            :=
     )
     ']'                                     ;
 
-CharacterRangeUnicodeSet              :=
+CharacterRangeUnicodeSet                   :=
+    @":C:":Other;                           |
+    @":CC:":OtherControl;                   |
+    @":CF:":OtherFormat;                    |
+    @":CS:":OtherSurrogate;                 |
+    @":CO:":OtherPrivateUse;                |
+    @":CN:":OtherNotAssigned;               |
+
     @":L:":Letter;                          |
     @":LU:":LetterUpper;                    |
     @":LL:":LetterLowerCase;                |
@@ -140,18 +161,6 @@ CharacterRangeUnicodeSet              :=
     @":NL:":NumberLetter;                   |
     @":NO:":NumberOther;                    |
 
-    @":Z:":Separator;                       |
-    @":ZS:":SeparatorSpace;                 |
-    @":ZL:":SeparatorLine;                  |
-    @":ZP:":SeparatorParagraph;             |
-
-    @":C:":Other;                           |
-    @":CC:":OtherControl;                   |
-    @":CF:":OtherFormat;                    |
-    @":CS:":OtherSurrogate;                 |
-    @":CO:":OtherPrivateUse;                |
-    @":CN:":OtherNotAssigned;               |
-
     @":P:":Punctuation;                     |
     @":PC:":PunctuationConnector;           |
     @":PD:":PunctuationDash;                |
@@ -165,7 +174,12 @@ CharacterRangeUnicodeSet              :=
     @":SM:":SymbolMath;                     |
     @":SC:":SymbolCurrency;                 |
     @":SK:":SymbolModifier;                 |
-    @":SO:":SymbolOther;                    ;
+    @":SO:":SymbolOther;                    |
+
+    @":Z:":Separator;                       |
+    @":ZS:":SeparatorSpace;                 |
+    @":ZL:":SeparatorLine;                  |
+    @":ZP:":SeparatorParagraph;             ;
 
 CharacterRangeEntry                        :=
     CharacterRangeChar                      |
@@ -187,13 +201,15 @@ CharacterRangeChar                         :=
                 OctEscape
              )                              ;
 
-Number := 
+SeptemvigesimalNumber                      :=
     /* *
      * To ensure that the base-27 is parsed right,
      * it requires the 'U' to always be first.
      * */
     "27x" SeptemvigesimalChar:WholePart;+
-    (@'U':Unsigned;? @'L':Long;?):ValueType;|
+    (@'U':Unsigned;? @'L':Long;?):ValueType;;
+
+OctalNumber                                :=
     "8x" OctalChar:WholePart;+
     (
         @'U':Unsigned; @'L':Long;?          | 
@@ -201,12 +217,16 @@ Number :=
         @'D':Double;                        | 
         @'F':Single;                        | 
         @'M':Decimal;
-    ):ValueType;?                           | 
+        ):ValueType;?                       ;
+
+HexadecimalNumber                          :=
     "0x" HexChar:WholePart;+
     (
         @'U':Unsigned; @'L':Long;?          | 
         @'L':Long; @'U':Unsigned;?
-    ):ValueType;?                           |
+        ):ValueType;?                       ;
+
+RealNumber                                 :=
     DecimalNumber:WholePart;+ 
     (
         (
@@ -215,7 +235,7 @@ Number :=
             @'D':Double;                    | 
             @'F':Single;                    | 
             @'M':Decimal;
-        ):ValueType;                        | 
+            ):ValueType;                    | 
         '.' DecimalNumber:FloatingPart;+ 
         (
             @'e' 
@@ -230,7 +250,13 @@ Number :=
             @'F':Single;                    | 
             @'M':Decimal;
         ):ValueType;Default=Double;?
-    )?;
+    )?                                      ;
+
+Number                                   ::=> 
+    SeptemvigesimalNumber                   |
+    OctalNumber                             |
+    HexadecimalNumber                       |
+    RealNumber                              ;
 
 Comment :=*
     SingleLineComment                       | 
@@ -254,7 +280,7 @@ Whitespace :=*
         '\v'                                | 
         '\t'                                |
         '\f'
-    )+                                      |
+        )+                                  |
     NewLine; 
 #endif
 #endif
@@ -274,4 +300,4 @@ NewLine :=
     '\u2029'                                ; 
 
 NotNewLineCharacter :=
-    [^\r\n\u0085\u2028\u2029];
+    [^\r\n\u0085\u2028\u2029]               ;

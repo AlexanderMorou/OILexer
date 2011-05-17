@@ -8,8 +8,8 @@
     <ProjectGuid>{886B34E8-755F-420C-8725-767EADD92996}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Oilexer</RootNamespace>
-    <AssemblyName>OILexerParser</AssemblyName>
+    <RootNamespace>AllenCopeland.Abstraction.Slf</RootNamespace>
+    <AssemblyName>_abs.slf.languages.oilexer</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -84,7 +84,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>AllenCopeland.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>Allen Copeland.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -99,6 +99,22 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="_abs.slf.ast.oil, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\SLF\AST\Objectified Intermediate Language\bin\x86\Debug\_abs.slf.ast.oil.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\SLF\TypeSystems\Abstract\bin\x86\Debug\_abs.slf.typesystems.abstract.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\SLF\TypeSystems\Common Language Infrastructure\bin\x86\Debug\_abs.slf.typesystems.cli.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Utilities\bin\x86\Debug\_abs.util.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -133,829 +149,847 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInformation.cs" />
-    <Compile Include="AutoRegionAreas.cs" />
-    <Compile Include="CodeGeneratorHelper.cs" />
-    <Compile Include="Comments\Comments.cs" />
-    <Compile Include="Comments\DocumentationComment.cs" />
-    <Compile Include="Comments\DocumentationStringComment.cs" />
-    <Compile Include="Comments\IComment.cs" />
-    <Compile Include="Comments\IComments.cs" />
-    <Compile Include="Comments\IDocumentationComment.cs" />
-    <Compile Include="Comments\IDocumentationCommentParticle.cs" />
-    <Compile Include="Comments\IDocumentationStringComment.cs" />
-    <Compile Include="Comments\IDocumentationWrapperComment.cs" />
-    <Compile Include="Comments\IFieldReferenceComment.cs" />
-    <Compile Include="Comments\IMemberReferenceComment.cs" />
-    <Compile Include="Comments\IMemberReferenceComment{T}.cs" />
-    <Compile Include="Comments\IMembersWrapperComment.cs" />
-    <Compile Include="Comments\IMethodReferenceComment.cs" />
-    <Compile Include="Comments\IParameterReferenceComment.cs" />
-    <Compile Include="Comments\IPropertyReferenceComment.cs" />
-    <Compile Include="Comments\MemberReferenceComment{T}.cs" />
-    <Compile Include="CompilerWarnLevel.cs" />
-    <Compile Include="Compiler\CompilerModuleSupportFlags.cs" />
-    <Compile Include="Compiler\CompilerModuleType.cs" />
-    <Compile Include="Compiler\CSharpIntermediateCompiler.cs" />
-    <Compile Include="Compiler\CSharpIntermediateCompilerModule.cs" />
-    <Compile Include="Compiler\IIntermediateCompiler.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerCommandLineModule.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerError.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerModule.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerModuleActionResult.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerModuleCallback.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerOptions.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerResults.cs" />
-    <Compile Include="Compiler\IIntermediateCompilerResultsBase.cs" />
-    <Compile Include="Compiler\IntermediateCompiler.cs" />
-    <Compile Include="Compiler\IntermediateCompilerBase.cs" />
-    <Compile Include="Compiler\IntermediateCompilerCallbackModule.cs" />
-    <Compile Include="Compiler\IntermediateCompilerCommandLineModule.cs" />
-    <Compile Include="Compiler\IntermediateCompilerError.cs" />
-    <Compile Include="Compiler\IntermediateCompilerModuleBase.cs" />
-    <Compile Include="Compiler\IntermediateCompilerOptions.cs" />
-    <Compile Include="Compiler\IntermediateCompilerResults.cs" />
-    <Compile Include="CultureIdentifier.cs" />
-    <Compile Include="CultureIdentifiers+CountryRegions.cs" />
-    <Compile Include="CultureIdentifiers+CultureCodes.cs" />
-    <Compile Include="CultureIdentifiers+IDs.cs" />
-    <Compile Include="CultureIdentifiers+LocalizedNames.cs" />
-    <Compile Include="CultureIdentifiers.cs" />
-    <Compile Include="CultureIdentifierTypeConverter.cs" />
-    <Compile Include="DebugSupport.cs" />
-    <Compile Include="Expression\ArrayIndexerExpression.cs" />
-    <Compile Include="Expression\BaseReferenceExpression.cs" />
-    <Compile Include="Expression\BinaryOperationExpression.cs" />
-    <Compile Include="Expression\CastExpression.cs" />
-    <Compile Include="Expression\CreateArrayExpression+SerializationType.cs" />
-    <Compile Include="Expression\CreateArrayExpression.cs" />
-    <Compile Include="Expression\CreateNewObjectExpression.cs" />
-    <Compile Include="Expression\DirectionExpression.cs" />
-    <Compile Include="Expression\Expression.cs" />
-    <Compile Include="Expression\ExpressionCollection.cs" />
-    <Compile Include="Expression\Expression{TDom}.cs" />
-    <Compile Include="Expression\FieldReferenceExpression.cs" />
-    <Compile Include="Expression\GetResourceExpressionTarget.cs" />
-    <Compile Include="Expression\IArrayIndexerExpression.cs" />
-    <Compile Include="Expression\IBaseReferenceExpression.cs" />
-    <Compile Include="Expression\IBinaryOperationExpression.cs" />
-    <Compile Include="Expression\ICastExpression.cs" />
-    <Compile Include="Expression\ICommentExpression.cs" />
-    <Compile Include="Expression\ICreateArrayExpression.cs" />
-    <Compile Include="Expression\ICreateNewObjectExpression.cs" />
-    <Compile Include="Expression\IDirectionExpression.cs" />
-    <Compile Include="Expression\IEventReferenceExpression.cs" />
-    <Compile Include="Expression\IExpression.cs" />
-    <Compile Include="Expression\IExpressionCollection.cs" />
-    <Compile Include="Expression\IExpression{TDom}.cs" />
-    <Compile Include="Expression\IFieldReferenceExpression.cs" />
-    <Compile Include="Expression\IGetResourceExpression.cs" />
-    <Compile Include="Expression\IIndexerReferenceExpression.cs" />
-    <Compile Include="Expression\ILocalReferenceExpression.cs" />
-    <Compile Include="Expression\IMemberParentExpression.cs" />
-    <Compile Include="Expression\IMemberParentExpression{TDom}.cs" />
-    <Compile Include="Expression\IMemberReferenceExpression.cs" />
-    <Compile Include="Expression\IMethodInvokeExpression.cs" />
-    <Compile Include="Expression\IMethodReferenceExpression.cs" />
-    <Compile Include="Expression\IndexerReferenceExpression.cs" />
-    <Compile Include="Expression\IParameterReferenceExpression.cs" />
-    <Compile Include="Expression\IPrimitiveExpression.cs" />
-    <Compile Include="Expression\IPropertyReferenceExpression.cs" />
-    <Compile Include="Expression\IPropertySetValueReferenceExpression.cs" />
-    <Compile Include="Expression\ISimpleStatementExpression.cs" />
-    <Compile Include="Expression\IThisReferenceExpression.cs" />
-    <Compile Include="Expression\ITypeOfExpression.cs" />
-    <Compile Include="Expression\ITypeReferenceExpression.cs" />
-    <Compile Include="Expression\IUnaryOperationExpression.cs" />
-    <Compile Include="Expression\IVariableReferenceExpression.cs" />
-    <Compile Include="Expression\IWrappingExpression.cs" />
-    <Compile Include="Expression\MemberParentExpression{TDom}.cs" />
-    <Compile Include="Expression\MethodInvokeExpression.cs" />
-    <Compile Include="Expression\MethodReferenceExpression.cs" />
-    <Compile Include="Expression\ParentMemberReference.cs" />
-    <Compile Include="Expression\PrimitiveExpression.cs" />
-    <Compile Include="Expression\PropertyReferenceExpression.cs" />
-    <Compile Include="Expression\PropertySetValueReferenceExpression.cs" />
-    <Compile Include="Expression\ThisReferenceExpression.cs" />
-    <Compile Include="Expression\TypeOfExpression.cs" />
-    <Compile Include="Expression\TypeReferenceExpression.cs" />
-    <Compile Include="Expression\UnaryOperationExpression.cs" />
-    <Compile Include="Expression\VariableReferenceExpression.cs" />
-    <Compile Include="FileModel\TemporaryDirectory.cs" />
-    <Compile Include="FileModel\TemporaryDirectory.Directories.cs" />
-    <Compile Include="FileModel\TemporaryDirectory.Files.cs" />
-    <Compile Include="FileModel\TemporaryFile.cs" />
-    <Compile Include="FileModel\TemporaryFileHelper.cs" />
-    <Compile Include="FiniteAutomata\DFAState.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataBitSet+RangeData.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataBitSet.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataMultiTargetTransitionTable{2}.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataSection.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataSingleTargetTransitionTable.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataState{4}.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataTransitionNode{TCheck, TTarget}.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataTransitionTable+KeysCollection.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataTransitionTable+ValuesCollection.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomataTransitionTable{3}.cs" />
-    <Compile Include="FiniteAutomata\FiniteAutomationSourceKind.cs" />
-    <Compile Include="FiniteAutomata\IDFAState.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataMultiTargetTransitionTable.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataSection.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataSet.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataSingleTargetTransitionTable.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataSource.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataState.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataTransitionNode.cs" />
-    <Compile Include="FiniteAutomata\IFiniteAutomataTransitionTable.cs" />
-    <Compile Include="FiniteAutomata\INFAState.cs" />
-    <Compile Include="FiniteAutomata\MinimalBitArray.cs" />
-    <Compile Include="FiniteAutomata\NFAState+DFAEntry.cs" />
-    <Compile Include="FiniteAutomata\NFAState+DFAEntrySet.cs" />
-    <Compile Include="FiniteAutomata\NFAState+DFAEntryTable.cs" />
-    <Compile Include="FiniteAutomata\NFAState{4}.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarBreakdown.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarConstantEntrySymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarConstantItemSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarConstantSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarRuleSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarSymbolComparer.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarSymbolSet.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarTokenSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarVariableSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\GrammarVocabulary.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarConstantEntrySymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarConstantItemSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarConstantSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarRuleSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarSymbolSet.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarTokenSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\IGrammarVariableSymbol.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalDFARootState.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalDFAState.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalDFAStateTransitionTable.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalFollowInfo.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalFollowTable.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalNFARootState.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalNFAState.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalParser.cs" />
-    <Compile Include="FiniteAutomata\Rules\SyntacticalRootComparer.cs" />
-    <Compile Include="FiniteAutomata\Tokens\IRegularLanguageStateMachine.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularCaptureType.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageDFARootState.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageDFAState.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageDFATransitionTable.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageLexer.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageNFARootState.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageNFAState.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageRecognizerStateMachine.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData+CaptureEntry.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData+Entry.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageScanData.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageSet.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageToken.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageTokenTable+Target.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageTokenTable.cs" />
-    <Compile Include="FiniteAutomata\Tokens\RegularLanguageTransducerStateMachine.cs" />
-    <Compile Include="IAssemblyInformation.cs" />
-    <Compile Include="ICultureIdentifier.cs" />
-    <Compile Include="IIntermediateModule.cs" />
-    <Compile Include="IIntermediateModules.cs" />
-    <Compile Include="IIntermediateProject.cs" />
-    <Compile Include="IIntermediateProjectAssemblyInformation.cs" />
-    <Compile Include="IIntermediateProjectInformation.cs" />
-    <Compile Include="IIntermediateProjectPartials.cs" />
-    <Compile Include="IntermediateModule.cs" />
-    <Compile Include="IntermediateModules.cs" />
-    <Compile Include="IntermediateProject.cs" />
-    <Compile Include="IntermediateProjectInformation.cs" />
-    <Compile Include="IntermediateProjectPartials.cs" />
-    <Compile Include="Parser\Builder\IUnicodeCollectiveTargetGraph.cs" />
-    <Compile Include="Parser\Builder\IUnicodeTarget.cs" />
-    <Compile Include="Parser\Builder\IUnicodeTargetCategory.cs" />
-    <Compile Include="Parser\Builder\IUnicodeTargetGraph.cs" />
-    <Compile Include="Parser\Builder\IUnicodeTargetPartialCategory.cs" />
-    <Compile Include="Parser\Builder\ParserBuilder.cs" />
-    <Compile Include="Parser\Builder\ParserBuilderPhase.cs" />
-    <Compile Include="Parser\Builder\ParserBuilderResults.cs" />
-    <Compile Include="Parser\Builder\ParserCompilerExtensions.cs" />
-    <Compile Include="Parser\Builder\TokenEqualityLevel.cs" />
-    <Compile Include="Parser\Builder\TokenPrecedenceTable.cs" />
-    <Compile Include="Parser\Builder\UnicodeCollectiveTargetGraph.cs" />
-    <Compile Include="Parser\Builder\UnicodeTarget.cs" />
-    <Compile Include="Parser\Builder\UnicodeTargetCategory.cs" />
-    <Compile Include="Parser\Builder\UnicodeTargetGraph.cs" />
-    <Compile Include="Parser\Builder\UnicodeTargetPartialCategory.cs" />
-    <Compile Include="Parser\GDFileData\GDFileObjectRelationalMap.cs" />
-    <Compile Include="Parser\GDFileData\IEntryObjectRelationalMap.cs" />
-    <Compile Include="Parser\GDFileData\IGDFileObjectRelationalMap.cs" />
-    <Compile Include="Parser\GDFileData\IRuleEntryObjectRelationalMap.cs" />
-    <Compile Include="Parser\GDFileData\ITokenEntryObjectRelationalMap.cs" />
-    <Compile Include="Parser\GDFileData\RuleEntryObjectRelationalMap.cs" />
-    <Compile Include="Parser\GDTokenRegion.cs" />
-    <Compile Include="Parser\GDTokenGroupRegion.cs" />
-    <Compile Include="Parser\GDCommentRegion.cs" />
-    <Compile Include="Parser\GDFile+MyOptions.cs" />
-    <Compile Include="Parser\GDFile.cs" />
-    <Compile Include="Parser\GDFileData\CommentEntry.cs" />
-    <Compile Include="Parser\GDFileData\DefineSymbolDirective.cs" />
-    <Compile Include="Parser\GDFileData\Entry.cs" />
-    <Compile Include="Parser\GDFileData\EntryPreprocessorType.cs" />
-    <Compile Include="Parser\GDFileData\EntryScanMode.cs" />
-    <Compile Include="Parser\GDFileData\ErrorEntry.cs" />
-    <Compile Include="Parser\GDFileData\IAmbiguousEntity.cs" />
-    <Compile Include="Parser\GDFileData\ICommentEntry.cs" />
-    <Compile Include="Parser\GDFileData\IEntry.cs" />
-    <Compile Include="Parser\GDFileData\IErrorEntry.cs" />
-    <Compile Include="Parser\GDFileData\INamedEntry.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorAddRuleDirective.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorCEqualityExp.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorCExp.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorCLogicalAndConditionExp.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorCLogicalOrConditionExp.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorCPrimary.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorDefineRuleDirective.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorDefineSymbolDirective.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorDirective.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorDirectives.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorEntryContainer.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorIfDirective.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorIncludeDirective.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorReturnDirective.cs" />
-    <Compile Include="Parser\GDFileData\IPreprocessorThrowDirective.cs" />
-    <Compile Include="Parser\GDFileData\IProductionRuleEntry.cs" />
-    <Compile Include="Parser\GDFileData\IProductionRuleTemplateEntry.cs" />
-    <Compile Include="Parser\GDFileData\IScannableEntry.cs" />
-    <Compile Include="Parser\GDFileData\IScannableEntryItem.cs" />
-    <Compile Include="Parser\GDFileData\ITokenEntry.cs" />
-    <Compile Include="Parser\GDFileData\NamedEntry.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorAddRuleDirective.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorCEqualityExp.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorCExp.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorCLogicalAndConditionExp.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorCLogicalOrConditionExp.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorConditionalReturnDirective.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorCPrimary.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorDefineRuleDirective.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorDirectiveBase.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorEntryContainer.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorIfDirective.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorIncludeDirective.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorProductionRuleSeries.cs" />
-    <Compile Include="Parser\GDFileData\PreprocessorThrowDirective.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleEntry.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralCharProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralCharReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralProductionRuleItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralReferenceProductionRuleItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralStringProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ILiteralStringReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRule.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleExpressionSeries.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleGroupItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRulePreprocessor.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleSource.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleSpecialItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleTemplatePart.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IProductionRuleTemplateParts.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\IRuleReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ISoftReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ISoftTemplateReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ITemplateParamReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ITemplateReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ITokenReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\LiteralCharProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\LiteralCharReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\LiteralProductionRuleItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\LiteralReferenceProductionRuleItem{TValue, TLiteral}.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\LiteralStringProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\LiteralStringReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ProductionRule.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ProductionRuleGroupItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ProductionRulePreprocessorDirective.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ProductionRuleSeries.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\ProductionRuleTemplatePart.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\RuleReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\SoftReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\SoftTemplateReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\TemplateParamReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\TemplateReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleExpression\TokenReferenceProductionRuleItem.cs" />
-    <Compile Include="Parser\GDFileData\ProductionRuleTemplateEntry.cs" />
-    <Compile Include="Parser\GDFileData\ScannableEntryItem.cs" />
-    <Compile Include="Parser\GDFileData\ScannableEntryItemRepeatInfo.cs" />
-    <Compile Include="Parser\GDFileData\ScannableEntryItemRepeatOptions.cs" />
-    <Compile Include="Parser\GDFileData\StringTerminalKind.cs" />
-    <Compile Include="Parser\GDFileData\TokenEntry.cs" />
-    <Compile Include="Parser\GDFileData\TokenEOFEntry.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\CharRangeTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\CommandTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ICharRangeTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ICommandTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralCharReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralCharTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralReferenceTokenItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralStringReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralStringTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ILiteralTokenItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\IScanCommandTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ISoftReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ISubtractionCommand.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ITokenExpression.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ITokenExpressionSeries.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ITokenGroupItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ITokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ITokenReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ITokenSource.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\LiteralCharReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\LiteralCharTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\LiteralReferenceTokenItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\LiteralStringReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\LiteralStringTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\LiteralTokenItem{T}.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\ScanCommandTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\SoftReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\SubtractionCommandTokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\TokenExpression.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\TokenExpressionSeries.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\TokenGroupItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\TokenItem.cs" />
-    <Compile Include="Parser\GDFileData\TokenExpression\TokenReferenceTokenItem.cs" />
-    <Compile Include="Parser\GDProductionRuleGroupRegion.cs" />
-    <Compile Include="Parser\GDParser+Lexer.cs" />
-    <Compile Include="Parser\GDParser+PreprocessorContainer.cs" />
-    <Compile Include="Parser\GDParser.cs" />
-    <Compile Include="Parser\GDParserErrors.cs" />
-    <Compile Include="Parser\GDParserResults.cs" />
-    <Compile Include="Parser\GDPreprocessorRegion.cs" />
-    <Compile Include="Parser\GDProductionRuleRegion.cs" />
-    <Compile Include="Parser\GDToken.cs" />
-    <Compile Include="Parser\GDTokens+CharacterRangeToken.cs" />
-    <Compile Include="Parser\GDTokens+CharLiteralToken.cs" />
-    <Compile Include="Parser\GDTokens+CommentToken.cs" />
-    <Compile Include="Parser\GDTokens+IdentifierToken.cs" />
-    <Compile Include="Parser\GDTokens+NumberLiteral.cs" />
-    <Compile Include="Parser\GDTokens+OperatorToken.cs" />
-    <Compile Include="Parser\GDTokens+PreprocessorDirective.cs" />
-    <Compile Include="Parser\GDTokens+ReferenceToken.cs" />
-    <Compile Include="Parser\GDTokens+StringLiteralToken.cs" />
-    <Compile Include="Parser\GDTokens+WhitespaceToken.cs" />
-    <Compile Include="Parser\GDTokens.cs" />
-    <Compile Include="Parser\GDTokenType.cs" />
-    <Compile Include="Parser\IGDFile.cs" />
-    <Compile Include="Parser\IGDFileOptions.cs" />
-    <Compile Include="Parser\IGDParser.cs" />
-    <Compile Include="Parser\IGDRegion.cs" />
-    <Compile Include="Parser\IGDToken.cs" />
-    <Compile Include="Parser\IGDTokenizer.cs" />
-    <Compile Include="Parser\IParser.cs" />
-    <Compile Include="Parser\IParserResults.cs" />
-    <Compile Include="Parser\IParserResults{T}.cs" />
-    <Compile Include="Parser\IParser{TToken, TTokenizer, TResult}.cs" />
-    <Compile Include="Parser\IToken.cs" />
-    <Compile Include="Parser\ITokenizer.cs" />
-    <Compile Include="Parser\ITokenizer{T}.cs" />
-    <Compile Include="Parser\ITokenStream.cs" />
-    <Compile Include="Parser\Parser.cs" />
-    <Compile Include="Parser\ParserMode.cs" />
-    <Compile Include="Parser\ParserResults{T}.cs" />
-    <Compile Include="Parser\Parser{TToken, TTokenizer, TResult}.cs" />
-    <Compile Include="Parser\StringStream.cs" />
-    <Compile Include="Parser\Token.cs" />
-    <Compile Include="Parser\Tokenizer.cs" />
-    <Compile Include="Parser\Tokenizer{T}.cs" />
-    <Compile Include="Parser\TokenStream.cs" />
-    <Compile Include="ProjectDependencyReport.cs" />
-    <Compile Include="ProjectOutputType.cs" />
+    <Compile Include="Compilers\Oilexer\IUnicodeCollectiveTargetGraph.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\IUnicodeTarget.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\IUnicodeTargetCategory.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\IUnicodeTargetGraph.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\IUnicodeTargetPartialCategory.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\ParserBuilder.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\ParserBuilderPhase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\ParserBuilderPhaseChangeEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\ParserBuilderResults.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\ParserCompilerExtensions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\TokenEqualityLevel.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\TokenPrecedenceTable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\UnicodeCollectiveTargetGraph.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\UnicodeTarget.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\UnicodeTargetCategory.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\UnicodeTargetGraph.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compilers\Oilexer\UnicodeTargetPartialCategory.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\OilexerLanguage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\OilexerProvider+AltParser.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\OilexerProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\OilexerVendorProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\CommentEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\DefineSymbolDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Entry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\EntryPreprocessorType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\EntryScanMode.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ErrorEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\GDFileObjectRelationalMap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IAmbiguousEntity.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ICommentEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IEntryObjectRelationalMap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IErrorEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IGDFileObjectRelationalMap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\INamedEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorAddRuleDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorCEqualityExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorCExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorCLogicalAndConditionExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorCLogicalOrConditionExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorCPrimary.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorDefineRuleDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorDefineSymbolDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorDirectives.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorEntryContainer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorIfDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorIncludeDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorReturnDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IPreprocessorThrowDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IProductionRuleEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IProductionRuleTemplateEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IRuleEntryObjectRelationalMap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IScannableEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\IScannableEntryItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ITokenEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ITokenEntryObjectRelationalMap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\NamedEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorAddRuleDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorCEqualityExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorCExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorCLogicalAndConditionExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorCLogicalOrConditionExp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorConditionalReturnDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorCPrimary.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorDefineRuleDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorDirectiveBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorEntryContainer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorIfDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorIncludeDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorProductionRuleSeries.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\PreprocessorThrowDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ProductionRuleEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ProductionRuleTemplateEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\RuleEntryObjectRelationalMap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarBreakdown.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarConstantEntrySymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarConstantItemSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarConstantSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarRuleSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarSymbolComparer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarSymbolSet.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarTokenSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarVariableSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\GrammarVocabulary.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarConstantEntrySymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarConstantItemSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarConstantSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarRuleSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarSymbolSet.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarTokenSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IGrammarVariableSymbol.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralCharProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralCharReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralProductionRuleItem{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralReferenceProductionRuleItem{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralStringProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ILiteralStringReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRule.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRuleExpressionSeries.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRuleGroupItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRulePreprocessor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRuleSource.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRuleSpecialItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRuleTemplatePart.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IProductionRuleTemplateParts.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\IRuleReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ISoftReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ISoftTemplateReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ITemplateParamReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ITemplateReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ITokenReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\LiteralCharProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\LiteralCharReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\LiteralProductionRuleItem{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\LiteralReferenceProductionRuleItem{TValue, TLiteral}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\LiteralStringProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\LiteralStringReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ProductionRule.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ProductionRuleGroupItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ProductionRulePreprocessorDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ProductionRuleSeries.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\ProductionRuleTemplatePart.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\RuleReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SoftReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SoftTemplateReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalDFARootState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalDFAState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalDFAStateTransitionTable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalFollowInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalFollowTable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalNFARootState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalNFAState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalParser.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\SyntacticalRootComparer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\TemplateParamReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\TemplateReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Rules\TokenReferenceProductionRuleItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ScannableEntryItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ScannableEntryItemRepeatInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\ScannableEntryItemRepeatOptions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\StringTerminalKind.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\TokenEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\TokenEOFEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\CharRangeTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\CommandTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ICharRangeTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ICommandTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralCharReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralCharTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralReferenceTokenItem{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralStringReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralStringTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ILiteralTokenItem{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\IRegularLanguageStateMachine.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\IScanCommandTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ISoftReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ISubtractionCommand.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ITokenExpression.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ITokenExpressionSeries.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ITokenGroupItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ITokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ITokenReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ITokenSource.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\LiteralCharReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\LiteralCharTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\LiteralReferenceTokenItem{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\LiteralStringReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\LiteralStringTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\LiteralTokenItem{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularCaptureType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageDFARootState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageDFAState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageDFATransitionTable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageLexer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageNFARootState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageNFAState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageRecognizerStateMachine.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageScanData+CaptureEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageScanData+Entry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageScanData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageSet+RangeInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageSet.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageTokenTable+Target.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageTokenTable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\RegularLanguageTransducerStateMachine.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\ScanCommandTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\SoftReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\SubtractionCommandTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\TokenExpression.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\TokenExpressionSeries.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\TokenGroupItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\TokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Languages\Oilexer\Tokens\TokenReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexerParser+Lexer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexerParser+PreprocessorContainer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexerParser.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDCommentRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDFile+MyOptions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDFile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDParserErrors.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDParserResults.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDPreprocessorRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDProductionRuleGroupRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDProductionRuleRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokenGroupRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokenRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+CharacterRangeToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+CharLiteralToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+CommentToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+IdentifierToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+NumberLiteral.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+OperatorToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+PreprocessorDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+ReferenceToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+StringLiteralToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens+WhitespaceToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokens.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\GDTokenType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IGDFile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IGDFileOptions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IGDParser.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IGDRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IGDToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IGDTokenizer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IParser.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IParser{TToken, TTokenizer, TResult}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\IToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\ITokenizer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\ITokenizer{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\ITokenStream.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\Parser.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\ParserMode.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\Parser{TToken, TTokenizer, TResult}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\StringStream.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\Token.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\Tokenizer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\Tokenizer{T}.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Parsers\OILexer\TokenStream.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Properties\ParserAssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Statements\AssignStatement.cs" />
-    <Compile Include="Statements\BlockedStatement{TDom}.cs" />
-    <Compile Include="Statements\BlockStatement.cs" />
-    <Compile Include="Statements\BreakableBlockedStatement{TDom}+ExitPoint.cs" />
-    <Compile Include="Statements\BreakableBlockedStatement{TDom}.cs" />
-    <Compile Include="Statements\BreakStatement.cs" />
-    <Compile Include="Statements\CommentStatement.cs" />
-    <Compile Include="Statements\ConditionStatement.cs" />
-    <Compile Include="Statements\CrementStatement.cs" />
-    <Compile Include="Statements\EnumeratorStatement.cs" />
-    <Compile Include="Statements\IAddEventWatchStatement.cs" />
-    <Compile Include="Statements\IAssignStatement.cs" />
-    <Compile Include="Statements\IAssignStatementTarget.cs" />
-    <Compile Include="Statements\IBlockedStatement.cs" />
-    <Compile Include="Statements\IBlockedStatement{TDom}.cs" />
-    <Compile Include="Statements\IBlockParent.cs" />
-    <Compile Include="Statements\IBlockStatement.cs" />
-    <Compile Include="Statements\IBreakStatement.cs" />
-    <Compile Include="Statements\IBreakTargetExitPoint.cs" />
-    <Compile Include="Statements\IBreakTargetStatement.cs" />
-    <Compile Include="Statements\ICommentStatement.cs" />
-    <Compile Include="Statements\IConditionBlock.cs" />
-    <Compile Include="Statements\IConditionSeriesParts.cs" />
-    <Compile Include="Statements\IConditionSeriesStatement.cs" />
-    <Compile Include="Statements\IConditionStatement.cs" />
-    <Compile Include="Statements\ICrementStatement.cs" />
-    <Compile Include="Statements\IEnumeratorStatement.cs" />
-    <Compile Include="Statements\IForRangeStatement.cs" />
-    <Compile Include="Statements\IGoToLabelStatement.cs" />
-    <Compile Include="Statements\IIterationStatement.cs" />
-    <Compile Include="Statements\ILabelStatement.cs" />
-    <Compile Include="Statements\ILocalDeclarationStatement.cs" />
-    <Compile Include="Statements\IMethodReturnStatement.cs" />
-    <Compile Include="Statements\IReturnStatement.cs" />
-    <Compile Include="Statements\ISimpleStatement.cs" />
-    <Compile Include="Statements\IStatement.cs" />
-    <Compile Include="Statements\IStatementBlock.cs" />
-    <Compile Include="Statements\IStatementBlockInsertBase.cs" />
-    <Compile Include="Statements\IStatementSeries.cs" />
-    <Compile Include="Statements\IStatement{TDom}.cs" />
-    <Compile Include="Statements\ISwitchStatement.cs" />
-    <Compile Include="Statements\ISwitchStatementCase.cs" />
-    <Compile Include="Statements\ISwitchStatementCases.cs" />
-    <Compile Include="Statements\IterationStatement.cs" />
-    <Compile Include="Statements\IYieldBreakStatement.cs" />
-    <Compile Include="Statements\IYieldStatement.cs" />
-    <Compile Include="Statements\LabelStatement.cs" />
-    <Compile Include="Statements\LabelStatement.GoToStatement.cs" />
-    <Compile Include="Statements\ReturnStatement.cs" />
-    <Compile Include="Statements\SimpleStatement.cs" />
-    <Compile Include="Statements\StatementBlock.cs" />
-    <Compile Include="Statements\StatementExtensions.cs" />
-    <Compile Include="Statements\StatementSeries.cs" />
-    <Compile Include="Statements\Statement{TDom}.cs" />
-    <Compile Include="Statements\SwitchStatement.cs" />
-    <Compile Include="Statements\SwitchStatementCase.cs" />
-    <Compile Include="Statements\SwitchStatementCases.cs" />
-    <Compile Include="Statements\YieldBreakStatement.cs" />
-    <Compile Include="Statements\YieldStatement.cs" />
-    <Compile Include="StringFormWriter.cs" />
-    <Compile Include="Translation\CodeDOMTranslationOptions.cs" />
-    <Compile Include="Translation\CodeDomTranslator+MixedOptions.cs" />
-    <Compile Include="Translation\CodeDomTranslator.cs" />
-    <Compile Include="Translation\CodeTranslationOptions.cs" />
-    <Compile Include="Translation\CodeTranslationOptions.PassiveNameHandler.cs" />
-    <Compile Include="Translation\CSharpCodeTranslator.cs" />
-    <Compile Include="Translation\CSharpCodeTranslator.KeywordLookup.cs" />
-    <Compile Include="Translation\GDCodeTranslator.cs" />
-    <Compile Include="Translation\ICodeDOMTranslationOptions.cs" />
-    <Compile Include="Translation\ICodeDomTranslator.cs" />
-    <Compile Include="Translation\ICodeDomTranslator{T}.cs" />
-    <Compile Include="Translation\ICodeGeneratorNameHandler.cs" />
-    <Compile Include="Translation\ICodeGeneratorOptions.cs" />
-    <Compile Include="Translation\IGDTranslator.cs" />
-    <Compile Include="Translation\IIntermediateCodeTranslator.cs" />
-    <Compile Include="Translation\IIntermediateCodeTranslatorFormatter.cs" />
-    <Compile Include="Translation\IIntermediateCodeTranslatorOptions.cs" />
-    <Compile Include="Translation\IIntermediateLanguageTranslator.cs" />
-    <Compile Include="Translation\IIntermediateTranslator.cs" />
-    <Compile Include="Translation\IntermediateCodeTranslator+HTMLFormatter.cs" />
-    <Compile Include="Translation\IntermediateCodeTranslator+UBBFormatter.cs" />
-    <Compile Include="Translation\IntermediateCodeTranslator.cs" />
-    <Compile Include="Translation\IntermediateCodeTranslatorOptions.cs" />
-    <Compile Include="Translation\IntermediateTranslator.cs" />
-    <Compile Include="Translation\ProjectTranslator.cs" />
-    <Compile Include="Translation\TranslationProcessingSource.cs" />
-    <Compile Include="Types\AttributeConstructorParameter.cs" />
-    <Compile Include="Types\AttributeConstructorParameters.cs" />
-    <Compile Include="Types\AttributeDeclaration.cs" />
-    <Compile Include="Types\AttributeDeclarations.cs" />
-    <Compile Include="Types\AttributePropertyParameter.cs" />
-    <Compile Include="Types\ClassPartials.cs" />
-    <Compile Include="Types\ClassType.cs" />
-    <Compile Include="Types\ClassTypes.cs" />
-    <Compile Include="Types\DeclarationChangeArgs.cs" />
-    <Compile Include="Types\DeclarationResources.cs" />
-    <Compile Include="Types\DeclarationResourcesStringTable.cs" />
-    <Compile Include="Types\DeclarationResourcesStringTableEntry.cs" />
-    <Compile Include="Types\Declaration{TParent, TDom}.cs" />
-    <Compile Include="Types\DeclaredTypes{TItem, TDom}.cs" />
-    <Compile Include="Types\DeclaredType{TDom}.cs" />
-    <Compile Include="Types\DeclaredType{TDom}.Reference.cs" />
-    <Compile Include="Types\DelegateType.cs" />
-    <Compile Include="Types\DelegateTypeParameterMember.cs" />
-    <Compile Include="Types\DelegateTypeParameterMembers.cs" />
-    <Compile Include="Types\DelegateTypes.cs" />
-    <Compile Include="Types\EnumBaseType.cs" />
-    <Compile Include="Types\EnumeratorType.cs" />
-    <Compile Include="Types\EnumeratorTypes.cs" />
-    <Compile Include="Types\EventDeclarationArgs.cs" />
-    <Compile Include="Types\ExternType+TypeReference.cs" />
-    <Compile Include="Types\ExternType.cs" />
-    <Compile Include="Types\IAttributeConstructorParameter.cs" />
-    <Compile Include="Types\IAttributeConstructorParameters.cs" />
-    <Compile Include="Types\IAttributeDeclaration.cs" />
-    <Compile Include="Types\IAttributeDeclarations.cs" />
-    <Compile Include="Types\IAttributeDeclarationTarget.cs" />
-    <Compile Include="Types\IAttributePropertyParameter.cs" />
-    <Compile Include="Types\IClassPartials.cs" />
-    <Compile Include="Types\IClassType.cs" />
-    <Compile Include="Types\IClassTypes.cs" />
-    <Compile Include="Types\IDeclaration.cs" />
-    <Compile Include="Types\IDeclarationResources.cs" />
-    <Compile Include="Types\IDeclarationResourcesStringTable.cs" />
-    <Compile Include="Types\IDeclarationResourcesStringTableEntry.cs" />
-    <Compile Include="Types\IDeclarations.cs" />
-    <Compile Include="Types\IDeclarations{T}.cs" />
-    <Compile Include="Types\IDeclarationTarget.cs" />
-    <Compile Include="Types\IDeclaration{TParent, TDom}.cs" />
-    <Compile Include="Types\IDeclaredType.cs" />
-    <Compile Include="Types\IDeclaredTypeReference.cs" />
-    <Compile Include="Types\IDeclaredTypeReference{T}.cs" />
-    <Compile Include="Types\IDeclaredTypes{TItem, TDom}.cs" />
-    <Compile Include="Types\IDeclaredType{TDom}.cs" />
-    <Compile Include="Types\IDelegateType.cs" />
-    <Compile Include="Types\IDelegateTypeParameterMember.cs" />
-    <Compile Include="Types\IDelegateTypeParameterMembers.cs" />
-    <Compile Include="Types\IDelegateTypes.cs" />
-    <Compile Include="Types\IEnumeratorType.cs" />
-    <Compile Include="Types\IEnumeratorTypes.cs" />
-    <Compile Include="Types\IExternType.cs" />
-    <Compile Include="Types\IExternTypeReference.cs" />
-    <Compile Include="Types\IFieldParentType.cs" />
-    <Compile Include="Types\IInterfacePartials.cs" />
-    <Compile Include="Types\IInterfaceType.cs" />
-    <Compile Include="Types\IInterfaceTypes.cs" />
-    <Compile Include="Types\IMemberParentType.cs" />
-    <Compile Include="Types\INameSpaceDeclaration.cs" />
-    <Compile Include="Types\INameSpaceDeclarationPartials.cs" />
-    <Compile Include="Types\INamespaceDeclarations.cs" />
-    <Compile Include="Types\INameSpaceParent.cs" />
-    <Compile Include="Types\InterfacePartials.cs" />
-    <Compile Include="Types\InterfaceType.cs" />
-    <Compile Include="Types\InterfaceTypes.cs" />
-    <Compile Include="Types\IParameteredDeclaredType.cs" />
-    <Compile Include="Types\IParameteredDeclaredType{TParentDom}.cs" />
-    <Compile Include="Types\IParameteredParentType{TDom}.cs" />
-    <Compile Include="Types\IResourceable.cs" />
-    <Compile Include="Types\ISegmentableDeclarationTarget.cs" />
-    <Compile Include="Types\ISegmentableDeclarationTargetPartials.cs" />
-    <Compile Include="Types\ISegmentableDeclarationTargetPartials{T}.cs" />
-    <Compile Include="Types\ISegmentableDeclarationTarget{T}.cs" />
-    <Compile Include="Types\ISegmentableDeclaredType.cs" />
-    <Compile Include="Types\ISegmentableDeclaredTypePartials.cs" />
-    <Compile Include="Types\ISegmentableDeclaredTypePartials{TItem, TDom}.cs" />
-    <Compile Include="Types\ISegmentableDeclaredType{TItem, TDom}.cs" />
-    <Compile Include="Types\ISignatureMemberParentType.cs" />
-    <Compile Include="Types\IStatementType.cs" />
-    <Compile Include="Types\IStructPartials.cs" />
-    <Compile Include="Types\IStructType.cs" />
-    <Compile Include="Types\IStructTypes.cs" />
-    <Compile Include="Types\IType.cs" />
-    <Compile Include="Types\ITypeMemberParent.cs" />
-    <Compile Include="Types\ITypeParent.cs" />
-    <Compile Include="Types\ITypeReference.cs" />
-    <Compile Include="Types\ITypeReferenceable.cs" />
-    <Compile Include="Types\ITypeReferenceCollection.cs" />
-    <Compile Include="Types\ITypeReference{T}.cs" />
-    <Compile Include="Types\MemberAccessLevel.cs" />
-    <Compile Include="Types\Members\BinaryOperatorOverloadContainingSide.cs" />
-    <Compile Include="Types\Members\BinaryOperatorOverloadMember.cs" />
-    <Compile Include="Types\Members\BinaryOperatorParameter+ReferenceParticle.cs" />
-    <Compile Include="Types\Members\BinaryOperatorParameter.cs" />
-    <Compile Include="Types\Members\ConstructorCascadeTarget.cs" />
-    <Compile Include="Types\Members\ConstructorMember.cs" />
-    <Compile Include="Types\Members\ConstructorMembers.cs" />
-    <Compile Include="Types\Members\ConstructorParameterMember.cs" />
-    <Compile Include="Types\Members\ConstructorParameterMembers.cs" />
-    <Compile Include="Types\Members\EnumTypeFieldMembers.cs" />
-    <Compile Include="Types\Members\ExpressionCoercionMembers.cs" />
-    <Compile Include="Types\Members\FieldMember+ReferenceExpression.cs" />
-    <Compile Include="Types\Members\FieldMember.cs" />
-    <Compile Include="Types\Members\FieldMembers.cs" />
-    <Compile Include="Types\Members\IAutoCommentFragmentMember.cs" />
-    <Compile Include="Types\Members\IAutoCommentFragmentMembers.cs" />
-    <Compile Include="Types\Members\IAutoCommentMember.cs" />
-    <Compile Include="Types\Members\IBinaryOperatorOverloadMember.cs" />
-    <Compile Include="Types\Members\IBinaryOperatorParameter.cs" />
-    <Compile Include="Types\Members\ICodeBodyMember.cs" />
-    <Compile Include="Types\Members\IConstructorMember.cs" />
-    <Compile Include="Types\Members\IConstructorMembers.cs" />
-    <Compile Include="Types\Members\IConstructorParameterMember.cs" />
-    <Compile Include="Types\Members\IConstructorParameterMembers.cs" />
-    <Compile Include="Types\Members\IEnumTypeFieldMembers.cs" />
-    <Compile Include="Types\Members\IExportTableMember.cs" />
-    <Compile Include="Types\Members\IExpressionCoercionMember.cs" />
-    <Compile Include="Types\Members\IExpressionCoercionMembers.cs" />
-    <Compile Include="Types\Members\IFieldMember.cs" />
-    <Compile Include="Types\Members\IFieldMembers.cs" />
-    <Compile Include="Types\Members\IFieldMembersBase.cs" />
-    <Compile Include="Types\Members\IImplementedMember.cs" />
-    <Compile Include="Types\Members\IIndexerMember.cs" />
-    <Compile Include="Types\Members\IIndexerParameterMember.cs" />
-    <Compile Include="Types\Members\IIndexerParameterMembers.cs" />
-    <Compile Include="Types\Members\IIndexerSignatureMember.cs" />
-    <Compile Include="Types\Members\IIndexerSignatureParameterMember.cs" />
-    <Compile Include="Types\Members\IIndexerSignatureParameterMembers.cs" />
-    <Compile Include="Types\Members\IIndexerSignatureParameterMembers{TItem, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\IIndexerSignatureParameterMember{TItem, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\IInvokableMember.cs" />
-    <Compile Include="Types\Members\IMember.cs" />
-    <Compile Include="Types\Members\IMembers.cs" />
-    <Compile Include="Types\Members\IMembers{TItem, TParent, TDom}.cs" />
-    <Compile Include="Types\Members\IMember{TParent, TDom}.cs" />
-    <Compile Include="Types\Members\IMethodMember.cs" />
-    <Compile Include="Types\Members\IMethodMembers.cs" />
-    <Compile Include="Types\Members\IMethodParameterMember.cs" />
-    <Compile Include="Types\Members\IMethodParameterMembers.cs" />
-    <Compile Include="Types\Members\IMethodSignatureMember.cs" />
-    <Compile Include="Types\Members\IMethodSignatureMembers.cs" />
-    <Compile Include="Types\Members\IMethodSignatureMembers{TParameter, TTypeParameter, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\IMethodSignatureMember{TParameter, TTypeParameter, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\IMethodSignatureParameterMember.cs" />
-    <Compile Include="Types\Members\IMethodSignatureParameterMembers.cs" />
-    <Compile Include="Types\Members\IMethodSignatureTypeParameterMember.cs" />
-    <Compile Include="Types\Members\IMethodSignatureTypeParameterMembers.cs" />
-    <Compile Include="Types\Members\IMethodSignatureTypeParameterMembers{TParameter, TTypeParameter, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\IMethodSignatureTypeParameterMember{TParameter, TTypeParameter, TParent}.cs" />
-    <Compile Include="Types\Members\IMethodTypeParameterMember.cs" />
-    <Compile Include="Types\Members\IMethodTypeParameterMembers.cs" />
-    <Compile Include="Types\Members\IndexerMember.cs" />
-    <Compile Include="Types\Members\IndexerParameterMember.cs" />
-    <Compile Include="Types\Members\IndexerParameterMembers.cs" />
-    <Compile Include="Types\Members\IndexerSignatureMember.cs" />
-    <Compile Include="Types\Members\IndexerSignatureParameterMember.cs" />
-    <Compile Include="Types\Members\IndexerSignatureParameterMembers.cs" />
-    <Compile Include="Types\Members\IndexerSignatureParameterMembers{TParameter, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\IOperatorOverloadMember.cs" />
-    <Compile Include="Types\Members\IOperatorOverloadMember{TOperator}.cs" />
-    <Compile Include="Types\Members\IParameteredDeclaration{TParameter, TDom, TParent}.cs" />
-    <Compile Include="Types\Members\IParameteredParameterMembers{TParameter, TDom, TParent}.cs" />
-    <Compile Include="Types\Members\IParameteredParameterMember{TParameter, TDom, TParent}.cs" />
-    <Compile Include="Types\Members\IPropertyBodyMember.cs" />
-    <Compile Include="Types\Members\IPropertyMember.cs" />
-    <Compile Include="Types\Members\IPropertyMembers.cs" />
-    <Compile Include="Types\Members\IPropertySetBodyMember.cs" />
-    <Compile Include="Types\Members\IPropertySignatureMember.cs" />
-    <Compile Include="Types\Members\IPropertySignatureMembers.cs" />
-    <Compile Include="Types\Members\IPropertySignatureMembers{TItem, TParent}.cs" />
-    <Compile Include="Types\Members\IPropertySignatureMember{TParent}.cs" />
-    <Compile Include="Types\Members\ISignatureTableMember.cs" />
-    <Compile Include="Types\Members\ISnippetMember.cs" />
-    <Compile Include="Types\Members\ISnippetMembers.cs" />
-    <Compile Include="Types\Members\IStatementBlockLocalMember.cs" />
-    <Compile Include="Types\Members\IStatementBlockLocalMembers.cs" />
-    <Compile Include="Types\Members\ITypeConversionOverloadMember.cs" />
-    <Compile Include="Types\Members\ITypeConversionOverloadSource.cs" />
-    <Compile Include="Types\Members\ITypeParameterMember.cs" />
-    <Compile Include="Types\Members\ITypeParameterMembers.cs" />
-    <Compile Include="Types\Members\ITypeParameterMembers{TItem, TDom, TParent}.cs" />
-    <Compile Include="Types\Members\ITypeParameterMembers{TItem, TParentDom}.cs" />
-    <Compile Include="Types\Members\ITypeParameterMember{TDom, TParent}.cs" />
-    <Compile Include="Types\Members\ITypeParameterMember{TParentDom}.cs" />
-    <Compile Include="Types\Members\IUnaryOperatorOverloadMember.cs" />
-    <Compile Include="Types\Members\IUnaryOperatorOverloadSource.cs" />
-    <Compile Include="Types\Members\Members{TItem, TParent, TDom}.cs" />
-    <Compile Include="Types\Members\Member{TParent, TDom}.cs" />
-    <Compile Include="Types\Members\MethodMember+ReferenceExpression.cs" />
-    <Compile Include="Types\Members\MethodMember.cs" />
-    <Compile Include="Types\Members\MethodMembers+ValuesCollection.cs" />
-    <Compile Include="Types\Members\MethodMembers.cs" />
-    <Compile Include="Types\Members\MethodParameterMember.cs" />
-    <Compile Include="Types\Members\MethodParameterMembers.cs" />
-    <Compile Include="Types\Members\MethodSignatureMember.cs" />
-    <Compile Include="Types\Members\MethodSignatureMembers.cs" />
-    <Compile Include="Types\Members\MethodSignatureMember{TParameter, TTypeParameter, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\MethodSignatureParameterMember.cs" />
-    <Compile Include="Types\Members\MethodSignatureParameterMembers.cs" />
-    <Compile Include="Types\Members\MethodSignatureTypeParameterMember.cs" />
-    <Compile Include="Types\Members\MethodSignatureTypeParameterMembers.cs" />
-    <Compile Include="Types\Members\MethodTypeParameterMember.cs" />
-    <Compile Include="Types\Members\MethodTypeParameterMembers.cs" />
-    <Compile Include="Types\Members\OverloadableBinaryOperators.cs" />
-    <Compile Include="Types\Members\OverloadableUnaryOperators.cs" />
-    <Compile Include="Types\Members\ParameteredParameterMembers{TParameter, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\ParameteredParameterMember{TParameter, TSignatureDom, TParent}+ReferenceExpression.cs" />
-    <Compile Include="Types\Members\ParameteredParameterMember{TParameter, TSignatureDom, TParent}.cs" />
-    <Compile Include="Types\Members\ParameteredParameterMember{TParameter, TSignatureDom, TParent}.FauxCast.cs" />
-    <Compile Include="Types\Members\PropertyBodyMember.cs" />
-    <Compile Include="Types\Members\PropertyBodyMemberPart.cs" />
-    <Compile Include="Types\Members\PropertyMember+ReferenceExpression.cs" />
-    <Compile Include="Types\Members\PropertyMember.cs" />
-    <Compile Include="Types\Members\PropertyMembers.cs" />
-    <Compile Include="Types\Members\PropertySetBodyMember.cs" />
-    <Compile Include="Types\Members\PropertySignatureMember.cs" />
-    <Compile Include="Types\Members\PropertySignatureMembers.cs" />
-    <Compile Include="Types\Members\PropertySignatureMember{TParent}.cs" />
-    <Compile Include="Types\Members\SnippetMember.cs" />
-    <Compile Include="Types\Members\SnippetMembers.cs" />
-    <Compile Include="Types\Members\StatementBlockLocalMember+DeclarationStatement.cs" />
-    <Compile Include="Types\Members\StatementBlockLocalMember+ReferenceExpression.cs" />
-    <Compile Include="Types\Members\StatementBlockLocalMember.cs" />
-    <Compile Include="Types\Members\StatementBlockLocalMembers.cs" />
-    <Compile Include="Types\Members\TypeConversionOverloadMember.cs" />
-    <Compile Include="Types\Members\TypeConversionOverloadSource+ReferenceParticle.cs" />
-    <Compile Include="Types\Members\TypeConversionOverloadSource.cs" />
-    <Compile Include="Types\Members\TypeConversionRequirement.cs" />
-    <Compile Include="Types\Members\TypeParameterMembers{TItem, TDom, TParent}.cs" />
-    <Compile Include="Types\Members\TypeParameterMembers{TParentDom}.cs" />
-    <Compile Include="Types\Members\TypeParameterMember{TDom, TParent}+ParameterTypeReference.cs" />
-    <Compile Include="Types\Members\TypeParameterMember{TDom, TParent}.cs" />
-    <Compile Include="Types\Members\TypeParameterMember{TParentDom}.cs" />
-    <Compile Include="Types\Members\TypeParameterSpecialCondition.cs" />
-    <Compile Include="Types\Members\UnaryOperatorOverloadMember.cs" />
-    <Compile Include="Types\Members\UnaryOperatorOverloadSource+ReferenceParticle.cs" />
-    <Compile Include="Types\Members\UnaryOperatorOverloadSource.cs" />
-    <Compile Include="Types\NameSpaceDeclaration.cs" />
-    <Compile Include="Types\NameSpaceDeclarationPartials.cs" />
-    <Compile Include="Types\NameSpaceDeclarations.cs" />
-    <Compile Include="Types\ParameteredDeclaredType{TItem, TDom}.cs" />
-    <Compile Include="Types\ParameteredDeclaredType{TItem, TDom}.TypeParameterMembers.cs" />
-    <Compile Include="Types\ResourceGenerationType.cs" />
-    <Compile Include="Types\SegmentableDeclaredTypePartials{TItem, TDom}.cs" />
-    <Compile Include="Types\SegmentableParameteredMemberTypeParentType{TItem, TDom, TPartials}.cs" />
-    <Compile Include="Types\SegmentableParameteredType{TItem, TDom, TPartials}.cs" />
-    <Compile Include="Types\StructPartials.cs" />
-    <Compile Include="Types\StructType.cs" />
-    <Compile Include="Types\StructTypes.cs" />
-    <Compile Include="Types\TypeConstrainedName.cs" />
-    <Compile Include="Types\TypedName.cs" />
-    <Compile Include="Types\TypeReferenceBase.cs" />
-    <Compile Include="Types\TypeReferenceCollection.cs" />
-    <Compile Include="Types\TypeReferenceResolveOptions.cs" />
-    <Compile Include="Utilities\Arrays\Tweaks.cs" />
-    <Compile Include="Utilities\Collections\ControlledStateCollection{T}.cs" />
-    <Compile Include="Utilities\Collections\ControlledStateDictionary{TKey, TValue}+KeysCollection.cs" />
-    <Compile Include="Utilities\Collections\ControlledStateDictionary{TKey, TValue}+SharedLocals.cs" />
-    <Compile Include="Utilities\Collections\ControlledStateDictionary{TKey, TValue}+ValuesCollection.cs" />
-    <Compile Include="Utilities\Collections\ControlledStateDictionary{TKey, TValue}.cs" />
-    <Compile Include="Utilities\Collections\ControlledStateKeyedTree.cs" />
-    <Compile Include="Utilities\Collections\ControlledStateKeyedTreeNode.cs" />
-    <Compile Include="Utilities\Collections\CovariantReadOnlyCollection.cs" />
-    <Compile Include="Utilities\Collections\Extensions.cs" />
-    <Compile Include="Utilities\Collections\IControlledStateCollection.cs" />
-    <Compile Include="Utilities\Collections\IControlledStateCollection{T}.cs" />
-    <Compile Include="Utilities\Collections\IControlledStateDictionary.cs" />
-    <Compile Include="Utilities\Collections\IControlledStateDictionary{TKey, TValue}.cs" />
-    <Compile Include="Utilities\Collections\IControlledStateKeyedTree.cs" />
-    <Compile Include="Utilities\Collections\IControlledStateKeyedTreeNode.cs" />
-    <Compile Include="Utilities\Collections\IKeyedTree.cs" />
-    <Compile Include="Utilities\Collections\IKeyedTreeNode.cs" />
-    <Compile Include="Utilities\Collections\IReadOnlyCollection.cs" />
-    <Compile Include="Utilities\Collections\IReadOnlyColletion{T}.cs" />
-    <Compile Include="Utilities\Collections\IReadOnlyDictionary.cs" />
-    <Compile Include="Utilities\Collections\IReadOnlyDictionary{TKey, TValue}.cs" />
-    <Compile Include="Utilities\Collections\KeyedTree.cs" />
-    <Compile Include="Utilities\Collections\KeyedTreeNode.cs" />
-    <Compile Include="Utilities\Collections\ReadOnlyCollectionGroup.cs" />
-    <Compile Include="Utilities\Collections\ReadOnlyCollection{T}.cs" />
-    <Compile Include="Utilities\Collections\ReadOnlyDictionary{TKey, TValue}.cs" />
-    <Compile Include="Utilities\Collections\SimpleDictionaryEnumerator{TKey, TValue}.cs" />
-    <Compile Include="Utilities\Collections\Special.cs" />
-    <Compile Include="Utilities\Common\EventArgs{T}.cs" />
-    <Compile Include="Utilities\Common\EventHandler{T}.cs" />
-    <Compile Include="Utilities\Common\IterationLogic.cs" />
-    <Compile Include="_Internal\BitStreamCreator.cs" />
-    <Compile Include="_Internal\GrammarCore.cs" />
-    <Compile Include="_Internal\Inlining\IInlinedTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedCharRangeTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedLiteralCharReferenceTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedLiteralCharTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedLiteralStringReferenceTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedLiteralStringTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedScanTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedSubtractionCommandTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedTokenEntry.cs" />
-    <Compile Include="_Internal\Inlining\InlinedTokenEOFEntry.cs" />
-    <Compile Include="_Internal\Inlining\InlinedTokenExpression.cs" />
-    <Compile Include="_Internal\Inlining\InlinedTokenExpressionSeries.cs" />
-    <Compile Include="_Internal\Inlining\InlinedTokenGroupItem.cs" />
-    <Compile Include="_Internal\Inlining\InlinedTokenReferenceTokenItem.cs" />
-    <Compile Include="_Internal\Inlining\InliningCore.cs" />
-    <Compile Include="_Internal\LinkerCore %28Stage 1%29.cs" />
-    <Compile Include="_Internal\LinkerCore %28Stage 2%29.cs" />
-    <Compile Include="_Internal\LinkerCore %28Stage 3%29.cs" />
-    <Compile Include="_Internal\LinkerCore+ProductionRuleTemplateArgumentSeries.cs" />
-    <Compile Include="_Internal\_GDResolutionAssistant.cs" />
-    <Compile Include="_Internal\_OIL+_Core+CommentConstants.cs" />
-    <Compile Include="_Internal\_OIL+_Core+MaintenanceResources.cs" />
-    <Compile Include="_Internal\_OIL+_Core.cs" />
-    <Compile Include="_Internal\_OIL.cs" />
-    <Compile Include="_Internal\_SerializationMethods.cs" />
+    <Compile Include="_Internal\Oilexer\BitStreamCreator.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\GrammarCore+CompilerErrors.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\GrammarCore.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\IInlinedTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedCharRangeTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedLiteralCharReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedLiteralCharTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedLiteralStringReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedLiteralStringTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedScanTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedSubtractionCommandTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenEOFEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenExpression.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenExpressionSeries.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenGroupItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenReferenceTokenItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\Inlining\InliningCore.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\LinkerCore %28Stage 1%29.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\LinkerCore %28Stage 2%29.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\LinkerCore %28Stage 3%29.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\LinkerCore+ProductionRuleTemplateArgumentSeries.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\_GDResolutionAssistant.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\_OIL+_Core.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="_Internal\Oilexer\_OIL.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>AllenCopeland.Abstraction.Slf.Languages.Oilexer.Properties</CustomToolNamespace>
     </EmbeddedResource>
-    <EmbeddedResource Include="_Internal\_OIL.resx">
+    <EmbeddedResource Include="_Internal\Oilexer\_OIL.resx">
       <DependentUpon>_OIL.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="_Internal\Inlining\ReadMe.txt" />
+    <None Include="Allen Copeland.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="AllenCopeland.snk" />
+    <Content Include="_Internal\Oilexer\Inlining\ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

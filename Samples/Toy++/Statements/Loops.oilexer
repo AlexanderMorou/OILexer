@@ -1,0 +1,39 @@
+#include                     "Statements.oilexer";
+
+IterationStatement                       ::=>
+	WhileStatement                          |
+	DoStatement                             |
+	ForStatement                            |
+	ForEachStatement                        ;
+
+WhileStatement                            ::=
+	"while" 
+	Parametered<BooleanExpression:Condition;>
+	EmbeddedStatement:Body;                 ;
+
+DoStatement                               ::=
+	"do" 
+		EmbeddedStatement:Inner;
+	"while" 
+   Parametered<BooleanExpression:Condition;>;
+
+ForStatement                              ::=
+	"for" Parametered<ForInitializer:Initializer;?
+		BooleanExpression:Condition;?
+		DelimitedList<ExpressionStatement:Iterators;, ','>?>
+	EmbeddedStatement:Body;                 ;
+
+ForInitializer                           ::=>
+	LocalVariableDeclaration                |
+	ForStatementExpressionList              ;
+
+ForStatementExpressionList                ::=
+	DelimitedList<ExpressionStatement:Initializers;, ','>;
+
+ForEachStatement                          ::=
+	"foreach" Parametered<
+				LocalVariableType:Type; 
+				Identifier:Name;
+				  "in"
+				Expression:Source;>
+	EmbeddedStatement:Body;                 ;

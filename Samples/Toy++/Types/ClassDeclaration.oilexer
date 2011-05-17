@@ -2,13 +2,18 @@
 /* --------------------------------------- *\
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
+/* *
+ * Figured while I was at it, I would fix what
+ * I see as 'issues' with the original language's 
+ * definition, namely the fixed position of the
+ * partial keyword.
+ * */
 ClassDeclaration                          ::=
 	Attributes:Attributes;?
     (
-        OTuple<"new", ("public" | "private"), ("sealed"| "abstract" | "static")> |
-        OTuple<"new", "protected", "internal", ("sealed"| "abstract" | "static")>
+        OTuple<"new", ("public" | "private"), ("sealed"| "abstract" | "static"), "partial"> |
+        OTuple<"new", "protected", "internal", ("sealed"| "abstract" | "static"), "partial">
     ):Modifiers;
-    "partial"!:IsPartial;? 
 	"class" Identifier:Name;
 	ClassOrStructHeader<>
 	'{'

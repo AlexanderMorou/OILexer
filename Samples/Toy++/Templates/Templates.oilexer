@@ -13,13 +13,10 @@ DelimitedList<Term, Delimiter>            ::=
     Term (Delimiter Term)*;
 
 Parametered<T>                            ::=
-    Encased<'(', T, ')'>                    ;
+    '(' T ')'                               ;
 
 CParametered<T>                           ::=
-    Encased<'{', T, '}'>                    ;
-
-Encased<L, M, R>                          ::=
-    L M R;
+    '{' T '}'                               ;
 
 LeftOrRightDelimited
     <

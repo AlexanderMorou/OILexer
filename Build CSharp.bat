@@ -1,1 +1,1 @@
-@OILexer.exe -ex:dll -ns "Samples\CSharp\Root.Oilexer"
+@OILexer.exe -ns "Samples\CSharp\Root.Oilexer"

@@ -16,7 +16,7 @@ ArrayInitializerCreationExpression        ::=
     ArrayInitializer:Initializer;           ;
 
 RankSpecifier                             ::=
-    '[' ',':Rank;* ']';
+    '[' ','#:Rank;* ']'                     ;
 
 ArrayType                                 ::=
     NonArrayType:ElementType; 

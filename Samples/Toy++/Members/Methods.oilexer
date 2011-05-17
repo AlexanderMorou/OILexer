@@ -20,37 +20,66 @@ AbstractMethodDeclaration                 ::=
     ';'                                     ;
 
 ConcreteMethodDeclaration                ::=>
-    InstanceMethodDeclaration               |
-    StaticMethodDeclaration                 ;
+    ExternMethodDeclaration                 |
+    ExternInterfaceMethodDeclaration        |
+    InternInterfaceMethodDeclaration        |
+    InternMethodDeclaration                 ;
 
-InstanceMethodDeclaration                 ::=
+InternInterfaceMethodDeclaration          ::=
     Attributes:Attributes;?
-    (
-        OTuple<"new", ("public" | "private"), "virtual", "extern"> |
-        OTuple<"new", ("public" | "private"), "override", "sealed", "extern"> |
-        OTuple<"new", "internal", "protected", "virtual", "extern"> |
-        OTuple<"new", "internal", "protected", "override", "sealed", "extern">
-    ):Modifiers;
+    "extern"
     "partial"!:IsPartial;?
     ReturnType:ReturnType;
-    MemberName:Name;
+    Type:InterfaceType; '.' Identifier:Name;
     GenericHeader<
         '(' 
             FormalParameterList:Parameters;? 
         ')'>
     Block:Body;                             ;
 
-StaticMethodDeclaration                   ::=
+InternMethodDeclaration                   ::=
     Attributes:Attributes;?
     (
-        Tuple<"new"?, "protected"?, "internal"?, "extern"?, "static"> |
-        Tuple<"new"?, ("public" | "private")?, "extern"?, "static">
+        Tuple<"override", "sealed"?, "internal"?, "protected"?> |
+        Tuple<"override", "sealed"?, ("public" | "private")?> |
+        OTuple<"new", ("public" | "private"), ("virtual" | "static")> |
+        OTuple<"new", "internal", "protected", ("virtual" | "static")> |
     ):Modifiers;
     "partial"!:IsPartial;?
     ReturnType:ReturnType;
-    MemberName:Name;
-    GenericHeader<'(' MethodFormalParameterList:Parameters;? ')'>
+    Identifier:Name;
+    GenericHeader<
+        '(' 
+            FormalParameterList:Parameters;? 
+        ')'>
     Block:Body;                             ;
+
+ExternInterfaceMethodDeclaration  ::=
+    Attributes:Attributes;?
+    "extern"
+    "partial"!:IsPartial;?
+    ReturnType:ReturnType;
+    Type:InterfaceType; '.' Identifier:Name;
+    GenericHeader<
+        '(' 
+            FormalParameterList:Parameters;? 
+        ')'> ';'                            ;
+
+ExternMethodDeclaration           ::=
+    Attributes:Attributes;?
+    (
+        Tuple<"override", "sealed"?, ("public" | "private")?, "extern"> |
+        Tuple<"override", "sealed"?, "internal"?, "protected"?, "extern"> |
+        Tuple<"new"?, ("public" | "private")?, ("virtual" | "static")?, "extern"> |
+        Tuple<"new"?, "internal"?, "protected"?, ("virtual" | "static")?, "extern">
+    ):Modifiers;
+    "partial"!:IsPartial;?
+    ReturnType:ReturnType;
+    Identifier:Name;
+    GenericHeader<
+        '(' 
+            FormalParameterList:Parameters;? 
+        ')'> ';'                            ;
 
 /* --------------------------------------- *\
 |*            B.2.10: Interfaces           *|
