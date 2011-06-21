@@ -9,14 +9,18 @@ MethodDeclaration                        ::=>
     ConcreteMethodDeclaration               ;
 
 AbstractMethodDeclaration                 ::=
-    Attributes:Attributes;?
+    (Attributes:Attributes; Whitespace?)?
     (
-        Tuple<"abstract", "new"?, "protected"?, "internal"?>
-        Tuple<"abstract", "new"?, "public"?>
+        Tuple<"abstract" Whitespace, ("new" Whitespace)?, ("protected" Whitespace)?, ("internal" Whitespace)?>
+        Tuple<"abstract" Whitespace, ("new" Whitespace)?, ("public" Whitespace)?>
     ):Modifiers;
-    ReturnType:ReturnType;
+    ReturnType:ReturnType; Whitespace
     Identifier:Name;
-    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
+    WhitePaddingOpt<GenericHeader<
+        '(' 
+            WhitePaddingOpt<
+            FormalParameterList:Parameters;?>
+        ')'>>
     ';'                                     ;
 
 ConcreteMethodDeclaration                ::=>
@@ -26,79 +30,90 @@ ConcreteMethodDeclaration                ::=>
     InternMethodDeclaration                 ;
 
 InternInterfaceMethodDeclaration          ::=
-    Attributes:Attributes;?
-    "extern"
-    "partial"!:IsPartial;?
-    ReturnType:ReturnType;
-    Type:InterfaceType; '.' Identifier:Name;
-    GenericHeader<
+    (Attributes:Attributes; Whitespace?)?
+    "extern" Whitespace
+    ("partial"!:IsPartial; Whitespace)?
+    ReturnType:ReturnType; Whitespace
+    Type:InterfaceType; WhitePaddingOpt<'.'> Identifier:Name;
+    WhitePaddingOpt<GenericHeader<
         '(' 
-            FormalParameterList:Parameters;? 
-        ')'>
+            WhitePaddingOpt<
+            FormalParameterList:Parameters;?>
+        ')'>>
     Block:Body;                             ;
 
 InternMethodDeclaration                   ::=
-    Attributes:Attributes;?
+    (Attributes:Attributes; Whitespace?)?
     (
-        Tuple<"override", "sealed"?, "internal"?, "protected"?> |
-        Tuple<"override", "sealed"?, ("public" | "private")?> |
-        OTuple<"new", ("public" | "private"), ("virtual" | "static")> |
-        OTuple<"new", "internal", "protected", ("virtual" | "static")> |
+        Tuple<"override" Whitespace, ("sealed" Whitespace)?, ("internal" Whitespace)?, ("protected" Whitespace)?> |
+        Tuple<"override" Whitespace, ("sealed" Whitespace)?, (("public" | "private") Whitespace)?> |
+        OTuple<"new" Whitespace, ("public" | "private") Whitespace, ("virtual" | "static") Whitespace> |
+        OTuple<"new" Whitespace, "internal" Whitespace, "protected" Whitespace, ("virtual" | "static")  Whitespace> |
     ):Modifiers;
-    "partial"!:IsPartial;?
-    ReturnType:ReturnType;
+    ("partial"!:IsPartial; Whitespace)?
+    ReturnType:ReturnType; Whitespace
     Identifier:Name;
-    GenericHeader<
+    WhitePaddingOpt<GenericHeader<
         '(' 
-            FormalParameterList:Parameters;? 
-        ')'>
+            WhitePaddingOpt<
+            FormalParameterList:Parameters;?>
+        ')'>>
     Block:Body;                             ;
 
 ExternInterfaceMethodDeclaration  ::=
-    Attributes:Attributes;?
-    "extern"
-    "partial"!:IsPartial;?
-    ReturnType:ReturnType;
-    Type:InterfaceType; '.' Identifier:Name;
-    GenericHeader<
+    (Attributes:Attributes; Whitespace?)?
+    "extern" Whitespace
+    ("partial"!:IsPartial; Whitespace)?
+    ReturnType:ReturnType; Whitespace
+    Type:InterfaceType; WhitePaddingOpt<'.'> Identifier:Name;
+    WhitePaddingOpt<GenericHeader<
         '(' 
-            FormalParameterList:Parameters;? 
-        ')'> ';'                            ;
+            WhitePaddingOpt<
+            FormalParameterList:Parameters;?>
+        ')'>> ';'                           ;
 
 ExternMethodDeclaration           ::=
-    Attributes:Attributes;?
+    (Attributes:Attributes; Whitespace?)?
     (
-        Tuple<"override", "sealed"?, ("public" | "private")?, "extern"> |
-        Tuple<"override", "sealed"?, "internal"?, "protected"?, "extern"> |
-        Tuple<"new"?, ("public" | "private")?, ("virtual" | "static")?, "extern"> |
-        Tuple<"new"?, "internal"?, "protected"?, ("virtual" | "static")?, "extern">
+        Tuple<"override" Whitespace, ("sealed" Whitespace)?, (("public" | "private") Whitespace)?, "extern" Whitespace> |
+        Tuple<"override" Whitespace, ("sealed" Whitespace)?, ("internal" Whitespace)?, ("protected" Whitespace)?, "extern" Whitespace> |
+        Tuple<("new" Whitespace)?, (("public" | "private") Whitespace)?, (("virtual" | "static") Whitespace)?, "extern" Whitespace> |
+        Tuple<("new" Whitespace)?, ("internal" Whitespace)?, ("protected" Whitespace)?, (("virtual" | "static") Whitespace)?, "extern" Whitespace>
     ):Modifiers;
-    "partial"!:IsPartial;?
-    ReturnType:ReturnType;
+    ("partial"!:IsPartial; Whitespace)?
+    ReturnType:ReturnType; Whitespace
     Identifier:Name;
-    GenericHeader<
+    WhitePaddingOpt<GenericHeader<
         '(' 
-            FormalParameterList:Parameters;? 
-        ')'> ';'                            ;
+            WhitePaddingOpt<
+            FormalParameterList:Parameters;?>
+        ')'>> ';'                           ;
 
 /* --------------------------------------- *\
 |*            B.2.10: Interfaces           *|
 \* --------------------------------------- */
 
 InterfaceMethodDeclaration                ::=
-    Attributes:Attributes;?
-    "new"!:IsNew;?
-    ReturnType:ReturnType;
-    Identifier:Name;
-    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
+    (Attributes:Attributes; Whitespace?)?
+    ("new"!:IsNew; Whitespace)?
+    ReturnType:ReturnType; Whitespace
+    Identifier:Name; 
+    WhitePaddingOpt<
+        GenericHeader<
+        '(' WhitePaddingOpt<
+            FormalParameterList:Parameters;?> 
+        ')'>>
     ';'                                     ;
 
 /* --------------------------------------- *\
 |*    T*y++ Specific Generic Extensions    *|
 \* --------------------------------------- */
 TypeParameterMethodDeclaration            ::=
-    Attributes:Attributes;?
-    ReturnType:ReturnType;
+    (Attributes:Attributes; Whitespace?)?
+    ReturnType:ReturnType; Whitespace
     Identifier:Name;
-    GenericHeader<'(' FormalParameterList:Parameters;? ')'>
-    ';'                                     ;
+    WhitePaddingOpt<
+    GenericHeader<
+        '(' WhitePaddingOpt<
+            FormalParameterList:Parameters;?>  
+        ')'>> ';'                           ;

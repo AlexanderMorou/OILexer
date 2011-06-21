@@ -1,14 +1,14 @@
 #include "Expressions.oilexer";
 
 LambdaExpression                          ::= 
-    AnonymousFunctionSignature:Signature;
-    "=>"
+    AnonymousFunctionSignature:Signature; 
+    WhitePaddingOpt<"=>">
     AnonymousFunctionBody:Body;             ;
 
 AnonymousMethodExpression                 ::=
-    "delegate" 
+    "delegate" Whitespace
     ExplicitAnonymousFunctionSignature:Signature;?
-    Block:Body;                             ;
+    Whitespace? Block:Body;                 ;
 
 AnonymousFunctionSignature               ::=>
     ExplicitAnonymousFunctionSignature      |
@@ -19,27 +19,36 @@ AnonymousFunctionBody                    ::=>
     Block                                   ;
 
 ExplicitAnonymousFunctionSignature      ::=
-    '(' DelimitedList<ExplicitAnonymousFunctionParameter:Parameters;, ','>? ')';
+    '(' 
+        WhitePaddingOpt<
+        WhitespaceDelimitedList<ExplicitAnonymousFunctionParameter:Parameters;, ','>?>
+    ')';
 
 ExplicitAnonymousFunctionParameter        ::=
-    ("ref" | "out"):Modifier;? Type:Type;
-    Identifier:Name;                        ;
+    ("ref" | "out"):Modifier;? Whitespace Type:Type;
+    Whitespace Identifier:Name;             ;
 
 ImplicitAnonymousFunctionSignature       ::=>
     Identifier                              |
     ImplicitAnonymousFunctionParameterList  ;
 
 ImplicitAnonymousFunctionParameterList    ::=
-    '(' DelimitedList<Identifier:Names;, ','>? ')';
+    '(' 
+        WhitePaddingOpt<
+            WhitespaceDelimitedList<
+                Identifier:Names;, ','>?>
+     ')';
 
 AnonymousObjectCreationExpression         ::=
-    "new" AnonymousObjectInitializer:Type;  ;
+    WhitePaddingOpt<"new"> 
+    AnonymousObjectInitializer:Type;        ;
 
 AnonymousObjectInitializer                ::=
     '{'
+        Whitespace?
         (
-            DelimitedList<MemberDeclarator:Members;, ','>
-            ','?
+            WhitespaceDelimitedList<MemberDeclarator:Members;, ','>
+            WhitePaddingOpt<','>?
         )?
     '}';
 
@@ -49,4 +58,4 @@ MemberDeclarator                         ::=>
     MemberAssignmentDeclarator              ;
 
 MemberAssignmentDeclarator                ::=
-    Identifier:Name; '=' Expression:Value;  ;
+    Identifier:Name; WhitePaddingOpt<'='> Expression:Value;  ;

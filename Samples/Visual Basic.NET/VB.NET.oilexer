@@ -1,0 +1,20 @@
+#LexerName                                  "VBTokenizer";
+#ParserName                                    "VBParser";
+#AssemblyName                                  "VBReader";
+#GrammarName                                     "VB.NET";
+#TokenPrefix                                         "VB";
+#TokenSuffix                                      "Token";
+#RulePrefix                                          "VB";
+#RuleSuffix                                        "Rule";
+#Root                                             "Start";
+#Namespace        "AllenCopeland.Abstraction.Slf.Parsers";
+
+#ifndef Lexer
+#define Lexer = VBParser;
+#endif
+
+#include        "Expressions\\VB.NET-Expressions.oilexer";
+#include "Lexical Grammar\\VB.NET-LexicalGrammar.oilexer";
+#include                "Members\\VB.NET-Members.oilexer";
+#include          "Statements\\VB.NET-Statements.oilexer";
+#include                    "Types\\VB.NET-Types.oilexer";

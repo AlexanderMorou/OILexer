@@ -1,0 +1,21 @@
+#include                     "CharsAndLines.oilexer";
+#include                          "Keywords.oilexer";
+#include                       "Identifiers.oilexer";
+#include                          "Literals.oilexer";
+#include                        "Separators.oilexer";
+#include                         "Operators.oilexer";
+
+#ifndef Lexer
+#define Lexer            =            VBPreprocessor;
+#include                    "LexicalContext.oilexer";
+#include "Preprocessor\\VB.NET-Preprocessor.oilexer";
+#elif Lexer == "VBLexer"
+#include                    "LexicalContext.oilexer";
+/* *
+ * From Visual Basic Language Specification 10.0
+ * Section 13.1 Lexical Grammar
+ * */
+Start                                             ::=
+    LogicalLine:Lines;*                             ;
+
+#endif

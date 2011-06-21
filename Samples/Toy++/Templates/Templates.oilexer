@@ -12,6 +12,11 @@
 DelimitedList<Term, Delimiter>            ::=
     Term (Delimiter Term)*;
 
+WhitespaceDelimitedList<Term, Delimiter>  ::=
+    DelimitedList<
+        Term, 
+        WhitePaddingOpt<Delimiter>>         ;
+
 Parametered<T>                            ::=
     '(' T ')'                               ;
 
@@ -29,3 +34,8 @@ LeftOrRightDelimited
 SetInject<Set, Element>                   ::=
     Set* Element Set*                       ;
 
+WhitePaddingOpt<T>                        ::=
+    Whitespace? T Whitespace?               ;
+
+WhitePadding<T>                           ::=
+    Whitespace T Whitespace                 ;

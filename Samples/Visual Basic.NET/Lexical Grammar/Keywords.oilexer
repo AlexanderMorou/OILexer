@@ -1,0 +1,173 @@
+#include           "VB.NET-LexicalGrammar.oilexer";
+/* *
+ * From Visual Basic Language Specification 10.0
+ * Section 13.1.3 Keywords (Table: 2.3 Keywords)
+ * */
+Keyword                                          :=
+         @"AddHandler":AddHandler;                | 
+          @"AddressOf":AddressOf;                 | 
+              @"Alias":Alias;                     | 
+                @"And":And;                       | 
+            @"AndAlso":AndAlso;                   | 
+                 @"As":As;                        | 
+            @"Boolean":Boolean;                   | 
+              @"ByRef":ByRef;                     | 
+               @"Byte":Byte;                      | 
+              @"ByVal":ByVal;                     | 
+               @"Call":Call;                      | 
+               @"Case":Case;                      | 
+              @"Catch":Catch;                     | 
+               @"Char":Char;                      | 
+              @"Class":Class;                     | 
+              @"Const":Const;                     | 
+           @"Continue":Continue;                  | 
+              @"CType":CType;                     | 
+               @"Date":Date;                      | 
+            @"Decimal":Decimal;                   | 
+            @"Declare":Declare;                   | 
+            @"Default":Default;                   | 
+           @"Delegate":Delegate;                  | 
+                @"Dim":Dim;                       | 
+         @"DirectCast":DirectCast;                | 
+                 @"Do":Do;                        | 
+             @"Double":Double;                    | 
+               @"Each":Each;                      | 
+               @"Else":Else;                      | 
+             @"ElseIf":ElseIf;                    | 
+                @"End":End;                       | 
+              @"EndIf":EndIf;                     | 
+               @"Enum":Enum;                      | 
+              @"Erase":Erase;                     | 
+              @"Error":Error;                     | 
+              @"Event":Event;                     | 
+               @"Exit":Exit;                      | 
+              @"False":False;                     | 
+            @"Finally":Finally;                   | 
+                @"For":For;                       | 
+           @"Function":Function;                  | 
+                @"Get":Get;                       | 
+            @"GetType":GetType;                   | 
+    @"GetXmlNamespace":GetXmlNamespace;           | 
+             @"Global":Global;                    | 
+              @"GoSub":GoSub;                     | 
+               @"GoTo":GoTo;                      | 
+            @"Handles":Handles;                   | 
+                 @"If":If;                        | 
+         @"Implements":Implements;                | 
+            @"Imports":Imports;                   | 
+                 @"In":In;                        | 
+           @"Inherits":Inherits;                  | 
+            @"Integer":Integer;                   | 
+          @"Interface":Interface;                 | 
+                 @"Is":Is;                        | 
+              @"IsNot":IsNot;                     | 
+                @"Let":Let;                       | 
+                @"Lib":Lib;                       | 
+               @"Like":Like;                      | 
+               @"Long":Long;                      | 
+               @"Loop":Loop;                      | 
+                 @"Me":Me;                        | 
+                @"Mod":Mod;                       | 
+             @"Module":Module;                    | 
+        @"MustInherit":MustInherit;               | 
+       @"MustOverride":MustOverride;              | 
+             @"MyBase":MyBase;                    | 
+            @"MyClass":MyClass;                   | 
+          @"Namespace":Namespace;                 | 
+          @"Narrowing":Narrowing;                 | 
+                @"New":New;                       | 
+               @"Next":Next;                      | 
+                @"Not":Not;                       | 
+            @"Nothing":Nothing;                   | 
+     @"NotInheritable":NotInheritable;            | 
+     @"NotOverridable":NotOverridable;            | 
+             @"Object":Object;                    | 
+                 @"Of":Of;                        | 
+                 @"On":On;                        | 
+           @"Operator":Operator;                  | 
+             @"Option":Option;                    | 
+           @"Optional":Optional;                  | 
+                 @"Or":Or;                        | 
+             @"OrElse":OrElse;                    | 
+          @"Overloads":Overloads;                 | 
+        @"Overridable":Overridable;               | 
+          @"Overrides":Overrides;                 | 
+         @"ParamArray":ParamArray;                | 
+            @"Partial":Partial;                   | 
+           @"Property":Property;                  | 
+         @"RaiseEvent":RaiseEvent;                | 
+           @"ReadOnly":ReadOnly;                  | 
+              @"ReDim":ReDim;                     | 
+                @"REM":CommentStart;              | 
+      @"RemoveHandler":RemoveHandler;             | 
+             @"Resume":Resume;                    | 
+             @"Return":Return;                    | 
+              @"SByte":SByte;                     | 
+             @"Select":Select;                    | 
+                @"Set":Set;                       | 
+            @"Shadows":Shadows;                   | 
+             @"Shared":Shared;                    | 
+              @"Short":Short;                     | 
+             @"Single":Single;                    | 
+             @"Static":Static;                    | 
+               @"Step":Step;                      | 
+               @"Stop":Stop;                      | 
+             @"String":String;                    | 
+          @"Structure":Structure;                 | 
+                @"Sub":Sub;                       | 
+           @"SyncLock":SyncLock;                  | 
+               @"Then":Then;                      | 
+              @"Throw":Throw;                     | 
+                 @"To":To;                        | 
+               @"True":True;                      | 
+                @"Try":Try;                       | 
+            @"TryCast":TryCast;                   | 
+             @"TypeOf":TypeOf;                    | 
+           @"UInteger":UInteger;                  | 
+              @"ULong":ULong;                     | 
+             @"UShort":UShort;                    | 
+              @"Using":Using;                     | 
+            @"Variant":Variant;                   | 
+               @"Wend":Wend;                      | 
+               @"When":When;                      | 
+              @"While":While;                     | 
+           @"Widening":Widening;                  | 
+               @"With":With;                      | 
+         @"WithEvents":WithEvents;                | 
+          @"WriteOnly":WriteOnly;                 | 
+                @"Xor":Xor;                       |
+                 AccessModifierWords              |
+                   CastType                       ;
+
+/* *
+ * For ease of reading and referencing.
+ * Likely course is they're resolved to the 
+ * keywords variation.
+ * */
+AccessModifierWords                              :=
+             @"Public":Public;                    | 
+          @"Protected":Protected;                 | 
+             @"Friend":Friend;                    | 
+            @"Private":Private;                   ;
+
+/* *
+ * From Visual Basic Language Specification 10.0
+ * Section 13.3.6 Expressions
+ * */
+CastType                                         :=
+              @"CBool":CastToBool;                |
+              @"CByte":CastToUnsignedByte;        |
+              @"CChar":CastToChar;                |
+              @"CDate":CastToDate;                |
+               @"CDec":CastToDecimal;             |
+               @"CDbl":CastToDouble;              |
+               @"CInt":CastToSignedInteger;       |
+               @"CLng":CastToSignedLong;          |
+               @"CObj":CastToObject;              |
+             @"CSByte":CastToSignedByte;          |
+             @"CShort":CastToSignedShort;         |
+               @"CSng":CastToSignedSingle;        |
+               @"CStr":CastToString;              |
+              @"CUInt":CastToUnsignedInteger;     |
+              @"CULng":CastToUnsignedLong;        |
+            @"CUShort":CastToUnsignedShort;       ;

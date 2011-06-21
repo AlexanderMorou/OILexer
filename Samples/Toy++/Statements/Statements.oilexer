@@ -43,8 +43,6 @@ ExpressionStatement                      ::=>
 	AssignmentExpression                    |
 	CrementExpression                       ;
 
-
-
 LockStatement                             ::=
 	"lock" '(' Expression:Target; ')'
 	EmbeddedStatement:Body;;

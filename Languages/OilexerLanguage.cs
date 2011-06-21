@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Compilers;
+using AllenCopeland.Abstraction.Slf.Oil;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -66,6 +67,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages
         public ILanguageVendor Vendor
         {
             get { return LanguageVendors.AllenCopeland; }
+        }
+
+        #endregion
+
+        #region ILanguage Members
+
+        public IIntermediateAssembly CreateAssembly(string name)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

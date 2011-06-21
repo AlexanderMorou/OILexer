@@ -6,13 +6,16 @@ ArrayCreationExpression                  ::=>
 //    ArrayRankInitializerCreationExpression;
     
 ArraySizeCreationExpression               ::=
-    "new" NonArrayType:Type;
-    BracketExpressionList:SizeInitializers; 
-    RankSpecifier:Ranks;* 
+    "new" Whitespace NonArrayType:Type;
+    Whitespace?
+    BracketExpressionList:SizeInitializers;
+    Whitespace?
+    (Whitespace? RankSpecifier:Ranks;)* 
+    Whitespace? 
     ArrayInitializer:Initializer;           ;
 
 ArrayInitializerCreationExpression        ::=
-    "new" ArrayType:Type;
+    "new" Whitespace ArrayType:Type;
     ArrayInitializer:Initializer;           ;
 
 RankSpecifier                             ::=
@@ -37,9 +40,11 @@ NonArrayReferenceType                    ::=>
 
 ArrayInitializer                         ::=>
     '{'
+        Whitespace?
         (
-            DelimitedList<VariableInitializer:Values;, ','>
-            ','?
+            WhitespaceDelimitedList<
+                VariableInitializer:Values;, ','>
+            WhitePaddingOpt<','>?
         )?
     '}';
 
