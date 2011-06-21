@@ -14,7 +14,8 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Oil;
-using AllenCopeland.Abstraction.Slf.Oil.Expressions.CSharp;
+using AllenCopeland.Abstraction.Slf.Languages.CSharp;
+using AllenCopeland.Abstraction.Slf.Languages.CSharp.Expressions;
 using AllenCopeland.Abstraction.Slf.Oil.Expressions;
 using AllenCopeland.Abstraction.Slf.Oil.Members;
 using AllenCopeland.Abstraction.Slf.Oil.Statements;
@@ -237,7 +238,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             var stateMachine = targetType;
             stateMachine.AccessLevel = AccessLevelModifiers.Internal;
             stateMachine.BaseType = charStream.BitStream;
-
+            
             /* *
              * Setup the 'next character' state movement method,
              * the state and exit-length variables.

@@ -1,7 +1,7 @@
 #include "Expressions.oilexer";
 
 UnaryExpression                          ::=>
-    UnaryOperators:Operators;*
+    (UnaryOperators:Operators; Whitespace?)*
     PrimaryExpression:Operand;              ;
 
 UnaryOperators                           ::=>
@@ -19,7 +19,9 @@ UnaryOperator                             ::=
     ):Operator;                             ;
     
 CastOperator                              ::=
-    '(' Type:Operator; ')'                  ;
+    '('
+        WhitePaddingOpt<Type:Operator;> 
+    ')'                                     ;
 
 MultiplicitiveExpression                  ::=
     BinaryOperationExpression<
@@ -55,10 +57,10 @@ ValueRelationalExpression                 ::=
 
 TypeRelationalExpression                  ::=
     RelationalExpression:Left;
-    (
+    WhitePaddingOpt<(
         "is"                                |
         "as"
-    ):Operator;
+    ):Operator;>
     Type:Right;                             ;
 
 EqualityExpression                        ::=
@@ -113,9 +115,9 @@ NullCoalescingExpression                  ::=
 ConditionalExpression                     ::=
     NullCoalescingExpression:Term;
     (
-        '?'
+        WhitePaddingOpt<'?'>
         Expression:TruePart; 
-        ':'
+        WhitePaddingOpt<':'>
         Expression:FalsePart;
     )?                                      ;
 
@@ -148,9 +150,9 @@ CrementExpression                        ::=>
     PostcrementExpression                   ;
 
 PrecrementExpression                      ::=
-    ("++" | "--"):Operator;
+    ("++" | "--"):Operator; Whitespace?
     UnaryExpression:Term;                   ;
 
 PostcrementExpression                     ::=
-    PrimaryExpression:Term;
+    PrimaryExpression:Term; Whitespace?
     ("++" | "--"):Operator;                 ;

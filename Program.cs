@@ -25,6 +25,7 @@ using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Arrays;
 using AllenCopeland.Abstraction.Utilities.Collections;
 using AllenCopeland.Abstraction.Utilities.Common;
+using AllenCopeland.Abstraction.Globalization;
 /* *
  * Old Release Post-build command:
  * "$(ProjectDir)PostBuild.bat" "$(ConfigurationName)" "$(TargetPath)"
@@ -137,6 +138,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             /// </summary>
             ExportCSharp            = 0x0600,
         }
+
         public static List<string> StreamAnalysisFiles = new List<string>();
         public static ValidOptions options             = ValidOptions.DoNotEmitSyntax;
         public static string baseTitle;
@@ -147,10 +149,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// call site.</param>
         private static void Main(string[] args)
         {
-            ProcessMain(args);
+            //TestMethod();
+            ProcessArgumentSet(args);
         }
 
-        internal static ParserBuilderResults ProcessMain(string[] args)
+        internal static ParserBuilderResults ProcessArgumentSet(string[] args)
         {
             var consoleTitle = Console.Title;
             try
@@ -234,16 +237,18 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private static void TestMethod()
         {
-            var abstractionTime = Time(BrowseCSCMessages);
             var reflectionTime = Time(BrowseCSCMessagesReflection);
+            var abstractionTime = Time(BrowseCSCMessages);
             Console.WriteLine("Abstraction took: {0}\nReflection Took: {1}", abstractionTime, reflectionTime);
         }
 
         private static void BrowseCSCMessagesReflection() {
             var cscms = typeof(CSharpCompilerMessages);
             var properties = cscms.GetProperties(BindingFlags.Public | BindingFlags.Static);
-            Tuple<bool, int, int, string, string>[] warnErrors = new Tuple<bool, int, int, string, string>[properties.Length];
+            var warnErrors = (new { IsError = false, MessageId = 0, WarningLevel = 0, Message = String.Empty, Name = String.Empty }).GetAnonymousTypeArray(properties.Length);
+            //Tuple<bool, int, int, string, string>[] warnErrors = new Tuple<bool, int, int, string, string>[properties.Length];
             int index = 0;
+            
             foreach (var prop in properties)
             {
                 var returnType = prop.PropertyType;
@@ -251,68 +256,85 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 if (returnType == typeof(ICompilerReferenceWarning))
                 {
                     ICompilerReferenceWarning warning = (ICompilerReferenceWarning)getMethod.Invoke(null, null);
-                    warnErrors[index++] = new Tuple<bool, int, int, string, string>(false, warning.MessageIdentifier, warning.WarningLevel, warning.MessageBase, prop.Name);
+                    warnErrors[index++] = new { IsError = false, MessageId = warning.MessageIdentifier, WarningLevel = warning.WarningLevel, Message = warning.MessageBase, Name = prop.Name };
+                    //warnErrors[index++] = new Tuple<bool, int, int, string, string>(false, warning.MessageIdentifier, warning.WarningLevel, warning.MessageBase, prop.Name);
                 }
                 else if (returnType == typeof(ICompilerReferenceError))
                 {
                     ICompilerReferenceError error = (ICompilerReferenceError)getMethod.Invoke(null, null);
-                    warnErrors[index++] = new Tuple<bool, int, int, string, string>(true, error.MessageIdentifier, 0, error.MessageBase, prop.Name);
+                    warnErrors[index++] = new { IsError = true, MessageId = error.MessageIdentifier, WarningLevel = 0, Message = error.MessageBase, Name = prop.Name };
+                    //warnErrors[index++] = new Tuple<bool, int, int, string, string>(true, error.MessageIdentifier, 0, error.MessageBase, prop.Name);
                 }
             }
             var messages = (from we in warnErrors
                             where we != null
-                            orderby we.Item1,
-                                    we.Item3,
-                                    we.Item2,
-                                    we.Item4
-                            select new { MessageName = we.Item5, IsError = we.Item1, MessageIdentifier = we.Item2, WarningLevel = we.Item3, MessageBase = we.Item4 }).ToArray();
+                            orderby we.IsError,
+                                    we.WarningLevel,
+                                    we.MessageId,
+                                    we.Name
+                            select we).ToArray();
         }
+
         private static void BrowseCSCMessages()
         {
             var cscms = typeof(CSharpCompilerMessages).GetTypeReference<IClassType>();
-            Tuple<bool, int, int, string, string>[] warnErrors = new Tuple<bool, int, int, string, string>[cscms.Properties.Count];
-            int index = 0;
+            //var warnErrors = (new { IsError = false, MessageId = 0, WarningLevel = 0, Message = String.Empty, Name = String.Empty }).GetAnonymousTypeArray(cscms.Properties.Count);
+            ////Tuple<bool, int, int, string, string>[] warnErrors = new Tuple<bool, int, int, string, string>[cscms.Properties.Count];
+            //int index = 0;
             
-            foreach (ICompiledPropertyMember prop in cscms.Properties.Values)
-            {
-                var returnType = prop.PropertyType;
-                if (returnType == typeof(ICompilerReferenceWarning).GetTypeReference())
-                {
-                    ICompilerReferenceWarning warning = prop.GetValue<ICompilerReferenceWarning>();
-                    warnErrors[index++] = new Tuple<bool, int, int, string, string>(false, warning.MessageIdentifier, warning.WarningLevel, warning.MessageBase, prop.Name);
-                }
-                else if (returnType == typeof(ICompilerReferenceError).GetTypeReference())
-                {
-                    ICompilerReferenceError error = prop.GetValue<ICompilerReferenceError>();
-                    warnErrors[index++] = new Tuple<bool, int, int, string, string>(true, error.MessageIdentifier, 0, error.MessageBase, prop.Name);
-                }
-            }
-            var messages = (from we in warnErrors
-                            where we != null
-                            orderby we.Item1,
-                                    we.Item3,
-                                    we.Item2,
-                                    we.Item4
-                            select new { MessageName = we.Item5, IsError = we.Item1, MessageIdentifier = we.Item2, WarningLevel = we.Item3, MessageBase = we.Item4 }).ToArray();
-        }
+            //foreach (ICompiledPropertyMember prop in cscms.Properties.Values)
+            //{
+            //    var returnType = prop.PropertyType;
+            //    if (returnType == typeof(ICompilerReferenceWarning).GetTypeReference())
+            //    {
+            //        var warning = prop.GetValue<ICompilerReferenceWarning>();
+            //        warnErrors[index++] = new { IsError = false, MessageId = warning.MessageIdentifier, WarningLevel = warning.WarningLevel, Message = warning.MessageBase, Name = prop.Name };
+            //    }
+            //    else if (returnType == typeof(ICompilerReferenceError).GetTypeReference())
+            //    {
+            //        var error = prop.GetValue<ICompilerReferenceError>();
+            //        warnErrors[index++] = new { IsError = true, MessageId = error.MessageIdentifier, WarningLevel = 0, Message = error.MessageBase, Name = prop.Name };
+            //    }
+            //}
+            var errorRef = typeof(ICompilerReferenceError).GetTypeReference();
+            var warningRef = typeof(ICompilerReferenceWarning).GetTypeReference();
+            var timedAction = Utilities.Common.MiscHelperMethods.TimeResult(() =>
+                (from ICompiledPropertyMember prop in cscms.Properties.Values
+                 let propertyType = prop.PropertyType
+                 let isError = propertyType == errorRef
+                 let isWarning = propertyType == warningRef
+                 where isError || isWarning
+                 let warning = isError ? null : prop.GetValue<ICompilerReferenceWarning>()
+                 let error = isError ? prop.GetValue<ICompilerReferenceError>() : null
+                 let MessageId = isError ?
+                     error.MessageIdentifier :
+                     warning.MessageIdentifier
+                 let WarningLevel = isError ?
+                     0 :
+                     warning.WarningLevel
+                 let Message = isError ?
+                     error.MessageBase :
+                     warning.MessageBase
+                 let Name = prop.Name
+                 orderby isError,
+                         WarningLevel,
+                         MessageId,
+                         Name
+                 select new
+                 {
+                     IsError = isError,
+                     MessageId = isError ?
+                         error.MessageIdentifier :
+                         warning.MessageIdentifier,
+                     WarningLevel = isError ?
+                         0 :
+                         warning.WarningLevel,
+                     Message = isError ?
+                         error.MessageBase :
+                         warning.MessageBase,
+                     Name = prop.Name
+                 }).ToArray());
 
-        private static void Extraction05()
-        {
-            BuildTupleSamples();
-            var cacheClearing = Time(CLIGateway.ClearCache);
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            Console.WriteLine("Press any key to re-run test.");
-            Console.ReadKey(true);
-            Console.WriteLine();
-            Console.WriteLine("Re-running test...");
-            BuildTupleSamples();
-            var secondCacheClearing = Time(CLIGateway.ClearCache);
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            Console.WriteLine();
-            Console.WriteLine("Clearing cache took (first/second): {0}/{1}", cacheClearing, secondCacheClearing);
-            //Console.ReadKey(true);
         }
 
         private static TimeSpan Time(Action a)
@@ -327,289 +349,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private static void T<T1>()
         {
             Console.WriteLine(typeof(T1));
-        }
-
-        private static void BuildTupleSamples()
-        {
-            int minTuple = 9;
-            int maxTuple = 108;
-            var disposalAid = new MassDisposalAid();
-            /* *
-             * The system tuple implementation maxes out at eight
-             * elements with the final element consisting of a secondary
-             * tuple set.
-             * */
-            Stopwatch mainStopwatch = new Stopwatch();
-            mainStopwatch.Start();
-            var eightTupleType = typeof(Tuple<,,,,,,,>).GetTypeReference<IClassType>();
-            IIntermediateAssembly result = IntermediateGateway.CreateAssembly("TupleProject");
-            disposalAid.Add(eightTupleType);
-            /* *
-             * Add a default namespace and tuple helper class for simpler instantiation of
-             * tuple instances.
-             * */
-            result.DefaultNamespace = result.Namespaces.Add("AllenCopeland.Abstraction.Utilities.Tuples");
-            var tupleHelperClass = result.DefaultNamespace.Classes.Add("TupleHelper");
-            /* *
-             * Obtain a stopwatch for monitoring each individual pass.
-             * */
-            TimeSpan[] passTimes = new TimeSpan[maxTuple + 1 - minTuple];
-            tupleHelperClass.SuspendDualLayout();
-            GenericParameterData[] nameCopy = new GenericParameterData[maxTuple];
-            TypedName[] parameterInfoCopy = new TypedName[maxTuple];
-            for (int j = 0; j < maxTuple; j++)
-            {
-                string currentTypeParamName = string.Format("TItem{0}", j + 1);
-                nameCopy[j] = new GenericParameterData(currentTypeParamName);
-                parameterInfoCopy[j] = new TypedName(string.Format("item{0}", j + 1), currentTypeParamName);
-            }
-            var getTupleName = new TypedName("GetTuple", CommonTypeRefs.Void);
-            IClassType[] tupleBaseTypes = new IClassType[7];
-            /* *
-             * Unrealistic example, but need to verify ability to obtain multiple 
-             * type references in a thread safe manner.
-             * */
-            Parallel.For(0, 8, i =>
-            {
-                switch (i)
-                {
-                    case 0:
-                        tupleBaseTypes[i] = typeof(Tuple<>).GetTypeReference<IClassType>();
-                        break;
-                    case 1:
-                        tupleBaseTypes[i] = typeof(Tuple<,>).GetTypeReference<IClassType>();
-                        break;
-                    case 2:
-                        tupleBaseTypes[i] = typeof(Tuple<,,>).GetTypeReference<IClassType>();
-                        break;
-                    case 3:
-                        tupleBaseTypes[i] = typeof(Tuple<,,,>).GetTypeReference<IClassType>();
-                        break;
-                    case 4:
-                        tupleBaseTypes[i] = typeof(Tuple<,,,,>).GetTypeReference<IClassType>();
-                        break;
-                    case 5:
-                        tupleBaseTypes[i] = typeof(Tuple<,,,,,>).GetTypeReference<IClassType>();
-                        break;
-                    case 6:
-                        tupleBaseTypes[i] = typeof(Tuple<,,,,,,>).GetTypeReference<IClassType>();
-                        break;
-
-                }
-            });
-            disposalAid.AddRange(tupleBaseTypes);
-            var unused = tupleHelperClass.Methods;
-            var unused2 = result.DefaultNamespace.Types;
-            Parallel.For(minTuple, maxTuple + 1, i =>
-            //for (int i = minTuple; i <= maxTuple; i++)
-            {
-                Stopwatch innerStopwatch = new Stopwatch();
-                innerStopwatch.Start();
-                /* *
-                 * Each tuple has n-many type-parameters where n is equal
-                 * to the current value of i.
-                 * *
-                 * As such helper methods and the type's constructor must 
-                 * have n-many parameters in order to instantiate such 
-                 * types.
-                 * */
-                GenericParameterData[] names = new GenericParameterData[i];
-                var parameterInfo = new TypedName[i];
-                Array.Copy(nameCopy, names, i);
-                Array.Copy(parameterInfoCopy, parameterInfo, i);
-                var dNSParts = result.DefaultNamespace.Parts;
-                var currentType = dNSParts.Add().Classes.Add("Tuple", names);
-                currentType.SuspendDualLayout();
-
-                var currentTupleHelper = tupleHelperClass.Methods.Add(getTupleName, parameterInfo, names);
-
-                var mainConstructor = currentType.Constructors.Add(parameterInfo);
-
-                currentTupleHelper.ReturnType = currentType.MakeGenericClosure(currentTupleHelper.GenericParameters);
-                LinkedList<ITypeCollection> sevenTupleSets = new LinkedList<ITypeCollection>();
-                LinkedList<IExpression[]> sevenParameterSets = new LinkedList<IExpression[]>();
-                int sevenTupleSetCount = (int)Math.Ceiling(((double)(i)) / 7);
-                /* *
-                 * Since the final eight-type tuple represents a tuple whose last type-parameter
-                 * is another tuple, it's necessary to segment the tuple into groups of seven,
-                 * where the eighth would be a forward reference to the rest of the tuple's
-                 * data elements.  This process is recursive, so a 14-type tuple would be:
-                 * Tuple<T1, T2, T3, T4, T5, T6, T7, Tuple<T8, T9, T10, T11, T12, T13, T14>>
-                 * whereas a 15-type tuple would be:
-                 * Tuple<T1, T2, T3, T4, T5, T6, T7, Tuple<T8, T9, T10, T11, T12, T13, T14, Tuple<T15>>>
-                 * */
-                var typeParams = currentType.TypeParameters.Values.ToArray();
-                IExpression[] parameters = new IExpression[i];
-                var parametersEnum = mainConstructor.Parameters.Values.GetEnumerator();
-                int parameterIndex = 0;
-
-                while (parametersEnum.MoveNext())
-                    parameters[parameterIndex++] = parametersEnum.Current.GetReference();
-                List<IExpression> currentParamReferences = new List<IExpression>();
-                List<IType> currentTupleTypes = new List<IType>();
-                for (int k = 0, j = 0; k < i; k++, j++)
-                {
-                    currentTupleTypes.Add(typeParams[k]);
-                    currentParamReferences.Add(parameters[k]);
-                    if (j >= 6)
-                    {
-                        sevenParameterSets.AddLast(currentParamReferences.ToArray());
-                        sevenTupleSets.AddLast((LockedTypeCollection)currentTupleTypes.ToLockedCollection());
-                        j = -1;
-                        currentParamReferences.Clear();
-                        currentTupleTypes.Clear();
-                    }
-                }
-                if (currentParamReferences.Count > 0)
-                {
-                    sevenParameterSets.AddLast(currentParamReferences.ToArray());
-                    sevenTupleSets.AddLast((LockedTypeCollection)currentTupleTypes.ToLockedCollection());
-                    currentParamReferences.Clear();
-                    currentTupleTypes.Clear();
-                }
-                /* *
-                 * We start with the last type in the tuple groups,
-                 * this way we can build the type backwards and end up with
-                 * a final type where the last few types are in as small a tuple
-                 * as possible.
-                 * */
-                var current = sevenTupleSets.Last;
-                IClassType currentTypeBase = null;
-                ICreateInstanceExpression trailingCascadeParameter = null;
-                var currentParamSet = sevenParameterSets.Last;
-                while (current != null)
-                {
-                    /* *
-                     * Since we start with the last element, it's only
-                     * null on the last element, or the first pass.
-                     * */
-                    if (currentTypeBase == null)
-                    {
-                        /* *
-                         * The last set will always have no more than seven types.
-                         * *
-                         * So create a reference to a tuple grouping with the appropriate
-                         * number of type-parameters.
-                         * */
-                        currentTypeBase = (IClassType)tupleBaseTypes[current.Value.Count - 1].MakeGenericClosure(current.Value);
-                        /* *
-                         * The trailing cascade parameter instantiates the final tuple on all
-                         * versions of the type-parameter, except for the last, which has no more
-                         * than seven elements.
-                         * */
-                        trailingCascadeParameter = currentTypeBase.NewExpression(currentParamSet.Value);
-                    }
-                    else
-                    {
-                        /* *
-                         * Every element after the first processed (or last in line)
-                         * has exactly eight types.
-                         * */
-                        var lockedTypes = (LockedTypeCollection)(current.Value);
-                        lockedTypes._Add(currentTypeBase);
-                        var tempTypeBase = (IClassType)eightTupleType.MakeGenericClosure(lockedTypes);
-
-                        if (currentParamSet != sevenParameterSets.First)
-                        {
-                            /* *
-                             * Rebuild the trailing cascade parameter to new up an instance of
-                             * the current temp base type, its final parameter is the current
-                             * cascade parameter, thereby making the final cascade member
-                             * the results of this action.
-                             * */
-                            var tempCascadeParameter = tempTypeBase.NewExpression(currentParamSet.Value);
-                            tempCascadeParameter.Parameters.IndexedParameters.Add(trailingCascadeParameter);
-                            trailingCascadeParameter = tempCascadeParameter;
-                        }
-                        else
-                        {
-                            /* *
-                             * In cases where it's the last set to be processed, or the
-                             * first set of tuple types, instead of newing up the base type,
-                             * redirect them to the main constructor's cascade parameters
-                             * targeted at the base 8-type tuple.
-                             * */
-                            mainConstructor.CascadeMembers.AddRange(currentParamSet.Value);
-                            mainConstructor.CascadeMembers.Add(trailingCascadeParameter);
-                        }
-                        currentTypeBase = tempTypeBase;
-                    }
-                    current = current.Previous;
-                    currentParamSet = currentParamSet.Previous;
-                }
-                /* *
-                 * Assign the current type's base type.
-                 * */
-                currentType.BaseType = currentTypeBase;
-                //Denote the cascade target.
-                mainConstructor.CascadeTarget = ConstructorCascadeTarget.Base;
-
-                //Obtain a series of references to the parameters.
-
-                //for use with the constructor of the type.
-                var createNewTupleInst = currentTupleHelper.ReturnType.NewExpression();
-                foreach (var param in currentTupleHelper.Parameters.Values)
-                    createNewTupleInst.Parameters.IndexedParameters.Add(param.GetReference());
-                currentTupleHelper.Return(createNewTupleInst);
-
-                //Make the method accessible and static.
-                currentTupleHelper.AccessLevel = AccessLevelModifiers.Public;
-                currentTupleHelper.IsStatic = true;
-                //Make the main constructor accessible.
-                mainConstructor.AccessLevel = AccessLevelModifiers.Public;
-                currentType.ResumeDualLayout();
-                //Obtain the current pass' time and reset the timer.
-                innerStopwatch.Stop();
-                passTimes[i - minTuple] = innerStopwatch.Elapsed;
-
-            } /**/);
-            mainStopwatch.Stop();
-            TimeSpan actualTimeTaken = mainStopwatch.Elapsed;
-            TimeSpan fullTimeTaken = TimeSpan.Zero;
-            mainStopwatch.Reset();
-            mainStopwatch.Start();
-            tupleHelperClass.ResumeDualLayout();
-            mainStopwatch.Stop();
-            var dualResume = mainStopwatch.Elapsed;
-            TimeSpan minTime = TimeSpan.MaxValue;
-            TimeSpan maxTime = TimeSpan.MinValue;
-            int minIndex = 0,
-                maxIndex = 0;
-            int index = minTuple;
-            foreach (var span in passTimes)
-            {
-                if (minTime > span)
-                {
-                    minTime = span;
-                    minIndex = index;
-                }
-                if (maxTime < span)
-                {
-                    maxTime = span;
-                    maxIndex = index;
-                }
-                fullTimeTaken += span;
-                index++;
-            }
-            TimeSpan averageSpan = new TimeSpan(fullTimeTaken.Ticks / passTimes.Length);
-            TimeSpan averageSpan2 = new TimeSpan(actualTimeTaken.Ticks / passTimes.Length);
-            //WriteProject(result, @"C:\Projects\Code\C#\OILexer\");
-            //WriteProject(result, @"C:\Projects\Code\C#\OILexer\", ".html", "&nbsp;".Repeat(4), true);
-            mainStopwatch.Reset();
-            Console.WriteLine("To build a series of {0} tuple classes it took: {1}", passTimes.Length, actualTimeTaken);
-            Console.WriteLine("The average pass took: {0} / {1}", averageSpan, averageSpan2);
-            Console.WriteLine("Total core processing time: {0}", fullTimeTaken);
-            Console.WriteLine("Multi-core advantage {0:#.##}% gain", (100 - (((double)actualTimeTaken.Ticks * 100) / (double)(fullTimeTaken.Ticks))));
-            Console.WriteLine("MaxPass: {0} ({2})\tMinPass: {1} ({3})", maxTime, minTime, maxIndex, minIndex);
-            Console.WriteLine("Resuming dual layout on TupleHelper took {0}", dualResume);
-            mainStopwatch.Start();
-            disposalAid.BeginExodus();
-            //CLIGateway.ClearCache();
-            result.Dispose();
-            disposalAid.EndExodus();
-            mainStopwatch.Stop();
-
-            Console.WriteLine("Disposal took {0}", mainStopwatch.Elapsed);
         }
 
         private static ParserBuilderResults ProcessFile(string file)
@@ -687,7 +426,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                  let state = resultsOfBuild.RuleStateMachines.ContainsKey(rule) ? resultsOfBuild.RuleStateMachines[rule] : null
                                  where state != null
                                  let stateCount = state.CountStates()
-                                 select new { Name = rule.Name, StateCount = stateCount, IsToken=false}).ToArray();
+                                 select new { Name = rule.Name, StateCount = stateCount, IsToken = false }).ToArray();
                     //Combine the tokens and rules into one array.
                     var combined = toks.Add(rules);
                     //Group the elements by the number of states.
@@ -1002,6 +741,129 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             Console.WriteLine("A total of {0:#,#} bytes were parsed from {1} files.", size, parserResults.Result.Files.Count);
         }
 
+        private static void ShowErrors(IParserResults<IGDFile> iprs)
+        {
+            long size = (from s in iprs.Result.Files
+                         select new FileInfo(s).Length).Sum();
+
+            var iprsSorted =
+                (from IParserSyntaxError ce in iprs.SyntaxErrors
+                 orderby ce.Location.Line,
+                         ce.Message
+                 select ce).ToArray();
+            int largestColumn = iprsSorted.Max(p => p.Location.Column).ToString().Length;
+            int furthestLine = iprsSorted.Max(p => p.Location.Line).ToString().Length;
+
+            string[] parts = (from e in iprs.SyntaxErrors
+                              let ePath = Path.GetDirectoryName(e.FileName)
+                              orderby ePath.Length descending
+                              select ePath).First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries);
+
+            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+             * Breakdown the longest filename and rebuild it part by part,         *
+             * where all elements from the error set contain the current path,     *
+             * select that path, then select the longest common path.              *
+             * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+             * If the longest file doesn't contain anything in common, then there  *
+             * is no group relative path and the paths will be shown in full.      *
+             * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+            string relativeRoot = null;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string currentRoot = string.Join(@"\", parts, 0, parts.Length - i);
+                if (iprsSorted.All(p => p.FileName.Contains(currentRoot)))
+                {
+                    relativeRoot = currentRoot;
+                    break;
+                }
+            }
+
+            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+             * Change was made to the sequence of LINQ expressions due to their    *
+             * readability versus traditional methods of a myriad of dictionaries. *
+             * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+            var fileQuery =
+                (from IParserSyntaxError error in iprsSorted
+                 select error.FileName).Distinct();
+
+            var folderQuery =
+                (from file in fileQuery
+                 select Path.GetDirectoryName(file)).Distinct();
+
+            var fileErrorQuery =
+                (from file in fileQuery
+                 join IParserSyntaxError error in iprsSorted on file equals error.FileName into fileErrors
+                 let fileErrorsArray = fileErrors.ToArray()
+                 orderby fileErrorsArray.Length descending,
+                         file ascending
+                 select new { File = Path.GetFileName(file), Path = Path.GetDirectoryName(file), Errors = fileErrorsArray }).ToArray();
+
+            var folderErrors =
+                (from folder in folderQuery
+                 join file in fileErrorQuery on folder equals file.Path into folderFileErrors
+                 let folderFileArray = folderFileErrors.ToArray()
+                 orderby folderFileArray.Length descending,
+                         folder ascending
+                 select new { Path = folder, ErroredFiles = folderFileArray, FileCount = folderFileArray.Length, ErrorCount = folderFileArray.Sum(fileData => fileData.Errors.Length) }).ToArray();
+                 
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            List<string> erroredFiles = new List<string>();
+            var color = Console.ForegroundColor;
+            if (relativeRoot != null)
+                Console.WriteLine("All folders relative to: {0}", relativeRoot);
+            foreach (var folder in folderErrors)
+            {
+                //error color used for denoting the specific error.
+                const ConsoleColor errorColor = ConsoleColor.DarkRed;
+                //Used for the string noting there were errors.
+                const ConsoleColor errorMColor = ConsoleColor.Red;
+                //Position Color.
+                const ConsoleColor posColor = ConsoleColor.Gray;
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+
+                string flError = (folder.ErrorCount > 1) ? "errors" : "error";
+                string rPath = null;
+                if (relativeRoot != null)
+                {
+                    if (folder.Path == relativeRoot)
+                        rPath = @".\";
+                    else
+                        rPath = folder.Path.Substring(relativeRoot.Length);// Console.WriteLine("{0} {2} in folder .{1}", folder.ErrorCount, folder.Path.Substring(relativeRoot.Length), flError);
+                }
+                else
+                    rPath = folder.Path;// Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, folder.Path, flError);
+                Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, rPath, flError);
+                foreach (var fileErrorSet in folder.ErroredFiles)
+                {
+                    Console.ForegroundColor = errorMColor;
+                    string fError = (fileErrorSet.Errors.Length > 1) ? "errors" : "error";
+                    Console.WriteLine("\t{0} {2} in file {1}:", fileErrorSet.Errors.Length, fileErrorSet.File, fError);
+                    foreach (var ce in fileErrorSet.Errors)
+                    {
+                        Console.ForegroundColor = errorColor;
+                        Console.Write("\t\t{");
+                        Console.ForegroundColor = posColor;
+                        int l = ce.Location.Line, c = ce.Location.Column;
+                        l = furthestLine - l.ToString().Length;
+                        c = largestColumn - c.ToString().Length;
+                        Console.Write("{2}{0}:{1}{3}", ce.Location.Line, ce.Location.Column, ' '.Repeat(l), ' '.Repeat(c));
+                        Console.ForegroundColor = errorColor;
+                        Console.Write("}} - {0}", ce.Message);
+                        Console.WriteLine();
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
+            }
+            Console.ForegroundColor = color;
+            int totalErrorCount = iprs.SyntaxErrors.Count,
+                totalFileCount  = folderErrors.Sum(folderData => folderData.FileCount);
+            Console.WriteLine("There were {0} {2} in {1} {3}.", totalErrorCount, totalFileCount, totalErrorCount == 1 ? "error" : "errors", totalFileCount == 1 ? "file" : "files");
+            Console.WriteLine("A total of {0:#,#} bytes were parsed from {1} files.", size, iprs.Result.Files.Count);
+        }
+        
         /*
         public static void WriteProject(IIntermediateAssembly project, string targetDirectory, string fileExtension = ".cs", string tabString = "    ", bool htmlExportMode = false)
         {
@@ -1032,7 +894,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             Dictionary<IIntermediateModule, List<string>> moduleFiles;
             ProjectTranslator.WriteProject(project, translator, targetDirectory, out td, out tfc, out files, out partialCompletions, out moduleFiles, true, true, fileExtension, true, tabString);
         }
-        */
+        //*/
+
         private static void SetAttributes(IParserResults<IGDFile> iprs, ParserBuilderResults resultsOfBuild)
         {
             resultsOfBuild.Project.AssemblyInformation.Company = "None";
@@ -1053,7 +916,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 {
                     Title = TitleSequence_CharacterSetComputations,
                     Value = RegularLanguageSet.CountComputations()
-                }).GetArray(
+                }).GetAnonymousTypeArray(
                 new
                 {
                     Title = TitleSequence_CharacterSetCache,
@@ -1069,7 +932,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     Title = TitleSequence_VocabularyComputations,
                     Value = GrammarVocabulary.CountComputationCaches()
                 });
-            if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
+            //if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
             {
                 sequence = sequence.AddBefore(
                 new
@@ -1508,7 +1371,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             Console.ForegroundColor = consoleColor;
         }
 
-
         private static void DisplaySyntax(ICommandTokenItem commandItem, ref bool startingLine, int depth)
         {
             if (commandItem is IScanCommandTokenItem)
@@ -1731,129 +1593,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return new ParserBuilderResults() { Project = builder.Project, CompilationErrors = builder.CompilationErrors, PhaseTimes = new ReadOnlyDictionary<ParserBuilderPhase, TimeSpan>(builder.PhaseTimes), RuleStateMachines = builder.RuleDFAStates };
         }
 
-        private static void ShowErrors(IParserResults<IGDFile> iprs)
-        {
-            long size = (from s in iprs.Result.Files
-                         select new FileInfo(s).Length).Sum();
-
-            var iprsSorted =
-                (from IParserSyntaxError ce in iprs.SyntaxErrors
-                 orderby ce.Location.Line,
-                         ce.Message
-                 select ce).ToArray();
-            int largestColumn = iprsSorted.Max(p => p.Location.Column).ToString().Length;
-            int furthestLine = iprsSorted.Max(p => p.Location.Line).ToString().Length;
-
-            string[] parts = (from e in iprs.SyntaxErrors
-                              let ePath = Path.GetDirectoryName(e.FileName)
-                              orderby ePath.Length descending
-                              select ePath).First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries);
-
-            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-             * Breakdown the longest filename and rebuild it part by part,         *
-             * where all elements from the error set contain the current path,     *
-             * select that path, then select the longest common path.              *
-             * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-             * If the longest file doesn't contain anything in common, then there  *
-             * is no group relative path and the paths will be shown in full.      *
-             * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-            string relativeRoot = null;
-            for (int i = 0; i < parts.Length; i++)
-            {
-                string currentRoot = string.Join(@"\", parts, 0, parts.Length - i);
-                if (iprsSorted.All(p => p.FileName.Contains(currentRoot)))
-                {
-                    relativeRoot = currentRoot;
-                    break;
-                }
-            }
-
-            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-             * Change was made to the sequence of LINQ expressions due to their    *
-             * readability versus traditional methods of a myriad of dictionaries. *
-             * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-            var fileQuery =
-                (from IParserSyntaxError error in iprsSorted
-                 select error.FileName).Distinct();
-
-            var folderQuery =
-                (from file in fileQuery
-                 select Path.GetDirectoryName(file)).Distinct();
-
-            var fileErrorQuery =
-                (from file in fileQuery
-                 join IParserSyntaxError error in iprsSorted on file equals error.FileName into fileErrors
-                 let fileErrorsArray = fileErrors.ToArray()
-                 orderby fileErrorsArray.Length descending,
-                         file ascending
-                 select new { File = Path.GetFileName(file), Path = Path.GetDirectoryName(file), Errors = fileErrorsArray }).ToArray();
-
-            var folderErrors =
-                (from folder in folderQuery
-                 join file in fileErrorQuery on folder equals file.Path into folderFileErrors
-                 let folderFileArray = folderFileErrors.ToArray()
-                 orderby folderFileArray.Length descending,
-                         folder ascending
-                 select new { Path = folder, ErroredFiles = folderFileArray, FileCount = folderFileArray.Length, ErrorCount = folderFileArray.Sum(fileData => fileData.Errors.Length) }).ToArray();
-                 
-
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            List<string> erroredFiles = new List<string>();
-            var color = Console.ForegroundColor;
-            if (relativeRoot != null)
-                Console.WriteLine("All folders relative to: {0}", relativeRoot);
-            foreach (var folder in folderErrors)
-            {
-                //error color used for denoting the specific error.
-                const ConsoleColor errorColor = ConsoleColor.DarkRed;
-                //Used for the string noting there were errors.
-                const ConsoleColor errorMColor = ConsoleColor.Red;
-                //Position Color.
-                const ConsoleColor posColor = ConsoleColor.Gray;
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-
-                string flError = (folder.ErrorCount > 1) ? "errors" : "error";
-                string rPath = null;
-                if (relativeRoot != null)
-                {
-                    if (folder.Path == relativeRoot)
-                        rPath = @".\";
-                    else
-                        rPath = folder.Path.Substring(relativeRoot.Length);// Console.WriteLine("{0} {2} in folder .{1}", folder.ErrorCount, folder.Path.Substring(relativeRoot.Length), flError);
-                }
-                else
-                    rPath = folder.Path;// Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, folder.Path, flError);
-                Console.WriteLine("{0} {2} in folder {1}", folder.ErrorCount, rPath, flError);
-                foreach (var fileErrorSet in folder.ErroredFiles)
-                {
-                    Console.ForegroundColor = errorMColor;
-                    string fError = (fileErrorSet.Errors.Length > 1) ? "errors" : "error";
-                    Console.WriteLine("\t{0} {2} in file {1}:", fileErrorSet.Errors.Length, fileErrorSet.File, fError);
-                    foreach (var ce in fileErrorSet.Errors)
-                    {
-                        Console.ForegroundColor = errorColor;
-                        Console.Write("\t\t{");
-                        Console.ForegroundColor = posColor;
-                        int l = ce.Location.Line, c = ce.Location.Column;
-                        l = furthestLine - l.ToString().Length;
-                        c = largestColumn - c.ToString().Length;
-                        Console.Write("{2}{0}:{1}{3}", ce.Location.Line, ce.Location.Column, ' '.Repeat(l), ' '.Repeat(c));
-                        Console.ForegroundColor = errorColor;
-                        Console.Write("}} - {0}", ce.Message);
-                        Console.WriteLine();
-                    }
-                    Console.WriteLine();
-                }
-                Console.WriteLine();
-            }
-            Console.ForegroundColor = color;
-            int totalErrorCount = iprs.SyntaxErrors.Count,
-                totalFileCount  = folderErrors.Sum(folderData => folderData.FileCount);
-            Console.WriteLine("There were {0} {2} in {1} {3}.", totalErrorCount, totalFileCount, totalErrorCount == 1 ? "error" : "errors", totalFileCount == 1 ? "file" : "files");
-            Console.WriteLine("A total of {0:#,#} bytes were parsed from {1} files.", size, iprs.Result.Files.Count);
-        }
-
         private static void DisplayUsage()
         {
             const string Usage_Options       = "options:";
@@ -1916,7 +1655,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
             }
             Console.WriteLine("╘═{1}{0}═╛", '═'.Repeat(longestLineLength - Usage_End.Length), Usage_End);
-            Console.ReadKey(true);
         }
     }
 
@@ -1924,7 +1662,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
     {
         public static ParserBuilderResults CallMainMethod(params string[] args)
         {
-            return Program.ProcessMain(args);
+            return Program.ProcessArgumentSet(args);
         }
     }
 }

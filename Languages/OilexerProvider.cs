@@ -27,7 +27,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages
             get { throw new NotImplementedException(); }
         }
 
-        public ILanguageASTTranslator<IGDFile> ASTTranslator
+        public ILanguageCSTTranslator<IGDFile> ASTTranslator
         {
             get { throw new NotImplementedException(); }
         }
@@ -40,6 +40,29 @@ namespace AllenCopeland.Abstraction.Slf.Languages
         public IHighLevelLanguage<IGDFile> Language
         {
             get { return OilexerLanguage.LanguageInstance; }
+        }
+
+        #endregion
+
+        #region IHighLevelLanguageProvider<IGDFile> Members
+
+        public IAnonymousTypePatternAid AnonymousTypePattern
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        #endregion
+
+        #region ILanguageProvider Members
+
+        public Oil.IIntermediateAssembly CreateAssembly(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        ILanguage ILanguageProvider.Language
+        {
+            get { return this.Language; }
         }
 
         #endregion

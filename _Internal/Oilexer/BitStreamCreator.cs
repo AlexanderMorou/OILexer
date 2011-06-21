@@ -5,8 +5,8 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Abstract;
 using AllenCopeland.Abstraction.Slf.Cli;
 using AllenCopeland.Abstraction.Slf.Oil;
-using AllenCopeland.Abstraction.Slf.CSharp;
-using AllenCopeland.Abstraction.Slf.Oil.Expressions.CSharp;
+using AllenCopeland.Abstraction.Slf.Languages.CSharp;
+using AllenCopeland.Abstraction.Slf.Languages.CSharp.Expressions;
 using AllenCopeland.Abstraction.Slf.Oil.Expressions;
 using AllenCopeland.Abstraction.Slf.Oil.Members;
 using AllenCopeland.Abstraction.Slf.Oil.Statements;
@@ -90,7 +90,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             //    result[i] = this.buffer[i];
             loop.Assign(resultChars.GetReference().GetIndexer(iLocal.GetReference()), charBuffer.GetReference().GetIndexer(iLocal.GetReference()));
             //return new string(result);
-            toStringOverride.Return(typeof(string).GetTypeReference().NewExpression(resultChars.GetReference()));
+            toStringOverride.Return(typeof(string).GetTypeReference().GetNewExpression(resultChars.GetReference()));
             return toStringOverride;
         }
 

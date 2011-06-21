@@ -13,21 +13,25 @@ Argument                                  ::=
     (
         "ref"                               | 
         "out"
-    ):Direction;? ArgumentExpression:Value; ;
+    ):Direction;? Whitespace
+    ArgumentExpression:Value;               ;
 
 ArgumentExpression                       ::=>
     Expression                              |
     NamedExpression                         ;
 
 NamedExpression                           ::=
-    Identifier:ParameterName; 
+    Identifier:ParameterName; Whitespace
     Expression:NamedExpression;             ;
 
 ExpressionList                            ::=
-    DelimitedList<Expression:Items;, ','>   ;
+    WhitespaceDelimitedList<
+        Expression:Items;, ','>             ;
 
 EnclosedExpressionList<Left, Right>       ::=
-    Left ExpressionList:Items; Right        ;
+    Left 
+        WhitePaddingOpt<ExpressionList:Items;>? 
+    Right                                   ;
 
 PrimaryExpression                        ::=>
     ArrayCreationExpression                 |
@@ -56,10 +60,11 @@ SimpleName ::=
     Identifier:Name; TypeArgumentList:TypeParameters;?;
 
 ParenthesizedExpression ::=
-    '(' Expression:Inner; ')';
+    '(' WhitePaddingOpt<Expression:Inner;> ')';
 
 PrimaryMemberAccess                       ::=
-    PrimaryExpression:PreviousAccess; '.' 
+    PrimaryExpression:PreviousAccess; 
+    WhitePaddingOpt<'.'>
     SimpleName:CurrentAccess;               ;
 
 PredefinedTypeMemberAccess                ::=
@@ -79,7 +84,8 @@ PredefinedTypeMemberAccess                ::=
         "uint"                              |
         "ulong"                             |
         "ushort"
-    ):PreviousAccess; '.' 
+    ):PreviousAccess; 
+    WhitePaddingOpt<'.'>     
     SimpleName:CurrentAccess;               ;
 
 QualifiedAliasMemberAccess                ::=
@@ -107,14 +113,16 @@ BaseAccess                               ::=>
     BaseElementAccess                       ;
 
 BaseMemberAccess                          ::=
-    "base" '.' Identifier:Target;           ;
+    "base" WhitePaddingOpt<'.'>
+    Identifier:Target;                      ;
 
 BaseElementAccess                         ::=
-    "base" EnclosedExpressionList<'[', ']'> ;
+    "base" Whitespace?
+    EnclosedExpressionList<'[', ']'>        ;
 
 ObjectCreationExpression                  ::=
-  "new" Type ArgumentList<'(', ')'>? 
-  ObjectOrCollectionInitializer:Initializer;;
+  "new" Whitespace Type WhitePaddingOpt<ArgumentList<'(', ')'>?>
+  Whitespace? ObjectOrCollectionInitializer:Initializer;;
 
 ObjectOrCollectionInitializer            ::=>
     CollectionInitializer                   |
@@ -122,11 +130,10 @@ ObjectOrCollectionInitializer            ::=>
 
 ObjectInitializer                         ::=
     '{' 
-        (
-            DelimitedList<MemberInitializer:Members;, ','>
-            ','?
-        )?
-    '}';
+        WhitePaddingOpt<
+            WhitespaceDelimitedList<MemberInitializer:Members;, ','>
+            (Whitespace? ',')?>?
+    '}'                                     ;
 
 MemberInitializer                         ::=
     Identifier:Target; '=' 
@@ -167,24 +174,33 @@ TypeOfType                               ::=>
     UnboundTypeName                         ;
 
 UnboundTypeName                           ::=
-    (Identifier:Alias; "::")? 
-    DelimitedList<UnboundGenericPart:Parts;, '.'>;
+    (Identifier:Alias; WhitePaddingOpt<"::">)? 
+    WhitespaceDelimitedList<UnboundGenericPart:Parts;, '.'>;
 
 UnboundGenericPart                        ::=
-    Identifier:Names; 
+    Identifier:Names; Whitespace?
     GenericDimensionSpecifier:Dimensions;?  ;
 
 GenericDimensionSpecifier                 ::=
-    '<' ',':Commas;* '>'                    ;
+    '<' (','#:Commas; Whitespace)* '>'      ;
 
 CheckedExpression                         ::=
-    "checked" '(' Expression:Target; ')'    ;
+    "checked" Whitespace? 
+    '(' 
+        WhitePaddingOpt<Expression:Target;> 
+    ')'                                     ;
 
 UncheckedExpression                       ::=
-    "unchecked" '(' Expression:Target; ')'  ;
+    "unchecked" Whitespace? 
+    '(' 
+        WhitePaddingOpt<Expression:Target;> 
+    ')'                                     ;
 
 DefaultValueExpression                    ::=
-    "default" '(' Type ')'                  ;
+    "default" Whitespace?
+    '(' 
+        WhitePaddingOpt<Type:Target;>
+    ')'                                     ;
 
 Expression                               ::=>
     NonAssignmentExpression                 |
