@@ -114,7 +114,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
                 return currentNode[secondaryRoot.Value.Entry];
             var currentSubVariant = currentNode.Value.Class.Classes.Add(string.Format("_{0}", secondaryRoot.Value.Entry.Name));
             currentSubVariant.BaseType = currentNode.Value.Class;
-            currentSubVariant.ImplementedInterfaces.ImplementInterfaceQuick(secondaryRoot.Value.RelativeInterface);
+            //currentSubVariant.ImplementedInterfaces.ImplementInterfaceQuick(secondaryRoot.Value.RelativeInterface);
             return currentNode.Add(secondaryRoot.Value.Entry, new RuleObjectification(null, currentSubVariant, secondaryRoot.Value.Entry));
         }
 
@@ -130,7 +130,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         {
             const string defaultNamespaceSubspace = "Cst";
             var dNamespace = project.DefaultNamespace;
-            if (dNamespace.Namespaces.ContainsKey(defaultNamespaceSubspace))
+            if (dNamespace.Namespaces.PathExists(defaultNamespaceSubspace))
                 dNamespace = dNamespace.Namespaces[defaultNamespaceSubspace];
             else
                 dNamespace = dNamespace.Namespaces.Add(defaultNamespaceSubspace);
@@ -138,7 +138,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             const string iNameFormat = "I" + nameFormat;
             var iFace = dNamespace.Interfaces.Add(string.Format(iNameFormat, this.Source.Options.RulePrefix, entry.Name, this.Source.Options.RuleSuffix));
             var bClass = dNamespace.Classes.Add(string.Format(nameFormat, this.Source.Options.RulePrefix, entry.Name, this.Source.Options.RuleSuffix));
-            bClass.ImplementedInterfaces.ImplementInterfaceQuick(iFace);
+            //bClass.ImplementedInterfaces.ImplementInterfaceQuick(iFace);
             return new RuleObjectification(iFace, bClass, entry);
         }
 

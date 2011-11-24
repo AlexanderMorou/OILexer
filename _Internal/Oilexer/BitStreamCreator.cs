@@ -75,7 +75,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             toStringOverride.AccessLevel = AccessLevelModifiers.Public;
             toStringOverride.IsOverride = true;
             //char[] result = new char[this.actualSize];
-            var resultChars = toStringOverride.Locals.Add(new TypedName("result", typeof(char[]).GetTypeReference()), new CreateArrayDetailExpression(typeof(char).GetTypeReference(), charBufferSize.GetReference()));
+            var resultChars = toStringOverride.Locals.Add(new TypedName("result", typeof(char[]).GetTypeReference()), new MalleableCreateArrayDetailExpression(typeof(char).GetTypeReference(), charBufferSize.GetReference()));
             var iLocal = toStringOverride.Locals.Add(new TypedName("i", typeof(int).GetTypeReference()));
             //int i = 0;
             iLocal.InitializationExpression = IntermediateGateway.NumberZero;
@@ -118,7 +118,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 //          {
             var nullCheck = growBufferMethod.If(charBuffer.GetReference().EqualTo(IntermediateGateway.NullValue));
 //              this.buffer = new char[totalSize];
-            nullCheck.Assign(charBuffer.GetReference(), new CreateArrayExpression(typeof(char).GetTypeReference(), totalSizeParameter.GetReference()));
+            nullCheck.Assign(charBuffer.GetReference(), new MalleableCreateArrayExpression(typeof(char).GetTypeReference(), totalSizeParameter.GetReference()));
 //              return;
 //          }
             nullCheck.Return();
@@ -138,7 +138,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             rangeCheck.Assign(pNewVar.GetReference(), totalSizeParameter.GetReference());
 
 //          char[] newBuffer = new char[pNew];
-            var newBufferVar = growBufferMethod.Locals.Add(new TypedName("newBuffer", typeof(char[]).GetTypeReference()), new CreateArrayExpression(typeof(char).GetTypeReference(), pNewVar.GetReference()));
+            var newBufferVar = growBufferMethod.Locals.Add(new TypedName("newBuffer", typeof(char[]).GetTypeReference()), new MalleableCreateArrayExpression(typeof(char).GetTypeReference(), pNewVar.GetReference()));
             //So newBuffer doesn't refer to pNew before it is declared.
             newBufferVar.AutoDeclare = false;
             growBufferMethod.DefineLocal(newBufferVar);

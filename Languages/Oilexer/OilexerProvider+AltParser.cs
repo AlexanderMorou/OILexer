@@ -12,7 +12,7 @@ using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
  \-------------------------------------------------------------------- */
 
-namespace AllenCopeland.Abstraction.Slf.Languages
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
     partial class OilexerProvider
     {

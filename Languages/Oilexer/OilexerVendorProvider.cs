@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 
-namespace AllenCopeland.Abstraction.Slf.Languages
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class OilexerVendorProvider
@@ -17,8 +17,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages
         /// <param name="vendor">The singleton
         /// <see cref="IAllenCopelandLanguageVendor"/>
         /// which will provide the language.</param>
-        /// <returns></returns>
-        public static OilexerLanguage GetLanguageOilexer(this IAllenCopelandLanguageVendor vendor)
+        /// <returns>The singleton <see cref="OilexerLanguage"/> instance.</returns>
+        public static OilexerLanguage GetOilexerLanguage(this IAllenCopelandLanguageVendor vendor)
         {
             return OilexerLanguage.LanguageInstance;
         }

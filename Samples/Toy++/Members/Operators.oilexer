@@ -12,23 +12,23 @@ DeclareInternExtern<
         #return 
             Attributes:Attributes;?
             Tuple<"public", "static", "extern">
-            Body';';
+            Whitespace? Body';'              ;
     #else
         #define Extern = 
             Attributes:Attributes;?
             Tuple<"public", "static", "extern">
-            Body ';'                        ;
+            Whitespace? Body ';'            ;
     #endif
     #ifdef Intern
         #return 
-            Attributes:Attributes;?
-            Tuple<"public", "static">
-            Body Block:Body;                ;
+            Attributes:Attributes;? Whitespace?
+            Tuple<"public", "static"> Whitespace?
+            Body  Whitespace? Block:Body;   ;
     #else
         #define Intern = 
             Attributes:Attributes;?
             Tuple<"public", "static">
-            Body Block:Body;                ;
+            Body  Whitespace? Block:Body;   ;
     #endif                                  ;
 
 OperatorDeclaration                      ::=>
@@ -70,17 +70,17 @@ ExternBinaryOperatorDeclaration           ::=
             ">="
         ):Operator;
         '(' 
-            TypedName:Left;
-            ',' 
+            TypedName:Left; 
+            WhitePaddingOpt<','>
             TypedName:Right;
         ')'>                                ;
-    
+
 ExternUnaryOperatorDeclaration            ::=
     DeclareInternExtern<
         InternUnaryOperatorDeclaration,
         ExternUnaryOperatorDeclaration,
         Type:OperatorType;
-            "operator"
+            "operator" Whitespace
         (
             '+'                             |
             '-'                             |
@@ -90,18 +90,18 @@ ExternUnaryOperatorDeclaration            ::=
             "--"                            |
             "true"                          |
             "false"
-        ):Operator;
+        ):Operator; Whitespace?
         '('
-            TypedName:Operand;
+            WhitePaddingOpt<TypedName:Operand;>
         ')'>                                ;
 
 ExternTypeOperatorDeclaration             ::=
     DeclareInternExtern<
         InternTypeOperatorDeclaration,
         ExternTypeOperatorDeclaration,
-        ("implicit" | "explicit"):Operator;
-        "operator"
-        Type:OperatorType;
+        ("implicit" | "explicit"):Operator; Whitespace
+        "operator" Whitespace
+        Type:OperatorType; Whitespace?
         '(' 
-            TypedName:Operand;
+            WhitePaddingOpt<TypedName:Operand;>
         ')'>                                ;

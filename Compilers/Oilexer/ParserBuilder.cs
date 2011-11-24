@@ -93,6 +93,15 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         public ParserBuilder(IGDFile source, List<string> streamAnalysisFiles)
         {
+            Initialize(source, streamAnalysisFiles);
+        }
+
+        protected ParserBuilder()
+        {
+        }
+
+        protected void Initialize(IGDFile source, List<string> streamAnalysisFiles)
+        {
             this.CompilationErrors = new CompilerErrorCollection();
             this.PhaseTimes = new Dictionary<ParserBuilderPhase, TimeSpan>();
             this.Source = (GDFile)source;

@@ -12,7 +12,7 @@ using AllenCopeland.Abstraction.Slf.Oil;
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
  \-------------------------------------------------------------------- */
 
-namespace AllenCopeland.Abstraction.Slf.Languages
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
     /// <summary>
     /// Provides information about the OILexer language which reads in 
@@ -28,12 +28,17 @@ namespace AllenCopeland.Abstraction.Slf.Languages
         /// <summary>
         /// The singleton instance which which provides information about the language.
         /// </summary>
-        internal static OilexerLanguage LanguageInstance = new OilexerLanguage();
+        internal static readonly OilexerLanguage LanguageInstance = new OilexerLanguage();
         #region IHighLevelLanguage<IGDFile> Members
 
-        public IHighLevelLanguageProvider<IGDFile> GetProvider()
+        IHighLevelLanguageProvider<IGDFile> IHighLevelLanguage<IGDFile>.GetProvider()
         {
-            return OilexerProvider.ProviderInstance;
+            return this.GetProvider();
+        }
+
+        public OilexerProvider GetProvider()
+        {
+            return new OilexerProvider();
         }
 
         public Guid Guid
