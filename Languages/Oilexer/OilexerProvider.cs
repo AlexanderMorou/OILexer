@@ -13,23 +13,43 @@ using AllenCopeland.Abstraction.Slf.Translation;
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
  \-------------------------------------------------------------------- */
 
-namespace AllenCopeland.Abstraction.Slf.Languages
+namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
-    internal partial class OilexerProvider :
+    public sealed partial class OilexerProvider :
         IHighLevelLanguageProvider<IGDFile>
     {
-        internal static readonly OilexerProvider ProviderInstance = new OilexerProvider();
+        private AltParser parser;
+        private AltParserBuilder builder;
+
+        internal OilexerProvider() { }
 
         #region IHighLevelLanguageProvider<IGDFile> Members
 
         public ILanguageParser<IGDFile> Parser
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                if (this.parser == null)
+                    this.parser = new AltParser();
+                return this.parser;
+            }
         }
 
-        public ILanguageCSTTranslator<IGDFile> ASTTranslator
+        public AltParserBuilder CSTTranslator
         {
-            get { throw new NotImplementedException(); }
+            get {
+                if (this.builder == null)
+                    this.builder = new AltParserBuilder();
+                return this.builder;
+            }
+        }
+
+        ILanguageCSTTranslator<IGDFile> IHighLevelLanguageProvider<IGDFile>.CSTTranslator
+        {
+            get
+            {
+                return this.CSTTranslator;
+            }
         }
 
         public IIntermediateCodeTranslator Translator

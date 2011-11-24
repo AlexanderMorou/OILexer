@@ -1,31 +1,24 @@
 ﻿using System;
-using System.CodeDom.Compiler;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using AllenCopeland.Abstraction.Globalization;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining;
 using AllenCopeland.Abstraction.Slf.Abstract;
 using AllenCopeland.Abstraction.Slf.Cli;
 using AllenCopeland.Abstraction.Slf.Cli.Members;
-using AllenCopeland.Abstraction.Slf.Compilers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Oil;
-using AllenCopeland.Abstraction.Slf.Oil.Expressions;
-using AllenCopeland.Abstraction.Slf.Oil.Members;
 using AllenCopeland.Abstraction.Slf.Parsers;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Arrays;
 using AllenCopeland.Abstraction.Utilities.Collections;
-using AllenCopeland.Abstraction.Utilities.Common;
-using AllenCopeland.Abstraction.Globalization;
+using AllenCopeland.Abstraction.Utilities.Miscellaneous;
 /* *
  * Old Release Post-build command:
  * "$(ProjectDir)PostBuild.bat" "$(ConfigurationName)" "$(TargetPath)"
@@ -57,8 +50,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private const string Export_CSharp                          = Export + ExportKind_CSharp;
         private const string TitleSequence_CharacterSetCache        = "Character set cache size";
         private const string TitleSequence_CharacterSetComputations = "Character set computations";
-        private const string TitleSequence_VocabularyCache          = "Vocabulary set computations";
-        private const string TitleSequence_VocabularyComputations   = "Vocabulary cache size";
+        private const string TitleSequence_VocabularyCache          = "Vocabulary cache size";
+        private const string TitleSequence_VocabularyComputations   = "Vocabulary set computations";
         private const string TitleSequence_NumberOfRules            = "Number of rules";
         private const string TitleSequence_NumberOfTokens           = "Number of tokens";
         private const string PhaseName_Linking                      = "Linking";
@@ -245,7 +238,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private static void BrowseCSCMessagesReflection() {
             var cscms = typeof(CSharpCompilerMessages);
             var properties = cscms.GetProperties(BindingFlags.Public | BindingFlags.Static);
-            var warnErrors = (new { IsError = false, MessageId = 0, WarningLevel = 0, Message = String.Empty, Name = String.Empty }).GetAnonymousTypeArray(properties.Length);
+#pragma warning disable 429
+            //Intentional unreachable expression, used for data typing.
+            var warnErrors = false ? (new[] { new { IsError = false, MessageId = 0, WarningLevel = 0, Message = String.Empty, Name = String.Empty } }) : null;
+#pragma warning restore 429
+            Array.Resize(ref warnErrors, properties.Length);
             //Tuple<bool, int, int, string, string>[] warnErrors = new Tuple<bool, int, int, string, string>[properties.Length];
             int index = 0;
             
@@ -277,7 +274,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private static void BrowseCSCMessages()
         {
-            var cscms = typeof(CSharpCompilerMessages).GetTypeReference<IClassType>();
+            var cscms = typeof(CSharpCompilerMessages).GetTypeReference<IGeneralGenericTypeUniqueIdentifier, IClassType>();
             //var warnErrors = (new { IsError = false, MessageId = 0, WarningLevel = 0, Message = String.Empty, Name = String.Empty }).GetAnonymousTypeArray(cscms.Properties.Count);
             ////Tuple<bool, int, int, string, string>[] warnErrors = new Tuple<bool, int, int, string, string>[cscms.Properties.Count];
             //int index = 0;
@@ -298,7 +295,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             //}
             var errorRef = typeof(ICompilerReferenceError).GetTypeReference();
             var warningRef = typeof(ICompilerReferenceWarning).GetTypeReference();
-            var timedAction = Utilities.Common.MiscHelperMethods.TimeResult(() =>
+            var timedFunc = MiscHelperMethods.TimeResult(() =>
                 (from ICompiledPropertyMember prop in cscms.Properties.Values
                  let propertyType = prop.PropertyType
                  let isError = propertyType == errorRef
@@ -911,30 +908,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private static void DisplayTailInformation(int maxLength, IParserResults<IGDFile> iprs)
         {
-            var sequence = (
-                new
-                {
-                    Title = TitleSequence_CharacterSetComputations,
-                    Value = RegularLanguageSet.CountComputations()
-                }).GetAnonymousTypeArray(
-                new
-                {
-                    Title = TitleSequence_CharacterSetCache,
-                    Value = RegularLanguageSet.CountComputationCaches()
-                },
-                new
-                {
-                    Title = TitleSequence_VocabularyCache,
-                    Value = GrammarVocabulary.CountComputations()
-                },
-                new
-                {
-                    Title = TitleSequence_VocabularyComputations,
-                    Value = GrammarVocabulary.CountComputationCaches()
-                });
-            //if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
-            {
-                sequence = sequence.AddBefore(
+            var sequence = new[] {
                 new
                 {
                     Title = TitleSequence_NumberOfRules,
@@ -944,8 +918,27 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     Title = TitleSequence_NumberOfTokens,
                     Value = iprs.Result.GetTokens().Count()
                 },
-                null);
-            }
+                null,
+                new
+                {
+                    Title = TitleSequence_CharacterSetCache,
+                    Value = RegularLanguageSet.CountComputationCaches()
+                },
+                new
+                {
+                    Title = TitleSequence_CharacterSetComputations,
+                    Value = RegularLanguageSet.CountComputations()
+                } ,
+                new
+                {
+                    Title = TitleSequence_VocabularyCache,
+                    Value = GrammarVocabulary.CountComputationCaches()
+                },
+                new
+                {
+                    Title = TitleSequence_VocabularyComputations,
+                    Value = GrammarVocabulary.CountComputations()
+                }};
             foreach (var element in sequence)
                 if (element == null)
                     Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));

@@ -197,7 +197,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
         }
         internal static string EncodePrim(string p)
         {
-            return p.EscapeStringOrCharCILAndCS();
+            return _CoreHelperMethods.EscapeStringOrCharCILAndCS(p);
         }
 
         internal static string EncodePrim(char p)

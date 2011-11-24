@@ -54,9 +54,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             if (other.Target != this.Target)
                 return false;
             return other.All(p =>
-            {
-                return this.ContainsKey(p.Key) && this[p.Key].Equals(p.Value);
-            });
+                this.ContainsKey(p.Key) && this[p.Key].Equals(p.Value));
         }
 
         #endregion

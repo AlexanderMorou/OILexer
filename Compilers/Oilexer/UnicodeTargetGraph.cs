@@ -61,5 +61,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 return this.Equals((IUnicodeTargetGraph)obj);
             return false;
         }
+
+        public override int GetHashCode()
+        {
+            int result = this.Count;
+            foreach (var kvp in this)
+                result ^= kvp.Key.GetHashCode() ^ kvp.Value.GetHashCode();
+            return result;
+        }
     }
 }

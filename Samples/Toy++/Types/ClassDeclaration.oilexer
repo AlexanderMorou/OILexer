@@ -11,12 +11,11 @@
 ClassDeclaration                          ::=
 	Attributes:Attributes;?
     (
-        OTuple<"new", ("public" | "private"), ("sealed"| "abstract" | "static"), "partial"> |
+        OTuple<"new", ("public" | "private" | "protected" Whitespace "and" Whitespace "internal" | "internal" Whitespace "and" Whitespace "protected"), ("sealed"| "abstract" | "static"), "partial"> |
         OTuple<"new", "protected", "internal", ("sealed"| "abstract" | "static"), "partial">
     ):Modifiers;
-	"class" Identifier:Name;
+	"class" Whitespace Identifier:Name;
 	ClassOrStructHeader<>
 	'{'
 		ClassMemberDeclaration:Members;*
 	'}' ';'?                                ;
-	
