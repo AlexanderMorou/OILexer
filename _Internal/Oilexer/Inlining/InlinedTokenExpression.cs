@@ -25,7 +25,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         /// <param name="source">The <see cref="TokenExpression"/> from which the
         /// <see cref="InlinedTokenExpression"/> is derived.</param>
         public InlinedTokenExpression(ITokenExpression source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
-            : base(InliningCore.Inline((IControlledStateCollection<ITokenItem>)source, sourceRoot, root, oldNewLookup), source.FileName, source.Column, source.Line, source.Position)
+            : base(InliningCore.Inline((IControlledCollection<ITokenItem>)source, sourceRoot, root, oldNewLookup), source.FileName, source.Column, source.Line, source.Position)
         {
             this.Source = source;
         }

@@ -26,6 +26,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// <returns>A new <see cref="IProductionRuleItem"/> with the data
         /// members of the current <see cref="IProductionRuleItem"/>.</returns>
         new IProductionRuleItem Clone();
-        IReadOnlyDictionary<string, string> ConditionalConstraints { get; }
+        IControlledDictionary<string, string> ConditionalConstraints { get; }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
+using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -18,10 +19,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         private EntryScanMode scanMode;
         private bool unhinged;
         internal ITokenExpressionSeries branches;
-        private List<string> lowerPrecedenceNames;
+        private List<GDTokens.IdentifierToken> lowerPrecedenceNames;
         private ITokenEntry[] lowerPrecedenceTokens;
         private bool forcedRecognizer = false;
-        public TokenEntry(string name, ITokenExpressionSeries branches, EntryScanMode scanMode, string fileName, int column, int line, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer)
+        public TokenEntry(string name, ITokenExpressionSeries branches, EntryScanMode scanMode, string fileName, int column, int line, long position, bool unhinged, List<GDTokens.IdentifierToken> lowerPrecedences, bool forcedRecognizer)
             : base(name, fileName, column, line, position)
         {
             this.lowerPrecedenceNames = lowerPrecedences;
@@ -89,11 +90,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        public List<string> LowerPrecedenceNames
+        public List<GDTokens.IdentifierToken> LowerPrecedenceNames
         {
             get {
                 if (this.lowerPrecedenceNames == null)
-                    this.lowerPrecedenceNames = new List<string>();
+                    this.lowerPrecedenceNames = new List<GDTokens.IdentifierToken>();
                 return this.lowerPrecedenceNames;
             }
         }

@@ -13,7 +13,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     public class SyntacticalFollowTable :
-        ControlledStateDictionary<SyntacticalDFAState, SyntacticalFollowInfo>
+        ControlledDictionary<SyntacticalDFAState, SyntacticalFollowInfo>
     {
         public SyntacticalFollowTable()
         {

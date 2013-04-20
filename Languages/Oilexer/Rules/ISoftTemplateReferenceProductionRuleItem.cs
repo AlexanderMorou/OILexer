@@ -21,6 +21,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// <summary>
         /// Returns the parts to suppliment the template's parts.
         /// </summary>
-        IReadOnlyCollection<IProductionRuleSeries> Parts { get; } 
+        IControlledCollection<IProductionRuleSeries> Parts { get; } 
     }
 }

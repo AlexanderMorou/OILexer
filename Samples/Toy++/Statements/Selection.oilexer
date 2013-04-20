@@ -1,30 +1,30 @@
 #include                     "Statements.oilexer";
 
 SelectionStatement                             ::=
-	IfStatement                                  |
-	SwitchStatement                              ;
+    IfStatement                                  |
+    SwitchStatement                              ;
 
 IfStatement                                    ::=
-	"if" Parametered<BooleanExpression:Condition;>
-		EmbeddedStatement:TruePart;
-	("else" 
-		EmbeddedStatement:FalsePart;)?           ;
+    "if" Parametered<BooleanExpression:Condition;>
+        EmbeddedStatement:TruePart;
+    ("else" 
+        EmbeddedStatement:FalsePart;)?           ;
 
 SwitchStatement                                ::=
-	"switch" Parametered<Expression:CaseSelector;>
+    "switch" Parametered<Expression:CaseSelector;>
 	CParametered<SwitchSection:Sections;*>       ;
 
 SwitchSection                                  ::=
-	SwitchLabel:Labels;+
-	Statement:Statements;*                       ;
+    SwitchLabel:Labels;+
+    Statement:Statements;*                       ;
 
 SwitchLabel                                   ::=>
-	SwitchDefaultLabel                           |
-	SwitchCaseLabel                              ;
+    SwitchDefaultLabel                           |
+    SwitchCaseLabel                              ;
 
 SwitchDefaultLabel                             ::=
-	"default" ':'                                ;
+    "default" ':'                                ;
 
 SwitchCaseLabel ::=
-	"case" ConstantExpression:Case; ':'          ;
+    "case" ConstantExpression:Case; ':'          ;
 

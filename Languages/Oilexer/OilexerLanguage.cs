@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Compilers;
-using AllenCopeland.Abstraction.Slf.Oil;
+using AllenCopeland.Abstraction.Slf.Ast;
+using AllenCopeland.Abstraction.Slf.Abstract;
+using AllenCopeland.Abstraction.Slf.Cli;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -20,9 +22,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     /// a result.
     /// </summary>
     public class OilexerLanguage :
-        IHighLevelLanguage<IGDFile>
+        ILanguage<OilexerLanguage, OilexerProvider>
     {
-        private static Guid _LanguageGuid = new Guid(0xED13FCAD, 0xE20F, 0x4C81, 0xA6, 0xFE, 0xAF, 0xAD, 0xE2, 0x99, 0xB9, 0xC0);
+        private static Guid _LanguageGuid = LanguageGuids.Oilexer;
         private OilexerLanguage() {
         }
         /// <summary>
@@ -31,14 +33,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         internal static readonly OilexerLanguage LanguageInstance = new OilexerLanguage();
         #region IHighLevelLanguage<IGDFile> Members
 
-        IHighLevelLanguageProvider<IGDFile> IHighLevelLanguage<IGDFile>.GetProvider()
-        {
-            return this.GetProvider();
-        }
-
         public OilexerProvider GetProvider()
         {
-            return new OilexerProvider();
+            return new OilexerProvider(IntermediateGateway.CreateIdentityManager(CliGateway.CurrentPlatform, CliGateway.CurrentVersion));
         }
 
         public Guid Guid
@@ -78,9 +75,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 
         #region ILanguage Members
 
-        public IIntermediateAssembly CreateAssembly(string name)
+        public IAssembly CreateAssembly(string name)
         {
-            throw new NotImplementedException();
+            return new OilexerAssembly(name, GetProvider());
         }
 
         #endregion

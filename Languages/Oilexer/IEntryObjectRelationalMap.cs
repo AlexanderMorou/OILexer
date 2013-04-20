@@ -14,7 +14,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
     public interface IEntryObjectRelationalMap
     {
-        IReadOnlyCollection<IScannableEntry> Implements { get; }
+        IControlledCollection<IScannableEntry> Implements { get; }
         /// <summary>
         /// Obtains an enumerable state machine which yields the sequences of 
         /// variations of which the <see cref="IEntryObjectRelationalMap"/>'s

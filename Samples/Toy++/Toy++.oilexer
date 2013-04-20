@@ -1,52 +1,51 @@
-#LexerName                             "TPPTokenizer";
-#ParserName                               "TPPParser";
-#AssemblyName                             "TPPReader";
-#GrammarName                                    "T++";
-#TokenPrefix                                    "TPP";
-#TokenSuffix                                  "Token";
-#RulePrefix                                      "TP";
-#RuleSuffix                                    "Rule";
-#Root                               "CompilationUnit";
-#Namespace            "AllenCopeland.Abstraction.Slf";
+#LexerName                     "ToyTokenizer";
+#ParserName                       "ToyParser";
+#AssemblyName                     "ToyReader";
+#GrammarName                          "T*y++";
+#TokenPrefix                            "TPP";
+#TokenSuffix                          "Token";
+#RulePrefix                             "TPP";
+#RuleSuffix                            "Rule";
+#Root                          "AssemblyPart";
+#Namespace "AllenCopeland.Abstraction.Slf.Languages.ToyPP";
 
-#include                         "Attributes.oilexer";
-#include                          "Namespace.oilexer";
-#include           "Expressions\\Expressions.oilexer";
-#include "Lexical Grammar\\TPPLexicalGrammar.oilexer";
-#include                   "Members\\Members.oilexer";
-#include             "Statements\\Statements.oilexer";
-#include                       "Types\\Types.oilexer";
-#include                 "Language\\Language.oilexer";
-#include               "Templates\\Templates.oilexer";
+#include                 "Attributes.oilexer";
+#include           "GeneralTemplates.oilexer";
+#include                  "Namespace.oilexer";
+#include   "Expressions\\Expressions.oilexer";
+#include "Lexical Grammar\\ToyTokens.oilexer";
+#include           "Members\\Members.oilexer";
+#include     "Statements\\Statements.oilexer";
+#include               "Types\\Types.oilexer";
+#include         "Language\\Language.oilexer";
+#include       "Templates\\Templates.oilexer";
 
 #ifndef Lexer
-#define Lexer = TPParser;
+#define Lexer = ToyParser;
 #endif
 
-ExternAliasDirective                               ::=
-    "extern" "alias" Identifier:AliasName;
-    ';' ;
+ExternAliasDirective                       ::=
+    "extern" "alias" Identifier:AliasName;   ;
 
-UsingDirective                                    ::=>
-    UsingAliasDirective                              |
-    UsingNamespaceDirective                          ;
+UsingDirective                            ::=>
+    UsingAliasDirective                      |
+    UsingNamespaceDirective                  ;
 
-UsingAliasDirective                                ::=
+UsingAliasDirective                        ::=
     "using" Identifier:Alias; '=' 
-        NamespaceOrTypeName:Target; ';'              ;
+        NamespaceOrTypeName:Target;          ;
 
-UsingNamespaceDirective                            ::=
-    "using" NamespaceName:Target; ';'                ;
+UsingNamespaceDirective                    ::=
+    "using" NamespaceName:Target;            ;
 
-NamespaceOrTypeName                                ::=
+NamespaceOrTypeName                        ::=
     (
-        QualifiedAliasMember:AliasPart;              |
+        QualifiedAliasMember:AliasPart;      |
         SimpleName:Names;
-    ) ('.' SimpleName:Names;)*                       ;
+    ) ('.' SimpleName:Names;)*               ;
 
-CompilationUnit                                    ::=
+AssemblyPart                               ::=
     ExternAliasDirective:Externs;*
     UsingDirective:Usings;*
     GlobalAttributes:Attributes;?
-    NamespaceMemberDeclaration:Members;*             ;
-
+    NamespaceMemberDeclaration:Members;*     ;

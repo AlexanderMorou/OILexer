@@ -8,6 +8,7 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+using AllenCopeland.Abstraction.Slf.Abstract;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -374,7 +375,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                 }
                 catch
                 {
-                    errors.SourceError(GrammarCore.CompilerErrors.InvalidPreprocessorCondition, expression.Line, expression.Column, entry.FileName, expression.ToString());
+                    errors.SourceError(GrammarCore.CompilerErrors.InvalidPreprocessorCondition, new LineColumnPair(expression.Line, expression.Column), LineColumnPair.Zero, entry.FileName, expression.ToString());
                 }
             }
             //rule 1.
@@ -519,7 +520,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                         }
                     }
                     else
-                        errors.SourceError(GrammarCore.CompilerErrors.IsDefinedTemplateParameterMustExpectRule, expression.Line, expression.Column, entry.FileName, name);
+                        errors.SourceError(GrammarCore.CompilerErrors.IsDefinedTemplateParameterMustExpectRule, new LineColumnPair(expression.Line, expression.Column), LineColumnPair.Zero, entry.FileName, name);
                 }
                 foreach (IEntry ientry in file)
                     if (ientry is IProductionRuleEntry && (!(ientry is IProductionRuleTemplateEntry)))
@@ -527,7 +528,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                             return true;
                 return false;
             }
-            errors.SourceError(GrammarCore.CompilerErrors.InvalidDefinedTarget, expression.Column, expression.Line, entry.FileName, expression.ToString());
+            errors.SourceError(GrammarCore.CompilerErrors.InvalidDefinedTarget, new LineColumnPair(expression.Line, expression.Column), LineColumnPair.Zero, entry.FileName, expression.ToString());
             return false;
         }
 
@@ -600,9 +601,9 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             }
             if (errorLocations.Count > 0)
                 foreach (var errorLocation in errorLocations)
-                    errors.SourceError(GrammarCore.CompilerErrors.LanguageDefinedError, errorLocation.Item2, errorLocation.Item3, errorLocation.Item1, directive.Reference.Number.ToString(), string.Format(directive.Reference.Message, errorData));
+                    errors.SourceError(GrammarCore.CompilerErrors.LanguageDefinedError, new LineColumnPair(errorLocation.Item2, errorLocation.Item3), LineColumnPair.Zero, errorLocation.Item1, directive.Reference.Number.ToString(), string.Format(directive.Reference.Message, errorData));
             else
-                errors.SourceError(GrammarCore.CompilerErrors.LanguageDefinedError, directive.Line, directive.Column, entry.FileName, directive.Reference.Number.ToString(), string.Format(directive.Reference.Message, errorData));
+                errors.SourceError(GrammarCore.CompilerErrors.LanguageDefinedError, new LineColumnPair(directive.Line, directive.Column), LineColumnPair.Zero, entry.FileName, directive.Reference.Number.ToString(), string.Format(directive.Reference.Message, errorData));
         }
 
         internal static IProductionRuleItem Expand(this IPreprocessorConditionalReturnDirective directive, ProductionRuleTemplateArgumentSeries argumentLookup, IProductionRuleTemplateEntry entry, GDFile file, ICompilerErrorCollection errors)
@@ -644,7 +645,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                         }
                 if (foundItem == null)
                 {
-                    errors.SourceError(GrammarCore.CompilerErrors.UndefinedAddRuleTarget, directive.Line, directive.Column, entry.FileName, string.Join<IProductionRule>(" | ", directive.Rules), search);
+                    errors.SourceError(GrammarCore.CompilerErrors.UndefinedAddRuleTarget, new LineColumnPair(directive.Line, directive.Column), LineColumnPair.Zero, entry.FileName, string.Join<IProductionRule>(" | ", directive.Rules), search);
                     return;
                 }
                 foreach (IProductionRule ipr in directive.Rules)
@@ -673,7 +674,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                 foreach (IEntry ie in file)
                     if (ie is INamedEntry && ((INamedEntry)ie).Name == search)
                     {
-                        errors.SourceError(GrammarCore.CompilerErrors.DuplicateTermDefined, directive.Column, directive.Line, entry.FileName, search);
+                        errors.SourceError(GrammarCore.CompilerErrors.DuplicateTermDefined, new LineColumnPair(directive.Line, directive.Column), LineColumnPair.Zero, entry.FileName, search);
                         return;
                     }
                 ProductionRuleEntry insertedItem = new ProductionRuleEntry(search, entry.ScanMode, entry.FileName, directive.Column, directive.Line, directive.Position);

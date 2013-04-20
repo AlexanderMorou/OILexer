@@ -8,18 +8,18 @@ using System.Collections;
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     internal class ReadOnlyWrapper<T> :
-        IReadOnlyCollection<T>
+        IControlledCollection<T>
     {
-        private IControlledStateCollection<T> source;
+        private IControlledCollection<T> source;
 
-        internal ReadOnlyWrapper(IControlledStateCollection<T> source)
+        internal ReadOnlyWrapper(IControlledCollection<T> source)
         {
             if (source == null)
                 throw new ArgumentNullException("source");
             this.source = source;
         }
 
-        #region IControlledStateCollection<T> Members
+        #region IControlledCollection<T> Members
 
         public bool Contains(T item)
         {

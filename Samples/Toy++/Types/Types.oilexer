@@ -147,6 +147,3 @@ CommonTypeModifiers                       ::=
         "internal" "protected"? "new"?      |
         "protected" "new"? "internal"?      |
         "protected" "internal"? "new"?      ;
-
-TypedName                                 ::=
-    Type:Type; Identifier:Name;             ;

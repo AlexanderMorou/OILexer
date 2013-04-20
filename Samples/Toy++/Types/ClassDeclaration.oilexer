@@ -2,20 +2,219 @@
 /* --------------------------------------- *\
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
-/* *
- * Figured while I was at it, I would fix what
- * I see as 'issues' with the original language's 
- * definition, namely the fixed position of the
- * partial keyword.
- * */
 ClassDeclaration                          ::=
-	Attributes:Attributes;?
+    Attributes:Attributes;?
     (
-        OTuple<"new", ("public" | "private" | "protected" Whitespace "and" Whitespace "internal" | "internal" Whitespace "and" Whitespace "protected"), ("sealed"| "abstract" | "static"), "partial"> |
-        OTuple<"new", "protected", "internal", ("sealed"| "abstract" | "static"), "partial">
-    ):Modifiers;
-	"class" Whitespace Identifier:Name;
-	ClassOrStructHeader<>
-	'{'
-		ClassMemberDeclaration:Members;*
-	'}' ';'?                                ;
+        "new" "public"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "new" "private"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "new" "internal"? "protected"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "new" "protected"? "internal"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "new" "internal"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "protected"?                     |
+        "new" "protected"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "internal"?                      |
+        "new" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "public"?                        |
+        "new" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "private"?                       |
+        "new" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "internal"? "protected"?         |
+        "new" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "protected"? "internal"?         |
+        "public" "new"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "public" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "new"?                           | 
+        "private" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "new"?                           | 
+        "private" "new"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "internal" "new"? "protected"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "internal" "new"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "protected"?                     |
+        "internal" "protected"? "new"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "internal" "protected"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "new"?                           |
+        "internal" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "new"? "protected"?              | 
+        "internal" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "protected"? "new"?              | 
+        "protected" "new"? "internal"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "protected" "new"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "internal"?                      |
+        "protected" "internal"? "new"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )?                                  |
+        "protected" "internal"? 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "new"?                           |
+        "protected" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "new"? "internal"?               | 
+        "protected" 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        )? "internal"? "new"?               | 
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "new"? "public"?                  |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "new"? "private"?                 |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "new"? "internal"? "protected"?   |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "new"? "protected"? "internal"?   |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "public"? "new"?                  |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "private"? "new"?                 |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "internal"? "new"? "protected"?   |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "protected"? "new"? "internal"?   |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "internal"? "protected"? "new"?   |
+        (
+            "sealed"                        |
+            "abstract"                      |
+            "static"
+        ) "protected"? "internal"? "new"?
+    ):Modifiers;? "partial"!:IsPartial;? 
+    "class" Identifier:Name;
+    ClassOrStructHeader<>
+    '{'
+        ClassMemberDeclaration:Members;*
+    '}' ';'?                                ;
+	

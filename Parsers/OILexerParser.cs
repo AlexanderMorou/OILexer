@@ -217,7 +217,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                      * */
                     if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
                     {
-                        List<string> lowerPrecedences = new List<string>();
+                        List<GDTokens.IdentifierToken> lowerPrecedences = new List<GDTokens.IdentifierToken>();
                         GDTokens.IdentifierToken id = ((GDTokens.IdentifierToken)(its[0]));
                         GDTokens.OperatorToken ot = ((GDTokens.OperatorToken)(its[1]));
                         bool elementsAreChildren = false;
@@ -309,7 +309,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 //Case of a token defining precedence.
                                 while (LookAhead(0).TokenType == GDTokenType.Identifier)
                                 {
-                                    var lowerPrecedenceToken = ((GDTokens.IdentifierToken)LookAhead(0)).Name;
+                                    var lowerPrecedenceToken = ((GDTokens.IdentifierToken)LookAhead(0));
                                     lowerPrecedences.Add(lowerPrecedenceToken);
                                     PopAhead();
                                     GDTokens.OperatorToken cOp = null;
@@ -395,6 +395,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 {
                     LogError(GDParserErrors.ExpectedEndOfLine);
                     GetAhead(1);
+                    break;
                 }
             }
             GDParserResults gdpr = currentTarget;
@@ -738,7 +739,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     currentTarget.SetResult(currentTarget.Result + (GDFile)includedFile.Result);
                     if (!includedFile.Successful)
                         foreach (var ce in includedFile.SyntaxErrors)
-                            currentTarget.SyntaxErrors.SyntaxError(ce.Message, ce.Location.Line, ce.Location.Column, ce.FileName);
+                            currentTarget.SyntaxErrors.SyntaxError(ce);
                 }
             }
         }
@@ -958,7 +959,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 if (igdt == null && CurrentTokenizer.CurrentError != null)
                 {
                     var ce = CurrentTokenizer.CurrentError;
-                    this.currentTarget.SyntaxErrors.SyntaxError(ce.Message, ce.Location.Line, ce.Location.Column, ce.FileName);
+                    this.currentTarget.SyntaxErrors.SyntaxError(ce);
                     return;
                 }
                 else if (igdt == null)
@@ -1389,7 +1390,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         Expect("#include, #AssemblyName, #LexerName, #ParserName, #GrammarName, #TokenPrefix, #TokenSuffix, #RulePrefix, or #RuleSuffix directive", pp.Position);
                         return null;
                 }
-                currentTarget.SyntaxErrors.SyntaxError(GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, GDParserErrors.Expected, "string"));
+                currentTarget.SyntaxErrors.SyntaxError(this.CurrentTokenizer.CurrentError);//GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, GDParserErrors.Expected, "string"));
                 this.PopAhead();
                 return null;
             }
@@ -1422,7 +1423,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         this.PopAhead();
                         return null;
                 }
-                currentTarget.SyntaxErrors.SyntaxError(GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, GDParserErrors.Expected, ";"));
+                currentTarget.SyntaxErrors.SyntaxError(this.CurrentTokenizer.CurrentError);//GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, GDParserErrors.Expected, ";"));
                 this.PopAhead();
                 this.PopAhead();
                 return null;
@@ -1849,7 +1850,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                      * */
                     if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
                     {
-                        List<string> lowerPrecedences = new List<string>();
+                        List<GDTokens.IdentifierToken> lowerPrecedences = new List<GDTokens.IdentifierToken>();
                         GDTokens.IdentifierToken id = ((GDTokens.IdentifierToken)(its[0]));
                         GDTokens.OperatorToken ot = ((GDTokens.OperatorToken)(its[1]));
                         bool elementsAreChildren = false;
@@ -1939,7 +1940,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 //Case of a token defining precedence.
                                 while (LookAhead(0).TokenType == GDTokenType.Identifier)
                                 {
-                                    var lowerPrecedenceToken = ((GDTokens.IdentifierToken)LookAhead(0)).Name;
+                                    var lowerPrecedenceToken = ((GDTokens.IdentifierToken)LookAhead(0));
                                     lowerPrecedences.Add(lowerPrecedenceToken);
                                     PopAhead();
                                     GDTokens.OperatorToken cOp = null;
@@ -2596,12 +2597,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
         }
 
-        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer)
+        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<GDTokens.IdentifierToken> lowerPrecedences, bool forcedRecognizer)
         {
             ParseToken(identifier, scanMode, position, unhinged, lowerPrecedences, forcedRecognizer, null);
         }
 
-        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<string> lowerPrecedences, bool forcedRecognizer, PreprocessorIfDirective.DirectiveBody target)
+        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<GDTokens.IdentifierToken> lowerPrecedences, bool forcedRecognizer, PreprocessorIfDirective.DirectiveBody target)
         {
             long bodyStart = this.StreamPosition;
             ITokenEntry ite = new TokenEntry(identifier.Name, ParseTokenExpressionSeries(), scanMode, this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position, unhinged, lowerPrecedences, forcedRecognizer);
@@ -2729,75 +2730,83 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             {
                 ITokenItem item = null;
                 IGDToken igdt = LookAhead(0);
-                switch (igdt.TokenType)
+                if (igdt == null && CurrentTokenizer.CurrentError != null)
                 {
-                    case GDTokenType.Comment:
-                        var commentToken = igdt as GDTokens.CommentToken;
-                        if (captureRegions && commentToken.MultiLine)
-                        {
-                            var gdResult = currentTarget.Result as GDFile;
-                            gdResult.AddCommentRegion(commentToken);
-                        }
+                    currentTarget.SyntaxErrors.SyntaxError(CurrentTokenizer.CurrentError);
 
-                        PopAhead();
-                        continue;
-                    case GDTokenType.CharacterLiteral:
-                        item = ParseTokenCharLiteral();
-                        break;
-                    case GDTokenType.StringLiteral:
-                        item = ParseTokenStringLiteral();
-                        break;
-                    case GDTokenType.Identifier:
-                        item = ParseTokenReferenceItem();
-                        break;
-                    case GDTokenType.CharacterRange:
-                        item = ParseTokenCharacterRange();
-                        break;
-                    case GDTokenType.NumberLiteral:
-                        LogError(GDParserErrors.Unexpected, "number", igdt.Position);
-                        goto yield;
-                    case GDTokenType.PreprocessorDirective:
-                        LogError(GDParserErrors.Unexpected, "preprocessor", igdt.Position);
-                        goto yield;
-                    case GDTokenType.Operator:
-                        switch (((GDTokens.OperatorToken)(igdt)).Type)
-                        {
-                            case GDTokens.OperatorType.Pipe:
-                                ClearAhead();
-                                goto yield;
-                            case GDTokens.OperatorType.LeftParenthesis:
-                                ClearAhead();
-                                item = (ITokenGroupItem)ParseTokenGroup();
-                                break;
-                            case GDTokens.OperatorType.RightParenthesis:
-                                if (parameterDepth <= 0)
-                                    LogError(GDParserErrors.Expected, ";", igdt.Position);
-                                goto yield;
-                            case GDTokens.OperatorType.GreaterThan:
-                            case GDTokens.OperatorType.Comma:
-                                if (commandDepths.Contains(parameterDepth))
-                                {
+                    break;
+                }
+                else
+                {
+                    switch (igdt.TokenType)
+                    {
+                        case GDTokenType.Comment:
+                            var commentToken = igdt as GDTokens.CommentToken;
+                            if (captureRegions && commentToken.MultiLine)
+                            {
+                                var gdResult = currentTarget.Result as GDFile;
+                                gdResult.AddCommentRegion(commentToken);
+                            }
+                            PopAhead();
+                            continue;
+                        case GDTokenType.CharacterLiteral:
+                            item = ParseTokenCharLiteral();
+                            break;
+                        case GDTokenType.StringLiteral:
+                            item = ParseTokenStringLiteral();
+                            break;
+                        case GDTokenType.Identifier:
+                            item = ParseTokenReferenceItem();
+                            break;
+                        case GDTokenType.CharacterRange:
+                            item = ParseTokenCharacterRange();
+                            break;
+                        case GDTokenType.NumberLiteral:
+                            LogError(GDParserErrors.Unexpected, "number", igdt.Position);
+                            goto yield;
+                        case GDTokenType.PreprocessorDirective:
+                            LogError(GDParserErrors.Unexpected, "preprocessor", igdt.Position);
+                            goto yield;
+                        case GDTokenType.Operator:
+                            switch (((GDTokens.OperatorToken)(igdt)).Type)
+                            {
+                                case GDTokens.OperatorType.Pipe:
                                     ClearAhead();
                                     goto yield;
-                                }
-                                LogError(GDParserErrors.Expected, "identifier, '(', or ';'");
-                                goto yield;
-                            case GDTokens.OperatorType.SemiColon:
-                                ClearAhead();
-                                if (templateDepth != 0 || parameterDepth != 0)
-                                {
-                                    Expect((templateDepth == 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.StreamPosition);
-                                }
-                                goto yield;
-                            default:
-                                goto default_2;
-                        }
-                        break;
-                    default:
-                    default_2:
-                        PopAhead();
-                    LogError(GDParserErrors.Expected, "identifier, '(' or ';'");
-                    break;
+                                case GDTokens.OperatorType.LeftParenthesis:
+                                    ClearAhead();
+                                    item = (ITokenGroupItem)ParseTokenGroup();
+                                    break;
+                                case GDTokens.OperatorType.RightParenthesis:
+                                    if (parameterDepth <= 0)
+                                        LogError(GDParserErrors.Expected, ";", igdt.Position);
+                                    goto yield;
+                                case GDTokens.OperatorType.GreaterThan:
+                                case GDTokens.OperatorType.Comma:
+                                    if (commandDepths.Contains(parameterDepth))
+                                    {
+                                        ClearAhead();
+                                        goto yield;
+                                    }
+                                    LogError(GDParserErrors.Expected, "identifier, '(', or ';'");
+                                    goto yield;
+                                case GDTokens.OperatorType.SemiColon:
+                                    ClearAhead();
+                                    if (templateDepth != 0 || parameterDepth != 0)
+                                    {
+                                        Expect((templateDepth == 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.StreamPosition);
+                                    }
+                                    goto yield;
+                                default:
+                                    goto default_2;
+                            }
+                            break;
+                        default:
+                        default_2:
+                            PopAhead();
+                            LogError(GDParserErrors.Expected, "identifier, '(' or ';'");
+                            break;
+                    }
                 }
                 if (item != null)
                 {
@@ -2950,7 +2959,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         }
         private ITokenItem ParseTokenReferenceItem()
         {
-            ISoftReferenceTokenItem isrpri = null;
+            ISoftReferenceTokenItem isrti = null;
             GDTokens.IdentifierToken id = this.LookAhead(0) as GDTokens.IdentifierToken;
             if (id != null)
             {
@@ -2964,21 +2973,21 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     id2 = LookAhead(1) as GDTokens.IdentifierToken;
                     if (id2 != null)
                         GetAhead(2);
-                    isrpri = new SoftReferenceTokenItem(id.Name, id2.Name, id.Column, id.Line, id.Position)
+                    isrti = new SoftReferenceTokenItem(id.Name, id2.Name, id.Column, id.Line, id.Position)
                     {
                         PrimaryToken = id,
                         SecondaryToken = id2
                     };
                 }
                 else
-                    isrpri = new SoftReferenceTokenItem(id.Name, null, id.Column, id.Line, id.Position)
+                    isrti = new SoftReferenceTokenItem(id.Name, null, id.Column, id.Line, id.Position)
                     {
                         PrimaryToken = id
                     };
             }
             else
                 Expect("identifier");
-            return isrpri;
+            return isrti;
         }
 
         private ICommandTokenItem ParseCommandTokenItem(GDTokens.IdentifierToken id)

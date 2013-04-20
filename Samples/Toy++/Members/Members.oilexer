@@ -47,6 +47,7 @@ StructMemberDeclaration                  ::=>
     ConcretePropertyDeclaration             |
     EventDeclaration                        |
     IndexerDeclaration                      |
+    ConcreteIndexerDeclaration              |
     OperatorDeclaration                     |
     ConstructorDeclaration                  |
     StaticConstructorDeclaration            |
@@ -64,7 +65,7 @@ InterfaceMemberDeclaration               ::=>
 
 AbstractGet                               ::=
     Attributes:Attributes;? "get" ';'       ;
-
+    
 AbstractSet                               ::=
     Attributes:Attributes;? "set" ';'       ;
 
@@ -75,10 +76,3 @@ ConcreteGet                               ::=
 ConcreteSet                               ::=
     Attributes:Attributes;? "set"
     Block:Body;                             ;
-
-TypeParameterMemberDeclaration          ::=>
-    TypeParameterMethodDeclaration          |
-    TypeParameterPropertyDeclaration        |
-    TypeParameterConstructorDeclaration     |
-    TypeParameterEventDeclaration           |
-    TypeParameterIndexerDeclaration         ;

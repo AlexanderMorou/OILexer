@@ -7,15 +7,7 @@ TypeParameterConstraints                  ::=
     TypeParameterConstraint:Items;+;
 
 TypeParameterConstraint                   ::=
-    "where" TypeParameter:Parameter; 
-        (
-            TypeParameterConstraintCommon<>?
-            TypeParameterBodyDefinition<>   |
-            TypeParameterConstraintCommon<>    
-        )                                   ;
-
-TypeParameterConstraintCommon<_>          ::=
-    ':' 
+    "where" TypeParameter:Parameter; ':'
     (
         (
             "class"                         | 
@@ -33,14 +25,3 @@ TypeParameterConstraintCommon<_>          ::=
         )?                                  |
         "new"!:HasNew; '(' ')'
     );
-
-/* *
- * Standard C# convention uses '{' to delimit
- * entity boundaries; however, in this instance
- * '[' and ']' are more appropriate for backwards
- * compatability with actual C# code.
- * */
-TypeParameterBodyDefinition<_>            ::=
-    '['
-        TypeParameterMemberDeclaration:Members;+
-    ']';

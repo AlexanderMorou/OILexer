@@ -16,7 +16,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     /// for template expansion.
     /// </summary>
     public interface IProductionRuleTemplateParts :
-        IReadOnlyCollection<IProductionRuleTemplatePart>
+        IControlledCollection<IProductionRuleTemplatePart>
     {
 
     }

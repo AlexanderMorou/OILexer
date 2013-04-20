@@ -16,7 +16,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
     /// <see cref="ITokenEntry"/> or a sub-expression in a <see cref="ITokenEntry"/>.
     /// </summary>
     public interface ITokenExpression :
-        IReadOnlyCollection<ITokenItem>,
+        IControlledCollection<ITokenItem>,
         IAmbiguousGDEntity,
         ITokenSource
     {

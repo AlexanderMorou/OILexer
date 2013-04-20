@@ -15,7 +15,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     internal class UnicodeTarget :
-        ControlledStateDictionary<UnicodeCategory, IUnicodeTargetCategory>,
+        ControlledDictionary<UnicodeCategory, IUnicodeTargetCategory>,
         IUnicodeTarget
     {
         public UnicodeTarget(RegularLanguageDFAState target, bool targetIsOrigin)

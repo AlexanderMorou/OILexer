@@ -11,6 +11,8 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+using AllenCopeland.Abstraction.Slf.Ast;
+using AllenCopeland.Abstraction.Slf.Abstract;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -145,25 +147,25 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             switch (error)
             {
                 case GDParserErrors.Expected:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:string.Format(Resources.GrammarParserErrors_Expected, text));
+                    return new ParserSyntaxError(fileName:fileName, start:new LineColumnPair(line, column), end:LineColumnPair.Zero, errorText:string.Format(Resources.GrammarParserErrors_Expected, text));
                 case GDParserErrors.ExpectedEndOfFile:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:Resources.GrammarParserErrors_ExpectedEndOfFile);
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: Resources.GrammarParserErrors_ExpectedEndOfFile);
                 case GDParserErrors.ExpectedEndOfLine:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:Resources.GrammarParserErrors_ExpectedEndOfLine);
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: Resources.GrammarParserErrors_ExpectedEndOfLine);
                 case GDParserErrors.Unexpected:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:string.Format(Resources.GrammarParserErrors_Unexpected, text));
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: string.Format(Resources.GrammarParserErrors_Unexpected, text));
                 case GDParserErrors.UnexpectedEndOfFile:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:Resources.GrammarParserErrors_UnexpectedEndOfFile);
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: Resources.GrammarParserErrors_UnexpectedEndOfFile);
                 case GDParserErrors.UnexpectedEndOfLine:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:Resources.GrammarParserErrors_UnexpectedEndOfLine);
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: Resources.GrammarParserErrors_UnexpectedEndOfLine);
                 case GDParserErrors.UnknownSymbol:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:string.Format(Resources.GrammarParserErrors_UnknownSymbol, text));
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: string.Format(Resources.GrammarParserErrors_UnknownSymbol, text));
                 case GDParserErrors.InvalidEscape:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:Resources.GrammarParserErrors_InvalidEscape);
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: Resources.GrammarParserErrors_InvalidEscape);
                 case GDParserErrors.IncludeFileNotFound:
-                    return new ParserSyntaxError(fileName:fileName, line:line, column:column, errorText:string.Format(Resources.GrammarParserErrors_IncludeFileNotFound, text));
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: string.Format(Resources.GrammarParserErrors_IncludeFileNotFound, text));
                 case GDParserErrors.FixedArgumentCountError:
-                    return new ParserSyntaxError(fileName: fileName, line: line, column: column, errorText: string.Format(Resources.GrammarParserErrors_FixedArgumentCountError, text));
+                    return new ParserSyntaxError(fileName: fileName, start: new LineColumnPair(line, column), end: LineColumnPair.Zero, errorText: string.Format(Resources.GrammarParserErrors_FixedArgumentCountError, text));
                 default:
                     break;
             }
@@ -197,7 +199,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
         }
         internal static string EncodePrim(string p)
         {
-            return _CoreHelperMethods.EscapeStringOrCharCILAndCS(p);
+            return p.EscapeStringOrCharCILAndCS();
         }
 
         internal static string EncodePrim(char p)

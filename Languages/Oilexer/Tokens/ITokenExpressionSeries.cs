@@ -16,7 +16,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
     /// the branches of an <see cref="ITokenEntry"/> or <see cref="IGroupTokenItem"/>
     /// </summary>
     public interface ITokenExpressionSeries :
-        IReadOnlyCollection<ITokenExpression>,
+        IControlledCollection<ITokenExpression>,
         ITokenSource
     {
         /// <summary>

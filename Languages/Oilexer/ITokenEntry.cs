@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
+using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -30,7 +31,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <summary>
         /// Returns the list of token names that have a lower precedence than the current token.
         /// </summary>
-        List<string> LowerPrecedenceNames { get; }
+        List<GDTokens.IdentifierToken> LowerPrecedenceNames { get; }
         /// <summary>
         /// Returns the list of token instances that have a lower precedence than the current token.
         /// </summary>

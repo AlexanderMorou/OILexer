@@ -16,7 +16,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     /// template preprocessor items.
     /// </summary>
     public interface IPreprocessorDirectives :
-        IReadOnlyCollection<IPreprocessorDirective>
+        IControlledCollection<IPreprocessorDirective>
     {
     }
 }

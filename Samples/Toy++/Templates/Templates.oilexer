@@ -1,6 +1,6 @@
-#include                "Statements.oilexer";
-#include               "Expressions.oilexer";
-#include                     "Types.oilexer";
+#include        "StatementTemplates.oilexer";
+#include       "ExpressionTemplates.oilexer";
+#include             "TypeTemplates.oilexer";
 #include                  "Tuple{2}.oilexer";
 #include                  "Tuple{3}.oilexer";
 #include                  "Tuple{4}.oilexer";

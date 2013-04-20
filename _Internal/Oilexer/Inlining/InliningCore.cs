@@ -52,7 +52,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
             return new InlinedTokenExpression(source, sourceRoot, root, oldNewLookup);
         }
 
-        public static Collection<ITokenItem> Inline(IControlledStateCollection<ITokenItem> source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
+        public static Collection<ITokenItem> Inline(IControlledCollection<ITokenItem> source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
         {
             if (source == null)
                 throw new ArgumentNullException("source");

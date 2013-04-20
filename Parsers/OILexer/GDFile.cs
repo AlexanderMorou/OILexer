@@ -36,9 +36,9 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
         private IGDFileOptions options;
         private GDStringCollection _files;
         private IList<string> includes;
-        private IReadOnlyCollection<string> files;
+        private IControlledCollection<string> files;
         private IList<IGDRegion> myRegions = new List<IGDRegion>();
-        private IReadOnlyCollection<IGDRegion> regions;
+        private IControlledCollection<IGDRegion> regions;
         private GDFile()
         {
         }
@@ -49,7 +49,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
             this._files.Add(fileName);
         }
 
-        public IReadOnlyCollection<string> Files
+        public IControlledCollection<string> Files
         {
             get
             {
@@ -111,7 +111,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
             }
         }
 
-        public IReadOnlyCollection<IGDRegion> Regions
+        public IControlledCollection<IGDRegion> Regions
         {
             get
             {

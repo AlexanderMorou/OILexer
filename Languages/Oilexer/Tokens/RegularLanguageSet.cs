@@ -234,6 +234,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         {
             switch (c)
             {
+                case ':':
+                    return @"\:";
                 case '\t':
                     return @"\t";
                 case '\r':

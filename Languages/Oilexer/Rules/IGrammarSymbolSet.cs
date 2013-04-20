@@ -19,7 +19,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     /// symbols.
     /// </summary>
     public interface IGrammarSymbolSet :
-        IControlledStateCollection<IGrammarSymbol>
+        IControlledCollection<IGrammarSymbol>
     {
         IGrammarSymbol this[ITokenEntry entry] { get; }
         IGrammarSymbol this[ILiteralTokenItem entry] { get; }

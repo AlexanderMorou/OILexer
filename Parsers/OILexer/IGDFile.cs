@@ -21,10 +21,10 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
         IConcreteNode
     {
         /// <summary>
-        /// Returns the <see cref="IReadOnlyCollection"/> of files that the <see cref="IGDFile"/>
+        /// Returns the <see cref="IControlledCollection"/> of files that the <see cref="IGDFile"/>
         /// was created from.
         /// </summary>
-        IReadOnlyCollection<string> Files { get; }
+        IControlledCollection<string> Files { get; }
         /// <summary>
         /// Returns the <see cref="IGDFileOptions"/> which determines the options related to the 
         /// resulted generation process.
@@ -33,6 +33,6 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
 
         IList<string> Includes { get; }
 
-        IReadOnlyCollection<IGDRegion> Regions { get; }
+        IControlledCollection<IGDRegion> Regions { get; }
     }
 }

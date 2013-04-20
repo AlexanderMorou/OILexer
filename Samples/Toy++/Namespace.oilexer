@@ -27,3 +27,5 @@ NamespaceMemberDeclaration                ::=>
     NamespaceDeclaration                     |
     TypeDeclaration                          |
     LanguageDeclaration                      ;
+
+

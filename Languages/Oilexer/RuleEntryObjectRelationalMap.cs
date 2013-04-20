@@ -16,11 +16,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     internal class RuleEntryObjectRelationalMap :
         IRuleEntryObjectRelationalMap
     {
-        private IReadOnlyCollection<IScannableEntry> implementsList;
-        private IReadOnlyCollection<IProductionRuleEntry> implements;
+        private IControlledCollection<IScannableEntry> implementsList;
+        private IControlledCollection<IProductionRuleEntry> implements;
         private IList<IProductionRuleEntry> implementsSource;
-        private IGDFileObjectRelationalMap fileMap;
-        public RuleEntryObjectRelationalMap(IProductionRuleEntry[] implementsSeries, IGDFileObjectRelationalMap fileMap, IProductionRuleEntry entry)
+
+
+        internal IGDFileObjectRelationalMap fileMap;
+        internal RuleEntryObjectRelationalMap(IProductionRuleEntry[] implementsSeries, GDFileObjectRelationalMap fileMap, IProductionRuleEntry entry)
         {
             this.Entry = entry;
             this.implementsSource = implementsSeries.ToList();
@@ -29,7 +31,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 
         #region IRuleEntryObjectRelationalMap Members
 
-        public IReadOnlyCollection<IProductionRuleEntry> Implements
+        public IControlledCollection<IProductionRuleEntry> Implements
         {
             get
             {
@@ -75,7 +77,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 
         #region IEntryObjectRelationalMap Members
 
-        IReadOnlyCollection<IScannableEntry> IEntryObjectRelationalMap.Implements
+        IControlledCollection<IScannableEntry> IEntryObjectRelationalMap.Implements
         {
             get
             {

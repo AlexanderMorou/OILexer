@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Abstract;
 using AllenCopeland.Abstraction.Slf.Cli;
-using AllenCopeland.Abstraction.Slf.Oil;
+using AllenCopeland.Abstraction.Slf.Ast;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp.Expressions;
-using AllenCopeland.Abstraction.Slf.Oil.Expressions;
-using AllenCopeland.Abstraction.Slf.Oil.Members;
-using AllenCopeland.Abstraction.Slf.Oil.Statements;
+using AllenCopeland.Abstraction.Slf.Ast.Expressions;
+using AllenCopeland.Abstraction.Slf.Ast.Members;
+using AllenCopeland.Abstraction.Slf.Ast.Statements;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -44,25 +44,25 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
     }
     internal static class BitStreamCreator
     {
-        public static CharStreamClass CreateBitStream(IIntermediateTypeParent parent)
+        public static CharStreamClass CreateBitStream(IIntermediateTypeParent parent, IIntermediateCliManager identityManager)
         {
             IIntermediateClassType result = parent.Classes.Add("CharStream");
 
             result.AccessLevel = AccessLevelModifiers.Internal;
-            IIntermediateClassFieldMember charBuffer = result.Fields.Add(new TypedName("buffer", typeof(char[]).GetTypeReference()));
+            IIntermediateClassFieldMember charBuffer = result.Fields.Add(new TypedName("buffer", identityManager.ObtainTypeReference(RuntimeCoreType.Char).MakeArray()));
             charBuffer.AccessLevel = AccessLevelModifiers.Internal;
-            IIntermediateClassFieldMember charBufferSize = result.Fields.Add(new TypedName("actualSize", typeof(int).GetTypeReference()));
+            IIntermediateClassFieldMember charBufferSize = result.Fields.Add(new TypedName("actualSize", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
             charBufferSize.AccessLevel = AccessLevelModifiers.Internal;
             charBufferSize.InitializationExpression = IntermediateGateway.NumberZero;
-            var purgeMethod = AddPurgeMethod(result, charBufferSize);
-            var growBufferMethod = AddGrowBufferMethod(result, charBufferSize, charBuffer);
-            var pushStringMethod = AddPushStringMethod(result, charBufferSize, charBuffer, growBufferMethod);
-            var toStringMethod = AddToStringMethod(result, charBufferSize, charBuffer);
-            var pushCharMethod = AddPushMethod(result, charBufferSize, charBuffer, growBufferMethod);
+            var purgeMethod = AddPurgeMethod(result, charBufferSize, identityManager);
+            var growBufferMethod = AddGrowBufferMethod(result, charBufferSize, charBuffer, identityManager);
+            var pushStringMethod = AddPushStringMethod(result, charBufferSize, charBuffer, growBufferMethod, identityManager);
+            var toStringMethod = AddToStringMethod(result, charBufferSize, charBuffer, identityManager);
+            var pushCharMethod = AddPushMethod(result, charBufferSize, charBuffer, growBufferMethod, identityManager);
             return new CharStreamClass(result, charBuffer, charBufferSize, purgeMethod, pushStringMethod, pushCharMethod, toStringMethod, growBufferMethod);
         }
 
-        private static IIntermediateClassMethodMember AddToStringMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer)
+        private static IIntermediateClassMethodMember AddToStringMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer, IIntermediateCliManager identityManager)
         {
             /* *
              * Full method:
@@ -71,12 +71,12 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
              *     result[i] = buffer[i];
              * return new string(result);
              * */
-            IIntermediateClassMethodMember toStringOverride = result.Methods.Add(new TypedName("ToString", typeof(string).GetTypeReference()));
+            IIntermediateClassMethodMember toStringOverride = result.Methods.Add(new TypedName("ToString", identityManager.ObtainTypeReference(RuntimeCoreType.String)));
             toStringOverride.AccessLevel = AccessLevelModifiers.Public;
             toStringOverride.IsOverride = true;
             //char[] result = new char[this.actualSize];
-            var resultChars = toStringOverride.Locals.Add(new TypedName("result", typeof(char[]).GetTypeReference()), new MalleableCreateArrayDetailExpression(typeof(char).GetTypeReference(), charBufferSize.GetReference()));
-            var iLocal = toStringOverride.Locals.Add(new TypedName("i", typeof(int).GetTypeReference()));
+            var resultChars = toStringOverride.Locals.Add(new TypedName("result", identityManager.ObtainTypeReference(RuntimeCoreType.Char).MakeArray()), new MalleableCreateArrayDetailExpression(identityManager.ObtainTypeReference(RuntimeCoreType.Char), charBufferSize.GetReference()));
+            var iLocal = toStringOverride.Locals.Add(new TypedName("i", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
             //int i = 0;
             iLocal.InitializationExpression = IntermediateGateway.NumberZero;
             //So it isn't declared in the main body.
@@ -90,11 +90,11 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             //    result[i] = this.buffer[i];
             loop.Assign(resultChars.GetReference().GetIndexer(iLocal.GetReference()), charBuffer.GetReference().GetIndexer(iLocal.GetReference()));
             //return new string(result);
-            toStringOverride.Return(typeof(string).GetTypeReference().GetNewExpression(resultChars.GetReference()));
+            toStringOverride.Return(identityManager.ObtainTypeReference(RuntimeCoreType.String).GetNewExpression(resultChars.GetReference()));
             return toStringOverride;
         }
 
-        private static IIntermediateClassMethodMember AddGrowBufferMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer)
+        private static IIntermediateClassMethodMember AddGrowBufferMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer, IIntermediateCliManager identityManager)
         {
             /* *
              * Full Method:
@@ -112,13 +112,13 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
              * this.buffer.CopyTo(newBuffer, 0);
              * this.buffer = newBuffer;
              * */
-            var growBufferMethod = result.Methods.Add(new TypedName("GrowBuffer", CommonTypeRefs.Void));
-            var totalSizeParameter = growBufferMethod.Parameters.Add(new TypedName("totalSize", typeof(int).GetTypeReference()));
+            var growBufferMethod = result.Methods.Add(new TypedName("GrowBuffer", identityManager.ObtainTypeReference(RuntimeCoreType.VoidType)));
+            var totalSizeParameter = growBufferMethod.Parameters.Add(new TypedName("totalSize", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
 //          if (this.buffer == null)
 //          {
             var nullCheck = growBufferMethod.If(charBuffer.GetReference().EqualTo(IntermediateGateway.NullValue));
 //              this.buffer = new char[totalSize];
-            nullCheck.Assign(charBuffer.GetReference(), new MalleableCreateArrayExpression(typeof(char).GetTypeReference(), totalSizeParameter.GetReference()));
+            nullCheck.Assign(charBuffer.GetReference(), new MalleableCreateArrayExpression(identityManager.ObtainTypeReference(RuntimeCoreType.Char), totalSizeParameter.GetReference()));
 //              return;
 //          }
             nullCheck.Return();
@@ -128,7 +128,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             needCheck.Return();
 
 //          int pNew = this.actualSize * 2;
-            var pNewVar = growBufferMethod.Locals.Add(new TypedName("pNew", typeof(int).GetTypeReference()), charBufferSize.Multiply(2));
+            var pNewVar = growBufferMethod.Locals.Add(new TypedName("pNew", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)), charBufferSize.Multiply(2));
             //So it isn't declared automatically, thus causing a potential null reference exception.
             pNewVar.AutoDeclare = false;
             growBufferMethod.DefineLocal(pNewVar);
@@ -138,7 +138,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             rangeCheck.Assign(pNewVar.GetReference(), totalSizeParameter.GetReference());
 
 //          char[] newBuffer = new char[pNew];
-            var newBufferVar = growBufferMethod.Locals.Add(new TypedName("newBuffer", typeof(char[]).GetTypeReference()), new MalleableCreateArrayExpression(typeof(char).GetTypeReference(), pNewVar.GetReference()));
+            var newBufferVar = growBufferMethod.Locals.Add(new TypedName("newBuffer", identityManager.ObtainTypeReference(RuntimeCoreType.Char).MakeArray()), new MalleableCreateArrayExpression(identityManager.ObtainTypeReference(RuntimeCoreType.Char), pNewVar.GetReference()));
             //So newBuffer doesn't refer to pNew before it is declared.
             newBufferVar.AutoDeclare = false;
             growBufferMethod.DefineLocal(newBufferVar);
@@ -152,7 +152,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             return growBufferMethod;
         }
 
-        private static IIntermediateClassMethodMember AddPushStringMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer, IIntermediateClassMethodMember growBufferMethod)
+        private static IIntermediateClassMethodMember AddPushStringMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer, IIntermediateClassMethodMember growBufferMethod, IIntermediateCliManager identityManager)
         {
             /* *
              * Full Method:
@@ -166,9 +166,9 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
              *     actualSize++;
              * }
              * */
-            IIntermediateClassMethodMember pushStringMethod = result.Methods.Add(new TypedName("Push", CommonTypeRefs.Void));
+            IIntermediateClassMethodMember pushStringMethod = result.Methods.Add(new TypedName("Push", identityManager.ObtainTypeReference(RuntimeCoreType.VoidType)));
             pushStringMethod.AccessLevel = AccessLevelModifiers.Public;
-            var sParameter = pushStringMethod.Parameters.Add(new TypedName("s", CommonTypeRefs.String));
+            var sParameter = pushStringMethod.Parameters.Add(new TypedName("s", identityManager.ObtainTypeReference(RuntimeCoreType.String)));
 //          if (buffer == null)
 
             var nullCheck = pushStringMethod.If(charBuffer.GetReference().EqualTo(IntermediateGateway.NullValue));
@@ -180,7 +180,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             rangeCheck.Call(growBufferMethod.GetReference().Invoke(charBufferSize.GetReference().Add(sParameter.GetReference().GetProperty("Length"))));
 
             //int i = 0;
-            var iLocal = pushStringMethod.Locals.Add(new TypedName("i", typeof(int).GetTypeReference()));
+            var iLocal = pushStringMethod.Locals.Add(new TypedName("i", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
             //So it isn't declared in the main body.
             iLocal.InitializationExpression = IntermediateGateway.NumberZero;
             iLocal.AutoDeclare = false;
@@ -195,16 +195,16 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             return pushStringMethod;
         }
 
-        private static IIntermediateClassMethodMember AddPurgeMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize)
+        private static IIntermediateClassMethodMember AddPurgeMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateCliManager identityManager)
         {
-            IIntermediateClassMethodMember purgeMethod = result.Methods.Add(new TypedName("Purge", CommonTypeRefs.Void));
+            IIntermediateClassMethodMember purgeMethod = result.Methods.Add(new TypedName("Purge", identityManager.ObtainTypeReference(RuntimeCoreType.VoidType)));
             purgeMethod.AccessLevel = AccessLevelModifiers.Public;
 //          actualSize = 0;
             purgeMethod.Assign(charBufferSize.GetReference(), IntermediateGateway.NumberZero);
             return purgeMethod;
         }
 
-        private static IIntermediateClassMethodMember AddPushMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer, IIntermediateClassMethodMember growBufferMethod)
+        private static IIntermediateClassMethodMember AddPushMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateClassFieldMember charBuffer, IIntermediateClassMethodMember growBufferMethod, IIntermediateCliManager identityManager)
         {
             /* *
              * Full Method:
@@ -215,9 +215,9 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
              * buffer[actualSize] = c;
              * actualSize++;
              * */
-            IIntermediateClassMethodMember pushMethod = result.Methods.Add(new TypedName("Push", CommonTypeRefs.Void));
+            IIntermediateClassMethodMember pushMethod = result.Methods.Add(new TypedName("Push", identityManager.ObtainTypeReference(RuntimeCoreType.VoidType)));
             pushMethod.AccessLevel = AccessLevelModifiers.Public;
-            var cParameter = pushMethod.Parameters.Add(new TypedName("c", typeof(char).GetTypeReference()));
+            var cParameter = pushMethod.Parameters.Add(new TypedName("c", identityManager.ObtainTypeReference(RuntimeCoreType.Char)));
 //          if (buffer == null)
             var nullCheck = pushMethod.If(charBuffer.EqualTo(IntermediateGateway.NullValue));
 //              GrowBuffer(2);

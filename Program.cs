@@ -9,16 +9,15 @@ using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining;
 using AllenCopeland.Abstraction.Slf.Abstract;
 using AllenCopeland.Abstraction.Slf.Cli;
-using AllenCopeland.Abstraction.Slf.Cli.Members;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
-using AllenCopeland.Abstraction.Slf.Oil;
+using AllenCopeland.Abstraction.Slf.Ast;
 using AllenCopeland.Abstraction.Slf.Parsers;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Arrays;
 using AllenCopeland.Abstraction.Utilities.Collections;
-using AllenCopeland.Abstraction.Utilities.Miscellaneous;
+using AllenCopeland.Abstraction.Slf.Languages.CSharp;
 /* *
  * Old Release Post-build command:
  * "$(ProjectDir)PostBuild.bat" "$(ConfigurationName)" "$(TargetPath)"
@@ -32,43 +31,43 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
     internal static class Program
     {
         private static int longestLineLength = 0;
-        private const string Syntax                                 = "-s";
-        private const string NoSyntax                               = "-ns";
-        private const string NoLogo                                 = "-nl";
-        private const string Quiet                                  = "-q";
-        private const string Verbose                                = "-v";
-        private const string StreamAnalysis                         = "-a:";
-        private const string StreamAnalysisExtension                = "-ae:";
-        private const string Export                                 = "-ex:";
-        private const string ExportKind_TraversalHTML               = "t-html";
-        private const string ExportKind_DLL                         = "dll";
-        private const string ExportKind_EXE                         = "exe";
-        private const string ExportKind_CSharp                      = "cs";
-        private const string Export_TraversalHTML                   = Export + ExportKind_TraversalHTML;
-        private const string Export_DLL                             = Export + ExportKind_DLL;
-        private const string Export_EXE                             = Export + ExportKind_EXE;
-        private const string Export_CSharp                          = Export + ExportKind_CSharp;
-        private const string TitleSequence_CharacterSetCache        = "Character set cache size";
+        private const string Syntax = "-s";
+        private const string NoSyntax = "-ns";
+        private const string NoLogo = "-nl";
+        private const string Quiet = "-q";
+        private const string Verbose = "-v";
+        private const string StreamAnalysis = "-a:";
+        private const string StreamAnalysisExtension = "-ae:";
+        private const string Export = "-ex:";
+        private const string ExportKind_TraversalHTML = "t-html";
+        private const string ExportKind_DLL = "dll";
+        private const string ExportKind_EXE = "exe";
+        private const string ExportKind_CSharp = "cs";
+        private const string Export_TraversalHTML = Export + ExportKind_TraversalHTML;
+        private const string Export_DLL = Export + ExportKind_DLL;
+        private const string Export_EXE = Export + ExportKind_EXE;
+        private const string Export_CSharp = Export + ExportKind_CSharp;
+        private const string TitleSequence_CharacterSetCache = "Character set cache size";
         private const string TitleSequence_CharacterSetComputations = "Character set computations";
-        private const string TitleSequence_VocabularyCache          = "Vocabulary cache size";
-        private const string TitleSequence_VocabularyComputations   = "Vocabulary set computations";
-        private const string TitleSequence_NumberOfRules            = "Number of rules";
-        private const string TitleSequence_NumberOfTokens           = "Number of tokens";
-        private const string PhaseName_Linking                      = "Linking";
-        private const string PhaseName_ExpandingTemplates           = "Expanding templates";
-        private const string PhaseName_Deliteralization             = "Deliteralization";
-        private const string PhaseName_InliningTokens               = "Inlining tokens";
-        private const string PhaseName_TokenNFAConstruction         = "Token NFA Construction";
-        private const string PhaseName_TokenDFAConstruction         = "Token DFA Construction";
-        private const string PhaseName_TokenDFAReduction            = "Token DFA Reduction";
-        private const string PhaseName_RuleNFAConstruction          = "Rule NFA Construction";
-        private const string PhaseName_RuleDFAConstruction          = "Rule DFA Construction";
-        private const string PhaseName_CallTreeAnalysis             = "Call Tree Analysis";
-        private const string PhaseName_ObjectModelConstruction      = "Object Model Construction";
-        private const string PhaseName_TokenCaptureConstruction     = "Token Capture Construction";
-        private const string PhaseName_TokenEnumConstruction        = "Token Enum Construction";
-        private const string PhaseName_RuleStructureConstruction    = "Rule Structure Construction";
-        private const string PhaseName_Parsing                      = "Parsing";
+        private const string TitleSequence_VocabularyCache = "Vocabulary cache size";
+        private const string TitleSequence_VocabularyComputations = "Vocabulary set computations";
+        private const string TitleSequence_NumberOfRules = "Number of rules";
+        private const string TitleSequence_NumberOfTokens = "Number of tokens";
+        private const string PhaseName_Linking = "Linking";
+        private const string PhaseName_ExpandingTemplates = "Expanding templates";
+        private const string PhaseName_Deliteralization = "Deliteralization";
+        private const string PhaseName_InliningTokens = "Inlining tokens";
+        private const string PhaseName_TokenNFAConstruction = "Token NFA Construction";
+        private const string PhaseName_TokenDFAConstruction = "Token DFA Construction";
+        private const string PhaseName_TokenDFAReduction = "Token DFA Reduction";
+        private const string PhaseName_RuleNFAConstruction = "Rule NFA Construction";
+        private const string PhaseName_RuleDFAConstruction = "Rule DFA Construction";
+        private const string PhaseName_CallTreeAnalysis = "Call Tree Analysis";
+        private const string PhaseName_ObjectModelConstruction = "Object Model Construction";
+        private const string PhaseName_TokenCaptureConstruction = "Token Capture Construction";
+        private const string PhaseName_TokenEnumConstruction = "Token Enum Construction";
+        private const string PhaseName_RuleStructureConstruction = "Rule Structure Construction";
+        private const string PhaseName_Parsing = "Parsing";
         //TitleSequence_CharacterSetCache.Length, TitleSequence_CharacterSetComputations.Length, TitleSequence_VocabularyCache.Length, TitleSequence_VocabularyComputations.Length, TitleSequence_NumberOfRules.Length, TitleSequence_NumberOfTokens.Length, PhaseName_Linking.Length, PhaseName_ExpandingTemplates.Length, PhaseName_Deliteralization.Length, PhaseName_InliningTokens.Length, PhaseName_TokenNFAConstruction.Length , PhaseName_TokenDFAConstruction.Length , PhaseName_TokenDFAReduction.Length, PhaseName_RuleNFAConstruction.Length  , PhaseName_RuleDFAConstruction.Length  , PhaseName_CallTreeAnalysis.Length , PhaseName_ObjectModelConstruction.Length  , PhaseName_TokenCaptureConstruction.Length , PhaseName_TokenEnumConstruction.Length, PhaseName_RuleStructureConstruction.Length
         /// <summary>
         /// Defines the valid options for the <see cref="Program"/>.
@@ -83,40 +82,40 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             /// <summary>
             /// Displays the language's sytnax at the end.
             /// </summary>
-            ShowSyntax              = 0x0001,
+            ShowSyntax = 0x0001,
             /// <summary>
             /// Instructs the <see cref="Program"/> to not emit 
             /// the syntax at the end.
             /// </summary>
-            DoNotEmitSyntax         = 0x0002,
+            DoNotEmitSyntax = 0x0002,
             /// <summary>
             /// Instructs the <see cref="Program"/> to not
             /// display a logo to the console.
             /// </summary>
-            NoLogo                  = 0x0014,
+            NoLogo = 0x0014,
             /// <summary>
             /// Instructs the <see cref="Program"/> to emit as little
             /// as possible to the console.
             /// </summary>
-            QuietMode               = 0x0018,
+            QuietMode = 0x0018,
             /// <summary>
             /// Instructs the <see cref="Program"/> to 
             /// display extra information to the console.
             /// </summary>
-            VerboseMode             = 0x0030,
+            VerboseMode = 0x0030,
             /// <summary>
             /// Instructs the <see cref="Program"/> to emit
             /// a series of hypertext mark-up language (HTML)
             /// files associated to parsing the current
             /// grammar.
             /// </summary>
-            ExportTraversalHTML     = 0x0240,
+            ExportTraversalHTML = 0x0240,
             /// <summary>
             /// Instructs the <see cref="Program"/> to emit
             /// a dynamic link library (DLL) which can parse
             /// strings of the described language.
             /// </summary>
-            ExportDLL               = 0x0280,
+            ExportDLL = 0x0280,
             /// <summary>
             /// Instructs the <see cref="Program"/> to emit
             /// a simple executable (EXE) which can parse
@@ -124,16 +123,16 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             /// a series of strings which represent file(s) to 
             /// parse.
             /// </summary>
-            ExportEXE               = 0x0300,
+            ExportEXE = 0x0300,
             /// <summary>
             /// Instructs the <see cref="Program"/> to emit
             /// a series of C&#9839; files.
             /// </summary>
-            ExportCSharp            = 0x0600,
+            ExportCSharp = 0x0600,
         }
 
         public static List<string> StreamAnalysisFiles = new List<string>();
-        public static ValidOptions options             = ValidOptions.DoNotEmitSyntax;
+        public static ValidOptions options = ValidOptions.DoNotEmitSyntax;
         public static string baseTitle;
         /// <summary>
         /// The entrypoint.
@@ -227,15 +226,16 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 Console.Title = consoleTitle;
             }
         }
-
+#if false
         private static void TestMethod()
         {
             var reflectionTime = Time(BrowseCSCMessagesReflection);
             var abstractionTime = Time(BrowseCSCMessages);
             Console.WriteLine("Abstraction took: {0}\nReflection Took: {1}", abstractionTime, reflectionTime);
         }
-
-        private static void BrowseCSCMessagesReflection() {
+#endif
+        private static void BrowseCSCMessagesReflection()
+        {
             var cscms = typeof(CSharpCompilerMessages);
             var properties = cscms.GetProperties(BindingFlags.Public | BindingFlags.Static);
 #pragma warning disable 429
@@ -245,7 +245,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             Array.Resize(ref warnErrors, properties.Length);
             //Tuple<bool, int, int, string, string>[] warnErrors = new Tuple<bool, int, int, string, string>[properties.Length];
             int index = 0;
-            
+
             foreach (var prop in properties)
             {
                 var returnType = prop.PropertyType;
@@ -271,7 +271,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                     we.Name
                             select we).ToArray();
         }
-
+#if false
         private static void BrowseCSCMessages()
         {
             var cscms = typeof(CSharpCompilerMessages).GetTypeReference<IGeneralGenericTypeUniqueIdentifier, IClassType>();
@@ -333,7 +333,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                  }).ToArray());
 
         }
-
+#endif
         private static TimeSpan Time(Action a)
         {
             Stopwatch sw = new Stopwatch();
@@ -399,10 +399,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 catch (IOException) { }
                 resultsOfBuild = Build(resultsOfParse);
 
-                resultsOfBuild.PhaseTimes._AddInternal(ParserBuilderPhase.Parsing, parseTime);
+                resultsOfBuild.PhaseTimes._Add(ParserBuilderPhase.Parsing, parseTime);
                 if (resultsOfBuild == null)
                     goto errorChecker;
-                
+
                 if ((options & ValidOptions.VerboseMode) == ValidOptions.VerboseMode)
                 {
                     const string stateMachineCounts = "State machine state counts:";
@@ -418,7 +418,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                 let state = t.DFAState
                                 where state != null
                                 let stateCount = t.DFAState.CountStates()
-                                select new { Name = t.Name, StateCount = stateCount, IsToken = true}).ToArray();
+                                select new { Name = t.Name, StateCount = stateCount, IsToken = true }).ToArray();
                     var rules = (from rule in resultsOfParse.Result.GetRules()
                                  let state = resultsOfBuild.RuleStateMachines.ContainsKey(rule) ? resultsOfBuild.RuleStateMachines[rule] : null
                                  where state != null
@@ -431,7 +431,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                    orderby entry.StateCount descending,
                                            entry.Name ascending
                                    group entry by entry.StateCount).ToDictionary(key => key.Key, value => value.ToList());
-                    
+
                     int longestMinusComma = longestLineLength - 2;
                     var consoleForeColor = Console.ForegroundColor;
                     /* *
@@ -442,7 +442,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                      * Utilities.Common.StringHandling.FixedJoin could work here;
                      * however, color-coding elements would be out.
                      * */
-                    
+
                     foreach (var count in grouped.Keys)
                     {
                         string countStr = string.Format(" {0} ", count);
@@ -484,7 +484,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         }
                         //Cap the last element.
                         Console.WriteLine("{0} │", ' '.Repeat(longestLineLength - currentLength));
-                        
+
                     }
                     Console.ForegroundColor = consoleForeColor;
                     /* *
@@ -508,9 +508,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     catch (IOException)
                     {
                     }
-                    goto __CheckErrorAgain;
+                    goto ShowParseTime;
                 }
-                
+
                 if ((options & ValidOptions.ExportTraversalHTML) == ValidOptions.ExportTraversalHTML)
                 {
                     SetAttributes(resultsOfParse, resultsOfBuild);
@@ -567,19 +567,27 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     */
                 }
                 goto ShowParseTime;
-                
-            __CheckErrorAgain:
-                if (resultsOfParse.SyntaxErrors.HasErrors)
-                    Program.ShowErrors(resultsOfParse);
-                else if (resultsOfBuild.CompilationErrors.HasErrors)
-                    Program.ShowErrors(resultsOfParse, resultsOfBuild.CompilationErrors);
+
 
             }
             else
-                Program.ShowErrors(resultsOfParse);
-            
+                goto ShowParseTime;
+
         ShowParseTime:
             GC.Collect();
+            if (resultsOfParse.Successful && !resultsOfBuild.CompilationErrors.HasErrors)
+            {
+                var deja = (from k in resultsOfParse.Result
+                            where k is InlinedTokenEntry
+                            let t = (InlinedTokenEntry)k
+                            where t.DFAState != null
+                            select new { Name = t.Name, Transitions = t.DFAState.ToString() });
+                if (deja != null)
+                {
+                    var dkea = deja.ToArray();
+                }
+                var buildTypes = resultsOfBuild.Project.GetTypes().ToArray();
+            }
             GC.WaitForPendingFinalizers();
 
             if ((options & ValidOptions.QuietMode) != ValidOptions.QuietMode)
@@ -596,13 +604,17 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 }
                 catch (IOException) { }
                 ShowSyntax(resultsOfParse);
-            
+
             }
             try
             {
                 Console.Title = string.Format("{0} - {1}", baseTitle, "Finished");
             }
             catch (IOException) { }
+            if (resultsOfParse.SyntaxErrors.HasErrors)
+                Program.ShowErrors(resultsOfParse);
+            else if (resultsOfBuild.CompilationErrors.HasErrors)
+                Program.ShowErrors(resultsOfParse, resultsOfBuild.CompilationErrors);
             return resultsOfBuild;
         }
 
@@ -613,11 +625,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
             var sortedMessages =
                 (from ICompilerSourceMessage ce in errors
-                 orderby ce.Location.Line,
+                 orderby ce.Start.Line,
                          ce.Message
                  select ce).ToArray();
-            int largestColumn = sortedMessages.Max(p => p.Location.Column).ToString().Length;
-            int furthestLine = sortedMessages.Max(p => p.Location.Line).ToString().Length;
+            int largestColumn = sortedMessages.Max(p => p.Start.Column).ToString().Length;
+            int furthestLine = sortedMessages.Max(p => p.Start.Line).ToString().Length;
 
             string[] parts = (from ICompilerSourceMessage e in errors
                               let ePath = Path.GetDirectoryName(e.FileName)
@@ -716,10 +728,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                             Console.ForegroundColor = warnColor;
                         Console.Write("\t\t{0} - {{", ce.MessageIdentifier);
                         Console.ForegroundColor = posColor;
-                        int l = ce.Location.Line, c = ce.Location.Column;
+                        int l = ce.Start.Line, c = ce.Start.Column;
                         l = furthestLine - l.ToString().Length;
                         c = largestColumn - c.ToString().Length;
-                        Console.Write("{2}{0}:{1}{3}", ce.Location.Line, ce.Location.Column, ' '.Repeat(l), ' '.Repeat(c));
+                        Console.Write("{2}{0}:{1}{3}", ce.Start.Line, ce.Start.Column, ' '.Repeat(l), ' '.Repeat(c));
                         if (!isWarning)
                             Console.ForegroundColor = errorColor;
                         else
@@ -745,11 +757,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
             var iprsSorted =
                 (from IParserSyntaxError ce in iprs.SyntaxErrors
-                 orderby ce.Location.Line,
+                 orderby ce.Start.Line,
                          ce.Message
                  select ce).ToArray();
-            int largestColumn = iprsSorted.Max(p => p.Location.Column).ToString().Length;
-            int furthestLine = iprsSorted.Max(p => p.Location.Line).ToString().Length;
+            int largestColumn = iprsSorted.Max(p => p.Start.Column).ToString().Length;
+            int furthestLine = iprsSorted.Max(p => p.Start.Line).ToString().Length;
 
             string[] parts = (from e in iprs.SyntaxErrors
                               let ePath = Path.GetDirectoryName(e.FileName)
@@ -802,7 +814,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                  orderby folderFileArray.Length descending,
                          folder ascending
                  select new { Path = folder, ErroredFiles = folderFileArray, FileCount = folderFileArray.Length, ErrorCount = folderFileArray.Sum(fileData => fileData.Errors.Length) }).ToArray();
-                 
+
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -842,10 +854,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         Console.ForegroundColor = errorColor;
                         Console.Write("\t\t{");
                         Console.ForegroundColor = posColor;
-                        int l = ce.Location.Line, c = ce.Location.Column;
+                        int l = ce.Start.Line, c = ce.Start.Column;
                         l = furthestLine - l.ToString().Length;
                         c = largestColumn - c.ToString().Length;
-                        Console.Write("{2}{0}:{1}{3}", ce.Location.Line, ce.Location.Column, ' '.Repeat(l), ' '.Repeat(c));
+                        Console.Write("{2}{0}:{1}{3}", ce.Start.Line, ce.Start.Column, ' '.Repeat(l), ' '.Repeat(c));
                         Console.ForegroundColor = errorColor;
                         Console.Write("}} - {0}", ce.Message);
                         Console.WriteLine();
@@ -856,11 +868,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             }
             Console.ForegroundColor = color;
             int totalErrorCount = iprs.SyntaxErrors.Count,
-                totalFileCount  = folderErrors.Sum(folderData => folderData.FileCount);
+                totalFileCount = folderErrors.Sum(folderData => folderData.FileCount);
             Console.WriteLine("There were {0} {2} in {1} {3}.", totalErrorCount, totalFileCount, totalErrorCount == 1 ? "error" : "errors", totalFileCount == 1 ? "file" : "files");
             Console.WriteLine("A total of {0:#,#} bytes were parsed from {1} files.", size, iprs.Result.Files.Count);
         }
-        
+
         /*
         public static void WriteProject(IIntermediateAssembly project, string targetDirectory, string fileExtension = ".cs", string tabString = "    ", bool htmlExportMode = false)
         {
@@ -895,14 +907,19 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private static void SetAttributes(IParserResults<IGDFile> iprs, ParserBuilderResults resultsOfBuild)
         {
-            resultsOfBuild.Project.AssemblyInformation.Company = "None";
-            resultsOfBuild.Project.AssemblyInformation.AssemblyName = iprs.Result.Options.AssemblyName;
-            /* *
-             * Culture specifier here.
-             * */
-            resultsOfBuild.Project.AssemblyInformation.Culture = CultureIdentifiers.English_UnitedStates;
-            resultsOfBuild.Project.AssemblyInformation.Description = string.Format("Language parser for {0}.", iprs.Result.Options.GrammarName);
-            resultsOfBuild.Project.CustomAttributes.Add(new CustomAttributeDefinition.ParameterValueCollection(typeof(AssemblyVersionAttribute).GetTypeReference()) { "1.0.0.*" });
+            var prj = resultsOfBuild.Project;
+            if (prj != null)
+            {
+                var im = (IIntermediateCliManager)prj.IdentityManager;
+                prj.AssemblyInformation.Company = "None";
+                prj.AssemblyInformation.AssemblyName = iprs.Result.Options.AssemblyName;
+                /* *
+                 * Culture specifier here.
+                 * */
+                prj.AssemblyInformation.Culture = CultureIdentifiers.English_UnitedStates;
+                prj.AssemblyInformation.Description = string.Format("Language parser for {0}.", iprs.Result.Options.GrammarName);
+                prj.AssemblyInformation.AssemblyVersion = new IntermediateVersion(1, 0) { AutoIncrementRevision = true };
+            }
             //resultsOfBuild.Project.Attributes.AddNew(typeof(AssemblyVersionAttribute).GetTypeReference(), new AttributeConstructorParameter(new PrimitiveExpression("1.0.0.*")));
         }
 
@@ -1218,9 +1235,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             where TItem :
                 IScannableEntryItem
             where TExpression :
-                IReadOnlyCollection<TItem>
+                IControlledCollection<TItem>
             where TSeries :
-                IReadOnlyCollection<TExpression>
+                IControlledCollection<TExpression>
         {
             var consoleColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -1276,9 +1293,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             where TItem :
                 IScannableEntryItem
             where TExpression :
-                IReadOnlyCollection<TItem>
+                IControlledCollection<TItem>
             where TSeries :
-                IReadOnlyCollection<TExpression>
+                IControlledCollection<TExpression>
         {
             bool first = true;
             foreach (var expression in series)
@@ -1308,7 +1325,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             where T :
                 IScannableEntryItem
             where U :
-                IReadOnlyCollection<T>
+                IControlledCollection<T>
         {
             foreach (var item in expression)
                 DisplaySyntax<T>(item, ref startingLine, depth);
@@ -1583,29 +1600,29 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             builder.PhaseChange += changeEvent;
             builder.BuildProject();
             builder.PhaseChange -= changeEvent;
-            return new ParserBuilderResults() { Project = builder.Project, CompilationErrors = builder.CompilationErrors, PhaseTimes = new ReadOnlyDictionary<ParserBuilderPhase, TimeSpan>(builder.PhaseTimes), RuleStateMachines = builder.RuleDFAStates };
+            return new ParserBuilderResults() { Project = builder.Project, CompilationErrors = builder.CompilationErrors, PhaseTimes = new ControlledDictionary<ParserBuilderPhase, TimeSpan>(builder.PhaseTimes), RuleStateMachines = builder.RuleDFAStates };
         }
 
         private static void DisplayUsage()
         {
-            const string Usage_Options       = "options:";
-            const string Usage_Export        = "    " + Export + "kind; Export, where kind is:";
-            const string Usage_Export_Exe    = "           " + ExportKind_EXE + " │ Executable";
-            const string Usage_Export_Dll    = "           " + ExportKind_DLL + " │ Dynamic link library";
+            const string Usage_Options = "options:";
+            const string Usage_Export = "    " + Export + "kind; Export, where kind is:";
+            const string Usage_Export_Exe = "           " + ExportKind_EXE + " │ Executable";
+            const string Usage_Export_Dll = "           " + ExportKind_DLL + " │ Dynamic link library";
             const string Usage_Export_CSharp = "            " + ExportKind_CSharp + " │ CSharp Code";
-            const string Usage_Export_THTML  = "        " + ExportKind_TraversalHTML + " │ Traversable HTML";
-            const string Usage_Syntax        = "    " + Syntax + "         │ Show syntax.";
-            const string Usage_NoSyntax      = "    " + NoSyntax + "*       │ Don't show syntax";
-            const string Usage_NoLogo        = "    " + NoLogo + "        │ Do not show logo";
-            const string Usage_Verbose       = "    " + Verbose + "         │ Verbose mode";
-            const string Usage_QuietMode     = "    " + Quiet + "         │ Quiet mode";
-            const string Usage_Default       = "     *         │ default";
-            const string Usage_Usage         = "Usage:";
+            const string Usage_Export_THTML = "        " + ExportKind_TraversalHTML + " │ Traversable HTML";
+            const string Usage_Syntax = "    " + Syntax + "         │ Show syntax.";
+            const string Usage_NoSyntax = "    " + NoSyntax + "*       │ Don't show syntax";
+            const string Usage_NoLogo = "    " + NoLogo + "        │ Do not show logo";
+            const string Usage_Verbose = "    " + Verbose + "         │ Verbose mode";
+            const string Usage_QuietMode = "    " + Quiet + "         │ Quiet mode";
+            const string Usage_Default = "     *         │ default";
+            const string Usage_Usage = "Usage:";
 
             const string Usage_LineCenter = "───────────────┼";
-            const string Usage_LineDown   = "───────────────┬";
-            const string Usage_LineUp     = "───────────────┴";
-            const string Usage_End        = "═══════════════╧";
+            const string Usage_LineDown = "───────────────┬";
+            const string Usage_LineUp = "───────────────┴";
+            const string Usage_End = "═══════════════╧";
 
             string Usage_TagLine = string.Format("    {0} [options] File [options]", Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location));
             string[] usageLines = new string[] {
@@ -1639,8 +1656,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             {
                 if (s == "-")
                     Console.WriteLine("├─{0}─┤", '─'.Repeat(longestLineLength));
-                else if (s == Usage_LineDown || 
-                         s == Usage_LineUp || 
+                else if (s == Usage_LineDown ||
+                         s == Usage_LineUp ||
                          s == Usage_LineCenter)
                     Console.WriteLine("├─{0}{1}─┤", s, '─'.Repeat(longestLineLength - s.Length));
                 else

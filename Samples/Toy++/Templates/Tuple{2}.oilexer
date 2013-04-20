@@ -8,7 +8,7 @@ TupleRAOB<A, B>                           ::=
     A B?                                    |
     B? A                                    ;
 
-TupleRAOB<A, B>                           ::=
+TupleOARB<A, B>                           ::=
     A? B                                    |
     B A?                                    ;
 
