@@ -1,9 +1,8 @@
-#include         "TPPLexicalGrammar.oilexer";
+#include                      "ToyTokens.oilexer";
 
 OperatorOrPunctuator :=
           '{':OpenBlock;                    |
           '}':CloseBlock;                   |
-          '@':CaseInsensitive;              |
           '[':LeftSquareBracket;            |
           ']':RightSquareBracket;           |
           '(':LeftParenthesis;              |
@@ -51,4 +50,5 @@ OperatorOrPunctuator :=
         "<<=":LeftShiftAssignment;          |
          "=>":LambdaSpecifier;              |
          ">>":RightShift;**                 |
-        ">>=":RightShiftAssignment;**       ;
+        ">>=":RightShiftAssignment;**       | 
+	      '@':IsCaseInsensitive;            ;

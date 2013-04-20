@@ -17,7 +17,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         ISoftTemplateReferenceProductionRuleItem
     {
         
-        private IReadOnlyCollection<IProductionRuleSeries> parts;
+        private IControlledCollection<IProductionRuleSeries> parts;
         /// <summary>
         /// Creates a new <see cref="SoftTemplateReferenceProductionRuleItem"/> instance
         /// with the <paramref name="serii"/>, <paramref name="primaryName"/>, 
@@ -57,7 +57,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 
         #region ISoftTemplateReferenceProductionRuleItem Members
 
-        public IReadOnlyCollection<IProductionRuleSeries> Parts
+        public IControlledCollection<IProductionRuleSeries> Parts
         {
             get { return this.parts; }
         }

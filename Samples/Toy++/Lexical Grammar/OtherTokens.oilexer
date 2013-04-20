@@ -1,26 +1,21 @@
-#include         "TPPLexicalGrammar.oilexer";
+#include                      "ToyTokens.oilexer";
 
 #ifdef Lexer
-#if Lexer == "TPPreprocessor"
+#if Lexer == "ToyPreprocessor"
 
-Token$                                     :=
+Token$ :=
     Identifier                              |
     Keywords                                |
-    String                                  |
-    Char                                    |
-    SeptemvigesimalNumber                   |
-    OctalNumber                             |
-    HexadecimalNumber                       |
-    RealNumber                              |
+    Literal                                 |
     OperatorOrPunctuator                    |
     IntegralDataTypes                       |
     Modifiers                               |
-    CharacterRange                          ;
+    PreprocessorCharacterRange              ;
     
 #endif
 #endif 
 
-Literal                                  ::=>
+Literal :=
     Number                                  |
     String                                  |
     Char                                    ;
@@ -45,7 +40,7 @@ String :=
 StringChar := 
     CommonEscapes                           | 
     StringEscape                            | 
-    [^"\\\r\n];
+    [^"\\\r\n:];
 
 StringEscape := '\\' '"';
 
@@ -61,28 +56,21 @@ CommonEscapes :=
           OctEscape /* Octal Escape */      |
           ErrEscape /* Errored escape */)   ;
 
-#if Lexer == "TPPreprocessor"
-Identifier                                 := 
-    '@'? IdentifierOrKeyword                ;
-#else
-Identifier                                 := 
-    Subtract(IdentifierOrKeyword, Keywords) |
-    '@' IdentifierOrKeyword                 ;
-#endif
+Identifier := 
+    '@'? IdentifierOrKeyword;
 
 UnicodeEscapeSequence :=
     "\\u" HexChar{4};
 
-IdentifierOrKeyword                        :=
-    IdentifierStartCharacter 
-    IdentifierPartCharacter*                ;
+IdentifierOrKeyword :=
+    IdentifierStartCharacter IdentifierPartCharacter*;
 
-IdentifierStartCharacter                   :=
+IdentifierStartCharacter :=
     LetterCharacter                         |
     '_'                                     |
     UnicodeEscapeSequence                   ;
 
-IdentifierPartCharacter                    :=
+IdentifierPartCharacter :=
     LetterCharacter                         |
     CombiningCharacter                      |
     DecimalDigitCharacter                   |
@@ -91,142 +79,42 @@ IdentifierPartCharacter                    :=
     FormattingCharacter                     |
     UnicodeEscapeSequence                   ;
 
-LetterCharacter                            :=
-    [:Lu::Ll::Lt::Lm::Lo::Nl:]              ;
+LetterCharacter :=
+    [:Lu::Ll::Lt::Lm::Lo::Nl:];
 
-CombiningCharacter                         :=
-    [:Mn::Mc:]                              ;
+CombiningCharacter :=
+    [:Mn::Mc:];
 
-DecimalDigitCharacter                      :=
-    [:Nd:]                                  ;
+DecimalDigitCharacter :=
+    [:Nd:];
 
-ConnectingCharacter                        :=
-    [:Pc:]                                  ;
+ConnectingCharacter :=
+    [:Pc:];
 
-FormattingCharacter                        :=
-    [:Cf:]                                  ;
+FormattingCharacter :=
+    [:Cf:];
     
-ErrEscape := [^fvntrux\\"']:ECapt;          ; 
+ErrEscape := [^fvntrux\\"']:ECapt; /*{ThrowError(InvalidEscape, ECapt);}*/; 
 
 OctEscape := [0-7]{3};
 
 HexChar := [0-9A-Fa-f];
 
-HexEscape                                  :=
-    HexByteEscape | HexShortEscape          ;
+HexEscape := HexByteEscape | HexShortEscape;
 
 HexByteEscape := 'x' HexChar{2};
 
 HexShortEscape := 'u' HexChar{4};
 
 DecimalNumber := 
-    [0-9];
+    [0-9]+;
     
-SeptemvigesimalChar := [0-9A-Qa-q];
-
-OctalChar := [0-7];
-
-CharacterRange$                            :=
-    '[' '^':InvertedSet;Flag=true;? 
-    (
-        '-':HasHyphen;Flag=true;? 
-        CharacterRangeEntry:Entries;+       | 
-        CharacterRangeEntry:Entries;+ 
-        '-':HasHyphen;Flag=true;?
-    )
-    ']'                                     ;
-
-CharacterRangeUnicodeSet                   :=
-    @":C:":Other;                           |
-    @":CC:":OtherControl;                   |
-    @":CF:":OtherFormat;                    |
-    @":CS:":OtherSurrogate;                 |
-    @":CO:":OtherPrivateUse;                |
-    @":CN:":OtherNotAssigned;               |
-
-    @":L:":Letter;                          |
-    @":LU:":LetterUpper;                    |
-    @":LL:":LetterLowerCase;                |
-    @":LT:":LetterTitleCase;                |
-    @":LM:":LetterModifier;                 |
-    @":LO:":LetterOther;                    |
-
-    @":M:":Mark;                            |
-    @":MN:":NonSpacing;                     |
-    @":MC:":Combining;                      |
-    @":ME:":Enclosing;                      |
-
-    @":N:":Number;                          |
-    @":ND:":NumberDigit;                    |
-    @":NL:":NumberLetter;                   |
-    @":NO:":NumberOther;                    |
-
-    @":P:":Punctuation;                     |
-    @":PC:":PunctuationConnector;           |
-    @":PD:":PunctuationDash;                |
-    @":PS:":PunctuationOpenOrStart;         |
-    @":PE:":PunctuationCloseOrEnd;          |
-    @":PI:":PunctuationInitialQuote;        |
-    @":PF:":PunctuationFinalQuote;          |
-    @":PO:":PunctuationOther;               |
-
-    @":S:":Symbol;                          |
-    @":SM:":SymbolMath;                     |
-    @":SC:":SymbolCurrency;                 |
-    @":SK:":SymbolModifier;                 |
-    @":SO:":SymbolOther;                    |
-
-    @":Z:":Separator;                       |
-    @":ZS:":SeparatorSpace;                 |
-    @":ZL:":SeparatorLine;                  |
-    @":ZP:":SeparatorParagraph;             ;
-
-CharacterRangeEntry                        :=
-    CharacterRangeChar                      |
-    CharacterRangeSet                       |
-    CharacterRangeUnicodeSet                ;
-
-CharacterRangeSet :=
-    CharacterRangeChar:Start; '-' 
-    CharacterRangeChar:End;                 ;
-
-CharacterRangeChar                         :=
-    [^\]\\-:] |
-    '\\' (
-                '\\'                        |
-                ']'                         |
-                '-'                         |
-                ':'                         |
-                HexEscape                   |
-                OctEscape
-             )                              ;
-
-SeptemvigesimalNumber                      :=
-    /* *
-     * To ensure that the base-27 is parsed right,
-     * it requires the 'U' to always be first.
-     * */
-    "27x" SeptemvigesimalChar:WholePart;+
-    (@'U':Unsigned;? @'L':Long;?):ValueType;;
-
-OctalNumber                                :=
-    "8x" OctalChar:WholePart;+
-    (
-        @'U':Unsigned; @'L':Long;?          | 
-        @'L':Long; @'U':Unsigned;?          | 
-        @'D':Double;                        | 
-        @'F':Single;                        | 
-        @'M':Decimal;
-        ):ValueType;?                       ;
-
-HexadecimalNumber                          :=
-    "0x" HexChar:WholePart;+
+Number := 
+    "0x" HexChar:WholePart;+  
     (
         @'U':Unsigned; @'L':Long;?          | 
         @'L':Long; @'U':Unsigned;?
-        ):ValueType;?                       ;
-
-RealNumber                                 :=
+    ):ValueType;? |
     DecimalNumber:WholePart;+ 
     (
         (
@@ -235,7 +123,7 @@ RealNumber                                 :=
             @'D':Double;                    | 
             @'F':Single;                    | 
             @'M':Decimal;
-            ):ValueType;                    | 
+        ):ValueType;                        | 
         '.' DecimalNumber:FloatingPart;+ 
         (
             @'e' 
@@ -250,37 +138,40 @@ RealNumber                                 :=
             @'F':Single;                    | 
             @'M':Decimal;
         ):ValueType;Default=Double;?
-    )?                                      ;
-
-Number                                   ::=> 
-    SeptemvigesimalNumber                   |
-    OctalNumber                             |
-    HexadecimalNumber                       |
-    RealNumber                              ;
+    )?;
 
 Comment :=*
     SingleLineComment                       | 
     RangeComment                            ; 
 
 #ifdef Lexer
-#if Lexer == "TPPreprocessor"
+#if Lexer == "ToyPreprocessor"
 
 Whitespace :=
     [:Zs:]                                  | 
-    '\x09'                                  | 
+    '\u0009'                                | 
     '\v'                                    | 
     '\t'                                    |
     '\f'                                    ; 
 
-#elif Lexer == "TPParser"
+PreprocessorCharacterRange                 :=
+    '[' ('^'? PreprocessorCharacterRangeEntity*  |
+      PreprocessorCharacterRangeEntity* '^'?)']';
+
+PreprocessorCharacterRangeEntity           :=
+    CharacterRangeChar                      |
+    CharacterRangeUnicode                   |
+    CommonEscapes                           ;
+
+#elif Lexer == "ToyParser"
 Whitespace :=*
     (
         [:Zs:]                              | 
-        '\x09'                              | 
+        '\u0009'                            | 
         '\v'                                | 
         '\t'                                |
         '\f'
-        )+                                  |
+    )+                                      |
     NewLine; 
 #endif
 #endif
@@ -295,9 +186,58 @@ NewLine :=
     '\r'                                    | 
     '\n'                                    | 
     "\r\n"                                  | 
-    '\x85'                                  | 
+    '\u0085'                                | 
     '\u2028'                                | 
     '\u2029'                                ; 
 
 NotNewLineCharacter :=
-    [^\r\n\u0085\u2028\u2029]               ;
+    [^\r\n\u0085\u2028\u2029];
+
+CharacterRangeUnicode                      :=
+     ":Lu:":UppercaseLetter;                | //(letter, upper)
+     ":Ll:":LowercaseLetter;                | //(letter, lower)
+     ":Lt:":TitlecaseLetter;                | //(letter, titlecase)
+     ":Lm:":ModifierLetter;                 | //(letter, modifier)
+     ":Lo:":OtherLetter;                    | //(letter, other)
+      ":L:":AllLetters;                     | //(letter, upper, lower, titlecase, modifier, other)
+     ":Mn:":NonSpacingMark;                 | //(mark, nonspacing)
+     ":Mc:":SpaceCombiningMark;             | //(mark, combining)
+     ":Me:":EnclosingMark;                  | //(mark, enclosing)
+      ":M:":AllMarks;                       | //(mark, nonspacing, combining, enclosing)
+     ":Nd:":DecimalDigitNumber;             | //(number, decimal digit)
+     ":Nl:":LetterNumber;                   | //(number, letter)
+     ":No:":OtherNumber;                    | //(number, other)
+      ":N:":AllNumbers;                     | //(number, decimal digit, letter, other)
+     ":Zs:":SpaceSeparator;                 | //(separator, space)
+     ":Zl:":LineSeparator;                  | //(separator, line)
+     ":Zp:":ParagraphSeparator;             | //(separator, paragraph)
+      ":Z:":AllSeparators;                  | //(separator, space, line, paragraph)
+     ":Cc:":Control;                        | //(other, control)
+     ":Cf:":Format;                         | //(other, format)
+     ":Cs:":Surrogate;                      | //(other, surrogate)
+     ":Co:":PrivateUse;                     | //(other, private use)
+     ":Cn:":OtherNotAssigned;               | //(other, not assigned)
+      ":C:":AllOthers;                      | //(other, control, format, surrogate, private use, and not-assigned)
+     ":Pc:":ConnectorPunctuation;           | //(punctuation, connector)
+     ":Pd:":DashPunctuation;                | //(punctuation, dash)
+     ":Ps:":OpenPunctuation;                | //(punctuation, open /start)
+     ":Pe:":ClosePunctuation;               | //(punctuation, close/end)
+     ":Pi:":InitialQuotePunctuation;        | //(punctuation, initial quote)
+     ":Pf:":FinalQuotePunctuation;          | //(punctuation, final quote)
+     ":Po:":OtherPunctuation;               | //(punctuation, other)
+      ":P:":AllPunctuation;                 | //(punctuation, connector, dash, open/start, close/end, initial quote, final quote, other)
+     ":Sm:":MathSymbol;                     | //(symbol, math)
+     ":Sc:":CurrencySymbol;                 | //(symbol, currency)
+     ":Sk:":ModifierSymbol;                 | //(symbol, modifier)
+     ":So:":OtherSymbol;                    | //(symbol, other) 
+      ":S:":AllSymbols;                     ; //(symbol, math, currency, modifier, other)
+
+CharacterRangeChar                         := 
+    CharacterRangeCharEscape                |
+    CommonEscapes                           |
+    [^\]\r\n\\\u0085\u2028\u2029\:]          ;
+
+CharacterRangeCharEscape                   :=
+    '\\' ']'                                |
+    '\\' '^'                                |
+    '\\' ':'                                ;

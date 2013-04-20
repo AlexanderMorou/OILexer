@@ -17,7 +17,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
     /// Defines properties and methods for working with a unicode graph
     /// </summary>
     internal interface IUnicodeTargetGraph :
-        IControlledStateDictionary<RegularLanguageDFAState, IUnicodeTarget>,
+        IControlledDictionary<RegularLanguageDFAState, IUnicodeTarget>,
         IEquatable<IUnicodeTargetGraph>
     {
         /// <summary>

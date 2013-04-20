@@ -4,17 +4,18 @@
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
 
-ConstructorDeclaration                   ::=>
+ConstructorDeclaration                    ::=
     InternConstructorDeclaration            |
     ExternConstructorDeclaration            ;
 
 InternConstructorDeclaration              ::=
     Attributes:Attributes;?
     (
-        "public"?                           |
-        "private"?                          |
-        OTuple<"internal", "protected">
-    ):Modifiers;
+        "public"                            |
+        "protected" "internal"?             |
+        "internal" "protected"?             |
+        "private"
+    ):Modifiers;?
     Identifier:Name;
     '(' FormalParameterList:Parameters;? ')'
     ConstructorInitializer:Initializer;?
@@ -24,32 +25,37 @@ ConstructorInitializer                    ::=
     ':'
     ("base" | "this"):Target;
 	Parametered<DelimitedList<Argument:CascadeArguments;, ','>?>;
+//  '(' DelimitedList<Argument:CascadeArguments;, ','>? ')';
 
 ExternConstructorDeclaration              ::=
     Attributes:Attributes;?
     (
-        Tuple<("public" | "private")?, "extern"> |
-        Tuple<"internal"?, "protected"?, "extern">
-    ):Modifiers; Identifier:Name;
+        "public" "extern"?                  |
+        "extern" "public"?                  |
+        "protected" "internal"? "extern"?   |
+        "internal" "protected"? "extern"?   |
+        "protected" "extern"? "internal"?   |
+        "internal" "extern"? "protected"?   |
+        "extern" "protected"? "internal"?   |
+        "extern" "internal" "protected"?    |
+        "private" "extern"?                 |
+        "extern" "private"?                 
+    ):Modifiers;? Identifier:Name;
     '(' FormalParameterList:Parameters;? ')'
     ConstructorInitializer:Initializer;?
     ';'                                     ;
 
-TypeParameterConstructorDeclaration       ::=
-    Attributes:Attributes;?
-    Identifier:Name;
-    '(' FormalParameterList:Parameters;? ')'
-    ';'                                     ;
-
-StaticConstructorDeclaration             ::=>
+StaticConstructorDeclaration              ::=
     ExternStaticConstructorDeclaration      |
     InternStaticConstructorDeclaration      ;
 
 ExternStaticConstructorDeclaration        ::=
     Attributes:Attributes;
-    Tuple<"extern", "static">
+    ("extern" "static" |
+     "static" "extern")
     Identifier:Name;
-    '(' ')' ';'                             ;
+    '(' ')'
+    ';'                                     ;
 
 InternStaticConstructorDeclaration        ::=
     Attributes:Attributes;
@@ -70,4 +76,3 @@ InternDestructorDeclaration               ::=
     Attributes:Attributes;?
     '~'Identifier:Name; '(' ')'
     Block:Body;                             ;
-

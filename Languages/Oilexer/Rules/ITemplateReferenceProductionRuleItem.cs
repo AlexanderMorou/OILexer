@@ -14,7 +14,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     /// </summary>
     public interface ITemplateReferenceProductionRuleItem :
         IProductionRuleItem,
-        IReadOnlyCollection<IProductionRuleSeries>
+        IControlledCollection<IProductionRuleSeries>
     {
         /// <summary>
         /// Creates a copy of the current <see cref="ITemplateReferenceProductionRuleItem"/>.

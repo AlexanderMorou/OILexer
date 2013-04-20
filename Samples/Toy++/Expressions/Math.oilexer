@@ -1,7 +1,7 @@
 #include "Expressions.oilexer";
 
 UnaryExpression                          ::=>
-    (UnaryOperators:Operators; Whitespace?)*
+    UnaryOperators:Operators;*
     PrimaryExpression:Operand;              ;
 
 UnaryOperators                           ::=>
@@ -19,9 +19,7 @@ UnaryOperator                             ::=
     ):Operator;                             ;
     
 CastOperator                              ::=
-    '('
-        WhitePaddingOpt<Type:Operator;> 
-    ')'                                     ;
+    '(' Type:Operator; ')'                  ;
 
 MultiplicitiveExpression                  ::=
     BinaryOperationExpression<
@@ -57,10 +55,10 @@ ValueRelationalExpression                 ::=
 
 TypeRelationalExpression                  ::=
     RelationalExpression:Left;
-    WhitePaddingOpt<(
+    (
         "is"                                |
         "as"
-    ):Operator;>
+    ):Operator;
     Type:Right;                             ;
 
 EqualityExpression                        ::=
@@ -115,30 +113,28 @@ NullCoalescingExpression                  ::=
 ConditionalExpression                     ::=
     NullCoalescingExpression:Term;
     (
-        WhitePaddingOpt<'?'>
+        '?'
         Expression:TruePart; 
-        WhitePaddingOpt<':'>
+        ':'
         Expression:FalsePart;
     )?                                      ;
 
 AssignmentExpression                      ::=
-    BinaryOperationExpression<
-        Expression,
-        (
-            '='                             | 
-            "+="                            | 
-            "-="                            | 
-            "*="                            | 
-            "/="                            | 
-            "%="                            | 
-            "&="                            | 
-            "|="                            | 
-            "^="                            | 
-            "<<="                           | 
-            ">>="
-        ):Operator;,
-        UnaryExpression,
-        PrecedenceAssociation.Right>        ;
+    UnaryExpression:Target;
+    (
+        '='                                 | 
+        "+="                                | 
+        "-="                                | 
+        "*="                                | 
+        "/="                                | 
+        "%="                                | 
+        "&="                                | 
+        "|="                                | 
+        "^="                                | 
+        "<<="                               | 
+        ">>="
+    ):Operator;                         
+    Expression:Continuation;                ;
 
 NonAssignmentExpression                  ::=>
     ConditionalExpression                   |
@@ -150,9 +146,9 @@ CrementExpression                        ::=>
     PostcrementExpression                   ;
 
 PrecrementExpression                      ::=
-    ("++" | "--"):Operator; Whitespace?
+    ("++" | "--"):Operator;
     UnaryExpression:Term;                   ;
 
 PostcrementExpression                     ::=
-    PrimaryExpression:Term; Whitespace?
+    PrimaryExpression:Term;
     ("++" | "--"):Operator;                 ;

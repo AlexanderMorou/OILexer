@@ -1,5 +1,5 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2012 for Windows Desktop
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexer", "OILexer.csproj", "{0D009988-DE0E-4362-830D-7980BEB41F6F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexerParser", "OILexerParser.csproj", "{886B34E8-755F-420C-8725-767EADD92996}"
@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSOILexer", "VSOILexer\VSOI
 EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 4
+		SccNumberOfProjects = 3
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs04
 		SccLocalPath0 = .
@@ -16,9 +16,6 @@ Global
 		SccLocalPath1 = .
 		SccProjectUniqueName2 = OILexerParser.csproj
 		SccLocalPath2 = .
-		SccProjectUniqueName3 = VSOILexer\\VSOILexer.csproj
-		SccProjectName3 = VSOILexer
-		SccLocalPath3 = VSOILexer
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

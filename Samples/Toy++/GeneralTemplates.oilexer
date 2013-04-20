@@ -1,0 +1,24 @@
+#include                     "Toy++.oilexer";
+
+DelimitedList<Term, Delimiter>            ::=
+    Term (Delimiter Term)*;
+
+Parametered<T>                            ::=
+    Encased<'(', T, ')'>                    ;
+
+CParametered<T>                           ::=
+    Encased<'{', T, '}'>                    ;
+
+Encased<L, M, R>                          ::=
+    L M R;
+
+LeftOrRightDelimited<Left, Delimiter, Right>::=
+    Left (Delimiter Right)?                 |
+    Right                                   ;
+ 
+SetInject<Set, Element>                   ::=
+    Set* Element Set*                       ;
+
+LeftOrRight<Left, Right>                  ::=
+    Left Right?                             |
+    Right Left?                             ;

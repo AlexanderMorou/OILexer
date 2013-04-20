@@ -12,7 +12,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     public interface IProductionRuleSeries :
-        IReadOnlyCollection<IProductionRule>,
+        IControlledCollection<IProductionRule>,
         IProductionRuleSource
     {
 

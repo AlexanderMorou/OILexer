@@ -49,3 +49,12 @@ RecognizerGroup                           ::=
             RecognizerExpression, '|'
                      >
                >                            ;
+
+CharacterRange                            ::=
+    '[' TupleOARB<'^'!:IsNegativeSet;, CharacterRangeEntity:Entities;+> ']';
+
+CharacterRangeEntity                     ::=>
+    CharacterRangeChar                      |
+    CharacterRangeUnicode                   |
+    CommonEscapes                           ;
+

@@ -13,7 +13,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     internal interface IUnicodeCollectiveTargetGraph :
-        IControlledStateCollection<IUnicodeTargetGraph>
+        IControlledCollection<IUnicodeTargetGraph>
     {
         void Add(IUnicodeTargetGraph graph);
 

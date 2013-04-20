@@ -5,9 +5,10 @@ using System.Reflection.Emit;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Abstract;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
-using AllenCopeland.Abstraction.Slf.Oil;
+using AllenCopeland.Abstraction.Slf.Ast;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Collections;
+using AllenCopeland.Abstraction.Slf.Ast.Members;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -20,9 +21,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     using RuleTreeNode = KeyedTreeNode<IProductionRuleEntry, GDFileObjectRelationalMap.RuleObjectification>;
 
     public class GDFileObjectRelationalMap :
-        ControlledStateDictionary<IScannableEntry, IEntryObjectRelationalMap>,
+        ControlledDictionary<IScannableEntry, IEntryObjectRelationalMap>,
         IGDFileObjectRelationalMap
     {
+        private MultikeyedDictionary<IProductionRuleEntry, IProductionRuleEntry, IIntermediateEnumFieldMember> casesLookup;
         internal class RuleObjectification
         {
             
@@ -38,7 +40,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             public IProductionRuleEntry Entry { get; private set; }
         }
         
-        public GDFileObjectRelationalMap(IGDFile source, IControlledStateDictionary<IProductionRuleEntry, SyntacticalDFARootState> ruleStates, IIntermediateAssembly project)
+        public GDFileObjectRelationalMap(IGDFile source, IControlledDictionary<IProductionRuleEntry, SyntacticalDFARootState> ruleStates, IIntermediateAssembly project)
         {
             this.Source = source;
             this.Process(ruleStates, project);
@@ -56,7 +58,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
                     select tItem);
         }
 
-        private void Process(IControlledStateDictionary<IProductionRuleEntry, SyntacticalDFARootState> ruleStates, IIntermediateAssembly project)
+        private void Process(IControlledDictionary<IProductionRuleEntry, SyntacticalDFARootState> ruleStates, IIntermediateAssembly project)
         {
             var tokens = (from t in Source
                           let token = t as ITokenEntry
@@ -76,20 +78,47 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
                                        group ruleSecondary by rulePrimary).ToArray();
 
             RuleTree ruleVariants = new RuleTree();
+
+            this.casesLookup = new MultikeyedDictionary<IProductionRuleEntry,IProductionRuleEntry,IIntermediateEnumFieldMember>();
             
             IProductionRuleEntry[] emptySet = new IProductionRuleEntry[0];
             foreach (var rule in from rule in rules
                                  where !ruleDependencyGraph.Any(dependency => dependency.Key == rule)
                                  select rule)
             {
-                IRuleEntryObjectRelationalMap ruleORM = new RuleEntryObjectRelationalMap(emptySet, this, rule);
+                IRuleEntryObjectRelationalMap ruleORM;
+                if (rule.ElementsAreChildren)
+                {
+                    var casesEnum = project.DefaultNamespace.Parts.Add().Enums.Add(string.Format("{0}{1}{2}Cases", this.Source.Options.RulePrefix, rule.Name, this.Source.Options.RuleSuffix));
+                    foreach (var subRule in ruleStates[rule].OutTransitions.FullCheck.Breakdown.Rules)
+                    {
+                        var currentField = casesEnum.Fields.Add(subRule.Source.Name);
+                        casesLookup.Add(rule, subRule.Source, currentField);
+                    }
+                    ruleORM = new RuleEntryBranchObjectRelationalMap(casesEnum, emptySet, this, rule);
+                }
+                else
+                    ruleORM = new RuleEntryObjectRelationalMap(emptySet, this, rule);
                 this._Add(rule, ruleORM);
             }
             foreach (var ruleDependency in ruleDependencyGraph)
             {
-                IRuleEntryObjectRelationalMap ruleORM = new RuleEntryObjectRelationalMap(ruleDependency.ToArray(), this, ruleDependency.Key);
+                IRuleEntryObjectRelationalMap ruleORM;
+                if (ruleDependency.Key.ElementsAreChildren)
+                {
+                    var casesEnum = project.DefaultNamespace.Parts.Add().Enums.Add(string.Format("{0}{1}{2}Cases", this.Source.Options.RulePrefix, ruleDependency.Key.Name, this.Source.Options.RuleSuffix));
+                    foreach (var subRule in ruleStates[ruleDependency.Key].OutTransitions.FullCheck.Breakdown.Rules)
+                    {
+                        var currentField = casesEnum.Fields.Add(subRule.Source.Name);
+                        casesLookup.Add(ruleDependency.Key, subRule.Source, currentField);
+                    }
+                    ruleORM = new RuleEntryChildBranchObjectRelationalMap(casesEnum, ruleDependency.ToArray(), this, ruleDependency.Key);
+                }
+                else
+                    ruleORM = new RuleEntryChildObjectRelationalMap(ruleDependency.ToArray(), this, ruleDependency.Key);
                 this._Add(ruleDependency.Key, ruleORM);
             }
+            
             foreach (var rule in rules)
             {
                 RuleTreeNode startingNode = CheckRootVariant(project, ruleVariants, rule);
@@ -105,17 +134,27 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
                     }
                 }
             }
-            
         }
 
         private RuleTreeNode BuildVariation(RuleTreeNode currentNode, RuleTreeNode secondaryRoot, IIntermediateAssembly project)
         {
             if (currentNode.ContainsKey(secondaryRoot.Value.Entry))
                 return currentNode[secondaryRoot.Value.Entry];
-            var currentSubVariant = currentNode.Value.Class.Classes.Add(string.Format("_{0}", secondaryRoot.Value.Entry.Name));
+            var currentSubVariant = currentNode.Value.Class.Parts.Add().Classes.Add(string.Format("_{0}", secondaryRoot.Value.Entry.Name));
             currentSubVariant.BaseType = currentNode.Value.Class;
-            //currentSubVariant.ImplementedInterfaces.ImplementInterfaceQuick(secondaryRoot.Value.RelativeInterface);
-            return currentNode.Add(secondaryRoot.Value.Entry, new RuleObjectification(null, currentSubVariant, secondaryRoot.Value.Entry));
+            currentSubVariant.ImplementedInterfaces.ImplementInterfaceQuick(secondaryRoot.Value.RelativeInterface);
+            var branchORM = (IRuleEntryBranchObjectRelationalMap)this[secondaryRoot.Value.Entry];
+            /* *
+             * The variation of the rule needs linked to the appropriate 
+             * group rule marked with 'ElementsAreChildren'.
+             * *
+             * And within this, the proper path needs specified.
+             * */
+            var branchKind = currentSubVariant.Properties.Add(new TypedName(string.Format("{0}Kind", branchORM.Entry.Name), branchORM.CasesEnum), true, false);
+            branchKind.AccessLevel = AccessLevelModifiers.Public;
+            var childORM = (IRuleEntryChildObjectRelationalMap)this[currentNode.Value.Entry];
+            branchKind.GetMethod.Return(childORM.CaseFields[branchORM.Entry].GetReference());
+            return currentNode.Add(secondaryRoot.Value.Entry, new RuleObjectification(secondaryRoot.Value.RelativeInterface, currentSubVariant, secondaryRoot.Value.Entry));
         }
 
         private RuleTreeNode CheckRootVariant(IIntermediateAssembly project, RuleTree ruleVariants, IProductionRuleEntry rule)
@@ -137,8 +176,22 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             const string nameFormat = "{0}{1}{2}";
             const string iNameFormat = "I" + nameFormat;
             var iFace = dNamespace.Interfaces.Add(string.Format(iNameFormat, this.Source.Options.RulePrefix, entry.Name, this.Source.Options.RuleSuffix));
-            var bClass = dNamespace.Classes.Add(string.Format(nameFormat, this.Source.Options.RulePrefix, entry.Name, this.Source.Options.RuleSuffix));
-            //bClass.ImplementedInterfaces.ImplementInterfaceQuick(iFace);
+            var entryORM = (IRuleEntryObjectRelationalMap)this[entry];
+            if (entryORM is IRuleEntryBranchObjectRelationalMap)
+            {
+                var branchORM = (IRuleEntryBranchObjectRelationalMap)entryORM;
+                var entryInterfaceCase = iFace.Properties.Add(new TypedName(string.Format("{0}Kind", entry.Name), branchORM.CasesEnum), true, false);
+            }
+            else
+            {
+
+            }
+            IIntermediateClassType bClass = null;
+            if (!entry.ElementsAreChildren)
+            {
+                bClass = dNamespace.Parts.Add().Classes.Add(string.Format(nameFormat, this.Source.Options.RulePrefix, entry.Name, this.Source.Options.RuleSuffix));
+                bClass.ImplementedInterfaces.ImplementInterfaceQuick(iFace);
+            }
             return new RuleObjectification(iFace, bClass, entry);
         }
 
@@ -148,5 +201,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 
         #endregion
 
+
+        #region IGDFileObjectRelationalMap Members
+
+
+        public IMultikeyedDictionary<IProductionRuleEntry, IProductionRuleEntry, IIntermediateEnumFieldMember> CasesLookup
+        {
+            get { return this.casesLookup; }
+        }
+
+        #endregion
     }
 }

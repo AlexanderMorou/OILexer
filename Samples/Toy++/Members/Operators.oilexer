@@ -4,31 +4,39 @@
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
 
+ExternOperatorHeader<_>                   ::=
+    Attributes:Attributes;?
+    (
+      "public" "static" "extern"            |
+      "public" "extern" "static"            |
+      "extern" "public" "static"            |
+      "static" "public" "extern"            |
+      "static" "extern" "public"            |
+      "extern" "static" "public"
+    );
+
+InternOperatorHeader<_>                   ::=
+    Attributes:Attributes;?
+    (
+      "public" "static"                     |
+      "static" "public"                    
+    );
+
 DeclareInternExtern<
     Intern:Expect=Rule;, 
     Extern:Expect=Rule;, 
     Body> ::=
     #ifdef Extern
-        #return 
-            Attributes:Attributes;?
-            Tuple<"public", "static", "extern">
-            Whitespace? Body';'              ;
+        #return ExternOperatorHeader<> Body';';
     #else
-        #define Extern = 
-            Attributes:Attributes;?
-            Tuple<"public", "static", "extern">
-            Whitespace? Body ';'            ;
+        #define Extern = ExternOperatorHeader<>
+            Body ';'                        ;
     #endif
     #ifdef Intern
-        #return 
-            Attributes:Attributes;? Whitespace?
-            Tuple<"public", "static"> Whitespace?
-            Body  Whitespace? Block:Body;   ;
+        #return InternOperatorHeader<> Body Block:Body;;
     #else
-        #define Intern = 
-            Attributes:Attributes;?
-            Tuple<"public", "static">
-            Body  Whitespace? Block:Body;   ;
+        #define Intern = InternOperatorHeader<>
+            Body Block:Body;                ;
     #endif                                  ;
 
 OperatorDeclaration                      ::=>
@@ -70,17 +78,19 @@ ExternBinaryOperatorDeclaration           ::=
             ">="
         ):Operator;
         '(' 
-            TypedName:Left; 
-            WhitePaddingOpt<','>
-            TypedName:Right;
+            Type:LeftType; 
+            Identifier:LeftName;
+            ',' 
+            Type:RightType; 
+            Identifier:RightName;
         ')'>                                ;
-
+    
 ExternUnaryOperatorDeclaration            ::=
     DeclareInternExtern<
         InternUnaryOperatorDeclaration,
         ExternUnaryOperatorDeclaration,
         Type:OperatorType;
-            "operator" Whitespace
+            "operator"
         (
             '+'                             |
             '-'                             |
@@ -90,18 +100,17 @@ ExternUnaryOperatorDeclaration            ::=
             "--"                            |
             "true"                          |
             "false"
-        ):Operator; Whitespace?
+        ):Operator;
         '('
-            WhitePaddingOpt<TypedName:Operand;>
+            Type:OperandType; 
+            Identifier:OperandName;
         ')'>                                ;
 
 ExternTypeOperatorDeclaration             ::=
     DeclareInternExtern<
         InternTypeOperatorDeclaration,
         ExternTypeOperatorDeclaration,
-        ("implicit" | "explicit"):Operator; Whitespace
-        "operator" Whitespace
-        Type:OperatorType; Whitespace?
-        '(' 
-            WhitePaddingOpt<TypedName:Operand;>
-        ')'>                                ;
+        ("implicit" | "explicit"):Operator;
+        "operator"
+        Type:OperatorType;
+        '(' Type:OperandType; ')'>          ;

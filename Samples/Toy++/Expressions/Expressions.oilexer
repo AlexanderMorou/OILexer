@@ -1,8 +1,8 @@
-#include                 "..\\Toy++.oilexer";
-#include      "AnonymousExpressions.oilexer";
-#include                     "Array.oilexer";
-#include                      "Math.oilexer";
-#include                      "LINQ.oilexer";
+#include "..\\Toy++.oilexer";
+#include "AnonymousExpressions.oilexer";
+#include "Array.oilexer";
+#include "Math.oilexer";
+#include "LINQ.oilexer";
 /* B.2.4: Expressions */
 /* Grammar rewrite begins with expressions */
 ArgumentList<Left, Right>                 ::=
@@ -13,25 +13,13 @@ Argument                                  ::=
     (
         "ref"                               | 
         "out"
-    ):Direction;? Whitespace
-    ArgumentExpression:Value;               ;
-
-ArgumentExpression                       ::=>
-    Expression                              |
-    NamedExpression                         ;
-
-NamedExpression                           ::=
-    Identifier:ParameterName; Whitespace
-    Expression:NamedExpression;             ;
+    ):Direction;? Expression:Value;         ;
 
 ExpressionList                            ::=
-    WhitespaceDelimitedList<
-        Expression:Items;, ','>             ;
+    DelimitedList<Expression:Items;, ','>   ;
 
 EnclosedExpressionList<Left, Right>       ::=
-    Left 
-        WhitePaddingOpt<ExpressionList:Items;>? 
-    Right                                   ;
+    Left ExpressionList:Items; Right        ;
 
 PrimaryExpression                        ::=>
     ArrayCreationExpression                 |
@@ -58,13 +46,12 @@ PrimaryNoArrayCreationExpression         ::=>
 
 SimpleName ::=
     Identifier:Name; TypeArgumentList:TypeParameters;?;
-
+    
 ParenthesizedExpression ::=
-    '(' WhitePaddingOpt<Expression:Inner;> ')';
+    '(' Expression:Inner; ')';
 
 PrimaryMemberAccess                       ::=
-    PrimaryExpression:PreviousAccess; 
-    WhitePaddingOpt<'.'>
+    PrimaryExpression:PreviousAccess; '.' 
     SimpleName:CurrentAccess;               ;
 
 PredefinedTypeMemberAccess                ::=
@@ -84,8 +71,7 @@ PredefinedTypeMemberAccess                ::=
         "uint"                              |
         "ulong"                             |
         "ushort"
-    ):PreviousAccess; 
-    WhitePaddingOpt<'.'>     
+    ):PreviousAccess; '.' 
     SimpleName:CurrentAccess;               ;
 
 QualifiedAliasMemberAccess                ::=
@@ -104,7 +90,7 @@ InvocationExpression                      ::=
 ElementAccess                             ::=
    PrimaryNoArrayCreationExpression:CallSite; 
    EnclosedExpressionList<'[', ']'>         ;
-
+   
 ThisAccess                                ::=
     "this"                                  ;
 
@@ -113,16 +99,14 @@ BaseAccess                               ::=>
     BaseElementAccess                       ;
 
 BaseMemberAccess                          ::=
-    "base" WhitePaddingOpt<'.'>
-    Identifier:Target;                      ;
+    "base" '.' Identifier:Target;           ;
 
 BaseElementAccess                         ::=
-    "base" Whitespace?
-    EnclosedExpressionList<'[', ']'>        ;
+    "base" EnclosedExpressionList<'[', ']'> ;
 
 ObjectCreationExpression                  ::=
-  "new" Whitespace Type WhitePaddingOpt<ArgumentList<'(', ')'>?>
-  Whitespace? ObjectOrCollectionInitializer:Initializer;;
+  "new" Type ArgumentList<'(', ')'>? 
+  ObjectOrCollectionInitializer:Initializer;;
 
 ObjectOrCollectionInitializer            ::=>
     CollectionInitializer                   |
@@ -130,11 +114,12 @@ ObjectOrCollectionInitializer            ::=>
 
 ObjectInitializer                         ::=
     '{' 
-        WhitePaddingOpt<
-            WhitespaceDelimitedList<MemberInitializer:Members;, ','>
-            (Whitespace? ',')?>?
-    '}'                                     ;
-
+        (
+            DelimitedList<MemberInitializer:Members;, ','>
+            ','?
+        )?
+    '}';
+    
 MemberInitializer                         ::=
     Identifier:Target; '=' 
     InitializerValue:Value;                 ;
@@ -157,7 +142,7 @@ ElementInitializer                       ::=>
     
 CurlyExpressionList                       ::=
     EnclosedExpressionList<'{', '}'>        ;
-
+    
 BracketExpressionList                     ::=
     EnclosedExpressionList<'[', ']'>        ;
 
@@ -166,41 +151,34 @@ DelegateCreationExpression                ::=
     '(' Expression:MethodReference; ')'     ;
 
 TypeOfExpression                          ::=
-    "typeof"  '(' TypeOfType:Type; ')'      ;
-
-TypeOfType                               ::=>
-    Type                                    |
-    VoidType                                |
-    UnboundTypeName                         ;
+    "typeof" 
+    '(' 
+        (
+            Type                            | 
+            VoidType                        |
+            UnboundTypeName
+        ):Type;
+    ')'                                     ;
 
 UnboundTypeName                           ::=
-    (Identifier:Alias; WhitePaddingOpt<"::">)? 
-    WhitespaceDelimitedList<UnboundGenericPart:Parts;, '.'>;
+    (Identifier:Alias; "::")? 
+    DelimitedList<UnboundGenericPart:Parts;, ','>;
 
 UnboundGenericPart                        ::=
-    Identifier:Names; Whitespace?
+    Identifier:Names; 
     GenericDimensionSpecifier:Dimensions;?  ;
 
 GenericDimensionSpecifier                 ::=
-    '<' (','#:Commas; Whitespace)* '>'      ;
-
+    '<' ',':Commas;* '>'                    ;
+    
 CheckedExpression                         ::=
-    "checked" Whitespace? 
-    '(' 
-        WhitePaddingOpt<Expression:Target;> 
-    ')'                                     ;
+    "checked" '(' Expression:Target; ')'    ;
 
 UncheckedExpression                       ::=
-    "unchecked" Whitespace? 
-    '(' 
-        WhitePaddingOpt<Expression:Target;> 
-    ')'                                     ;
+    "unchecked" '(' Expression:Target; ')'  ;
 
 DefaultValueExpression                    ::=
-    "default" Whitespace?
-    '(' 
-        WhitePaddingOpt<Type:Target;>
-    ')'                                     ;
+    "default" '(' Type ')'                  ;
 
 Expression                               ::=>
     NonAssignmentExpression                 |

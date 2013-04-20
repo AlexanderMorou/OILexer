@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Compilers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
-using AllenCopeland.Abstraction.Slf.Oil;
+using AllenCopeland.Abstraction.Slf.Ast;
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {

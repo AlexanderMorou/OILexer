@@ -19,7 +19,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     public class GrammarSymbolSet :
-        ControlledStateCollection<IGrammarSymbol>,
+        ControlledCollection<IGrammarSymbol>,
         IGrammarSymbolSet
     {
         /// <summary>

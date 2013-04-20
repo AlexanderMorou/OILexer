@@ -12,7 +12,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
 {
     public class TokenStream<T> :
-        ControlledStateCollection<T>,
+        ControlledCollection<T>,
         ITokenStream<T>
         where T :
             IToken

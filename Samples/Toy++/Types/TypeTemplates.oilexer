@@ -1,0 +1,17 @@
+#include                     "Types.oilexer";
+
+GenericHeader<T>                          ::=
+    TypeParameterList:TypeParameters; 
+    T
+    TypeParameterConstraints:Constraints;?  |
+    T;
+
+ClassOrStructHeader<_>                    ::=
+    GenericHeader<
+        (':' 
+            DelimitedList
+            <
+                Type:BaseTypes;, 
+                ','
+            >
+        )?>;

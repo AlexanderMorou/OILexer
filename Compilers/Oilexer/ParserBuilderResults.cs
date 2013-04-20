@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
-using AllenCopeland.Abstraction.Slf.Oil;
+using AllenCopeland.Abstraction.Slf.Ast;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
@@ -31,8 +31,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// Returns the readonly dictionary of time spans for each
         /// phase in the build.
         /// </summary>
-        public ReadOnlyDictionary<ParserBuilderPhase, TimeSpan> PhaseTimes { get; internal set; }
-        public ReadOnlyDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleStateMachines { get; internal set; }
+        public ControlledDictionary<ParserBuilderPhase, TimeSpan> PhaseTimes { get; internal set; }
+        public ControlledDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleStateMachines { get; internal set; }
         public ICompilerErrorCollection CompilationErrors { get; internal set; }
     }
 }

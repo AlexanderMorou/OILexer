@@ -15,8 +15,8 @@ using AllenCopeland.Abstraction.Slf.Cli;
 using AllenCopeland.Abstraction.Slf.Compilers;
 using AllenCopeland.Abstraction.Slf.Languages;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
-using AllenCopeland.Abstraction.Slf.Oil;
-using AllenCopeland.Abstraction.Slf.Oil.Members;
+using AllenCopeland.Abstraction.Slf.Ast;
+using AllenCopeland.Abstraction.Slf.Ast.Members;
 using AllenCopeland.Abstraction.Slf.Translation;
 using Microsoft.CSharp;
  /*---------------------------------------------------------------------\

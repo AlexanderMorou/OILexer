@@ -6,6 +6,8 @@ using AllenCopeland.Abstraction.Slf.Compilers;
 using AllenCopeland.Abstraction.Slf.Compilers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Translation;
+using AllenCopeland.Abstraction.Slf.Ast;
+using System.Reflection;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -16,14 +18,14 @@ using AllenCopeland.Abstraction.Slf.Translation;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
     public sealed partial class OilexerProvider :
-        IHighLevelLanguageProvider<IGDFile>
+        LanguageProvider<OilexerLanguage, OilexerProvider, IIntermediateCliManager, Type, Assembly>,
+        ILanguageProvider<OilexerLanguage, OilexerProvider>
     {
         private AltParser parser;
         private AltParserBuilder builder;
 
-        internal OilexerProvider() { }
+        internal OilexerProvider(IIntermediateCliManager identityManager):base(identityManager) { }
 
-        #region IHighLevelLanguageProvider<IGDFile> Members
 
         public ILanguageParser<IGDFile> Parser
         {
@@ -44,47 +46,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        ILanguageCSTTranslator<IGDFile> IHighLevelLanguageProvider<IGDFile>.CSTTranslator
-        {
-            get
-            {
-                return this.CSTTranslator;
-            }
-        }
-
         public IIntermediateCodeTranslator Translator
         {
             get { throw new NotSupportedException(); }
         }
 
-        public IHighLevelLanguage<IGDFile> Language
+        protected override OilexerLanguage OnGetLanguage()
         {
-            get { return OilexerLanguage.LanguageInstance; }
+            return OilexerLanguage.LanguageInstance;
         }
-
-        #endregion
-
-        #region IHighLevelLanguageProvider<IGDFile> Members
-
-        public IAnonymousTypePatternAid AnonymousTypePattern
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        #endregion
-
-        #region ILanguageProvider Members
-
-        public Oil.IIntermediateAssembly CreateAssembly(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        ILanguage ILanguageProvider.Language
-        {
-            get { return this.Language; }
-        }
-
-        #endregion
     }
 }

@@ -11,9 +11,9 @@ BinaryOperationExpression
         Associativity:Expect=PrecedenceAssociation;
     > ::=
 #if Associativity == Left
-    #return (Current:Left; WhitePaddingOpt<Operators>)? Lower:Right;;
+    #return (Current:Left; Operators)? Lower:Right;;
 #elif Associativity == Right
-    #return Lower:Left; (WhitePaddingOpt<Operators> Current:Right;)?;
+    #return Lower:Left; (Operators Current:Right;)?;
 #else
     #throw InvalidAssociation, Associativity;
 #endif;

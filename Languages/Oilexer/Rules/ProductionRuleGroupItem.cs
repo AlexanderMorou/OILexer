@@ -58,15 +58,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         public ProductionRuleGroupItem(Dictionary<string, string> constraints, IProductionRule[] items, int column, int line, long position)
             : this(items, column, line, position)
         {
-            this.ConditionalConstraints = new ReadOnlyDictionary<string, string>(constraints);
+            this.ConditionalConstraints = new ControlledDictionary<string, string>(constraints);
         }
         public ProductionRuleGroupItem(Dictionary<string, string> constraints, ICollection<IProductionRuleSeries> serii, int column, int line, long position)
             : this(serii, column, line, position)
         {
-            this.ConditionalConstraints = new ReadOnlyDictionary<string, string>(constraints);
+            this.ConditionalConstraints = new ControlledDictionary<string, string>(constraints);
         }
 
-        public IReadOnlyDictionary<string, string> ConditionalConstraints { get; private set; }
+        public IControlledDictionary<string, string> ConditionalConstraints { get; private set; }
 
         /// <summary>
         /// Creates a copy of the current <see cref="IProductionRuleGroupItem"/>.

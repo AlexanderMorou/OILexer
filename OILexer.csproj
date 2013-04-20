@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AllenCopeland.Abstraction.Slf.Compilers.Oilexer</RootNamespace>
     <AssemblyName>Oilexer</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <FileUpgradeFlags>
@@ -45,6 +45,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\x64\Release\</OutputPath>
@@ -55,6 +56,7 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -64,6 +66,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -74,6 +77,7 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>AllenCopeland.Abstraction.Slf.Compilers.Oilexer.Program</StartupObject>
@@ -85,7 +89,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Allen Copeland.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile Condition=" '$(Configuration)' == 'Release' ">Allen Copeland.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -101,129 +105,136 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="_abs.slf.ast.oil, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'" >
+    <!--x86 Platform-->
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Abstraction\Build\x86\Release\_abs.slf.ast.oil.dll</HintPath>
+      <HintPath>..\Abstraction\Build\x86\Release\_abs.slf.ast.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'" >
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.slf.compilerservices.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'" >
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x64\Debug\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.slf.metadata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'" >
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.slf.typesystems.abstract.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'" >
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.slf.typesystems.cli.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'" >
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.util.automata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'" >
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.util.common.dll</HintPath>
     </Reference>
-
-
-
-    <Reference Include="_abs.slf.ast.oil, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'" >
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Abstraction\Build\x86\Debug\_abs.slf.ast.oil.dll</HintPath>
+      <HintPath>..\Abstraction\Build\x86\Debug\_abs.slf.ast.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'" >
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x86\Release\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.slf.compilerservices.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'" >
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.slf.metadata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'" >
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.slf.typesystems.abstract.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'" >
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.slf.typesystems.cli.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'" >
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.util.automata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'" >
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.util.common.dll</HintPath>
     </Reference>
-
-
-
     <!--x64 Platform-->
-    <Reference Include="_abs.slf.ast.oil, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" >
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Abstraction\Build\x64\Release\_abs.slf.ast.oil.dll</HintPath>
+      <HintPath>..\Abstraction\Build\x64\Release\_abs.slf.ast.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" >
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x86\Debug\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.slf.compilerservices.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" >
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.slf.metadata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" >
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.slf.typesystems.abstract.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" >
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.slf.typesystems.cli.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" >
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.util.automata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" >
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.util.common.dll</HintPath>
     </Reference>
-
-
-
-    <Reference Include="_abs.slf.ast.oil, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" >
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Abstraction\Build\x64\Debug\_abs.slf.ast.oil.dll</HintPath>
+      <HintPath>..\Abstraction\Build\x64\Debug\_abs.slf.ast.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" >
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x64\Release\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.slf.compilerservices.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" >
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.slf.metadata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" >
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.slf.typesystems.abstract.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" >
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.slf.typesystems.cli.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" >
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.util.automata.dll</HintPath>
     </Reference>
-    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x86" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" >
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f6ec7b8ea170809, processorArchitecture=x64" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.util.common.dll</HintPath>
     </Reference>
-
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs">
@@ -231,6 +242,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReadOnlyWrapper.cs" />
+    <None Include="app.config" />
     <None Include="Samples\Toy++\Attributes.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -247,9 +259,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Expressions\Math.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Toy++\GeneralTemplates.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Language\Expressions.oilexer">
+    <None Include="Samples\Toy++\Language\LanguageElements.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Language\Language.oilexer">
@@ -270,7 +285,7 @@
     <None Include="Samples\Toy++\Lexical Grammar\Preprocessor.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Lexical Grammar\TPPLexicalGrammar.oilexer">
+    <None Include="Samples\Toy++\Lexical Grammar\ToyTokens.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Members\Constructors.oilexer">
@@ -306,28 +321,19 @@
     <None Include="Samples\Toy++\Namespace.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Statements\Exceptions.oilexer">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Samples\Toy++\Statements\Jumps.oilexer">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Samples\Toy++\Statements\Loops.oilexer">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Samples\Toy++\Statements\Selection.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Statements\Statements.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Templates\Expressions.oilexer">
+    <None Include="Samples\Toy++\Templates\ExpressionTemplates.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Templates\OTuple{6}.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Templates\Statements.oilexer">
+    <None Include="Samples\Toy++\Templates\StatementTemplates.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Templates\Templates.oilexer">
@@ -348,7 +354,7 @@
     <None Include="Samples\Toy++\Templates\Tuple{6}.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Samples\Toy++\Templates\Types.oilexer">
+    <None Include="Samples\Toy++\Templates\TypeTemplates.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Toy++\Toy++.oilexer">

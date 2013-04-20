@@ -9,6 +9,7 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+using AllenCopeland.Abstraction.Slf.Abstract;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -246,7 +247,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     return ((ILiteralProductionRuleItem)(ruleItem)).Deliteralize(availableStock, file, errors);
                 else
                 {
-                    errors.SourceError(GrammarCore.CompilerErrors.UnexpectedLiteralEntry, ruleItem.Line, ruleItem.Column, currentEntry.FileName, ruleItem.GetType().Name);
+                    errors.SourceError(GrammarCore.CompilerErrors.UnexpectedLiteralEntry, new LineColumnPair(ruleItem.Line, ruleItem.Column), LineColumnPair.Zero, currentEntry.FileName, ruleItem.GetType().Name);
                     return null;
                 }
             }
@@ -358,7 +359,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             }
             if (availableStock.FindScannableEntry("__EXTRACTIONS") == null)
             {
-                ITokenEntry extractionsToken = new TokenEntry("__EXTRACTIONS", new TokenExpressionSeries(new ITokenExpression[0], literal.Line, literal.Column, literal.Position, currentEntry.FileName), currentEntry.ScanMode, currentEntry.FileName, literal.Column, literal.Line, literal.Position, false, new List<string>(), false);
+                ITokenEntry extractionsToken = new TokenEntry("__EXTRACTIONS", new TokenExpressionSeries(new ITokenExpression[0], literal.Line, literal.Column, literal.Position, currentEntry.FileName), currentEntry.ScanMode, currentEntry.FileName, literal.Column, literal.Line, literal.Position, false, new List<GDTokens.IdentifierToken>(), false);
                 availableStock.Add(extractionsToken);
                 file.Add(extractionsToken);
             }
@@ -551,7 +552,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     return ((ISoftReferenceProductionRuleItem)(ruleItem)).FinalLink(file, errors);
                 else
                 {
-                    errors.SourceError(GrammarCore.CompilerErrors.UnexpectedUndefinedEntry, ruleItem.Line, ruleItem.Column, currentEntry.FileName, ruleItem.GetType().Name);
+                    errors.SourceError(GrammarCore.CompilerErrors.UnexpectedUndefinedEntry, new LineColumnPair(ruleItem.Line, ruleItem.Column), LineColumnPair.Zero, currentEntry.FileName, ruleItem.GetType().Name);
                     return null;
                 }
             }
@@ -579,7 +580,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
         {
             IProductionRuleEntry ipre = ruleEntries.FindScannableEntry(softReference.PrimaryName);
             if (ipre == null)
-                errors.SourceError(GrammarCore.CompilerErrors.UndefinedTokenReference, softReference.Line, softReference.Column, currentEntry.FileName, softReference.PrimaryName);
+                errors.SourceError(GrammarCore.CompilerErrors.UndefinedTokenReference, new LineColumnPair(softReference.Line, softReference.Column), LineColumnPair.Zero, currentEntry.FileName, softReference.PrimaryName);
             else
             {
                 IRuleReferenceProductionRuleItem ipri = new RuleReferenceProductionRuleItem(ipre, softReference.Column, softReference.Line, softReference.Position); ;

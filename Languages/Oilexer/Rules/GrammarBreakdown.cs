@@ -16,7 +16,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     public class GrammarBreakdown
     {
         public class TokenElements :
-            ControlledStateCollection<IGrammarConstantItemSymbol>
+            ControlledCollection<IGrammarConstantItemSymbol>
         {
             public TokenElements(IGrammarConstantItemSymbol[] symbols)
                 : base(symbols)
@@ -25,11 +25,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public IControlledStateDictionary<ITokenEntry, TokenElements> LiteralSeriesTokens { get; private set; }
-        public IControlledStateCollection<IGrammarConstantEntrySymbol> ConstantTokens { get; private set; }
-        public IControlledStateCollection<IGrammarTokenSymbol> CaptureTokens { get; private set; }
-        public IControlledStateCollection<IGrammarRuleSymbol> Rules { get; private set; }
-        public IReadOnlyCollection<ITokenEntry> Tokens { get; private set; }
+        public IControlledDictionary<ITokenEntry, TokenElements> LiteralSeriesTokens { get; private set; }
+        public IControlledCollection<IGrammarConstantEntrySymbol> ConstantTokens { get; private set; }
+        public IControlledCollection<IGrammarTokenSymbol> CaptureTokens { get; private set; }
+        public IControlledCollection<IGrammarRuleSymbol> Rules { get; private set; }
+        public IControlledCollection<ITokenEntry> Tokens { get; private set; }
         public GrammarBreakdown(IGrammarSymbol[] symbols)
         {
             /* *
@@ -70,10 +70,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             var literalSeriesTokens = new Dictionary<ITokenEntry, TokenElements>();
             foreach (var tokenSymbolSet in tokenSymbolSets)
                 literalSeriesTokens.Add(tokenSymbolSet.Entry, new TokenElements(tokenSymbolSet.Items));
-            this.LiteralSeriesTokens = new ControlledStateDictionary<ITokenEntry, TokenElements>(literalSeriesTokens);
-            ConstantTokens = new ControlledStateCollection<IGrammarConstantEntrySymbol>(constantEntries);
-            CaptureTokens = new ControlledStateCollection<IGrammarTokenSymbol>(tokenEntries);
-            Rules = new ControlledStateCollection<IGrammarRuleSymbol>(ruleEntries);
+            this.LiteralSeriesTokens = new ControlledDictionary<ITokenEntry, TokenElements>(literalSeriesTokens);
+            ConstantTokens = new ControlledCollection<IGrammarConstantEntrySymbol>(constantEntries);
+            CaptureTokens = new ControlledCollection<IGrammarTokenSymbol>(tokenEntries);
+            Rules = new ControlledCollection<IGrammarRuleSymbol>(ruleEntries);
             Tokens = new ReadOnlyCollection<ITokenEntry>((
                       from constant in ConstantTokens
                       select constant.Source).Concat(

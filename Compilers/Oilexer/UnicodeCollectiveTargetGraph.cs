@@ -13,7 +13,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     internal class UnicodeCollectiveTargetGraph :
-        ControlledStateCollection<IUnicodeTargetGraph>,
+        ControlledCollection<IUnicodeTargetGraph>,
         IUnicodeCollectiveTargetGraph
     {
 

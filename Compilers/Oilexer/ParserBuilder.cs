@@ -13,15 +13,16 @@ using AllenCopeland.Abstraction.Slf.Cli;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
-using AllenCopeland.Abstraction.Slf.Oil;
+using AllenCopeland.Abstraction.Slf.Ast;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp.Expressions;
-using AllenCopeland.Abstraction.Slf.Oil.Expressions;
-using AllenCopeland.Abstraction.Slf.Oil.Members;
-using AllenCopeland.Abstraction.Slf.Oil.Statements;
+using AllenCopeland.Abstraction.Slf.Ast.Expressions;
+using AllenCopeland.Abstraction.Slf.Ast.Members;
+using AllenCopeland.Abstraction.Slf.Ast.Statements;
 using AllenCopeland.Abstraction.Slf.Parsers;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Collections;
+using AllenCopeland.Abstraction.Slf.Languages;
  /*---------------------------------------------------------------------\
  | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
@@ -61,7 +62,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// </summary>
         public Dictionary<ParserBuilderPhase, TimeSpan> PhaseTimes { get; private set; }
 
-        public ReadOnlyDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleDFAStates { get; private set; }
+        public ControlledDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleDFAStates { get; private set; }
 
         public IProductionRuleEntry StartEntry { get; private set; }
 
@@ -82,7 +83,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private Dictionary<IProductionRuleEntry, SyntacticalDFARootState> ruleDFAStates { get; set; }
 
-        public IReadOnlyCollection<string> StreamAnalysisFiles { get; private set; }
+        public IControlledCollection<string> StreamAnalysisFiles { get; private set; }
 
         private IGDFileObjectRelationalMap fileRelationalMap;
 
@@ -192,7 +193,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 var current = result[i];
                 ruleDFAStates.Add(current.Entry, current);
             }
-            this.RuleDFAStates = new ReadOnlyDictionary<IProductionRuleEntry, SyntacticalDFARootState>(this.ruleDFAStates);
+            this.RuleDFAStates = new ControlledDictionary<IProductionRuleEntry, SyntacticalDFARootState>(this.ruleDFAStates);
         }
 
         private void PerformStreamAnalysis()
@@ -204,9 +205,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 this.SyntaxParser.Parse(file);
         }
 
-        private void BuildCodeModel(IIntermediateAssembly project)
+        private void BuildCodeModel(IIntermediateAssembly project, IIntermediateCliManager identityManager)
         {
-            this.bitStream = BitStreamCreator.CreateBitStream(project.DefaultNamespace);
+            this.bitStream = BitStreamCreator.CreateBitStream(project.DefaultNamespace, identityManager);
             this.fileRelationalMap = new GDFileObjectRelationalMap(this.Source, this.RuleDFAStates, project);
         }
 
@@ -240,6 +241,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private void BuildRecognizerMachine(IIntermediateAssembly project, CharStreamClass charStream, RegularLanguageDFAState tokenDFA, string tokenName)
         {
+            IIntermediateCliManager identityManager = (IIntermediateCliManager)project.IdentityManager;
             //Setup the basic class, access level, and base-type.
             IIntermediateNamespaceDeclaration targetNamespace = project.DefaultNamespace.Parts.Add();
             IIntermediateClassType targetType;
@@ -252,16 +254,16 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
              * Setup the 'next character' state movement method,
              * the state and exit-length variables.
              * */
-            
-            var nextMethod = stateMachine.Methods.Add(new TypedName("Next", typeof(bool).GetTypeReference()));
+
+            var nextMethod = stateMachine.Methods.Add(new TypedName("Next", identityManager.ObtainTypeReference(RuntimeCoreType.Boolean)));
             nextMethod.AccessLevel = AccessLevelModifiers.Public;
-            var nextChar = nextMethod.Parameters.Add(new TypedName("currentChar", typeof(char).GetTypeReference()));
+            var nextChar = nextMethod.Parameters.Add(new TypedName("currentChar", identityManager.ObtainTypeReference(RuntimeCoreType.Char)));
             //nextMethod.Summary = string.Format("Moves the state machine into its next state with the @p:{0};.", nextChar.Name);
             //nextChar.DocumentationComment = "The next character used as the condition for state->state transitions.";
-            var stateField = stateMachine.Fields.Add(new TypedName("state", typeof(int).GetTypeReference()));
+            var stateField = stateMachine.Fields.Add(new TypedName("state", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
             stateField.InitializationExpression = IntermediateGateway.NumberZero;
             //stateField.Summary = "The state machine's current state, determining the logic path to follow for the next character.";
-            var exitLength = stateMachine.Fields.Add(new TypedName("exitLength", typeof(int).GetTypeReference()));
+            var exitLength = stateMachine.Fields.Add(new TypedName("exitLength", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
 
             /* *
              * Obtain all the states in the deterministic automation.
@@ -512,7 +514,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     {
                         currentTarget = nextMethod;
                         nextMethod.DefineLabel(graphLabel);
-                        var categoryGetExpr = typeof(char).GetTypeExpression().GetMethod("GetUnicodeCategory").Invoke(nextChar.GetReference());
+
+                        var categoryGetExpr = identityManager.ObtainTypeReference(RuntimeCoreType.Char).GetTypeExpression().GetMethod("GetUnicodeCategory").Invoke(nextChar.GetReference());
                         var graphSwitch = nextMethod.Switch(categoryGetExpr);
                         nextMethod.Return(IntermediateGateway.FalseValue);
                         foreach (var target in stateGraph.Keys)
@@ -531,13 +534,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                             fullCategory.IsDefault = false;
 
                             foreach (var category in fullCategories)
-                                fullCategory.Cases.Add(typeof(UnicodeCategory).GetTypeExpression().GetField(category.TargetedCategory.ToString()));
+                                fullCategory.Cases.Add(typeof(UnicodeCategory).GetTypeExpression(identityManager).GetField(category.TargetedCategory.ToString()));
                             fullCategory.GoTo(targetLabel);
 
                             foreach (var category in partialCategories)
                             {
                                 IExpression finalExpression = ObtainNegativeAssertion(nextChar, category.NegativeAssertion);
-                                var currentCategory = graphSwitch.Case(typeof(UnicodeCategory).GetTypeExpression().GetField(category.TargetedCategory.ToString()));
+                                var currentCategory = graphSwitch.Case(typeof(UnicodeCategory).GetTypeExpression(identityManager).GetField(category.TargetedCategory.ToString()));
                                 var currentCondition = currentCategory.If(finalExpression);
                                 currentCondition.GoTo(targetLabel);
                             }
@@ -777,7 +780,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 IIntermediateAssembly project = null;
                 if (this.Source == null)
                     goto finished;
-                project = IntermediateGateway.CreateAssembly(Source.Options.AssemblyName);
+                IIntermediateCliManager identityManager = IntermediateGateway.CreateIdentityManager(CliGateway.CurrentPlatform, CliGateway.CurrentVersion);
+                project = (IIntermediateAssembly)LanguageVendors.AllenCopeland.GetOilexerLanguage().CreateAssembly(Source.Options.AssemblyName);
                 if (Source.Options.Namespace == null)
                     project.DefaultNamespace = project.Namespaces.Add("OILexer.DefaultNamespace");
                 else
@@ -862,7 +866,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 timer.Reset();
                 Phase = ParserBuilderPhase.ObjectModelRootTypesConstruction;
                 timer.Start();
-                BuildCodeModel(project);
+                BuildCodeModel(project, identityManager);
                 timer.Stop();
                 PhaseTimes.Add(ParserBuilderPhase.ObjectModelRootTypesConstruction, timer.Elapsed);
                 timer.Reset();
@@ -915,12 +919,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             IProductionRuleEntry startRule;
             if (Source.Options.StartEntry == null || Source.Options.StartEntry == string.Empty)
             {
-                CompilationErrors.SourceModelError<GDFile>(GrammarCore.CompilerErrors.NoStartDefined, 0, 0, Source.Files[0], Source, Source.Options.GrammarName);
+                CompilationErrors.SourceModelError<GDFile>(GrammarCore.CompilerErrors.NoStartDefined, LineColumnPair.Zero, LineColumnPair.Zero, Source.Files[0], Source, Source.Options.GrammarName);
                 return;
             }
             if ((startRule = (this.Source.GetRules()).FindScannableEntry(Source.Options.StartEntry)) == null)
             {
-                CompilationErrors.SourceModelError<GDFile>(GrammarCore.CompilerErrors.InvalidStartDefined, 0, 0, Source.Files[0], Source, Source.Options.StartEntry, Source.Options.GrammarName);
+                CompilationErrors.SourceModelError<GDFile>(GrammarCore.CompilerErrors.InvalidStartDefined, LineColumnPair.Zero, LineColumnPair.Zero, Source.Files[0], Source, Source.Options.StartEntry, Source.Options.GrammarName);
                 return;
             }
             this.StartEntry = startRule;

@@ -7,13 +7,6 @@ InterfaceEventDeclaration                 ::=
     Type:EventType;
     Identifier:Name; ';'                    ;
 
-
-TypeParameterEventDeclaration             ::=
-    Attributes:Attributes;?
-    "event"
-    Type:EventType;
-    Identifier:Name; ';'                    ;
-
 /* --------------------------------------- *\
 |*              B.2.7: Classes             *|
 \* --------------------------------------- */
@@ -69,10 +62,8 @@ ConcreteBlockEventDeclaration             ::=
     '}';
 
 AddBlock                                  ::=
-    Attributes:Attributes;?
     "add" Block:Body;                       ;
 
 RemoveBlock                               ::=
-    Attributes:Attributes;?
     "remove" Block:Body;                    ;
 

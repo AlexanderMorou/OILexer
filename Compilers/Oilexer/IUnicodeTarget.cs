@@ -15,7 +15,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     internal interface IUnicodeTarget :
-        IControlledStateDictionary<UnicodeCategory, IUnicodeTargetCategory>,
+        IControlledDictionary<UnicodeCategory, IUnicodeTargetCategory>,
         IEquatable<IUnicodeTarget>
     {
         bool TargetIsOrigin { get; }

@@ -83,7 +83,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 
         public override string ToString()
         {
-            return string.Format("@{3}{0}{1}{2}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.siblingAmbiguity ? "**" : string.Empty, this.CaseInsensitive ? "@" : string.Empty);
+            return string.Format("{3}{0}{1}{2}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.siblingAmbiguity ? "**" : string.Empty, this.CaseInsensitive ? "@" : string.Empty);
         }
 
     }

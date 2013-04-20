@@ -16,7 +16,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     /// production rule.
     /// </summary>
     public interface IProductionRule :
-        IReadOnlyCollection<IProductionRuleItem>,
+        IControlledCollection<IProductionRuleItem>,
         IAmbiguousGDEntity,
         IProductionRuleSource
     {

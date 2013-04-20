@@ -14,7 +14,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     internal class UnicodeTargetGraph :
-        ControlledStateDictionary<RegularLanguageDFAState, IUnicodeTarget>,
+        ControlledDictionary<RegularLanguageDFAState, IUnicodeTarget>,
         IUnicodeTargetGraph
     {
         #region IUnicodeTargetGraph Members

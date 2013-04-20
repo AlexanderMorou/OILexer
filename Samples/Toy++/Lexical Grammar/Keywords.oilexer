@@ -1,16 +1,4 @@
-#include         "TPPLexicalGrammar.oilexer";
-
-LanguageExtensionsKeywords                 :=
-             "capturing":Capturing;         |
-                 "token":Token;             |
-              "language":Language;          |
-                  "with":With;              |
-                     'a':A;                 |
-                "parser":Parser;            |
-                 "named":Named;             |
-                   "and":And;               |
-                 "lexer":Lexer;             |
-            "recognizer":Recognizer;        ;
+#include                      "ToyTokens.oilexer";
 
 AttributeTargets                           :=
               "assembly":AssemblyTarget;    |
@@ -35,6 +23,18 @@ LinqKeywords                               :=
                  "group":Group;             |
                "orderby":OrderBy;           |
                  "where":Where;             ;
+
+LanguageKeywords                           :=
+	         "capturing":capturing;         | 
+	             "token":token;             | 
+	          "language":language;          | 
+	              "with":with;              | 
+	                 'a':a;                 | 
+	            "parser":parser;            | 
+	             "named":named;             | 
+	               "and":and;               | 
+	             "lexer":lexer;             | 
+	        "recognizer":recognizer;        ;
 
 Keywords>Identifier,AttributeTargets       :=
              "__arglist":__ArgList;         |
@@ -80,6 +80,7 @@ Keywords>Identifier,AttributeTargets       :=
                 "select":Select;            |
                 "sizeof":SizeOf;            |
             "stackalloc":StackAlloc;        |
+                "string":String;            |
                 "struct":Struct;            |
                 "switch":Switch;            |
                   "this":This;              |
@@ -127,12 +128,11 @@ IntegralDataTypes                          :=
                 "ushort":UInt16;            |
                  "sbyte":SByte;             |
                  "short":Int16;             |
-                "string":String;            |
                   "void":Void;              ;
 
 #ifdef Lexer
-#if Lexer == "TPPreprocessor"
-PreprocessorSymbol :=
+#if Lexer == "CSPreprocessor"
+PreprocessorSymbol                         :=
                     "if":If;                |
                   "else":Else;              |
                 "region":Region;            |
@@ -156,7 +156,7 @@ PreprocessorOperator                       :=
                      '(':LeftParenthesis;   |
                      ')':RightParenthesis;  ;
 
-PreprocessorPound :=
+PreprocessorPound                          :=
                      '#'                    ;
 	
 #endif

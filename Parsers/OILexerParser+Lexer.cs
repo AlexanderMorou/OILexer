@@ -705,7 +705,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 if (c == '/')
                 {
                     int lookAhead = 0;
-                    while ((c = LookAhead(lookAhead++)) != '\r' && c != '\n') ;
+                    while ((c = LookAhead(lookAhead++)) != '\r' && c != '\n' && c != '\0') ;
 
                     commentBody = new string(this.Flush(lookAhead - 1));
                 }

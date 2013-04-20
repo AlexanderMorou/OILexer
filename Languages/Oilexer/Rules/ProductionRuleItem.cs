@@ -35,7 +35,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         protected ProductionRuleItem(Dictionary<string, string> constraints, int column, int line, long position)
             : base(column, line, position)
         {
-            this.ConditionalConstraints = new ReadOnlyDictionary<string, string>(constraints);
+            this.ConditionalConstraints = new ControlledDictionary<string, string>(constraints);
         }
 
         #region IProductionRuleItem Members
@@ -48,7 +48,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return result;
         }
 
-        public IReadOnlyDictionary<string, string> ConditionalConstraints { get; private set; }
+        public IControlledDictionary<string, string> ConditionalConstraints { get; private set; }
 
         #endregion
 

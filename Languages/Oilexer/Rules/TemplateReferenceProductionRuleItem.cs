@@ -66,7 +66,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 
         public TemplateReferenceProductionRuleItem(Dictionary<string, string> constraints, IProductionRuleTemplateEntry reference, ICollection<IProductionRuleSeries> parts, int column, int line, long position)
         {
-            this.ConditionalConstraints = new ReadOnlyDictionary<string, string>(constraints);
+            this.ConditionalConstraints = new ControlledDictionary<string, string>(constraints);
             
             foreach (IProductionRuleSeries iprs in parts)
                 baseList.Add(iprs);
@@ -76,7 +76,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             this.reference = reference;
             
         }
-        public IReadOnlyDictionary<string, string> ConditionalConstraints { get; private set; }
+        public IControlledDictionary<string, string> ConditionalConstraints { get; private set; }
 
         #region ITemplateReferenceProductionRuleItem Members
 
