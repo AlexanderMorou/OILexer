@@ -1,0 +1,186 @@
+#ifndef Lexer
+#include                        "Oilexer.oilexer";
+#elif Lexer == "ToyParser"
+#include                       "Language.oilexer";
+#endif
+
+PreprocessorEntry                         ::=>
+    PreprocessorTerminalDirective            |
+    PreprocessorIfDirective                  |
+    PreprocessorDefineDirective              ;
+
+TemplatePreprocessorEntry                 ::=>
+    PreprocessorAddRuleDirective             |
+    PreprocessorDefineRuleTemplateDirective  |
+    PreprocessorThrowDirective               |
+    PreprocessorReturnDirective              ;
+
+
+PreprocessorThrowDirective                 ::=
+    @"#throw" Identifier:ErrorName; 
+    (
+        LanguageOperatorToken.PartSeparator
+        Identifier:Argument;
+    )* ';'                                   ;
+
+PreprocessorReturnDirective                ::=
+    @"#return" ProductionRuleTemplateSeries:Rules;
+    LanguageOperatorToken.Terminal?          ;
+
+PreprocessorAddRuleDirective               ::=
+    @"#addrule" 
+        Identifier:Target; 
+        LanguageOperatorToken.PartSeparator
+        ProductionRuleTemplateSeries:Rules; 
+        LanguageOperatorToken.Terminal       ;
+
+PreprocessorDefineRuleDirective            ::=
+    @"#define" 
+      PreprocessorDefineName:SymbolName; '=' 
+      ProductionRuleSeries:Rules; ';'        ;
+
+PreprocessorDefineRuleTemplateDirective    ::=
+    @"#define" 
+      PreprocessorDefineName:SymbolName; '=' 
+      ProductionRuleTemplateSeries:Rules; ';';
+
+PreprocessorDefineDirective                ::=
+    @"#define" 
+    Identifier:SymbolName;
+    (
+        '=' 
+        PreprocessorDefineDirectiveValue:Value;
+    )? 
+    ';'                                      ;
+
+PreprocessorDefineDirectiveValue          ::=>
+    Identifier                               |
+    String                                   ;
+
+PreprocessorDefineName                    ::=>
+    PreprocessorDefineNameExpression         |
+    Identifier                               ;
+
+PreprocessorDefineNameExpression           ::=
+    Identifier:NameParts; 
+    (
+        '+' 
+        Identifier:NameParts;
+    )+                                      ;
+
+PreprocessorTerminalDirective             ::=>
+    PreprocessorStringTerminalDirective      |
+    PreprocessorIdentifierTerminalDirective  ;
+
+PreprocessorStringTerminalDirective        ::=
+    StringTerminalKind:Kind; 
+        String:Value; ';'                    ;
+
+PreprocessorIdentifierTerminalDirective    ::=
+    StringTerminalKind:Kind;
+        Identifier:Value; ';'                ;
+
+PreprocessorIfDirective                   ::=>
+    PreprocessorIfConditionDirective         |
+    PreprocessorIfDefinedDirective           |
+    PreprocessorIfNotDefinedDirective        ;
+
+PreprocessorIfConditionDirective           ::=
+    @"#if" PreprocessorIfConditionLogicalOrExp:Condition;
+    Entry:Items;*$
+    (PreprocessorElseDirective:Next;)?$       
+    @"#endif"                                 ;
+
+PreprocessorIfDefinedDirective             ::=
+    @"#ifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    Entry:Items;* 
+    (PreprocessorElseDirective:Next;)?       
+    @"#endif"                                 ;
+
+PreprocessorIfNotDefinedDirective          ::=
+    @"#ifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    Entry:Items;* 
+    (PreprocessorElseDirective:Next;)?
+    @"#endif"                                 ;
+
+PreprocessorElseDirective                 ::=>
+    PreprocessorElseIfConditionDirective     |
+    PreprocessorElseIfDefinedDirective       |
+    PreprocessorElseIfNotDefinedDirective    |
+    PreprocessorFinalElseDirective           ;
+
+PreprocessorFinalElseDirective             ::=
+    @"#else" 
+    Entry:Items;*                            ;
+
+PreprocessorElseIfConditionDirective       ::=
+    @"#elif" PreprocessorIfConditionLogicalOrExp:Condition;
+    Entry:Items;*
+    (PreprocessorElseDirective:Next;)?       ;
+
+PreprocessorElseIfDefinedDirective         ::=
+    @"#elifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    Entry:Items;*
+    (PreprocessorElseDirective:Next;)?       ;
+
+PreprocessorElseIfNotDefinedDirective      ::=
+    @"#elifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    Entry:Items;*
+    (PreprocessorElseDirective:Next;)?       ;
+
+PreprocessorIfConditionLogicalOrExp        ::=
+    BinaryOperationExpression<
+        PreprocessorIfConditionLogicalOrExp, 
+            "||", 
+        PreprocessorIfConditionLogicalAndExp, 
+        Left>;
+
+PreprocessorIfConditionLogicalAndExp       ::=
+    BinaryOperationExpression<
+        PreprocessorIfConditionLogicalAndExp, 
+            "&&", 
+        PreprocessorIfConditionEqualityExp, 
+        Left>;
+
+PreprocessorIfConditionEqualityExp         ::=
+    BinaryOperationExpression<
+        PreprocessorIfConditionEqualityExp, 
+            ("=="|"!="):Operator;, 
+        PreprocessorIfConditionPrimaryExp, 
+        Left>;
+
+PreprocessorIfConditionPrimaryExp         ::=>
+    PreprocessorIfGroupedExpression          |
+    String                                   |
+    Number                                   |
+    Char                                     |
+    Identifier                               ;
+
+PreprocessorIfDefConditionLogicalOrExp     ::=
+    BinaryOperationExpression<
+        PreprocessorIfDefConditionLogicalOrExp, 
+            "||", 
+        PreprocessorIfDefConditionLogicalAndExp, 
+        Left>;
+
+PreprocessorIfDefConditionLogicalAndExp    ::=
+    BinaryOperationExpression<
+        PreprocessorIfDefConditionLogicalAndExp, 
+            "&&", 
+        PreprocessorIfDefConditionPrimaryExp, 
+        Left>;
+
+PreprocessorIfDefConditionPrimaryExp      ::=>
+    PreprocessorIfDefGroupedExpression       |
+    Identifier                               ;
+
+PreprocessorIfGroupedExpression            ::=
+    '(' 
+        PreprocessorIfConditionLogicalOrExp:Inner; 
+    ')';
+
+
+PreprocessorIfDefGroupedExpression         ::=
+    '('
+        PreprocessorIfDefConditionLogicalOrExp:Inner;
+    ')';

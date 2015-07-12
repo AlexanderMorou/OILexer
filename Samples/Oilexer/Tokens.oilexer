@@ -1,0 +1,125 @@
+#ifndef Lexer
+#include                    "Oilexer.oilexer";
+#elif Lexer == "ToyParser"
+#include                   "Language.oilexer";
+#endif
+
+TokenEntry                                 ::=
+    Identifier:Name; 
+        OTuple<
+            LanguageOperatorToken.ItemIsRecognizer!:ForceRecognizer; /*$*/,
+            "[+/-]"!:VisualSpan;
+            (
+                LanguageOperatorToken.OptionsSeparator /*:*/
+                    SpanName:SpanName; 
+                LanguageOperatorToken.Terminal
+            )? /*;*/, 
+            (TokenTerminals.PrecedenceDeclaration /*>*/
+                Identifier:LowerPrecedence; 
+                (
+                    TokenTerminals.PrecedenceSeparator /*,*/
+                    Identifier:LowerPrecedence;
+                )*
+            )?>
+        LanguageOperatorToken.TokenStart 
+        (
+            '*'!:Unhinged;?                  |
+            LanguageOperatorToken.Contextual!:Contextual;
+        )
+        TokenSeries:Items;
+        LanguageOperatorToken.Terminal /*;*/ ;
+
+SpanName                                  ::=>
+    Identifier                               |
+    String                                   ;
+
+TokenSeries                                ::=
+    TokenExpression:Items; 
+        (
+            LanguageOperatorToken.ExpressionSeparator /*|*/ 
+            TokenExpression:Items;
+        )*                                   ;
+
+TokenExpression                            ::=
+    TokenItem:Items;*                        ;
+
+CharacterRangeTokenItem                    ::=
+    CharacterRange 
+    ScannableEntryItemOptions<>?             ;
+
+TokenItem                                 ::=>
+    CharacterRangeTokenItem                  |
+    LiteralTokenItem                         |
+    SoftReferenceScannableEntryItem          |
+    GroupTokenItem                           |
+    BuiltInCommandTokenItem                  ;
+
+ScanOrSubtractCommand                      ::=
+    (
+        @"Scan"                              |
+        @"Subtract"
+    ):Command;
+    '('
+        TokenSeries:Left; 
+        ','
+        TokenSeries:Right;
+    ')';
+
+BuiltInCommandTokenItem                   ::=>
+    BaseEncodeCommand                        |
+    ScanOrSubtractCommand                    ;
+
+BaseEncodeCommand                          ::=
+    @"BaseEncode" '('
+    TokenSeries:EncodeTarget;
+    ','
+    EncodingNumber:Base;
+    ','
+    Number:Characters;
+    ')'                                     ;
+
+//8, 16, 18, 27, 36, or 60
+EncodingNumber :=
+    '8':Octal;                               |
+    "16":Hexadecimal;                        |
+    "18":Octadecimal;                        |
+    "27":Septemvigesimal;                    |
+    "36":Hexatridecimal;                     |
+    "60":Sexagesimal;                        ;
+
+LiteralTokenItem                          ::=>
+    StringTokenItem                          |
+    CharTokenItem                            ;
+
+GroupTokenItem                             ::=
+    LanguageOperatorToken.BeginGroup /*(*/
+    TokenSeries:Items; 
+    LanguageOperatorToken.EndGroup   /*)*/
+    ScannableEntryItemOptions
+    <
+        (
+            TokenTerminals.Default:HasDefault;
+            CommonTerminals.Assignment
+            SoftReferenceScannableEntryItemBody:DefaultValue;
+            LanguageOperatorToken.Terminal
+        )?
+    >?             ;
+
+StringTokenItem                            ::=
+    String:Value; 
+    ScannableEntryItemOptions
+        <(
+            TokenTerminals.IsFlag/*@"flag"*/
+                CommonTerminals.Assignment /*=*/ 
+            BooleanLiteral:IsFlagValue;
+            LanguageOperatorToken.Terminal /*;*/
+         )?>?                                ;
+
+CharTokenItem                              ::=
+    Char:Value; 
+    ScannableEntryItemOptions
+        <(
+            TokenTerminals.IsFlag/*@"flag"*/
+                CommonTerminals.Assignment /*=*/ 
+            BooleanLiteral:IsFlagValue; 
+            LanguageOperatorToken.Terminal /*;*/)?>?;

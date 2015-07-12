@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -55,21 +55,20 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
         protected virtual IToken LookAheadImpl(int howFar)
         {
             if (howFar < originalFormTokens.Count)
-            {
                 return originalFormTokens[howFar];
-            }
             else
             {
                 for (int i = originalFormTokens.Count; i < howFar; i++)
                     LookAhead(i);
                 if (this.originalFormTokens.Count > 0)
-                    this.currentTokenizer.Position = this.originalFormTokens[this.originalFormTokens.Count - 1].Position + this.originalFormTokens[this.originalFormTokens.Count - 1].Length;
+                {
+                    var last = this.originalFormTokens[this.originalFormTokens.Count - 1];
+                    this.currentTokenizer.Position = last.Position + last.Length;
+                }
 
                 CurrentTokenizer.NextToken(this.State);
                 if (CurrentTokenizer.CurrentToken != null)
-                {
                     originalFormTokens.Add(CurrentTokenizer.CurrentToken);
-                }
                 else
                     return null;
                 if (this.originalFormTokens.Count > 0)

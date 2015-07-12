@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -20,6 +20,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         public static readonly ScannableEntryItemRepeatInfo ZeroOrMore = new ScannableEntryItemRepeatInfo(ScannableEntryItemRepeatOptions.ZeroOrMore);
         public static readonly ScannableEntryItemRepeatInfo OneOrMore = new ScannableEntryItemRepeatInfo(ScannableEntryItemRepeatOptions.OneOrMore);
         public static readonly ScannableEntryItemRepeatInfo AnyOrder = new ScannableEntryItemRepeatInfo(ScannableEntryItemRepeatOptions.AnyOrder);
+        public static readonly ScannableEntryItemRepeatInfo MaxReduce = new ScannableEntryItemRepeatInfo(ScannableEntryItemRepeatOptions.MaxReduce);
 
         public ScannableEntryItemRepeatOptions Options { get; private set; }
 
@@ -73,17 +74,19 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
                     return 3;
                 case ScannableEntryItemRepeatOptions.AnyOrder:
                     return 4;
+                case ScannableEntryItemRepeatOptions.MaxReduce:
+                    return 5;
                 case ScannableEntryItemRepeatOptions.Specific:
                     if (this.Min == null)
                         if (this.Max == null)
                             return 5;
                         else
-                            return this.Max.Value | 5;
+                            return this.Max.Value << 6 | 5;
                     else
                         if (this.Max == null)
-                            return this.Min.Value | 5;
+                            return this.Min.Value << 3 | 5;
                         else
-                            return (this.Min.Value ^ this.Max.Value) | 5;
+                            return (this.Min.Value << 3 ^ this.Max.Value << 6) | 5;
 
             }
             return -1;
@@ -121,24 +124,28 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 
         public override string ToString()
         {
-            switch (this.Options & ~ScannableEntryItemRepeatOptions.AnyOrder)
+            bool maxReduce = ((this.Options & ~ScannableEntryItemRepeatOptions.AnyOrder) & ScannableEntryItemRepeatOptions.MaxReduce) == ScannableEntryItemRepeatOptions.MaxReduce;
+            bool anyOrder = ((this.Options & ~ScannableEntryItemRepeatOptions.MaxReduce) & ScannableEntryItemRepeatOptions.AnyOrder) == ScannableEntryItemRepeatOptions.AnyOrder;
+            switch (this.Options & ~(ScannableEntryItemRepeatOptions.AnyOrder | ScannableEntryItemRepeatOptions.MaxReduce))
             {
                 case ScannableEntryItemRepeatOptions.ZeroOrOne:
-                    return "?";
+                    return string.Format("?{0}{1}", maxReduce ? "$" : string.Empty, anyOrder ? "@" : string.Empty);
                 case ScannableEntryItemRepeatOptions.ZeroOrMore:
-                    return "*";
+                    return string.Format("*{0}{1}", maxReduce ? "$" : string.Empty, anyOrder ? "@" : string.Empty);
                 case ScannableEntryItemRepeatOptions.OneOrMore:
-                    return "+";
+                    return string.Format("+{0}{1}", maxReduce ? "$" : string.Empty, anyOrder ? "@" : string.Empty);
                 case ScannableEntryItemRepeatOptions.Specific:
                     if (Min == Max)
-                        return string.Format("{{{0}}}", Min.Value);
+                        return string.Format("{{{0}}}{1}{2}", Min.Value, maxReduce ? "$" : string.Empty, anyOrder ? "@" : string.Empty);
+                    else if (Min != null && Max != null)
+                        return string.Format("{{{0},{1}}}{2}{3}", Min.Value, Max.Value, maxReduce ? "$" : string.Empty, anyOrder ? "@" : string.Empty);
                     else if (Min != null)
-                        return string.Format("{{{0},}}", Min.Value);
+                        return string.Format("{{{0},}}{1}{2}", Min.Value, maxReduce ? "$" : string.Empty, anyOrder ? "@" : string.Empty);
                     else if (Max != null)
-                        return string.Format("{{,{0}}}", Max.Value);
+                        return string.Format("{{,{0}}}{1}{2}", Max.Value, maxReduce ? "$" : string.Empty, anyOrder ? "@" : string.Empty);
                     break;
             }
-            return string.Empty;
+            return maxReduce ? "$" : string.Empty;
         }
     }
 }

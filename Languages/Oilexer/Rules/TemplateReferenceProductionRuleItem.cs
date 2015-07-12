@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,7 +13,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     public class TemplateReferenceProductionRuleItem :
-        ReadOnlyCollection<IProductionRuleSeries>,
+        ControlledCollection<IProductionRuleSeries>,
         ITemplateReferenceProductionRuleItem
     {
         /// <summary>
@@ -40,14 +40,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// <summary>
         /// Data member for <see cref="Reference"/>.
         /// </summary>
-        private IProductionRuleTemplateEntry reference;
+        private IOilexerGrammarProductionRuleTemplateEntry reference;
 
         /// <summary>
         /// Creates a new <see cref="TemplateReferenceProductionRuleItem"/> with the <paramref name="reference"/>,
         /// <paramref name="parts"/>, <paramref name="column"/>, <paramref name="line"/>, and 
         /// <paramref name="position"/> provided.
         /// </summary>
-        /// <param name="reference">The <see cref="IProductionRuleTemplateEntry"/> which
+        /// <param name="reference">The <see cref="IOilexerGrammarProductionRuleTemplateEntry"/> which
         /// is referenced by the <see cref="TemplateReferenceProductionRuleItem"/>.</param>
         /// <param name="parts">The <see cref="IProductionRuleSeries"/> collection which denotes the
         /// parameters passed to the template expansion request.</param>
@@ -55,7 +55,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// defined.</param>
         /// <param name="line">The line at which the <see cref="TemplateReferenceProductionRuleItem"/> was defined.</param>
         /// <param name="position">The byte in the file at which the <see cref="TemplateReferenceProductionRuleItem"/> was declared.</param>
-        public TemplateReferenceProductionRuleItem(IProductionRuleTemplateEntry reference, IList<IProductionRuleSeries> parts, int column, int line, long position)
+        public TemplateReferenceProductionRuleItem(IOilexerGrammarProductionRuleTemplateEntry reference, IList<IProductionRuleSeries> parts, int column, int line, long position)
             : base(parts)
         {
             this.column = column;
@@ -64,7 +64,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             this.reference = reference;
         }
 
-        public TemplateReferenceProductionRuleItem(Dictionary<string, string> constraints, IProductionRuleTemplateEntry reference, ICollection<IProductionRuleSeries> parts, int column, int line, long position)
+        public TemplateReferenceProductionRuleItem(Dictionary<string, string> constraints, IOilexerGrammarProductionRuleTemplateEntry reference, ICollection<IProductionRuleSeries> parts, int column, int line, long position)
         {
             this.ConditionalConstraints = new ControlledDictionary<string, string>(constraints);
             
@@ -78,13 +78,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         }
         public IControlledDictionary<string, string> ConditionalConstraints { get; private set; }
 
-        #region ITemplateReferenceProductionRuleItem Members
+        //#region ITemplateReferenceProductionRuleItem Members
 
         /// <summary>
-        /// Returns the <see cref="IProductionRuleTemplateEntry"/> which the 
+        /// Returns the <see cref="IOilexerGrammarProductionRuleTemplateEntry"/> which the 
         /// <see cref="ITemplateReferenceProductionRuleItem"/> references.
         /// </summary>
-        public IProductionRuleTemplateEntry Reference
+        public IOilexerGrammarProductionRuleTemplateEntry Reference
         {
             get
             {
@@ -110,16 +110,16 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return trpri;
         }
 
-        #endregion
+        //#endregion
 
-        #region IProductionRuleItem Members
+        //#region IProductionRuleItem Members
 
         IProductionRuleItem IProductionRuleItem.Clone()
         {
             return this.Clone();
         }
 
-        #endregion
+        //#endregion
         /// <summary>
         /// Returns the column at the current <see cref="Line"/> the 
         /// <see cref="TemplateReferenceProductionRuleItem"/> was declared at.
@@ -145,7 +145,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get { return this.position; }
         }
 
-        #region IScannableEntryItem Members
+        //#region IScannableEntryItem Members
 
         /// <summary>
         /// Returns the name of the <see cref="TemplateReferenceProductionRuleItem"/>, if it was defined.
@@ -180,22 +180,42 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return this.Clone();
         }
 
-        #endregion
+        //#endregion
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             bool first = true;
+            if (this.Count > 1)
+                sb.AppendLine();
             sb.Append(this.Reference.Name);
-            sb.Append("<");
+            if (this.Count > 1 || this.Count > 0 && this[0].Count > 1 || this.Count > 0 && this[0].Count > 0 && this[0][0].Count > 1)
+            {
+                sb.AppendLine("<");
+                sb.Append("\t");
+            }
+            else
+                sb.Append("<");
             foreach (var item in this)
             {
                 if (first)
                     first = false;
                 else
-                    sb.Append(",");
-                sb.Append(item.ToString());
+                {
+                    sb.AppendLine(",");
+                    sb.Append("\t");
+                }
+                var current = item.ToString();
+                if (current.Length > Environment.NewLine.Length)
+                {
+                    if (current.Substring(0, Environment.NewLine.Length) == Environment.NewLine)
+                        current = current.Substring(Environment.NewLine.Length);
+                    if (current.Substring(current.Length - Environment.NewLine.Length) == Environment.NewLine)
+                        current = current.Substring(0, current.Length - Environment.NewLine.Length);
+                }
+                sb.Append(current.Replace(Environment.NewLine, Environment.NewLine + "\t"));
             }
-
+            if (this.Count > 1 || this.Count > 0 && this[0].Count > 1 || this.Count > 0 && this[0].Count > 0 && this[0][0].Count > 1)
+                sb.AppendLine();
             sb.Append(">");
             if (this.name != null && this.name != string.Empty)
             {
@@ -222,5 +242,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                     target.Name = name;
         }
 
+        public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
     }
 }

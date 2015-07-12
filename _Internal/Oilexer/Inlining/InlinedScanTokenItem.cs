@@ -16,8 +16,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
     {
         private RegularLanguageNFAState state;
 
-        public InlinedScanCommandTokenItem(IScanCommandTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
-            : base(InliningCore.Inline(source.SearchTarget, sourceRoot, root, oldNewLookup), source.SeekPast, source.Column, source.Line, source.Position)
+        public InlinedScanCommandTokenItem(IScanCommandTokenItem source, IOilexerGrammarTokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
+            : base(OilexerGrammarInliningCore.Inline(source.SearchTarget, sourceRoot, root, oldNewLookup), source.SeekPast, source.Column, source.Line, source.Position)
         {
             this.Source = source;
             this.SourceRoot = sourceRoot;
@@ -29,10 +29,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         public IScanCommandTokenItem Source { get; private set; }
 
         /// <summary>
-        /// Returns the <see cref="ITokenEntry"/> which contains
+        /// Returns the <see cref="IOilexerGrammarTokenEntry"/> which contains
         /// the <see cref="Source"/>.
         /// </summary>
-        public ITokenEntry SourceRoot { get; private set; }
+        public IOilexerGrammarTokenEntry SourceRoot { get; private set; }
 
         /// <summary>
         /// Returns the <see cref="InlinedTokenEntry"/> which contains the current
@@ -53,7 +53,6 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
                 if (this.state == null)
                 {
                     this.state = this.BuildNFAState();
-                    this.state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, InliningCore.TokenRootStateClonerCache, InliningCore.TokenStateClonerCache);
                 }
                 return this.state;
             }
@@ -62,49 +61,49 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
 
         private RegularLanguageNFAState BuildNFAState()
         {
-            if (state == null)
-            {
-                var target = (InlinedTokenExpressionSeries)this.SearchTarget;
-                RegularLanguageNFAState current = null;
-                Stack<RegularLanguageNFAState> states = new Stack<RegularLanguageNFAState>(new RegularLanguageNFAState[] { target.State });
-                List<RegularLanguageNFAState> covered = new List<RegularLanguageNFAState>();
-                //Step through the sequence until it's finished with the all states
-                //associated to the scan operation.
-                while (states.Count > 0)
-                {
-                    current = states.Pop();
-                    if (covered.Contains(current))
-                        continue;
-                    covered.Add(current);
-                    RegularLanguageSet currentSet = null;
-                    foreach (var transition in current.OutTransitions.Keys)
-                        if (currentSet == null)
-                            currentSet = transition;
-                        else
-                            currentSet |= transition;
-                    if (currentSet != null)
-                    {
-                        foreach (var transition in current.OutTransitions.Values)
-                            foreach (var transitionTarget in transition)
-                                if (!covered.Contains(transitionTarget))
-                                    states.Push(transitionTarget);
-                        currentSet = currentSet.Complement();
-                        if (!(currentSet.IsEmpty))
-                            current.MoveTo(currentSet, target.State);
-                    }
-                }
-                state = target.State;
-                List<RegularLanguageNFAState> flatline = new List<RegularLanguageNFAState>();
-                RegularLanguageNFAState.FlatlineState(state, flatline);
-                foreach (var fState in flatline)
-                    fState.SetIntermediate(this);
-                state.SetInitial(this);
-                foreach (var edge in State.ObtainEdges())
-                    edge.SetFinal(this);
-            }
             return state;
         }
 
         #endregion
+
+        public void BuildState(Dictionary<ITokenSource, Captures.ICaptureTokenStructuralItem> sourceReplacementLookup)
+        {
+            var thisReplacement = sourceReplacementLookup.ContainsKey(this) ? (ITokenSource)(sourceReplacementLookup[this]) : (ITokenSource)this;
+            var target = (InlinedTokenExpressionSeries)this.SearchTarget;
+            target.BuildState(sourceReplacementLookup);
+            RegularLanguageNFAState current = null;
+            Stack<RegularLanguageNFAState> states = new Stack<RegularLanguageNFAState>(new RegularLanguageNFAState[] { target.State });
+            List<RegularLanguageNFAState> covered = new List<RegularLanguageNFAState>();
+            states.Peek().SetInitial(thisReplacement);
+            //Step through the sequence until it's finished with the all states
+            //associated to the scan operation.
+            while (states.Count > 0)
+            {
+                current = states.Pop();
+                if (covered.Contains(current))
+                    continue;
+                covered.Add(current);
+                RegularLanguageSet currentSet = current.OutTransitions.FullCheck;
+                if (!currentSet.IsEmpty)
+                {
+                    foreach (var transition in current.OutTransitions.Values)
+                        foreach (var transitionTarget in transition)
+                            if (!covered.Contains(transitionTarget))
+                                states.Push(transitionTarget);
+                    currentSet = currentSet.Complement();
+                    if (!(currentSet.IsEmpty))
+                        current.MoveTo(currentSet, target.State);
+                }
+            }
+            state = target.State;
+            List<RegularLanguageNFAState> flatline = new List<RegularLanguageNFAState>();
+            RegularLanguageNFAState.FlatlineState(state, flatline);
+            foreach (var fState in flatline)
+                fState.SetIntermediate(thisReplacement);
+            state.SetInitial(thisReplacement);
+            foreach (var edge in State.ObtainEdges())
+                edge.SetFinal(thisReplacement);
+            state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, thisReplacement, OilexerGrammarInliningCore.TokenRootStateClonerCache, OilexerGrammarInliningCore.TokenStateClonerCache);
+        }
     }
 }

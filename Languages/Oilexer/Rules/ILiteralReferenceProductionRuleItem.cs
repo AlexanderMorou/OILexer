@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -19,7 +19,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// Returns the source of the literal that the <see cref="ILiteralReferenceProductionRuleItem"/>
         /// relates to.
         /// </summary>
-        ITokenEntry Source { get; }
+        IOilexerGrammarTokenEntry Source { get; }
         /// <summary>
         /// Returns the literal the <see cref="ILiteralReferenceProductionRuleItem"/> references.
         /// </summary>

@@ -1,0 +1,82 @@
+#LexerName "CmdLnArgsScanner";
+#ParserName "CmdLnArgsParser";
+#AssemblyName "CommandLineArgumentsReader";
+#GrammarName "CmdLnArgs";
+#TokenPrefix "Clat";
+#RulePrefix "Clar";
+#Root "ArgSet";
+#Namespace "AllenCopeland.Abstraction.Slf.Languages.CommandLineArguments";
+
+/* Simple, and easy to use,
+ * and it might actually be
+ * useful */
+
+ArgSet  ::=
+    CommandLineArgument:Arguments;*;
+
+
+CommandLineArgument  ::=>
+    Capture             |
+    FixedArgument       |
+    CapturingArgument   ;
+
+String                 :=
+    (
+        '"' 
+        (
+            '"' '"'     | 
+            [^"]
+        )*
+        '"'
+    )$                  ;
+
+FixedArgument        ::=>
+    DashedFixedArgument |
+    SolidusFixedArgument;
+
+DashedFixedArgument   ::=
+    '-' Identifier:Name;;
+
+SolidusFixedArgument  ::=
+    '/' Identifier:Name;;
+
+Identifier             :=
+    [A-Za-z] [A-Za-z0-9]*;
+
+CapturingArgument   ::=>
+    DashedCapturingArgument |
+    SolidusCapturingArgument;
+
+DashedCapturingArgument ::=
+    '-'
+    Identifier:Name; 
+    ':'
+    Capture:Value;        ;
+
+
+SolidusCapturingArgument ::=
+    '/'
+    Identifier:Name; 
+    ':'
+    Capture:Value;        ;
+
+Capture              ::=>
+    String              |
+    CommandArgumentCapture;
+
+CommandArgumentCapture :=
+    ([^" -:/] | '\\' '-' | '\\' ':')
+    (
+        [^ ":/]          |
+        '"' '"'         |
+        '\\' ':'
+    )*;
+
+CommandLineTerminals   :=
+    '-':Dash;           |
+    '/':Solidus;        |
+    ':':ValueSeparator; ;
+
+Whitespace            :=*
+    [ \t]+              ;
+

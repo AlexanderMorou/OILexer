@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,33 +11,32 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     partial class OilexerProvider
     {
         public class AltParserBuilder :
-            ParserBuilder,
-            ILanguageCSTTranslator<IGDFile>
+            ParserCompiler,
+            ILanguageCSTTranslator<IOilexerGrammarFile>
         {
             public AltParserBuilder()
             {
             }
 
+            //#region ILanguageCSTTranslator<IOilexerGrammarFile> Members
 
-            #region ILanguageCSTTranslator<IGDFile> Members
-
-            public void Process(IGDFile nextInput, IIntermediateAssembly currentAssembly)
+            public void Process(IOilexerGrammarFile nextInput, IIntermediateAssembly currentAssembly)
             {
                 throw new NotSupportedException("Inputs are linked explicitly in grammar files, next input processing is not supported.");
             }
 
-            #endregion
+            //#endregion
 
-            #region ILanguageProcessor<IIntermediateAssembly,IGDFile> Members
+            //#region ILanguageProcessor<IIntermediateAssembly,IOilexerGrammarFile> Members
 
-            public IIntermediateAssembly Process(IGDFile input)
+            public IIntermediateAssembly Process(IOilexerGrammarFile input)
             {
-                this.Initialize(input, new List<string>());
+                this.Initialize(input, new List<string>(), false, false);
                 this.BuildProject();
-                return this.Project;
+                return this.ResultAssembly;
             }
 
-            #endregion
+            //#endregion
         }
     }
 }

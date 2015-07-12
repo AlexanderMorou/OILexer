@@ -6,7 +6,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -47,14 +47,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         public bool Equals(IUnicodeTarget other)
         {
-            if (other.TargetIsOrigin != this.TargetIsOrigin)
-                return false;
-            if (other.Count != this.Count)
-                return false;
-            if (other.Target != this.Target)
-                return false;
-            return other.All(p =>
-                this.ContainsKey(p.Key) && this[p.Key].Equals(p.Value));
+            return Equals(other, false);
         }
 
         #endregion
@@ -76,5 +69,19 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return false;
         }
         public bool TargetIsOrigin { get; private set; }
+
+
+        public bool Equals(IUnicodeTarget other, bool relaxOriginatingState)
+        {
+            if (!relaxOriginatingState && other.TargetIsOrigin != this.TargetIsOrigin)
+                return false;
+            if (other.Count != this.Count)
+                return false;
+            if (other.Target != this.Target)
+                return false;
+            return other.All(p =>
+                this.ContainsKey(p.Key) && this[p.Key].Equals(p.Value));
+        }
+
     }
 }

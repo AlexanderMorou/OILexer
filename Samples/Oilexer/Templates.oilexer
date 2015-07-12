@@ -1,0 +1,136 @@
+#ifndef Lexer
+#include                        "Oilexer.oilexer";
+InvalidAssociation = "Invalid association '{0}'.  Expected: Left or Right", 0x100;
+
+PrecedenceAssociation := @"Left":Left; | @"Right":Right;;
+
+BinaryOperationExpression
+    <
+        Current:Expect=Rule;, 
+        Operators:Expect=Token;, 
+        Lower:Expect=Rule;, 
+        Associativity:Expect=PrecedenceAssociation;
+    > ::=
+#if Associativity == Left
+    #return (Current:Left; Operators)? Lower:Right;;
+#elif Associativity == Right
+    #return Lower:Left; (Operators Current:Right;)?;
+#else
+    #throw InvalidAssociation, Associativity;
+#endif;
+#elif Lexer == "ToyParser"
+#include                       "Language.oilexer";
+#endif
+
+ProductionRuleTemplateEntry                                          ::=
+    Identifier:Name;
+    LanguageOperatorToken.TemplateStart 
+        ProductionRuleTemplateArgument:Arguments;
+        (
+            LanguageOperatorToken.PartSeparator
+            ProductionRuleTemplateArgument:Arguments;
+        )*
+    LanguageOperatorToken.TemplateEnd
+    LanguageOperatorToken.RuleStart
+    ProductionRuleTemplateSeries:Items; LanguageOperatorToken.Terminal ;
+
+ProductionRuleTemplateArgument                                       ::=
+    Identifier:Name; 
+    (
+        LanguageOperatorToken.OptionsSeparator
+        RuleTerminals.TemplateRuleExpect '='
+        ProductionRuleTemplateArgumentExpect:Expected;
+        LanguageOperatorToken.Terminal
+    )?
+    LanguageOperatorToken.OneOrMore!:Multiple;?                        ;
+
+ProductionRuleTemplateSeries                                         ::=
+    ProductionRuleTemplate:Items;
+        (
+            LanguageOperatorToken.ExpressionSeparator
+            ProductionRuleTemplate:Items;
+        )*                                                             ;
+
+ProductionRuleTemplate                                               ::=
+    ProductionRuleTemplateItem:Items;*                                 ;
+
+ProductionRuleTemplateItem                                          ::=>
+    LiteralProductionRuleItem                                          |
+    TemplateReferenceTemplateProductionRuleItem                        |
+    SoftReferenceScannableEntryItem                                    |
+    GroupProductionRuleTemplateItem                                    |
+    PreprocessorProductionRuleTemplateItem                             ;
+
+
+TemplateReferenceTemplateProductionRuleItem                          ::=
+    Identifier:Name; 
+        LanguageOperatorToken.TemplateStart /*<*/
+            (
+                ProductionRuleTemplateSeries:Arguments;
+                (
+                    LanguageOperatorToken.PartSeparator /*,*/
+                    ProductionRuleTemplateSeries:Arguments;
+                )*
+            )?
+        LanguageOperatorToken.TemplateEnd /*>*/
+        ScannableEntryItemOptions<>?;
+
+
+
+PreprocessorProductionRuleTemplateItem                              ::=>
+    PreprocessorIfDirectiveProductionRuleTemplateItem                  |
+    TemplatePreprocessorEntry                                          ;
+
+PreprocessorIfDirectiveProductionRuleTemplateItem                   ::=>
+    PreprocessorIfConditionDirectiveProductionRuleTemplateItem         |
+    PreprocessorIfDefinedDirectiveProductionRuleTemplateItem           |
+    PreprocessorIfNotDefinedDirectiveProductionRuleTemplateItem        ;
+
+PreprocessorIfConditionDirectiveProductionRuleTemplateItem           ::=
+    @"#if" PreprocessorIfConditionLogicalOrExp:Condition;
+    ProductionRuleTemplateSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?
+    @"#endif"                                                          ;
+
+PreprocessorIfDefinedDirectiveProductionRuleTemplateItem             ::=
+    @"#ifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleTemplateSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?
+    @"#endif"                                                   ;
+
+PreprocessorIfNotDefinedDirectiveProductionRuleTemplateItem          ::=
+    @"#ifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleTemplateSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?
+    @"#endif"                                                          ;
+
+PreprocessorElseDirectiveProductionRuleTemplateItem                 ::=>
+    PreprocessorElseIfConditionDirectiveProductionRuleTemplateItem     |
+    PreprocessorElseIfDefinedDirectiveProductionRuleTemplateItem       |
+    PreprocessorElseIfNotDefinedDirectiveProductionRuleTemplateItem    |
+    PreprocessorFinalElseDirectiveProductionRuleTemplateItem           ;
+
+PreprocessorFinalElseDirectiveProductionRuleTemplateItem             ::=
+    @"#else" 
+        ProductionRuleTemplateSeries:Body;                             ;
+
+PreprocessorElseIfConditionDirectiveProductionRuleTemplateItem       ::=
+    @"#elif" PreprocessorIfConditionLogicalOrExp:Condition;
+    ProductionRuleTemplateSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?;
+
+PreprocessorElseIfDefinedDirectiveProductionRuleTemplateItem         ::=
+    @"#elifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleTemplateSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?;
+
+PreprocessorElseIfNotDefinedDirectiveProductionRuleTemplateItem      ::=
+    @"#elifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleTemplateSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?;
+
+GroupProductionRuleTemplateItem                                      ::=
+    LanguageOperatorToken.BeginGroup /*(*/
+        ProductionRuleTemplateSeries:Items;?
+    LanguageOperatorToken.EndGroup   /*)*/
+    ScannableEntryItemOptions<>?$                                      ;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,11 +13,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 {
     /// <summary>
     /// Provides a series of <see cref="ITokenItem"/> instances in a chain which define a 
-    /// <see cref="ITokenEntry"/> or a sub-expression in a <see cref="ITokenEntry"/>.
+    /// <see cref="IOilexerGrammarTokenEntry"/> or a sub-expression in a <see cref="IOilexerGrammarTokenEntry"/>.
     /// </summary>
     public interface ITokenExpression :
         IControlledCollection<ITokenItem>,
-        IAmbiguousGDEntity,
         ITokenSource
     {
         /// <summary>

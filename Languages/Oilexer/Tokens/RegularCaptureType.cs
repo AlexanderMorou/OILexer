@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -34,6 +34,16 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         /// whose term can be identified.
         /// </summary>
         Transducer,
+        /// <summary>
+        /// The state machine resulted in a transducer which needs to
+        /// be contextually aware of which elements are valid at a given
+        /// point, essentially making each end-point a language symbol of its
+        /// own.
+        /// </summary>
+        ContextfulTransducer,
+        /// <summary>
+        /// The state of the regular capture type hasn't been decided yet.
+        /// </summary>
         Undecided,
     }
 }

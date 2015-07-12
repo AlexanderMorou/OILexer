@@ -1,0 +1,106 @@
+#LexerName "$fileinputname$Tokenizer";
+#ParserName "$fileinputname$Parser";
+#AssemblyName "$fileinputname$Reader";
+#GrammarName "$fileinputname$";
+#TokenPrefix "$fileinputname$";
+#TokenSuffix "Token";
+#RulePrefix "$fileinputname$";
+#RuleSuffix "Rule";
+#Root "$fileinputname$RootElement";
+#Namespace "Company.Languages.$fileinputname$";
+
+$fileinputname$RootElement                ::=
+    StandardRule:Standards;*
+    RuleCollapsePoint:Collapsers;
+    SimpleToken:Simples;*
+    TemplateReferenceItem:TemplateElements; ;
+
+StandardRule                              ::=
+    /* *
+     * '@' Means to be case insensitive.
+     * */
+    @"public"? @"class"
+    '{'
+    '}'                                     ;
+
+RuleCollapsePoint                        ::=>
+    Collapse1                               |
+    Collapse2                               |
+    Collapse3                               ;
+
+Collapse1                                 ::=
+    @"public"? @"collapse" '1'
+    '{'
+    '}'                                     ;
+
+/* *
+ * To notate that the result Abstract Syntax
+ * Tree needs to contain an item, suffix the
+ * item with a colon (':'), then with the 
+ * name you want, followed by a semi-colon:
+ * Identifier:NameToCapture;
+ * *
+ * This is valid for both rules and tokens.
+ * */
+Collapse2                                 ::=
+    @"public"? @"collapse" '2' 
+        Identifier:Name;
+    '{'
+    '}';
+
+Collapse3                                 ::=
+    @"public"? @"collapse" '3' 
+    Identifier ';'                          ;
+
+
+/* *
+ * Square Brackets '[' and ']' within a token
+ * represent 'Character Ranges'.  To include
+ * a dash character, place it at the start or
+ * end of the set: [-A]
+ * To Represent the *reverse* of that set, 
+ * start it with a hat character '^':
+ *     [^'] which would match _any_ character
+ * *except* a single quote.
+ * */
+Identifier                                 :=
+    [A-Fa-f_][A-Fa-f_0-9]*                  ;
+
+
+/* *
+ * A simple token which only references a 
+ * single constant string, will be made into
+ * a symbol of its own, if no name is defined
+ * for that string, the name of the token
+ * will represent the symbol name.
+ * */
+SimpleToken                                :=
+    @"simple token";
+
+TemplateReferenceItem                     ::=
+    Template1<'a', Identifier>              ;
+
+/* *
+ * Templates are Rules with a less than 
+ * character after their name, followed by
+ * one or more names, separated by a comma
+ * ended with a greater than sign.
+ * * 
+ * Their purpose is to encode complex parse
+ * structure and have it ready at your 
+ * fingertips in the chance that it's used
+ * often.
+ * *
+ * In the example below, it represents a 
+ * pair which has one required element, but
+ * those elements can be in any order.
+ * *
+ * This is simple in theory, but use this 
+ * more than once, and representing it can be
+ * cumbersome; hence, Templates.
+ * */
+Template1<A, B>                           ::=
+    A  B?                                   |
+    B? A                                    |
+    B A?                                    |
+    A? B                                    ;

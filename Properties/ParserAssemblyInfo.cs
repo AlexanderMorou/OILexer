@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("None")]
 [assembly: AssemblyProduct("OILexer")]
-[assembly: AssemblyCopyright("Copyright © Allen C. Copeland Jr. 2008-2011")]
+[assembly: AssemblyCopyright("Copyright © Allen C. Copeland Jr. 2008-2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,13 +29,13 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.0.*")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
-//[assembly: InternalsVisibleTo("Abstraction.BugTest, PublicKey=002400000480000094000000060200000024000052534131000400000100010009e0756ea3c80f41287e7a2b53118c84bd8c573361b8a085268d639dbb675c68adec8c1f5d750cbf75635bdae6a15635762b759daba1cdcc1439a8ab5288a0d204483205a214786c5a23e68c1f0ad76efc12061a3715a280d1ae5ee1e732a9064e826e6396fe4ba5ad62f44500dab91ef574b9e51ebe8fdd04cd356658d69cbe")]
+[assembly: AssemblyVersion("2.0.*")]
+[assembly: AssemblyFileVersion("2.0 Alpha")]
 #if DEBUG
 [assembly: InternalsVisibleTo("Oilexer")]
-[assembly: InternalsVisibleTo("Oilexer.VSI")]
+[assembly: InternalsVisibleTo("OilexerTests")]
+[assembly: InternalsVisibleTo("OilexerVsix, PublicKey=00240000048000009400000006020000002400005253413100040000010001009982a9fd0d9f7efc18f1da44cf7a85d43b20fd87abb0e46719ec4bdc1b41acb42ca2c032d667030f4b0ba8db26c3b8952d776743b5f1c23d4b956ccbd80d3200b25c611f4300ad09d361c12ef2801ac5f731c63a2248474cc17c5de83572d8bcd5240e925ac8cf391b2b6cdd18c73ab922ff5ea1871cdcd0917a60b88606a996")]
 #else
-[assembly: InternalsVisibleTo("Oilexer, PublicKey=002400000480000094000000060200000024000052534131000400000100010009e0756ea3c80f41287e7a2b53118c84bd8c573361b8a085268d639dbb675c68adec8c1f5d750cbf75635bdae6a15635762b759daba1cdcc1439a8ab5288a0d204483205a214786c5a23e68c1f0ad76efc12061a3715a280d1ae5ee1e732a9064e826e6396fe4ba5ad62f44500dab91ef574b9e51ebe8fdd04cd356658d69cbe")]
-[assembly: InternalsVisibleTo("Oilexer.VSI, PublicKey=002400000480000094000000060200000024000052534131000400000100010009e0756ea3c80f41287e7a2b53118c84bd8c573361b8a085268d639dbb675c68adec8c1f5d750cbf75635bdae6a15635762b759daba1cdcc1439a8ab5288a0d204483205a214786c5a23e68c1f0ad76efc12061a3715a280d1ae5ee1e732a9064e826e6396fe4ba5ad62f44500dab91ef574b9e51ebe8fdd04cd356658d69cbe")]
+[assembly: InternalsVisibleTo("Oilexer,     PublicKey=00240000048000009400000006020000002400005253413100040000010001009982a9fd0d9f7efc18f1da44cf7a85d43b20fd87abb0e46719ec4bdc1b41acb42ca2c032d667030f4b0ba8db26c3b8952d776743b5f1c23d4b956ccbd80d3200b25c611f4300ad09d361c12ef2801ac5f731c63a2248474cc17c5de83572d8bcd5240e925ac8cf391b2b6cdd18c73ab922ff5ea1871cdcd0917a60b88606a996")]
+[assembly: InternalsVisibleTo("OilexerVsix, PublicKey=00240000048000009400000006020000002400005253413100040000010001009982a9fd0d9f7efc18f1da44cf7a85d43b20fd87abb0e46719ec4bdc1b41acb42ca2c032d667030f4b0ba8db26c3b8952d776743b5f1c23d4b956ccbd80d3200b25c611f4300ad09d361c12ef2801ac5f731c63a2248474cc17c5de83572d8bcd5240e925ac8cf391b2b6cdd18c73ab922ff5ea1871cdcd0917a60b88606a996")]
 #endif

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -14,19 +14,19 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         TokenItem,
         ITokenReferenceTokenItem
     {
-        private ITokenEntry reference;
+        private IOilexerGrammarTokenEntry reference;
 
         /// <summary>
         /// Creates a new <see cref="TokenReferenceTokenItem"/> with the <paramref name="reference"/>,
         /// <paramref name="column"/>, <paramref name="line"/>, and <paramref name="position"/>.
         /// </summary>
-        /// <param name="reference">The <see cref="ITokenEntry"/> that the <see cref="ITokenReferenceTokenItem"/>
+        /// <param name="reference">The <see cref="IOilexerGrammarTokenEntry"/> that the <see cref="ITokenReferenceTokenItem"/>
         /// references.</param>
         /// <param name="column">The column on <paramref name="line"/> at which the <see cref="TokenReferenceTokenItem"/> was
         /// defined.</param>
         /// <param name="line">The line at which the <see cref="TokenReferenceTokenItem"/> was defined.</param>
         /// <param name="position">The byte in the file at which the <see cref="TokenReferenceTokenItem"/> was declared.</param>
-        public TokenReferenceTokenItem(ITokenEntry reference, int column, int line, long position)
+        public TokenReferenceTokenItem(IOilexerGrammarTokenEntry reference, int column, int line, long position)
             : base(column, line, position)
         {
             if (reference == null)
@@ -36,7 +36,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 
         #region ITokenReferenceTokenItem Members
 
-        public ITokenEntry Reference
+        public IOilexerGrammarTokenEntry Reference
         {
             get { return this.reference; }
         }

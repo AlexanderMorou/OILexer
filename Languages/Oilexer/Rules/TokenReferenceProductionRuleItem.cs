@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,7 +13,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     /// <summary>
     /// Provides a base implementation of <see cref="ITokenReferenceProductionRuleItem"/>
-    /// which is a <see cref="IProductionRuleItem"/> that references an <see cref="ITokenEntry"/>.
+    /// which is a <see cref="IProductionRuleItem"/> that references an <see cref="IOilexerGrammarTokenEntry"/>.
     /// </summary>
     public class TokenReferenceProductionRuleItem :
         ProductionRuleItem,
@@ -23,13 +23,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// Creates a new <see cref="TokenReferenceProductionRuleItem"/> with the <paramref name="reference"/>,
         /// <paramref name="column"/>, <paramref name="line"/>, and <paramref name="position"/> provided.
         /// </summary>
-        /// <param name="reference">The <see cref="ITokenEntry"/> the <see cref="TokenReferenceProductionRuleItem"/> 
+        /// <param name="reference">The <see cref="IOilexerGrammarTokenEntry"/> the <see cref="TokenReferenceProductionRuleItem"/> 
         /// references.</param>
         /// <param name="column">The column on <paramref name="line"/> at which the <see cref="TokenReferenceProductionRuleItem"/> was
         /// defined.</param>
         /// <param name="line">The line at which the <see cref="TokenReferenceProductionRuleItem"/> was defined.</param>
         /// <param name="position">The byte in the file at which the <see cref="TokenReferenceProductionRuleItem"/> was declared.</param>
-        public TokenReferenceProductionRuleItem(ITokenEntry reference, int column, int line, long position)
+        public TokenReferenceProductionRuleItem(IOilexerGrammarTokenEntry reference, int column, int line, long position)
             : base(column, line, position)
         {
             this.reference = reference;
@@ -38,21 +38,21 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// <summary>
         /// Data member for <see cref="Reference"/>.
         /// </summary>
-        private ITokenEntry reference;
+        private IOilexerGrammarTokenEntry reference;
 
-        #region ITokenReferenceProductionRuleItem Members
+        //#region ITokenReferenceProductionRuleItem Members
 
         /// <summary>
-        /// Returns the <see cref="ITokenEntry"/> which the <see cref="TokenReferenceProductionRuleItem"/> 
+        /// Returns the <see cref="IOilexerGrammarTokenEntry"/> which the <see cref="TokenReferenceProductionRuleItem"/> 
         /// relates to.
         /// </summary>
-        public ITokenEntry Reference
+        public IOilexerGrammarTokenEntry Reference
         {
             get { return this.reference; }
             internal set { this.reference = value; }
         }
 
-        #endregion
+        //#endregion
 
         protected override sealed object OnClone()
         {

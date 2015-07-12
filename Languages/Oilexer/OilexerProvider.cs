@@ -8,8 +8,9 @@ using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Translation;
 using AllenCopeland.Abstraction.Slf.Ast;
 using System.Reflection;
+using AllenCopeland.Abstraction.Slf.Ast.Cli;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -27,7 +28,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         internal OilexerProvider(IIntermediateCliManager identityManager):base(identityManager) { }
 
 
-        public ILanguageParser<IGDFile> Parser
+        public ILanguageParser<IOilexerGrammarFile> Parser
         {
             get
             {

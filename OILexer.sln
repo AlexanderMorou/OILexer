@@ -1,27 +1,44 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexer", "OILexer.csproj", "{0D009988-DE0E-4362-830D-7980BEB41F6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexerParser", "OILexerParser.csproj", "{886B34E8-755F-420C-8725-767EADD92996}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexerParser", "OILexerParser.csproj", "{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSOILexer", "VSOILexer\VSOILexer.csproj", "{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{345BF5CC-10FB-4323-8AE8-F7D4F6E4A08C}"
+	ProjectSection(SolutionItems) = preProject
+		CopyOILexer.bat = CopyOILexer.bat
+		readme.html = readme.html
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsixOilexer", "VsixOilexer\VsixOilexer.csproj", "{09E5CB77-7B5E-442A-98D9-336A44568917}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04} = {A2008B7F-AAD5-440E-9480-BB4BE95F6B04}
+		{0D009988-DE0E-4362-830D-7980BEB41F6F} = {0D009988-DE0E-4362-830D-7980BEB41F6F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 3
+		SccNumberOfProjects = 4
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs04
+		SccTeamFoundationServer = https://alexandermorou.visualstudio.com/defaultcollection
 		SccLocalPath0 = .
-		SccProjectUniqueName1 = OILexer.csproj
+		SccProjectUniqueName1 = OILexerParser.csproj
 		SccLocalPath1 = .
-		SccProjectUniqueName2 = OILexerParser.csproj
+		SccProjectUniqueName2 = OILexer.csproj
 		SccLocalPath2 = .
+		SccProjectUniqueName3 = VsixOilexer\\VsixOilexer.csproj
+		SccProjectName3 = VsixOilexer
+		SccLocalPath3 = VsixOilexer
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
+		VSOilexerDebug|x64 = VSOilexerDebug|x64
+		VSOilexerDebug|x86 = VSOilexerDebug|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{0D009988-DE0E-4362-830D-7980BEB41F6F}.Debug|x64.ActiveCfg = Debug|x64
@@ -32,20 +49,28 @@ Global
 		{0D009988-DE0E-4362-830D-7980BEB41F6F}.Release|x64.Build.0 = Release|x64
 		{0D009988-DE0E-4362-830D-7980BEB41F6F}.Release|x86.ActiveCfg = Release|x86
 		{0D009988-DE0E-4362-830D-7980BEB41F6F}.Release|x86.Build.0 = Release|x86
-		{886B34E8-755F-420C-8725-767EADD92996}.Debug|x64.ActiveCfg = Debug|x64
-		{886B34E8-755F-420C-8725-767EADD92996}.Debug|x64.Build.0 = Debug|x64
-		{886B34E8-755F-420C-8725-767EADD92996}.Debug|x86.ActiveCfg = Debug|x86
-		{886B34E8-755F-420C-8725-767EADD92996}.Debug|x86.Build.0 = Debug|x86
-		{886B34E8-755F-420C-8725-767EADD92996}.Release|x64.ActiveCfg = Release|x64
-		{886B34E8-755F-420C-8725-767EADD92996}.Release|x64.Build.0 = Release|x64
-		{886B34E8-755F-420C-8725-767EADD92996}.Release|x86.ActiveCfg = Release|x86
-		{886B34E8-755F-420C-8725-767EADD92996}.Release|x86.Build.0 = Release|x86
-		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Debug|x64.ActiveCfg = Debug|x86
-		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Debug|x86.ActiveCfg = Debug|x86
-		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Debug|x86.Build.0 = Debug|x86
-		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Release|x64.ActiveCfg = Release|x86
-		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Release|x86.ActiveCfg = Release|x86
-		{6D79797E-B58D-4D4D-9378-F7C3F62F3AD3}.Release|x86.Build.0 = Release|x86
+		{0D009988-DE0E-4362-830D-7980BEB41F6F}.VSOilexerDebug|x64.ActiveCfg = Release|x64
+		{0D009988-DE0E-4362-830D-7980BEB41F6F}.VSOilexerDebug|x64.Build.0 = Release|x64
+		{0D009988-DE0E-4362-830D-7980BEB41F6F}.VSOilexerDebug|x86.ActiveCfg = Release|x86
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Debug|x64.ActiveCfg = Debug|x64
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Debug|x64.Build.0 = Debug|x64
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Debug|x86.ActiveCfg = Debug|x86
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Debug|x86.Build.0 = Debug|x86
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Release|x64.ActiveCfg = Release|x64
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Release|x64.Build.0 = Release|x64
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Release|x86.ActiveCfg = Release|x86
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.Release|x86.Build.0 = Release|x86
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.VSOilexerDebug|x64.ActiveCfg = Release|x64
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.VSOilexerDebug|x64.Build.0 = Release|x64
+		{A2008B7F-AAD5-440E-9480-BB4BE95F6B04}.VSOilexerDebug|x86.ActiveCfg = Release|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.Debug|x64.ActiveCfg = Debug|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.Debug|x86.ActiveCfg = Debug|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.Release|x64.ActiveCfg = Release|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.Release|x86.ActiveCfg = Release|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.Release|x86.Build.0 = Release|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.VSOilexerDebug|x64.ActiveCfg = Debug|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.VSOilexerDebug|x86.ActiveCfg = Debug|x86
+		{09E5CB77-7B5E-442A-98D9-336A44568917}.VSOilexerDebug|x86.Build.0 = Debug|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

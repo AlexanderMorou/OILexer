@@ -5,7 +5,7 @@ using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -17,7 +17,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
     /// Provides a base implementation of <see cref="ITokenExpression"/> 
     /// </summary>
     public class TokenExpression :
-        ReadOnlyCollection<ITokenItem>,
+        ControlledCollection<ITokenItem>,
         ITokenExpression
     {
         /// <summary>
@@ -97,15 +97,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 
         #endregion
 
-        #region IAmbiguousGDEntity Members
-
-        public void Disambiguify(IGDFile context, IEntry root)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -127,6 +118,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
             {
                 return base.baseList;
             }
+        }
+
+        public string Name
+        {
+          get { return null; }
         }
     }
 }

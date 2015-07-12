@@ -5,7 +5,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -14,9 +14,9 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     internal class TokenEqualityLevel :
-        List<InlinedTokenEntry>
+        List<OilexerGrammarTokenEntry>
     {
-        public TokenEqualityLevel(IEnumerable<InlinedTokenEntry> set)
+        public TokenEqualityLevel(IEnumerable<OilexerGrammarTokenEntry> set)
             : base(set)
         {
         }
@@ -28,11 +28,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         
         new public void Sort()
         {
-            InlinedTokenEntry[] items = (from i in this
+            OilexerGrammarTokenEntry[] items = (from i in this
                                          orderby i.Name
                                          select i).ToArray();
             this.Clear();
             this.AddRange(items);
         }
+        public int Index { get; internal set; }
     }
 }

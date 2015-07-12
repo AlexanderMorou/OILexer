@@ -10,11 +10,15 @@ using System.Threading.Tasks;
 #if x64
 using SlotType = System.UInt64;
 #elif x86
+#if HalfWord
+using SlotType = System.UInt16;
+#else
 using SlotType = System.UInt32;
+#endif
 #endif
 using AllenCopeland.Abstraction.Slf.FiniteAutomata;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -27,12 +31,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         IEquatable<RegularLanguageSet>
     {
         private string stringForm;
+        private RangeData? _rangeData;
         public static readonly RegularLanguageSet CompleteSet = BuildCompleteSet();
 
         private static RegularLanguageSet BuildCompleteSet()
         {
             var result = new RegularLanguageSet();
-            result.Set(null, 0, 0, FullSetLength, true);
+            result.Set(null, 0, 0, true);
             return result;
         }
         private const int FullSetLength = char.MaxValue + 1;
@@ -57,21 +62,28 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
                     max = range.Item2;
             }
 
-            max = (int)Math.Ceiling(((double)(max + 1)) / (double)SlotBitCount);
+            max = (int)Math.Ceiling(((double)(max + 1)) / (double)FiniteAutomataExtensions.SlotBitCount);
             SlotType[] dataSet = new SlotType[max];
             for (int i = 0; i < singleTons.Length; i++)
             {
                 char singleTon = singleTons[i];
-                dataSet[(SlotType)singleTon / SlotBitCount] |= (SlotType)(ShiftValue << (int)(singleTon % SlotBitCount));
+                dataSet[(SlotType)singleTon / FiniteAutomataExtensions.SlotBitCount] |= (SlotType)(FiniteAutomataExtensions.ShiftValue << (int)(singleTon % FiniteAutomataExtensions.SlotBitCount));
             }
 
             for (int i = 0; i < ranges.Length; i++)
             {
                 var range = ranges[i];
-                for (char j = range.Item1; j <= range.Item2; j++)
-                    dataSet[(SlotType)j / SlotBitCount] |= (SlotType)(ShiftValue << (int)(j % SlotBitCount));
+                /* *
+                 * Fix 2/28/2015 - Char-ranges that hit the upper char
+                 * limit caused an infinite loop due to it overflowing the 
+                 * char datatype.
+                 * *
+                 * Changed to int to fix.
+                 * */
+                for (int j = (int)range.Item1; j <= (int)range.Item2; j++)
+                    dataSet[(SlotType)j / FiniteAutomataExtensions.SlotBitCount] |= (SlotType)(FiniteAutomataExtensions.ShiftValue << (int)(((SlotType)j) % FiniteAutomataExtensions.SlotBitCount));
             }
-            result.Set(dataSet, 0, (uint)(max + 1), FullSetLength, false);
+            result.Set(dataSet, 0, (uint)(max + 1), false);
             for (int i = 0; i < categories.Length; i++)
             {
                 var category = categories[i];
@@ -94,7 +106,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         public RegularLanguageSet(char c)
         {
             SlotType[] values = new SlotType[] { 1 };
-            base.Set(values, (uint)c, 1, FullSetLength, false);
+            base.Set(values, (uint)c, 1, false);
         }
 
         public RegularLanguageSet(string characters)
@@ -110,7 +122,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 
         public RegularLanguageSet(UnicodeCategory category, UnicodeCategory[] characterData, int maxPoint)
         {
-            int max = (int)Math.Ceiling(((double)(maxPoint + 1)) / (double)SlotBitCount);
+            int max = (int)Math.Ceiling(((double)(maxPoint + 1)) / (double)FiniteAutomataExtensions.SlotBitCount);
             SlotType[] dataSet = new SlotType[max];
             Parallel.For(0, maxPoint + 1, j =>
                 {
@@ -118,10 +130,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
                     if (characterData[i] == category)
                         lock (dataSet)
                         {
-                            dataSet[i / SlotBitCount] |= (SlotType)(ShiftValue << (int)(i % SlotBitCount));
+                            dataSet[i / FiniteAutomataExtensions.SlotBitCount] |= (SlotType)(FiniteAutomataExtensions.ShiftValue << (int)(i % FiniteAutomataExtensions.SlotBitCount));
                         }
                 });
-            base.Set(dataSet, 0, (uint)(maxPoint + 1), FullSetLength, false, true);
+            base.Set(dataSet, 0, (uint)(maxPoint + 1), false, true);
         }
 
         public RegularLanguageSet(bool caseSensitive, params char[] characters)
@@ -161,7 +173,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         private unsafe void Set(BitArray characters, bool inverted)
         {
             SlotType[] values2 = characters.ObtainFiniteSeries(FullSetLength);
-            base.Set(values2, 0, (uint)characters.Length, FullSetLength, inverted);
+            base.Set(values2, 0, (uint)characters.Length, inverted);
         }
         /// <summary>
         /// Determines whether the <paramref name="character"/>
@@ -213,10 +225,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
             {
                 switch (element.Which)
                 {
-                    case SwitchPairElement.A:
+                    case SwitchPairElement.SingleCharacter:
                         sb.Append(EncodeChar(element.A.Value));
                         break;
-                    case SwitchPairElement.B:
+                    case SwitchPairElement.CharacterRange:
                         sb.AppendFormat("{0}-{1}", EncodeChar(element.B.Value.Start), EncodeChar(element.B.Value.End));
                         break;
                     default:
@@ -263,8 +275,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 
         protected internal RangeData GetRange()
         {
-            return new RangeData(this);
+            return (this._rangeData ?? (this._rangeData = new RangeData(this))).Value;
         }
 
+        internal override uint OnGetFullLength()
+        {
+            return RegularLanguageSet.FullSetLength;
+        }
     }
 }

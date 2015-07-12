@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -20,10 +20,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// </summary>
         IProductionRuleTemplatePart Reference { get; }
         /// <summary>
-        /// Returns the <see cref="IProductionRuleTemplateEntry"/> which the contains the 
+        /// Returns the <see cref="IOilexerGrammarProductionRuleTemplateEntry"/> which the contains the 
         /// <see cref="Reference"/> the <see cref="ITemplateParamReferenceProductionRuleItem"/> references.
         /// </summary>
-        IProductionRuleTemplateEntry Source { get; }
+        IOilexerGrammarProductionRuleTemplateEntry Source { get; }
         /// <summary>
         /// Creates a copy of the current <see cref="ITemplateParamReferenceProductionRuleItem"/>.
         /// </summary>

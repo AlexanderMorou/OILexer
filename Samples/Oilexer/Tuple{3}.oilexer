@@ -1,0 +1,32 @@
+#include                 "Templates.oilexer";
+
+Tuple<A, B, C>                            ::=
+    A Tuple<B, C>                           |
+    B Tuple<A, C>                           |
+    C Tuple<A, B>                           ;
+
+TupleR1<A, B, C>                          ::=
+    A OTuple<B, C>                          |
+    B OTuple<A, C>                          |
+    C OTuple<A, B>                          ;
+
+OTuple<A, B, C>                           ::=
+    Tuple<A?, B?, C?>                       ;
+    
+TupleOARBC<A, B, C>                       ::=
+    Tuple<A?, B, C>                         ;
+
+TupleOABRC<A, B, C>                       ::=
+    Tuple<A?, B?, C>                        ;
+
+TupleRABOC<A, B, C>                       ::=
+    Tuple<A, B, C?>                         ;
+
+TupleDelimTrail<A, B, C, Delimiter>       ::=
+    TupleDelimTrail<
+        TupleDelimTrail<
+            A,
+            B,
+            Delimiter>, 
+        C,
+        Delimiter>                          ;

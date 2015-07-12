@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -16,9 +16,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         IPreprocessorThrowDirective
     {
         internal string error;
-        IErrorEntry reference;
-        private IGDFile source;
-        private IGDToken[] arguments;
+        IOilexerGrammarErrorEntry reference;
+        private IOilexerGrammarFile source;
+        private IOilexerGrammarToken[] arguments;
         /// <summary>
         /// Creates a new <see cref="PreprocessorThrowDirective"/> with the 
         /// <paramref name="column"/>, <paramref name="line"/>, and <paramref name="position"/>.
@@ -32,7 +32,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <param name="line">The line index the <see cref="PreprocessorThrowDirective"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorThrowDirective"/> 
         /// was declared at.</param>
-        public PreprocessorThrowDirective(IGDFile source, string error, IGDToken[] arguments, int column, int line, long position)
+        public PreprocessorThrowDirective(IOilexerGrammarFile source, string error, IOilexerGrammarToken[] arguments, int column, int line, long position)
             : base(column, line, position)
         {
             this.source = source;
@@ -40,18 +40,18 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             this.arguments = arguments;
         }
 
-        #region IPreprocessorThrowDirective Members
+        //#region IPreprocessorThrowDirective Members
 
-        public IErrorEntry Reference
+        public IOilexerGrammarErrorEntry Reference
         {
             get
             {
                 if (this.source != null && this.reference == null && this.error != null && this.error != string.Empty)
                 {
-                    foreach (IEntry ie in source)
-                        if (ie is IErrorEntry && ((IErrorEntry)(ie)).Name == error)
+                    foreach (IOilexerGrammarEntry ie in source)
+                        if (ie is IOilexerGrammarErrorEntry && ((IOilexerGrammarErrorEntry)(ie)).Name == error)
                         {
-                            this.reference = (IErrorEntry)ie;
+                            this.reference = (IOilexerGrammarErrorEntry)ie;
                             this.error = null;
                             this.source = null;
                         }
@@ -63,12 +63,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <summary>
         /// Returns the arguments associated with the throw directive, all tokens.
         /// </summary>
-        public IGDToken[] Arguments
+        public IOilexerGrammarToken[] Arguments
         {
             get { return this.arguments; }
         }
 
-        #endregion
+        //#endregion
 
         public override EntryPreprocessorType Type
         {

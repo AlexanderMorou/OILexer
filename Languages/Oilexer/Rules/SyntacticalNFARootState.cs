@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Compilers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
+using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -16,15 +17,19 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     public class SyntacticalNFARootState :
         SyntacticalNFAState
     {
-        private IProductionRuleEntry entry;
-        public SyntacticalNFARootState(IProductionRuleEntry entry, ParserBuilder builder)
-            : base(builder)
+        private IOilexerGrammarProductionRuleEntry entry;
+        internal ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup;
+        internal GrammarSymbolSet symbols;
+        public SyntacticalNFARootState(IOilexerGrammarProductionRuleEntry entry, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, GrammarSymbolSet symbols)
+            : base(lookup, symbols)
         {
             this.entry = entry;
+            this.lookup = lookup;
         }
+
         protected override SyntacticalDFAState GetRootDFAState()
         {
-            return new SyntacticalDFARootState(this.entry, base.builder);
+            return new SyntacticalDFARootState(this.entry, lookup, symbols);
         }
 
         /// <summary>
@@ -42,7 +47,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return (SyntacticalDFARootState)base.DeterminateAutomata();
         }
 
-        public IProductionRuleEntry Source { get { return this.entry; } }
+        public IOilexerGrammarProductionRuleEntry Source { get { return this.entry; } }
 
     }
 }

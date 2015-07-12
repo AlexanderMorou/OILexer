@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -14,7 +14,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     public class GrammarSymbolComparer :
         IComparer<IGrammarSymbol>
     {
-        #region IComparer<IGrammarSymbol> Members
+        private GrammarSymbolSet _grammarSymbols;
+
+        public GrammarSymbolComparer() { }
+
+        public GrammarSymbolComparer(GrammarSymbolSet grammarSymbols)
+        {
+            this._grammarSymbols = grammarSymbols;
+        }
+        //#region IComparer<IGrammarSymbol> Members
 
         public int Compare(IGrammarSymbol x, IGrammarSymbol y)
         {
@@ -31,13 +39,19 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 if (y is IGrammarTokenSymbol)
                 {
                     var ygts = y as IGrammarTokenSymbol;
+                    bool xas = SymbolIsAmbiguity(xgts),
+                         yas = SymbolIsAmbiguity(ygts);
+                    if (xas && !yas)
+                        return 1;
+                    else if (!xas && yas)
+                        return -1;
                     if (xgts is IGrammarConstantSymbol)
                     {
                         if (ygts is IGrammarConstantSymbol)
                         {
                             if (xgts is IGrammarConstantEntrySymbol)
                                 if (ygts is IGrammarConstantEntrySymbol)
-                                    return xgts.Source.Name.CompareTo(ygts.Source.Name);
+                                    return string.Compare(xgts.Source.Name, ygts.Source.Name, true);
                                 else
                                     return -1;
                             else if (ygts is IGrammarConstantEntrySymbol)
@@ -50,10 +64,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                                     {
                                         var xgcis = xgts as IGrammarConstantItemSymbol;
                                         var ygcis = ygts as IGrammarConstantItemSymbol;
-                                        return xgcis.SourceItem.Name.CompareTo(ygcis.SourceItem.Name);
+                                        return string.Compare(xgcis.SourceItem.Name, ygcis.SourceItem.Name, true);
                                     }
-                                    else 
-                                        return xgts.Source.Name.CompareTo(ygts.Source.Name);
+                                    else
+                                        return string.Compare(xgts.Source.Name, ygts.Source.Name, true);
                                 }
                                 else
                                     return -1;
@@ -67,11 +81,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                     else if (xgts is IGrammarVariableSymbol)
                     {
                         if (y is IGrammarVariableSymbol)
-                            return xgts.Source.Name.CompareTo(ygts.Source.Name);
+                            return string.Compare(xgts.Source.Name, ygts.Source.Name, true);
                         else
                             return -1;
                     }
-                    return xgts.Source.Name.CompareTo(ygts.Source.Name);
+                    return string.Compare(xgts.Source.Name, ygts.Source.Name, true);
                 }
                 else
                     return -1;
@@ -86,7 +100,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 if (y is IGrammarRuleSymbol)
                 {
                     var ygrs = y as IGrammarRuleSymbol;
-                    return xgrs.Source.Name.CompareTo(ygrs.Source.Name);
+                    return string.Compare(xgrs.Source.Name, ygrs.Source.Name, true);
                 }
                 else
                     return -1;
@@ -94,6 +108,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return 0;
         }
 
-        #endregion
+        protected bool SymbolIsAmbiguity(IGrammarTokenSymbol symbol)
+        {
+            if (this._grammarSymbols == null)
+                return false;
+            return this._grammarSymbols.AmbiguousSymbols.Any(k => k.Contains((IGrammarTokenSymbol)symbol));
+        }
+
+        //#endregion
     }
 }

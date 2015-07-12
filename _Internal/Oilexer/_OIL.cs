@@ -1,7 +1,11 @@
 #if x64
 using SlotType = System.UInt64;
 #elif x86
+#if HalfWord
+using SlotType = System.UInt16;
+#else
 using SlotType = System.UInt32;
+#endif
 #endif
 using System;
 using System.CodeDom;
@@ -23,8 +27,10 @@ using System.Text.RegularExpressions;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Parsers;
 using AllenCopeland.Abstraction.Slf.Cst;
+using AllenCopeland.Abstraction.Slf.Abstract;
+using System.Globalization;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -67,39 +73,6 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             }
             return resultBuilder.ToString();
         }
-        public static string HTMLEncode(this string toEncode, bool encodeSpaces = true)
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (char c in toEncode)
-            {
-                switch (c)
-                {
-                    case '<':
-                        sb.Append("&lt;");
-                        break;
-                    case '>':
-                        sb.Append("&gt;");
-                        break;
-                    case '&':
-                        sb.Append("&amp;");
-                        break;
-                    case ' ':
-                        if (encodeSpaces)
-                            sb.Append("&nbsp;");
-                        else
-                            sb.Append(" ");
-                        break;
-                    default:
-                        if (c <= 0xFF)
-                            sb.Append(c);
-                        else
-                            sb.AppendFormat("&#{0:000#};", (int)c);
-                        break;
-                }
-            }
-            return sb.ToString();
-        }
-
 
         internal unsafe static SlotType[] ObtainFiniteSeries(this BitArray characters, int FullSetLength)
         {
@@ -134,7 +107,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             return values2;
         }
 
-        private static bool DependsOn(this SyntacticalDFAState target, IProductionRuleEntry entry, List<SyntacticalDFAState> followed)
+        private static bool DependsOn(this SyntacticalDFAState target, IOilexerGrammarProductionRuleEntry entry, List<SyntacticalDFAState> followed)
         {
             //Ensure that cyclic models don't recurse infinitely
             if (followed.Contains(target))
@@ -186,14 +159,14 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             return false;
         }
 
-        public static bool DependsOn(this SyntacticalDFARootState target, IProductionRuleEntry entry)
+        public static bool DependsOn(this SyntacticalDFARootState target, IOilexerGrammarProductionRuleEntry entry)
         {
             return target.DependsOn(entry, new List<SyntacticalDFAState>());
         }
 
         private class DependsOnPredicatedHelper
         {
-            internal IProductionRuleEntry rule;
+            internal IOilexerGrammarProductionRuleEntry rule;
             internal InlinedTokenEntry token;
 
             internal Func<GrammarVocabulary, bool> rulePredicate;
@@ -234,19 +207,93 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             return target.Match(text).AsEnumerable();
         }
 
-        public static IParserResults<TResult> Parse<TToken, TTokenizer, TResult, TParser>(this string fileName)
-            where TParser :
-                IParser<TToken, TTokenizer, TResult>,
-                new()
-            where TToken :
-                IToken
-            where TTokenizer :
-                ITokenizer<TToken>
-            where TResult :
-                IConcreteNode
+
+        public static T ObtainCILibraryType<T>(this Type t, IIdentityManager identityManager)
+            where T :
+                IType
         {
-            var parser = new TParser();
-            return parser.Parse(fileName);
+            if (t.Assembly != typeof(int).Assembly)
+                throw new ArgumentException();
+            return (T)identityManager.ObtainTypeReference(identityManager.ObtainTypeReference(RuntimeCoreType.RootType).Assembly.UniqueIdentifier.GetTypeIdentifier(t.Namespace, t.Name));
         }
+
+        public static string GetDocComment(this IOilexerGrammarProductionRuleEntry entry)
+        {
+            StringBuilder s = new StringBuilder();
+            if (entry == null ||
+                entry.PreexpansionText == null)
+                return string.Empty;
+
+            s.Append(entry.PreexpansionText.Replace('\x20', '\xA0'));
+            return s.ToString();
+        }
+
+        public static string GetDocComment(this IOilexerGrammarTokenEntry entry)
+        {
+            StringBuilder s = new StringBuilder();
+            if (entry == null || entry is IOilexerGrammarTokenEofEntry)
+                return string.Empty;
+
+            s.Append(entry.ToString().Replace('\x20', '\xA0'));
+            return s.ToString();
+        }
+
+#if WINDOWS
+
+        public static string GetFilenameProperCasing(this string filename)
+        {
+            try
+            {
+                var dirInfo = new DirectoryInfo(Path.GetDirectoryName(filename));
+                var files = dirInfo.GetFiles(Path.GetFileName(filename));
+                if (files.Length > 0)
+                    return Path.Combine(files[0].DirectoryName.GetDirectoryProperCasing(), files[0].Name);
+                return filename;
+            }
+            catch
+            {
+                return filename.ToLower();
+            }
+        }
+        public static string GetDirectoryProperCasing(this string path)
+        {
+            try
+            {
+                var attrs = File.GetAttributes(path);
+                if ((attrs & FileAttributes.Directory) == FileAttributes.Directory)
+                {
+                    var parent = path + @"\..\";
+                    var dirName = Path.GetFileName(path);
+                    var parentAdjust = Path.GetFullPath(parent);
+                    if (parentAdjust.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                        parentAdjust = parentAdjust.Substring(0, parentAdjust.Length - 1);
+                    /* *
+                     * Once we've reached the end of the line.
+                     * */
+                    if (parentAdjust == path)
+                        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(path) + Path.DirectorySeparatorChar;
+                    else
+                    {
+                        var previous = GetDirectoryProperCasing(parentAdjust);
+                        DirectoryInfo di = new DirectoryInfo(previous);
+                        return Path.Combine(previous, di.GetDirectories(dirName)[0].Name);
+                    }
+
+                }
+                else
+                    throw new ArgumentException("path");
+            }
+            catch
+            {
+                /* *
+                 * In the case of a general failure, yield the lower-case version
+                 * of the filename.  Likely caused by permissions issues.
+                 * */
+                return path.ToLower();
+            }
+        }
+
+#endif
+
     }
 }

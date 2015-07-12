@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -72,7 +72,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return srpri;
         }
 
-        #region ISoftReferenceProductionRuleItem Members
+        //#region ISoftReferenceProductionRuleItem Members
 
         /// <summary>
         /// Returns the name of the target the <see cref="SoftReferenceProductionRuleItem"/> refers
@@ -92,7 +92,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get { return this.secondaryName; }
         }
 
-        #endregion
+        //#endregion
         public bool IsFlag
         {
             get { return this.isFlag; }
@@ -114,8 +114,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 return this.PrimaryName;
         }
 
-        public GDTokens.IdentifierToken PrimaryToken { get; internal set; }
+        public OilexerGrammarTokens.IdentifierToken PrimaryToken { get; internal set; }
 
-        public GDTokens.IdentifierToken SecondaryToken { get; internal set; }
+        public OilexerGrammarTokens.IdentifierToken SecondaryToken { get; internal set; }
+
+        public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
     }
 }

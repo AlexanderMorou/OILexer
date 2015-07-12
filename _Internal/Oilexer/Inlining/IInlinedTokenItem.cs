@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
+using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -21,10 +22,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         /// </summary>
         ITokenItem Source { get; }
         /// <summary>
-        /// Returns the <see cref="ITokenEntry"/> which contains
+        /// Returns the <see cref="IOilexerGrammarTokenEntry"/> which contains
         /// the <see cref="Source"/>.
         /// </summary>
-        ITokenEntry SourceRoot { get; }
+        IOilexerGrammarTokenEntry SourceRoot { get; }
 
         /// <summary>
         /// Returns the <see cref="InlinedTokenEntry"/> which contains the current
@@ -38,5 +39,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         /// <see cref="IInlinedTokenItem"/>.
         /// </summary>
         RegularLanguageNFAState State { get; }
+
+        void BuildState(Dictionary<ITokenSource, ICaptureTokenStructuralItem> sourceReplacementLookup);
+
     }
 }

@@ -1,0 +1,22 @@
+#ifndef Lexer
+#include                        "Oilexer.oilexer";
+
+GDFile                                     ::=
+    Entry:Items;*                            ;
+#elif Lexer == "ToyParser"
+#include                       "Language.oilexer";
+#endif
+
+Entry                                     ::=>
+    PreprocessorEntry                        |
+    CommentEntry                             |
+    ScannableEntry                           ;
+
+ScannableEntry                            ::=>
+    ErrorEntry                               |
+    TokenEntry                               |
+    ProductionRuleEntry                      |
+    ProductionRuleTemplateEntry              ;
+
+CommentEntry                              ::=>
+    Comment                                  ;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -12,7 +12,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 {
     public class TokenGroupItem :
-        ReadOnlyCollection<ITokenExpression>,
+        ControlledCollection<ITokenExpression>,
         ITokenGroupItem
     {
         /// <summary>
@@ -66,7 +66,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
             return prgi;
         }
 
-        #region ITokenItem Members
+        //#region ITokenItem Members
 
 
         public string DefaultSoftRefOrValue
@@ -79,9 +79,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         {
             return this.Clone();
         }
-        #endregion
+        //#endregion
 
-        #region IScannableEntryItem Members
+        //#region IScannableEntryItem Members
 
         /// <summary>
         /// Returns the name of the <see cref="TokenGroupItem"/>, if it was defined.
@@ -141,7 +141,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
             return this.Clone();
         }
 
-        #endregion
+        //#endregion
 
         public override string ToString()
         {
@@ -233,7 +233,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         }
 
 
-        #region ITokenExpressionSeries Members
+        //#region ITokenExpressionSeries Members
 
 
         public string FileName { get; private set; }
@@ -243,7 +243,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
             return this.BuildString(false);
         }
 
-        #endregion
+        //#endregion
 
     }
 }

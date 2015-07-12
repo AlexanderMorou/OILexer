@@ -1,7 +1,7 @@
 ﻿
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -23,9 +23,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// members of the current <see cref="ITemplateReferenceProductionRuleItem"/>.</returns>
         new ITemplateReferenceProductionRuleItem Clone();
         /// <summary>
-        /// Returns the <see cref="IProductionRuleTemplateEntry"/> which the 
+        /// Returns the <see cref="IOilexerGrammarProductionRuleTemplateEntry"/> which the 
         /// <see cref="ITemplateReferenceProductionRuleItem"/> references.
         /// </summary>
-        IProductionRuleTemplateEntry Reference { get; }
+        IOilexerGrammarProductionRuleTemplateEntry Reference { get; }
     }
 }

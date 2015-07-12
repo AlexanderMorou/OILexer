@@ -1,4 +1,4 @@
-﻿using AllenCopeland.Abstraction.Slf.Ast;
+using AllenCopeland.Abstraction.Slf.Ast;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,16 +11,16 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         RuleEntryChildObjectRelationalMap,
         IRuleEntryBranchObjectRelationalMap
     {
-        internal RuleEntryChildBranchObjectRelationalMap(IIntermediateEnumType casesEnum, IProductionRuleEntry[] implementsSeries, GDFileObjectRelationalMap fileMap, IProductionRuleEntry entry)
+        internal RuleEntryChildBranchObjectRelationalMap(IIntermediateEnumType casesEnum, IOilexerGrammarProductionRuleEntry[] implementsSeries, OilexerGrammarFileObjectRelationalMap fileMap, IOilexerGrammarProductionRuleEntry entry)
             : base(implementsSeries, fileMap, entry)
         {
             this.CasesEnum = casesEnum;
         }
 
-        #region IRuleEntryBranchObjectRelationalMap Members
+        //#region IRuleEntryBranchObjectRelationalMap Members
 
         public IIntermediateEnumType CasesEnum { get; private set; }
 
-        #endregion
+        //#endregion
     }
 }

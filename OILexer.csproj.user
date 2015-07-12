@@ -1,18 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <ProjectView>ProjectFiles</ProjectView>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <StartWorkingDirectory>F:\Projects\Code\C#\OILexer\bin\x64\Debug\Samples\Toy++\</StartWorkingDirectory>
-    <StartArguments>Toy++.oilexer</StartArguments>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <StartArguments>Toy++.oilexer</StartArguments>
-    <StartWorkingDirectory>F:\Projects\Code\C#\OILexer\bin\x64\Release\Samples\Toy++\</StartWorkingDirectory>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <StartArguments>-v "Samples\Oilexer\Oilexer.oilexer" -ex:cs</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <StartArguments>Toy++.oilexer</StartArguments>
-    <StartWorkingDirectory>F:\Projects\Code\C#\OILexer\bin\x86\Debug\Samples\Toy++\</StartWorkingDirectory>
+    <StartArguments>-v "Samples\Oilexer\Oilexer.oilexer" -ex:cs</StartArguments>
+    <StartAction>Project</StartAction>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <StartArguments>"Samples\Oilexer\Oilexer.oilexer" -ex:cs -cycledepth:1</StartArguments>
+    <StartAction>Project</StartAction>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <StartArguments>"Samples\SimpleCalc\SimpleCalc.oilexer" -ex:cs -cycledepth:1</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ProjectView>ProjectFiles</ProjectView>
   </PropertyGroup>
 </Project>

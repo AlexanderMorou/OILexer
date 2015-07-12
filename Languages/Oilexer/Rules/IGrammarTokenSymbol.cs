@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -20,9 +20,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         IGrammarSymbol
     {
         /// <summary>
-        /// Returns the <see cref="ITokenEntry"/> on which the
+        /// Returns the <see cref="IOilexerGrammarTokenEntry"/> on which the
         /// <see cref="IGrammarTokenSymbol"/> is based.
         /// </summary>
-        ITokenEntry Source { get; }
+        IOilexerGrammarTokenEntry Source { get; }
     }
 }

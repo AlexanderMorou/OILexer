@@ -14,7 +14,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         IInlinedTokenItem
     {
         private RegularLanguageNFAState state;
-        public InlinedCharRangeTokenItem(ICharRangeTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root)
+        public InlinedCharRangeTokenItem(ICharRangeTokenItem source, IOilexerGrammarTokenEntry sourceRoot, InlinedTokenEntry root)
             : base(source.Inverted, source.Range, source.Line, source.Column, source.Position)
         {
             this.Source = source;
@@ -27,10 +27,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         public ICharRangeTokenItem Source { get; private set; }
 
         /// <summary>
-        /// Returns the <see cref="ITokenEntry"/> which contains
+        /// Returns the <see cref="IOilexerGrammarTokenEntry"/> which contains
         /// the <see cref="Source"/>.
         /// </summary>
-        public ITokenEntry SourceRoot { get; private set; }
+        public IOilexerGrammarTokenEntry SourceRoot { get; private set; }
 
         /// <summary>
         /// Returns the <see cref="InlinedTokenEntry"/> which contains the current
@@ -49,26 +49,28 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         {
             get
             {
-                if (this.state == null)
-                {
-                    this.state = this.BuildNFAState();
-                    this.state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, InliningCore.TokenRootStateClonerCache, InliningCore.TokenStateClonerCache);
-                }
                 return this.state;
             }
         }
 
-        private RegularLanguageNFAState BuildNFAState()
+        #endregion
+
+
+        #region IInlinedTokenItem Members
+
+
+        public void BuildState(Dictionary<ITokenSource, Captures.ICaptureTokenStructuralItem> sourceReplacementLookup)
         {
+            var thisReplacement = sourceReplacementLookup.ContainsKey(this) ? (ITokenSource)(sourceReplacementLookup[this]) : (ITokenSource)this;
             RegularLanguageNFAState root = new RegularLanguageNFAState();
             RegularLanguageNFAState next = new RegularLanguageNFAState();
-            root.SetInitial(this);
+            root.SetInitial(thisReplacement);
             root.MoveTo(this.Range, next);
-            next.SetFinal(this);
-            return root;
+            next.SetFinal(thisReplacement);
+            root.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, thisReplacement, OilexerGrammarInliningCore.TokenRootStateClonerCache, OilexerGrammarInliningCore.TokenStateClonerCache);
+            this.state = root;
         }
 
         #endregion
-
     }
 }

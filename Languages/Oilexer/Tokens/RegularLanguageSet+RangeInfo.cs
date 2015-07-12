@@ -21,8 +21,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         }
         public enum SwitchPairElement
         {
-            A,
-            B,
+            SingleCharacter,
+            CharacterRange,
         }
         public struct SwitchPair<TA, TB>
             where TA :
@@ -40,14 +40,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
                 : this()
             {
                 this.A = a;
-                this.Which = SwitchPairElement.A;
+                this.Which = SwitchPairElement.SingleCharacter;
             }
 
             public SwitchPair(TB b)
                 : this()
             {
                 this.B = b;
-                this.Which = SwitchPairElement.B;
+                this.Which = SwitchPairElement.CharacterRange;
             }
         }
         public struct RangeData :

@@ -1,0 +1,18 @@
+#include    "Oilexer.oilexer";
+
+Tuple<A, B, C, D, E>       ::=
+    A Tuple<B, C, D, E>      |
+    B Tuple<A, C, D, E>      |
+    C Tuple<A, B, D, E>      |
+    D Tuple<A, B, C, E>      |
+    E Tuple<A, B, C, D>      ;
+
+TupleR1<A, B, C, D, E>     ::=
+    A OTuple<B, C, D, E>     |
+    B OTuple<A, C, D, E>     |
+    C OTuple<A, B, D, E>     |
+    D OTuple<A, B, C, E>     |
+    E OTuple<A, B, C, D>     ;
+
+OTuple<A, B, C, D, E>      ::=
+   Tuple<A?, B?, C?, D?, E?> ;

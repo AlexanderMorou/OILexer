@@ -1,0 +1,328 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{678B0E41-72E0-498C-B621-38FBC85105D4}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>OilexerTests</RootNamespace>
+    <AssemblyName>OilexerTests</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
+    <IsCodedUITest>False</IsCodedUITest>
+    <TestProjectType>UnitTest</TestProjectType>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <AssemblyOriginatorKeyFile Condition="'$(Configuration)' == 'Release'">..\Allen Copeland.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Allen Copeland.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SolutionName)' == 'Abstraction'">
+    <ProjectReference Include="..\..\Abstraction\SLF\Ecma-335 Abstract Syntax Tree\Ecma-335 Abstract Syntax Tree.csproj">
+      <Project>{961977fe-07e8-40dd-a738-db8dce6cc482}</Project>
+      <Name>Ecma-335 Abstract Syntax Tree</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\SLF\Ast\Abstract Syntax Tree.csproj">
+      <Project>{02607dc2-e98b-43ae-b906-fe151a70a68d}</Project>
+      <Name>Abstract Syntax Tree</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\SLF\Compilers\Abstraction Compiler Services\Abstraction Compiler Services.csproj">
+      <Project>{df6044a9-ae48-4ac2-a170-eb839bb0058c}</Project>
+      <Name>Abstraction Compiler Services</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\SLF\Languages\CSharp\CSharp.csproj">
+      <Project>{a5e27b08-e854-40d5-b88b-0f10d1ca64af}</Project>
+      <Name>CSharp</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\SLF\Metadata\Metadata Library\Metadata Library.csproj">
+      <Project>{a94a88da-2500-4372-a433-a07ac3bfa05f}</Project>
+      <Name>Metadata Library</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\SLF\TypeSystems\Abstract\TypeSystem Abstract.csproj">
+      <Project>{161eaa8c-20c6-4b82-925a-4b8b112910ab}</Project>
+      <Name>TypeSystem Abstract</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\SLF\TypeSystems\Ecma-335 Common Type System\Ecma-335 Common Type System.csproj">
+      <Project>{d455d4ff-54fd-431e-bd27-43da130a0faa}</Project>
+      <Name>Ecma-335 Common Type System</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\Utilities\Common\Common Utilities.csproj">
+      <Project>{b449e1f5-149c-4f47-bbfc-a82eee96471a}</Project>
+      <Name>Common Utilities</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Abstraction\Utilities\FiniteAutomation\Finite Automation.csproj">
+      <Project>{ecc67b87-6eba-4f40-baae-fe838ff8afa3}</Project>
+      <Name>Finite Automation</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Release|x86'">
+    <!--x86 Platform-->
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.slf.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.cli.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.slf.cli.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.slf.compilerservices.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.slf.metadata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.slf.typesystems.abstract.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.slf.typesystems.cli.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.util.automata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Release\_abs.util.common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Debug|x86'">
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.slf.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.cli.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.slf.cli.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.slf.compilerservices.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.slf.metadata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.slf.typesystems.abstract.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.slf.typesystems.cli.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.util.automata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x86\Debug\_abs.util.common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Release|x64'">
+    <!--x64 Platform-->
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.slf.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.cli.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.slf.cli.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.slf.compilerservices.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.slf.metadata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.slf.typesystems.abstract.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.slf.typesystems.cli.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.util.automata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Release\_abs.util.common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Debug|x64'">
+    <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.slf.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.cli.cli.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.slf.cli.ast.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.languages.csharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.slf.languages.csharp.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.compilerservices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.slf.compilerservices.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.slf.metadata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.abstract, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.slf.typesystems.abstract.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.slf.typesystems.cli, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.slf.typesystems.cli.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.automata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.util.automata.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Abstraction\Build\x64\Debug\_abs.util.common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <Choose>
+    <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  <ItemGroup>
+    <Compile Include="ContextTracking.cs" />
+    <Compile Include="ParserTracking.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OILexer.csproj">
+      <Project>{0d009988-de0e-4362-830d-7980beb41f6f}</Project>
+      <Name>OILexer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\OILexerParser.csproj">
+      <Project>{a2008b7f-aad5-440e-9480-bb4be95f6b04}</Project>
+      <Name>OILexerParser</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Allen Copeland.pfx" />
+  </ItemGroup>
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.QualityTools.CodedUITestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Microsoft.VisualStudio.TestTools.UITest.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Microsoft.VisualStudio.TestTools.UITest.Extension, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Microsoft.VisualStudio.TestTools.UITesting, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
