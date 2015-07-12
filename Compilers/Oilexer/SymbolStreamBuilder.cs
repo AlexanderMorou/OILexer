@@ -95,9 +95,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this._tokenOffset = clearAfter + 1;
              */
             var ruleCheck = swapImpl.If(replacement.GetReference().Is(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol));
-            ruleCheck.Assign(_TokenOffsetImpl.GetReference(), this.compiler.RuleSymbolBuilder.EndTokenIndex.GetReference(replacement.GetReference().Cast(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol)));
+            ruleCheck.Assign(_TokenOffsetImpl.GetReference(), this.compiler.RuleSymbolBuilder.EndTokenIndex.GetReference(replacement.GetReference().Cast(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol)).Add(1));
             ruleCheck.CreateNext();
-            ruleCheck.Assign(_TokenOffsetImpl.GetReference(), this.compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(replacement.GetReference()));
+            ruleCheck.Next.Assign(_TokenOffsetImpl.GetReference(), this.compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(replacement.GetReference()).Add(1));
             swapImpl.If(this.compiler.GenericSymbolStreamBuilder.CountImpl.Subtract(1).GreaterThan(indexOf))
                 .Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference()
                     .GetMethod("RemoveRange").Invoke(

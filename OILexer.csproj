@@ -344,6 +344,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReadOnlyWrapper.cs" />
     <None Include="app.config" />
+    <None Include="Generate Dots ToySharp.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Samples\CommandLine\CommandLineArguments.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -420,11 +423,15 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="gearico.ico" />
+    <None Include="Build ToySharp.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Resources\" />
+    <Content Include="gearico.ico" />
+    <None Include="Resources\Evermor-Design-Galaxian-Gear.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
