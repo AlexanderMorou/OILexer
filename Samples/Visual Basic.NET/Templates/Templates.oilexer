@@ -1,8 +1,0 @@
-#ifndef Lexer
-#include                 "..\\VB.NET.oilexer";
-#endif
-
-#include                "Expressions.oilexer";
-
-DelimitedList<Term, Delimiter>            ::=
-    Term (Delimiter Term)*;

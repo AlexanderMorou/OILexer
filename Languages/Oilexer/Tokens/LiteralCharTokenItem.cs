@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,7 +13,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 {
     /// <summary>
     /// Provides a base implementation of <see cref="ILiteralStringTokenItem"/> which is
-    /// a <see cref="System.Char"/> literal defined in an <see cref="ITokenEntry"/>.
+    /// a <see cref="System.Char"/> literal defined in an <see cref="IOilexerGrammarTokenEntry"/>.
     /// </summary>
     public class LiteralCharTokenItem :
         LiteralTokenItem<char>,
@@ -73,7 +73,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         #endregion
         public override string ToString()
         {
-            return string.Format("{2}{0}{1}", GrammarCore.EncodePrim(this.Value), base.ToString(), this.CaseInsensitive ? "@" : string.Empty);
+            return string.Format("{2}{0}{1}", OilexerGrammarCore.EncodePrim(this.Value), base.ToString(), this.CaseInsensitive ? "@" : string.Empty);
         }
 
     }

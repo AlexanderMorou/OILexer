@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -33,6 +33,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         #region IEquatable<IUnicodeTargetCategory> Members
 
         public virtual bool Equals(IUnicodeTargetCategory other)
+        {
+            if (other is IUnicodeTargetPartialCategory)
+                return false;
+            return EqualsInternal(other);
+        }
+
+        protected bool EqualsInternal(IUnicodeTargetCategory other)
         {
             return this.TargetedCategory == other.TargetedCategory;
         }

@@ -5,7 +5,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -36,19 +36,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         #endregion
 
-
         #region IEquatable<IUnicodeTargetGraph> Members
 
         public bool Equals(IUnicodeTargetGraph other)
         {
-            if (other == null)
-                return false;
-            if (other.Count != this.Count)
-                return false;
-            return other.All(p =>
-                {
-                    return this.ContainsKey(p.Key) && this[p.Key].Equals(p.Value);
-                });
+            return this.Equals(other, false);
         }
 
         #endregion
@@ -69,5 +61,17 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 result ^= kvp.Key.GetHashCode() ^ kvp.Value.GetHashCode();
             return result;
         }
+
+
+        public bool Equals(IUnicodeTargetGraph other, bool relaxOriginatingState)
+        {
+            if (other == null)
+                return false;
+            if (other.Count != this.Count)
+                return false;
+            return other.All(p =>
+                this.ContainsKey(p.Key) && this[p.Key].Equals(p.Value, relaxOriginatingState));
+        }
+
     }
 }

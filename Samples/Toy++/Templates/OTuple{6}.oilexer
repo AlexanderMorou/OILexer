@@ -1,9 +1,0 @@
-#include                 "Templates.oilexer";
-/* *
- * The optional variation of the Tuple<A, B, C, D, E, F>
- * Elements within this are given all permutations;
- * however, each element is optional versus required.
- * */
-OTuple<A, B, C, D, E, F>                  ::=
-    Tuple<A?, B?, C?, D?, E?, F?>           ;
-

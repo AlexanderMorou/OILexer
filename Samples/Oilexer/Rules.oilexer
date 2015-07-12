@@ -1,0 +1,130 @@
+#ifndef Lexer
+#include                    "Oilexer.oilexer";
+#elif Lexer == "ToyParser"
+#include                   "Language.oilexer";
+#endif
+
+ProductionRuleEntry                        ::=
+    Identifier:Name; 
+        OTuple<
+            "[+/-]"!:VisualSpan; 
+            (
+                LanguageOperatorToken.OptionsSeparator /*:*/
+                    SpanName:SpanName; 
+                LanguageOperatorToken.Terminal
+            )? /*;*/, 
+            LanguageOperatorToken.ItemIsRecognizer!:ForceRecognizer; /*$*/> 
+        LanguageOperatorToken.RuleStart
+        RuleTerminals.IsCollapsePoint!:IsCollapsePoint;? /*'>'*/
+        ProductionRuleSeries:Items; 
+        LanguageOperatorToken.Terminal       ;
+
+ProductionRuleSeries                       ::=
+    ProductionRule:Items; 
+        (
+            LanguageOperatorToken.ExpressionSeparator
+            ProductionRule:Items;
+        )*$;
+
+ProductionRule                             ::=
+    ProductionRuleItem:Items;*               ;
+
+ProductionRuleItem                        ::=>
+    LiteralProductionRuleItem                |
+    SoftReferencProductionRuleItem           |
+    GroupProductionRuleItem                  |
+    PreprocessorProductionRuleItem           |
+    TemplateReferenceProductionRuleItem      ;
+
+TemplateReferenceProductionRuleItem        ::=
+    Identifier:Name; 
+        LanguageOperatorToken.TemplateStart /*<*/
+            (
+                ProductionRuleSeries:Arguments;
+                (
+                    LanguageOperatorToken.PartSeparator /*,*/
+                    ProductionRuleSeries:Arguments;
+                )*
+            )?
+        LanguageOperatorToken.TemplateEnd /*>*/
+        ScannableEntryItemOptions<>?;
+
+PreprocessorProductionRuleItem            ::=>
+    PreprocessorIfDirectiveProductionRuleItem;
+
+    
+SoftReferencProductionRuleItem                               ::=
+    Identifier:PrimaryName; 
+      (
+        LanguageOperatorToken.IdentitySeparator
+        Identifier:SecondaryName;
+      )?$ '!'!:IsFlag;? ScannableEntryItemOptions<>?$          ;
+
+PreprocessorIfDirectiveProductionRuleItem                   ::=>
+    PreprocessorIfConditionDirectiveProductionRuleItem         |
+    PreprocessorIfDefinedDirectiveProductionRuleItem           |
+    PreprocessorIfNotDefinedDirectiveProductionRuleItem        ;
+
+PreprocessorIfConditionDirectiveProductionRuleItem           ::=
+    @"#if" PreprocessorIfConditionLogicalOrExp:Condition;
+    ProductionRuleSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      
+    @"#endif"                                                   ;
+
+PreprocessorIfDefinedDirectiveProductionRuleItem             ::=
+    @"#ifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      
+    @"#endif"                                                   ;
+
+PreprocessorIfNotDefinedDirectiveProductionRuleItem          ::=
+    @"#ifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      
+    @"#endif"                                                   ;
+
+PreprocessorElseDirectiveProductionRuleItem                 ::=>
+    PreprocessorElseIfConditionDirectiveProductionRuleItem     |
+    PreprocessorElseIfDefinedDirectiveProductionRuleItem       |
+    PreprocessorElseIfNotDefinedDirectiveProductionRuleItem    |
+    PreprocessorFinalElseDirectiveProductionRuleItem           ;
+
+PreprocessorFinalElseDirectiveProductionRuleItem             ::=
+    @"#else" 
+        ProductionRuleSeries:Body;                             ;
+
+PreprocessorElseIfConditionDirectiveProductionRuleItem       ::=
+    @"#elif" PreprocessorIfConditionLogicalOrExp:Condition;
+    ProductionRuleSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      ;
+
+PreprocessorElseIfDefinedDirectiveProductionRuleItem         ::=
+    @"#elifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      ;
+
+PreprocessorElseIfNotDefinedDirectiveProductionRuleItem      ::=
+    @"#elifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    ProductionRuleSeries:Body;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      ;
+
+
+LiteralProductionRuleItem                 ::=>
+    StringProductionRuleItem                 |
+    CharProductionRuleItem                   ;
+
+GroupProductionRuleItem                    ::=
+    LanguageOperatorToken.BeginGroup /*(*/
+        ProductionRuleSeries:Items;
+    LanguageOperatorToken.EndGroup   /*)*/
+    ScannableEntryItemOptions<>?             ;
+
+StringProductionRuleItem                   ::=
+    String:Value; '!'!:IsFlag;?
+    ScannableEntryItemOptions<>?             ;
+
+CharProductionRuleItem                     ::=
+    Char:Value; '!'!:IsFlag;?
+    ScannableEntryItemOptions<>?             ;
+
+

@@ -1,0 +1,55 @@
+#LexerName "SimpleCalcTokenizer";
+#ParserName "SimpleCalcParser";
+#AssemblyName "SCReader";
+#GrammarName "SimpleCalc";
+#TokenPrefix "SCT";
+#RulePrefix "SCR";
+#Root "Expression";
+#Namespace "AllenCopeland.Abstraction.Slf.Languages.SimpleCalc";
+
+Expression ::=>
+    AddExp;
+
+AddExp ::=>
+    AddExpRecursive |
+    MultExp;
+
+GroupExp        ::=
+    '(' Expression:Inner; ')';
+
+AddExpRecursive ::=
+    AddExp:Left; 
+    ('+' | '-'):Operator;
+    MultExp:Right;;
+
+MultExp ::=>
+    MultExpRecursive |
+    PrimExp;
+
+MultExpRecursive ::=
+    MultExp:Left;
+    ('*'|'/'|'%'):Operator;
+    PrimExp:Right;;
+
+PrimExp ::=>
+    Identifier |
+    Number     |
+    GroupExp   ;
+
+Identifier :=
+    [A-Za-z_] [A-Za-z0-9_]*;
+
+Number :=
+    [0-9]+('.'[0-9])? (@'e' ('+'|'-')? [0-9]+)?;
+
+Whitespace :=*
+    (' '|'\t')+;
+
+Newline :=*
+    '\r' '\n'? | 
+    '\n'       ;
+
+Operators :=
+    '+':Add; | '-':Subtract; | '*':Multiply; | '/':Divide; | '%':Modulus; |
+    '(':LP;  | ')':RP;                                                    ;
+

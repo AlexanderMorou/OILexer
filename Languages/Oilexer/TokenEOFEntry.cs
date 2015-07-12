@@ -10,13 +10,13 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
  * */
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
-    internal interface ITokenEofEntry : ITokenEntry { }
-    public class TokenEofEntry :
-        TokenEntry,
-        ITokenEofEntry
+    internal interface IOilexerGrammarTokenEofEntry : IOilexerGrammarTokenEntry { }
+    public class OilexerGrammarTokenEofEntry :
+        OilexerGrammarTokenEntry,
+        IOilexerGrammarTokenEofEntry
     {
-        internal TokenEofEntry(ITokenEntry[] tokens)
-            : base("EndOFile", new TokenExpressionSeries(new ITokenExpression[0], 0, 0, 0, "ProjectConstructor.cs"), EntryScanMode.Inherited, "ProjectConstructor.cs", 0, 0, 0, false, tokens, false)
+        internal OilexerGrammarTokenEofEntry(IOilexerGrammarTokenEntry[] tokens)
+            : base("EndOFile", new TokenExpressionSeries(new ITokenExpression[0], 0, 0, 0, "OilexerGrammarTokenEOFEntry.cs"), EntryScanMode.Inherited, "OilexerGrammarTokenEOFEntry.cs", 0, 0, 0, false, tokens, false)
         {
             
         }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -32,10 +32,24 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <remarks>#ifdef</remarks>
         IfDefined,
         /// <summary>
+        /// The preprocessor is an if in statement indicating that
+        /// the productions following are allowed only when the element
+        /// provided is within the parse path.
+        /// </summary>
+        /// <remarks>#ifin</remarks>
+        IfIn,
+        /// <summary>
         /// The preprocessor is an else if statement.
         /// </summary>
         /// <remarks>#elif</remarks>
         ElseIf,
+        /// <summary>
+        /// The preprocessor is an else if in statement indicating that
+        /// the productions following are allowed only when the element
+        /// provided is within the parse path.
+        /// </summary>
+        /// <remarks>#elifin</remarks>
+        ElseIfIn,
         /// <summary>
         /// The preprocessor is an else if statement checking if something else is defined.
         /// </summary>

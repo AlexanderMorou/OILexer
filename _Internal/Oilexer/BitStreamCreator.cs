@@ -10,6 +10,7 @@ using AllenCopeland.Abstraction.Slf.Languages.CSharp.Expressions;
 using AllenCopeland.Abstraction.Slf.Ast.Expressions;
 using AllenCopeland.Abstraction.Slf.Ast.Members;
 using AllenCopeland.Abstraction.Slf.Ast.Statements;
+using AllenCopeland.Abstraction.Slf.Ast.Cli;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -75,7 +76,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             toStringOverride.AccessLevel = AccessLevelModifiers.Public;
             toStringOverride.IsOverride = true;
             //char[] result = new char[this.actualSize];
-            var resultChars = toStringOverride.Locals.Add(new TypedName("result", identityManager.ObtainTypeReference(RuntimeCoreType.Char).MakeArray()), new MalleableCreateArrayDetailExpression(identityManager.ObtainTypeReference(RuntimeCoreType.Char), charBufferSize.GetReference()));
+            var resultCharsInitExp = new MalleableCreateArrayDetailExpression(identityManager.ObtainTypeReference(RuntimeCoreType.Char));
+            resultCharsInitExp.Sizes.Add(charBufferSize.GetReference());
+            var resultChars = toStringOverride.Locals.Add(new TypedName("result", identityManager.ObtainTypeReference(RuntimeCoreType.Char).MakeArray()), resultCharsInitExp);
+            
             var iLocal = toStringOverride.Locals.Add(new TypedName("i", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
             //int i = 0;
             iLocal.InitializationExpression = IntermediateGateway.NumberZero;
@@ -175,7 +179,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 //              GrowBuffer(s.Length);
             nullCheck.Call(growBufferMethod.GetReference().Invoke(sParameter.GetReference().GetProperty("Length")));
 //          else if (buffer.Length < actualSize + s.Length)
-            var rangeCheck = nullCheck.Next.If(charBuffer.GetReference().GetProperty("Length").LessThan(charBufferSize.GetReference().Add(sParameter.GetReference().GetProperty("Length"))));
+            nullCheck.CreateNext(charBuffer.GetReference().GetProperty("Length").LessThan(charBufferSize.GetReference().Add(sParameter.GetReference().GetProperty("Length"))));
+            var rangeCheck = (IConditionBlockStatement)nullCheck.Next;
 //              GrowBuffer(actualSize + s.Length);
             rangeCheck.Call(growBufferMethod.GetReference().Invoke(charBufferSize.GetReference().Add(sParameter.GetReference().GetProperty("Length"))));
 
@@ -197,9 +202,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 
         private static IIntermediateClassMethodMember AddPurgeMethod(IIntermediateClassType result, IIntermediateClassFieldMember charBufferSize, IIntermediateCliManager identityManager)
         {
-            IIntermediateClassMethodMember purgeMethod = result.Methods.Add(new TypedName("Purge", identityManager.ObtainTypeReference(RuntimeCoreType.VoidType)));
+            var purgeMethod = result.Methods.Add(new TypedName("Purge", identityManager.ObtainTypeReference(RuntimeCoreType.VoidType)));
             purgeMethod.AccessLevel = AccessLevelModifiers.Public;
-//          actualSize = 0;
             purgeMethod.Assign(charBufferSize.GetReference(), IntermediateGateway.NumberZero);
             return purgeMethod;
         }
@@ -223,7 +227,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 //              GrowBuffer(2);
             nullCheck.Call(growBufferMethod.GetReference().Invoke(2.ToPrimitive()));
 //          else if (buffer.Length < actualSize + 1)
-            var rangeCheck = nullCheck.Next.If(charBuffer.GetReference().GetProperty("Length").LessThan(charBufferSize.GetReference().Add(1.ToPrimitive())));
+            nullCheck.CreateNext(charBuffer.GetReference().GetProperty("Length").LessThan(charBufferSize.GetReference().Add(1.ToPrimitive())));
+            var rangeCheck = (IConditionBlockStatement)nullCheck.Next;
 //              GrowBuffer(actualSize + 1);
             rangeCheck.Call(growBufferMethod.GetReference().Invoke(charBufferSize.GetReference().Add(1.ToPrimitive())));
 //          buffer[actualSize++] = c;

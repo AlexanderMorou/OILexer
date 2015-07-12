@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,11 +13,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
 {
     /// <summary>
     /// Provides a base implementation of <see cref="ITokenExpressionSeries"/> which provides
-    /// a series of <see cref="ITokenExpression"/> instances declared in an <see cref="IGDFile"/>
-    /// implementation segmented by <see cref="GDTokens.OperatorType.Pipe"/>
+    /// a series of <see cref="ITokenExpression"/> instances declared in an <see cref="IOilexerGrammarFile"/>
+    /// implementation segmented by <see cref="OilexerGrammarTokens.OperatorType.Pipe"/>
     /// </summary>
     public class TokenExpressionSeries :
-        ReadOnlyCollection<ITokenExpression>,
+        ControlledCollection<ITokenExpression>,
         ITokenExpressionSeries
     {
         /// <summary>
@@ -127,5 +127,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         }
 
         #endregion
+
+        public string Name
+        {
+          get { return null; }
+        }
     }
 }

@@ -1,0 +1,23 @@
+#include                 "Oilexer.oilexer";
+
+Tuple<A, B, C, D>                         ::=
+    A Tuple<B, C, D>                        |
+    B Tuple<A, C, D>                        |
+    C Tuple<A, B, D>                        |
+    D Tuple<A, B, C>                        ;
+
+TupleR1<A, B, C, D>                       ::=
+    A OTuple<B, C, D>                       |
+    B OTuple<A, C, D>                       |
+    C OTuple<A, B, D>                       |
+    D OTuple<A, B, C>                       ;
+
+OTuple<A, B, C, D>                        ::=
+    Tuple<A?, B?, C?, D?>                   ;
+
+TupleDelimTrail<A, B, C, D, Delimiter>    ::=
+    A (Delimiter B)? (Delimiter C)? 
+        (Delimiter D)?                      |
+    B (Delimiter C)? (Delimiter D)?         |
+    C (Delimiter D)?                        |
+    D;

@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -14,7 +14,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     public class PreprocessorIfDirective :
         PreprocessorDirectiveBase,
         IPreprocessorIfDirective,
-        IEntry
+        IOilexerGrammarEntry
     {
         /// <summary>
         /// Data member for <see cref="Condition"/>.
@@ -54,9 +54,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             switch (ppType)
             {
                 case EntryPreprocessorType.If:
+                case EntryPreprocessorType.IfIn:
                 case EntryPreprocessorType.IfNotDefined:
                 case EntryPreprocessorType.IfDefined:
                 case EntryPreprocessorType.ElseIf:
+                case EntryPreprocessorType.ElseIfIn:
                 case EntryPreprocessorType.ElseIfDefined:
                 case EntryPreprocessorType.Else:
                     break;
@@ -82,7 +84,31 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        #region IPreprocessorIfDirective Members
+        public override string ToString()
+        {
+            switch (this.ppType)
+            {
+                case EntryPreprocessorType.If:
+                    return string.Format("#if {0}", this.Condition);
+                case EntryPreprocessorType.IfIn:
+                    return string.Format("#ifin {0}", this.Condition);
+                case EntryPreprocessorType.IfNotDefined:
+                    return string.Format("#ifndef {0}", this.Condition);
+                case EntryPreprocessorType.IfDefined:
+                    return string.Format("#ifdef {0}", this.Condition);
+                case EntryPreprocessorType.ElseIf:
+                    return string.Format("#elif {0}", this.Condition);
+                case EntryPreprocessorType.ElseIfIn:
+                    return string.Format("#elifin {0}", this.Condition);
+                case EntryPreprocessorType.ElseIfDefined:
+                    return string.Format("#elifdef {0}", this.Condition);
+                case EntryPreprocessorType.Else:
+                    return "#else";
+            }
+            throw new InvalidOperationException();
+        }
+
+        //#region IPreprocessorIfDirective Members
 
         /// <summary>
         /// Returns the transitionFirst if directive in the series.
@@ -143,9 +169,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             internal set { this.previous = value; }
         }
 
-        #endregion
+        //#endregion
 
-        #region IPreprocessorIfDirective Members
+        //#region IPreprocessorIfDirective Members
 
 
         public IPreprocessorDirectives Body
@@ -162,10 +188,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         {
             ((DirectiveBody)this.Body).Add(directive);
         }
-        #endregion
+        //#endregion
 
         protected internal class DirectiveBody :
-            ReadOnlyCollection<IPreprocessorDirective>,
+            ControlledCollection<IPreprocessorDirective>,
             IPreprocessorDirectives
         {
             internal DirectiveBody()
@@ -179,13 +205,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        #region IEntry Members
+        //#region IOilexerGrammarEntry Members
 
         public string FileName
         {
             get { return this.filename; }
         }
 
-        #endregion
+        //#endregion
     }
 }

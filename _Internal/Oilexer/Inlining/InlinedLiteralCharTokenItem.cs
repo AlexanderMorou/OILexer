@@ -25,11 +25,11 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         /// </summary>
         /// <param name="source">The <see cref="ILiteralCharTokenItem"/> from which the current
         /// <see cref="InlinedLiteralCharTokenItem"/> is derived.</param>
-        /// <param name="sourceRoot">The <see cref="ITokenEntry"/> from which
+        /// <param name="sourceRoot">The <see cref="IOilexerGrammarTokenEntry"/> from which
         /// the <paramref name="source"/> is derived.</param>
         /// <param name="root">The <see cref="InlinedTokenEntry"/> in which
         /// the current K<see cref="InlinedLiteralCharTokenItem"/> is contained within.</param>
-        public InlinedLiteralCharTokenItem(ILiteralCharTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root)
+        public InlinedLiteralCharTokenItem(ILiteralCharTokenItem source, IOilexerGrammarTokenEntry sourceRoot, InlinedTokenEntry root)
             : base(source.Value, source.CaseInsensitive, source.Column, source.Line, source.Position)
         {
             this.Source = source;
@@ -37,6 +37,11 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
             this.Root = root;
             this.RepeatOptions = source.RepeatOptions;
             this.Name = source.Name;
+            if (source.IsFlag.HasValue)
+            {
+                this.IsFlag = source.IsFlag;
+                this.IsFlagToken = source.IsFlagToken;
+            }
         }
 
         /// <summary>
@@ -46,10 +51,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         public ILiteralCharTokenItem Source { get; private set; }
 
         /// <summary>
-        /// Returns the <see cref="ITokenEntry"/> which contains
+        /// Returns the <see cref="IOilexerGrammarTokenEntry"/> which contains
         /// the <see cref="Source"/>.
         /// </summary>
-        public ITokenEntry SourceRoot { get; private set; }
+        public IOilexerGrammarTokenEntry SourceRoot { get; private set; }
 
         /// <summary>
         /// Returns the <see cref="InlinedTokenEntry"/> which contains the current
@@ -66,24 +71,27 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
 
         public RegularLanguageNFAState State
         {
-            get {
-                if (this.state == null)
-                {
-                    this.state = this.BuildNFAState();
-                    this.state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, InliningCore.TokenRootStateClonerCache, InliningCore.TokenStateClonerCache);
-                }
+            get
+            {
                 return this.state;
             }
         }
 
-        private RegularLanguageNFAState BuildNFAState()
+        #endregion
+
+        #region IInlinedTokenItem Members
+
+
+        public void BuildState(Dictionary<ITokenSource, Captures.ICaptureTokenStructuralItem> sourceReplacementLookup)
         {
+            var thisReplacement = sourceReplacementLookup.ContainsKey(this) ? (ITokenSource)(sourceReplacementLookup[this]) : (ITokenSource)this;
             RegularLanguageNFAState rootState = new RegularLanguageNFAState();
             RegularLanguageNFAState endState = new RegularLanguageNFAState();
             rootState.MoveTo(new RegularLanguageSet(!this.CaseInsensitive, this.Value), endState);
-            rootState.SetInitial(this);
-            endState.SetFinal(this);
-            return rootState;
+            rootState.SetInitial(thisReplacement);
+            endState.SetFinal(thisReplacement);
+            rootState.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, thisReplacement, OilexerGrammarInliningCore.TokenRootStateClonerCache, OilexerGrammarInliningCore.TokenStateClonerCache);
+            this.state = rootState;
         }
 
         #endregion

@@ -5,7 +5,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -15,7 +15,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 
     /// <summary>
     /// Provides a base implementation of <see cref="ILiteralStringReferenceProductionRuleItem"/>
-    /// which is a reference to a string literal from a <see cref="ITokenEntry"/>.
+    /// which is a reference to a string literal from a <see cref="IOilexerGrammarTokenEntry"/>.
     /// </summary>
     public class LiteralStringReferenceProductionRuleItem :
         LiteralReferenceProductionRuleItem<string, ILiteralStringTokenItem>,
@@ -28,17 +28,17 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// </summary>
         /// <param name="literal">The <see cref="ILiteralStringTokenItem"/> which the <see cref="LiteralStringReferenceProductionRuleItem"/>
         /// references.</param>
-        /// <param name="source">The <see cref="ITokenEntry"/> which the contains the <paramref name="literal"/> the <see cref="LiteralStringReferenceProductionRuleItem"/>
+        /// <param name="source">The <see cref="IOilexerGrammarTokenEntry"/> which the contains the <paramref name="literal"/> the <see cref="LiteralStringReferenceProductionRuleItem"/>
         /// references.</param>
         /// <param name="column">The column on <paramref name="line"/> at which the <see cref="LiteralStringReferenceProductionRuleItem"/> was
         /// defined.</param>
         /// <param name="line">The line at which the <see cref="LiteralStringReferenceProductionRuleItem"/> was defined.</param>
         /// <param name="position">The byte in the file at which the <see cref="LiteralStringReferenceProductionRuleItem"/> was declared.</param>
-        public LiteralStringReferenceProductionRuleItem(ILiteralStringTokenItem literal, ITokenEntry source, int column, int line, long position)
+        public LiteralStringReferenceProductionRuleItem(ILiteralStringTokenItem literal, IOilexerGrammarTokenEntry source, int column, int line, long position)
             : base(literal, source, column, line, position)
         {
         }
-        public LiteralStringReferenceProductionRuleItem(ILiteralStringTokenItem literal, ITokenEntry source, int column, int line, long position, bool wasFlag, bool wasCounter)
+        public LiteralStringReferenceProductionRuleItem(ILiteralStringTokenItem literal, IOilexerGrammarTokenEntry source, int column, int line, long position, bool wasFlag, bool wasCounter)
             : base(literal, source, column, line, position, wasFlag, wasCounter)
         {
         }
@@ -55,14 +55,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return result;
         }
 
-        #region ILiteralStringReferenceProductionRuleItem Members
+        //#region ILiteralStringReferenceProductionRuleItem Members
 
         public new ILiteralStringReferenceProductionRuleItem Clone()
         {
             return ((ILiteralStringReferenceProductionRuleItem)(base.Clone()));
         }
 
-        #endregion
+        //#endregion
 
         public override string ToString()
         {
@@ -72,5 +72,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 return string.Format("{0}{2}{3}{1}{4}", this.Literal.Value.Encode(), this.ToStringFurtherOptions(), this.Counter ? "#" : string.Empty, this.IsFlag ? "!" : string.Empty, this.RepeatOptions);
         }
 
+        public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
     }
 }

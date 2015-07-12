@@ -1,0 +1,12 @@
+#ifndef Lexer
+#include                        "Oilexer.oilexer";
+#elif Lexer == "ToyParser"
+#include                       "Language.oilexer";
+#endif
+
+ErrorEntry                                 ::=
+    Identifier:Name; 
+    LanguageOperatorToken.ErrorStart  /*=*/
+    String:Message; 
+    LanguageOperatorToken.PartSeparator /*,*/
+    Integer:Number; ';'                      ;

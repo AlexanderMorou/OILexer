@@ -3,7 +3,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -30,7 +30,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
         /// <remarks><para>Typical of parsers such as Lex.</para>
         /// http://dinosaur.compilertools.net/#lex
         /// <para>Additionally, conflicts between token patterns are resolved on a 
-        /// First come first serve (FCFS) basis.</para>
+        /// First come firstSeries serve (FCFS) basis.</para>
         /// </remarks>
         void NextToken();
 

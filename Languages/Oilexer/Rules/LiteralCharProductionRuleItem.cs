@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -14,7 +14,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     /// <summary>
     /// Provides a base implementation of <see cref="ILiteralCharProductionRuleItem"/> which
     /// is for working with a <see cref="System.Char"/> literal defined in an 
-    /// <see cref="IProductionRuleEntry"/>.
+    /// <see cref="IOilexerGrammarProductionRuleEntry"/>.
     /// </summary>
     public class LiteralCharProductionRuleItem :
         LiteralProductionRuleItem<char>,
@@ -51,7 +51,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return result;
         }
 
-        #region ILiteralCharProductionRuleItem Members
+        //#region ILiteralCharProductionRuleItem Members
 
         /// <summary>
         /// Creates a copy of the current <see cref="LiteralCharProductionRuleItem"/>.
@@ -72,13 +72,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get { return this.caseInsensitive; }
         }
 
-        #endregion
+        //#endregion
 
         public override string ToString()
         {
-            return string.Format("{0}{1}", GrammarCore.EncodePrim(this.Value),base.ToString());
+            return string.Format("{0}{1}", OilexerGrammarCore.EncodePrim(this.Value),base.ToString());
         }
 
-
+        public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
     }
 }

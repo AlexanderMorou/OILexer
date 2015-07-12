@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Linq;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,35 +14,35 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
-    public class ProductionRuleTemplateEntry :
-        ProductionRuleEntry,
-        IProductionRuleTemplateEntry
+    public class OilexerGrammarProductionRuleTemplateEntry :
+        OilexerGrammarProductionRuleEntry,
+        IOilexerGrammarProductionRuleTemplateEntry
     {
         /// <summary>
         /// Data member for <see cref="PartNames"/>.
         /// </summary>
         private IProductionRuleTemplateParts parts;
 
-        public ProductionRuleTemplateEntry(string name, EntryScanMode scanMode, IList<IProductionRuleTemplatePart> partNames, string fileName, int column, int line, long position)
+        public OilexerGrammarProductionRuleTemplateEntry(string name, EntryScanMode scanMode, IList<IProductionRuleTemplatePart> partNames, string fileName, int column, int line, long position)
             : base(name, scanMode, fileName, column, line, position)
         {
             this.parts = new PartCollection(partNames);
         }
 
-        #region IProductionRuleTemplateEntry Members
+        //#region IOilexerGrammarProductionRuleTemplateEntry Members
 
         /// <summary>
-        /// The names of the parts associated with the <see cref="ProductionRuleTemplateEntry"/>.
+        /// The names of the parts associated with the <see cref="OilexerGrammarProductionRuleTemplateEntry"/>.
         /// </summary>
         public IProductionRuleTemplateParts Parts
         {
             get { return this.parts; }
         }
 
-        #endregion
+        //#endregion
 
         protected class PartCollection :
-            ReadOnlyCollection<IProductionRuleTemplatePart>,
+            ControlledCollection<IProductionRuleTemplatePart>,
             IProductionRuleTemplateParts
         {
             internal PartCollection()
@@ -54,7 +55,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        #region IProductionRuleTemplateEntry Members
+        //#region IOilexerGrammarProductionRuleTemplateEntry Members
 
 
         [DebuggerStepThrough]
@@ -83,6 +84,18 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             return new TemplateArgumentInformation(@fixed, dynamic, invalid);
         }
 
-        #endregion
+        //#endregion
+        public override string ToString()
+        {
+#if DEBUG
+            if (this.debugString == null)
+                this.debugString = string.Format("{0}<{3}> ::=\r\n{2} {1};", this.Name, GetBodyString(), IsRuleCollapsePoint ? ">" : string.Empty, string.Join(", ", from k in this.Parts
+                                                                                                                                                                 select k.Name));
+            return this.debugString;
+#else
+            return string.Format("{0}<{3}> ::={2} {1};", this.Name, GetBodyString(), IsRuleCollapsePoint ? ">" : string.Empty, string.Join(", ", from k in this.Parts
+                                                                                                                                                 select k.Name));
+#endif
+        }
     }
 }

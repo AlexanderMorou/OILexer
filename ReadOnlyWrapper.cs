@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,7 +19,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this.source = source;
         }
 
-        #region IControlledCollection<T> Members
+        //#region IControlledCollection<T> Members
 
         public bool Contains(T item)
         {
@@ -51,24 +51,24 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             get { return this.source[index]; }
         }
 
-        #endregion
+        //#endregion
 
-        #region IEnumerable<T> Members
+        //#region IEnumerable<T> Members
 
         public IEnumerator<T> GetEnumerator()
         {
             return this.source.GetEnumerator();
         }
 
-        #endregion
+        //#endregion
 
-        #region IEnumerable Members
+        //#region IEnumerable Members
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
         }
 
-        #endregion
+        //#endregion
     }
 }

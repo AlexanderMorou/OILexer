@@ -11,7 +11,7 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
-using GDFD = AllenCopeland.Abstraction.Slf.Languages.Oilexer;
+using OilexerGrammarFD = AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using OM = System.Collections.ObjectModel;
 
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
@@ -23,9 +23,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
     using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
     using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
     using AllenCopeland.Abstraction.Utilities.Collections;
-    //using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Utilities.Collections;
-    using GDEntryCollection =
-            OM::Collection<GDFD::IEntry>;
+    using OilexerGrammarEntryCollection =
+            OM::Collection<OilexerGrammarFD::IOilexerGrammarEntry>;
+    using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
+    using AllenCopeland.Abstraction.Slf.FiniteAutomata;
     /// <summary>
     /// Provides a series of extension methdos for the parser compiler
     /// to operate upon the data sets provided by the grammar description
@@ -57,10 +58,80 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return result;
         }
 
+        private static Tuple<RegularLanguageSet, UnicodeCategory[], Dictionary<UnicodeCategory, RegularLanguageSet>> Breakdown(RegularLanguageSet check, RegularLanguageSet fullCheck)
+        {
+            //if (check.IsNegativeSet)
+            //    return new Tuple<RegularLanguageSet, UnicodeCategory[], Dictionary<UnicodeCategory, RegularLanguageSet>>(check, new UnicodeCategory[0], new Dictionary<UnicodeCategory, RegularLanguageSet>());
+            var noise = fullCheck.RelativeComplement(check);
+            UnicodeCategory[] unicodeCategories;
+            Dictionary<UnicodeCategory, RegularLanguageSet> partialCategories = new Dictionary<UnicodeCategory, RegularLanguageSet>();
+            ParserCompilerExtensions.PropagateUnicodeCategoriesAndPartials(ref check, noise, out unicodeCategories, out partialCategories);
+            return new Tuple<RegularLanguageSet, UnicodeCategory[], Dictionary<UnicodeCategory, RegularLanguageSet>>(check, unicodeCategories, partialCategories);
+        }
+        public static RegularLanguageDFAUnicodeGraph BuildUnicodeGraph(this RegularLanguageDFAState state)
+        {
+            RegularLanguageDFAUnicodeGraph result = new RegularLanguageDFAUnicodeGraph() { UnicodeGraph = new UnicodeTargetGraph() };
+            if (state.OutTransitions.Count == 0)
+                return result;
+            var fullSet = state.OutTransitions.FullCheck;
+            foreach (var transition in state.OutTransitions)
+            {
+                /* *
+                 * Send in the current transition's requirement, along with the full set
+                 * to breakdown the unicode subsets contained within.
+                 * */
+                var breakdown = Breakdown(transition.Key, fullSet);
+                /* *
+                 * If the remainder of the unicode breakdown does not overlap enough
+                 * of a category to include it, denote the remainder.
+                 * */
+                if (breakdown.Item1 != null && !breakdown.Item1.IsEmpty)
+                    result.Add(breakdown.Item1, transition.Value);
+                /* *
+                 * If there are partial and full unicode sets,
+                 * push them into the unicode target logic result.UnicodeGraph.
+                 * */
+                if (breakdown.Item2.Length > 0 ||
+                    breakdown.Item3.Count > 0)
+                {
+                    IUnicodeTarget target = null;
+                    if (!result.UnicodeGraph.TryGetValue(transition.Value, out target))
+                        target = result.UnicodeGraph.Add(transition.Value, transition.Value == state);
+                    //Full sets are simple.
+                    foreach (var category in breakdown.Item2)
+                        target.Add(category);
+                    var item3 = breakdown.Item3;
+                    /* *
+                     * Partial sets are a bit more interesting.
+                     * */
+                    foreach (var partialCategory in item3.Keys)
+                    {
+                        /* *
+                         * If the partial set doesn't contain a remainder,
+                         * the original remainder was consumed by the overall 
+                         * checks that occur before it.
+                         * *
+                         * As an example, if the category is Ll, assuming there
+                         * are other paths that utilize a-z, the original check used to
+                         * construct the unicode breakdown would note this, but
+                         * the full set sent into the breakdown method would negate
+                         * the negative set (if a-z are already checked,
+                         * there is no need to check that the character -isn't- 
+                         * in that range).
+                         * */
+                        if (item3[partialCategory] == null)
+                            target.Add(partialCategory);
+                        else
+                            target.Add(partialCategory, item3[partialCategory]);
+                    }
+                }
+            }
+            return result;
+        }
+
         public static void PropagateUnicodeCategoriesAndPartials(ref RegularLanguageSet target, RegularLanguageSet negativeNoise, out UnicodeCategory[] categories, out Dictionary<UnicodeCategory, RegularLanguageSet> categoriesWithNegativeAssertions)
         {
             List<UnicodeCategory> fullCategories = new List<UnicodeCategory>();
-            fullCategories = new List<UnicodeCategory>();
             categoriesWithNegativeAssertions = new Dictionary<UnicodeCategory, RegularLanguageSet>();
             foreach (var category in unicodeCategoryData.Keys)
             {
@@ -75,17 +146,16 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 }
                 else if (compared > unicodeCategoryTrueCounts[category] - compared)
                 {
-
-                    var categoryCopy = categoryData.SymmetricDifference(intersection);
-                    categoryCopy = categoryCopy.SymmetricDifference(categoryCopy.Intersect(negativeNoise));
-                    target = target.SymmetricDifference(intersection);
+                    //if there are more elements that overlap than there are not,
+                    //include this category with a negative assertion.
+                    var categoryCopy = categoryData ^ intersection;
+                    categoryCopy = categoryCopy ^ (categoryCopy & negativeNoise);
+                    target ^= intersection;
 
                     if (categoryCopy.IsEmpty)
                         categoriesWithNegativeAssertions.Add(category, null);
                     else
                         categoriesWithNegativeAssertions.Add(category, categoryCopy);
-                    //if there are more elements that overlap than there are not,
-                    //include this category with a negative assertion.
                 }
             }
             categories = fullCategories.ToArray();
@@ -112,107 +182,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             toStringUnicodeCategories = resultSet.ToArray();
         }
 
-        private static bool SetsEqual(this BitArray left, BitArray right)
-        {
-            if (left.Length != right.Length)
-                return false;
-            int[] leftSet  = new int[(int)Math.Ceiling(((double)left.Length / 32D))],
-                  rightSet = new int[leftSet.Length];
-            left.CopyTo(leftSet, 0);
-            right.CopyTo(rightSet, 0);
-            for (int i = 0; i < leftSet.Length; i++)
-                if (leftSet[i] != rightSet[i])
-                    return false;
-            return true;
-        }
-
-        private static int Compare(this BitArray left, BitArray right)
-        {
-            int compared = 0;
-            int minLength = Math.Min(left.Length, right.Length);
-            for (int i = 0; i < minLength; i++)
-                if (left[i] && right[i])
-                    compared++;
-            return compared;
-        }
-
-        public static int CountTrue(this BitArray target)
-        {
-            int result = 0;
-            for (int i = 0; i < target.Length; i++)
-                if (target[i])
-                    result++;
-            return result;
-        }
-
-        public static int Max(this BitArray target)
-        {
-            for (int i = target.Length - 1; i >= 0; i--)
-                if (target[i])
-                    return i;
-            return -1;
-        }
-        public static string ToString(this BitArray chars, bool inverted)
-        {
-            return chars.ToString(inverted, EmptyCategories);
-        }
-        public static string ToString(this BitArray chars, bool inverted, UnicodeCategory[] categories)
-        {
-            bool inRange = false;
-            BitArray used = new BitArray(chars);
-
-            //if (inverted)
-            //    used = used.Not();
-            int rangeStart = -1;
-            StringBuilder range = new StringBuilder();
-            bool hitAny = false;
-            for (int i = 0; i < chars.Length; i++)
-            {
-                if (!inRange)
-                {
-                    if (used[i])
-                    {
-                        if (!hitAny)
-                        {
-                            if (inverted)
-                                range.Append("^");
-                            hitAny = true;
-                        }
-                        if (used.Length <= i + 1)
-                            inRange = false;
-                        else
-                            inRange = used[i + 1];
-                        if (!inRange)
-                            range.Append(GetCharacterString((char)i));
-                        else
-                            rangeStart = i;
-                    }
-                }
-                else
-                    if (!used[i] || i == chars.Length - 1)
-                    {
-                        inRange = false;
-                        range.Append(GetCharacterString((char)rangeStart));
-                        range.Append('-');
-                        range.Append(GetCharacterString((char)(i - (i == chars.Length - 1 ? 0 : 1))));
-                    }
-            }
-            if (!hitAny)
-            {
-                if (inverted)
-                {
-                    if (categories.Length == 0)
-                        range.Append("ALL");
-                    else
-                        range.Insert(0, '^');
-                }
-                else if (categories.Length == 0)
-                    range.Append("None");
-            }
-            for (int i = 0; i < categories.Length; i++)
-                range.Append(GetUnicodeCategoryString(categories[i]));
-            return string.Format("{0}", range.ToString());
-        }
         internal static string GetUnicodeCategoryString(UnicodeCategory target)
         {
             switch (target)
@@ -323,31 +292,31 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return c.ToString();
         }
 
-        public static void InitLookups(this IGDFile file, _GDResolutionAssistant resolutionAid = null)
+        public static void InitLookups(this IOilexerGrammarFile file, _OilexerGrammarResolutionAssistant resolutionAid = null)
         {
-            LinkerCore.resolutionAid = resolutionAid;
-            LinkerCore.errorEntries = (file.GetErrorEnumerator());
-            LinkerCore.tokenEntries = (file.GetTokenEnumerator());
-            LinkerCore.ruleEntries = (file.GetRulesEnumerator());
-            LinkerCore.ruleTemplEntries = (file.GetTemplateRulesEnumerator());
+            OilexerGrammarLinkerCore.resolutionAid = resolutionAid;
+            OilexerGrammarLinkerCore.errorEntries = (file.GetErrorEnumerator());
+            OilexerGrammarLinkerCore.tokenEntries = (file.GetTokenEnumerator());
+            OilexerGrammarLinkerCore.ruleEntries = (file.GetRulesEnumerator());
+            OilexerGrammarLinkerCore.ruleTemplEntries = (file.GetTemplateRulesEnumerator());
         }
 
-        public static void InitLookups(this IEnumerable<IGDFile> files, _GDResolutionAssistant resolutionAid = null)
+        public static void InitLookups(this IEnumerable<IOilexerGrammarFile> files, _OilexerGrammarResolutionAssistant resolutionAid = null)
         {
-            LinkerCore.resolutionAid = resolutionAid;
-            LinkerCore.errorEntries = (LinkerCore.GetErrorEnumerator(files));
-            LinkerCore.tokenEntries = (LinkerCore.GetTokenEnumerator(files));
-            LinkerCore.ruleEntries = (LinkerCore.GetRulesEnumerator(files));
-            LinkerCore.ruleTemplEntries = (LinkerCore.GetTemplateRulesEnumerator(files));
+            OilexerGrammarLinkerCore.resolutionAid = resolutionAid;
+            OilexerGrammarLinkerCore.errorEntries = (OilexerGrammarLinkerCore.GetErrorEnumerator(files));
+            OilexerGrammarLinkerCore.tokenEntries = (OilexerGrammarLinkerCore.GetTokenEnumerator(files));
+            OilexerGrammarLinkerCore.ruleEntries = (OilexerGrammarLinkerCore.GetRulesEnumerator(files));
+            OilexerGrammarLinkerCore.ruleTemplEntries = (OilexerGrammarLinkerCore.GetTemplateRulesEnumerator(files));
         }
 
         public static void ClearLookups()
         {
-            LinkerCore.resolutionAid = null;
-            LinkerCore.errorEntries = null;
-            LinkerCore.tokenEntries = null;
-            LinkerCore.ruleEntries = null;
-            LinkerCore.ruleTemplEntries = null;
+            OilexerGrammarLinkerCore.resolutionAid = null;
+            OilexerGrammarLinkerCore.errorEntries = null;
+            OilexerGrammarLinkerCore.tokenEntries = null;
+            OilexerGrammarLinkerCore.ruleEntries = null;
+            OilexerGrammarLinkerCore.ruleTemplEntries = null;
         }
 
         /// <summary>
@@ -359,7 +328,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// containing no terminals/non-terminals.</remarks>
         public static void CleanupRules()
         {
-            foreach (var rule in LinkerCore.ruleEntries)
+            foreach (var rule in OilexerGrammarLinkerCore.ruleEntries)
                 CleanupRule(rule);
         }
 
@@ -376,7 +345,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     terminalList.Add(expression);
             }
             foreach (var expression in terminalList)
-                ((ReadOnlyCollection<IProductionRule>)series).baseList.Remove(expression);
+                ((ControlledCollection<IProductionRule>)series).baseList.Remove(expression);
         }
 
         private static void CleanupRule(IProductionRule expression)
@@ -397,18 +366,18 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 ((ProductionRule)(expression)).baseList.Remove(item);
         }
 
-        public static bool InlineTokens(IGDFile file)
+        public static bool InlineTokens(IOilexerGrammarFile file)
         {
-            ITokenEntry[] originals = LinkerCore.tokenEntries.ToArray();
+            IOilexerGrammarTokenEntry[] originals = OilexerGrammarLinkerCore.tokenEntries.ToArray();
             InlinedTokenEntry[] result = new InlinedTokenEntry[originals.Length];
-            Dictionary<ITokenEntry, InlinedTokenEntry> originalNewLookup = new Dictionary<ITokenEntry, InlinedTokenEntry>();
+            Dictionary<IOilexerGrammarTokenEntry, InlinedTokenEntry> originalNewLookup = new Dictionary<IOilexerGrammarTokenEntry, InlinedTokenEntry>();
             for (int i = 0; i < result.Length; i++)
-                result[i] = InliningCore.Inline(originals[i]);
+                result[i] = OilexerGrammarInliningCore.Inline(originals[i], file);
             for (int i = 0; i < result.Length; i++)
                 originalNewLookup.Add(originals[i], result[i]);
             for (int i = 0; i < result.Length; i++)
                 result[i].ResolveLowerPrecedencesAgain(originalNewLookup);
-            GDEntryCollection gdec = file as GDEntryCollection;
+            OilexerGrammarEntryCollection gdec = file as OilexerGrammarEntryCollection;
             if (gdec == null)
                 return false;
             for (int i = 0; i < originals.Length; i++)
@@ -429,25 +398,25 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return true;
         }
 
-        private static void ReplaceTokenReference(ITokenEntry sourceElement, InlinedTokenEntry destination)
+        private static void ReplaceTokenReference(IOilexerGrammarTokenEntry sourceElement, InlinedTokenEntry destination)
         {
-            foreach (var rule in LinkerCore.ruleEntries)
+            foreach (var rule in OilexerGrammarLinkerCore.ruleEntries)
                 ReplaceTokenReference(rule, sourceElement, destination);
         }
 
-        private static void ReplaceTokenReference(IProductionRuleSeries target, ITokenEntry sourceElement, InlinedTokenEntry destination)
+        private static void ReplaceTokenReference(IProductionRuleSeries target, IOilexerGrammarTokenEntry sourceElement, InlinedTokenEntry destination)
         {
             foreach (var expression in target)
                 ReplaceTokenReference(expression, sourceElement, destination);
         }
 
-        private static void ReplaceTokenReference(IProductionRule target, ITokenEntry sourceElement, InlinedTokenEntry destination)
+        private static void ReplaceTokenReference(IProductionRule target, IOilexerGrammarTokenEntry sourceElement, InlinedTokenEntry destination)
         {
             foreach (var item in target)
                 ReplaceTokenReference(item, sourceElement, destination);
         }
 
-        private static void ReplaceTokenReference(IProductionRuleItem target, ITokenEntry sourceElement, InlinedTokenEntry destination)
+        private static void ReplaceTokenReference(IProductionRuleItem target, IOilexerGrammarTokenEntry sourceElement, InlinedTokenEntry destination)
         {
             if (target is IProductionRuleGroupItem)
                 ReplaceTokenReference((IProductionRuleSeries)target, sourceElement, destination);
@@ -483,14 +452,44 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// <summary>
         /// Obtains the tokens associated to a grammar description file.
         /// </summary>
-        /// <param name="file">The <see cref="IGDFile"/> which contains the tokens
+        /// <param name="file">The <see cref="IOilexerGrammarFile"/> which contains the tokens
         /// to enumerate.</param>
         /// <returns>A <see cref="IEnumerable{T}"/> associated to the tokens of the
         /// <paramref name="file"/> provided.</returns>
-        public static IEnumerable<InlinedTokenEntry> GetTokens(this IGDFile file)
+        public static IEnumerable<InlinedTokenEntry> GetInlinedTokens(this IOilexerGrammarFile file)
         {
             return from e in file
                    let iE = e as InlinedTokenEntry
+                   where iE != null
+                   select iE;
+        }
+
+        /// <summary>
+        /// Obtains the tokens associated to a grammar description file.
+        /// </summary>
+        /// <param name="file">The <see cref="IOilexerGrammarFile"/> which contains the tokens
+        /// to enumerate.</param>
+        /// <returns>A <see cref="IEnumerable{T}"/> associated to the tokens of the
+        /// <paramref name="file"/> provided.</returns>
+        public static IEnumerable<OilexerGrammarTokenEntry> GetTokens(this IOilexerGrammarFile file)
+        {
+            return from e in file
+                   let iE = e as OilexerGrammarTokenEntry
+                   where iE != null
+                   select iE;
+        }
+
+        /// <summary>
+        /// Obtains the tokens associated to a grammar description file.
+        /// </summary>
+        /// <param name="file">The <see cref="IOilexerGrammarFile"/> which contains the tokens
+        /// to enumerate.</param>
+        /// <returns>A <see cref="IEnumerable{T}"/> associated to the tokens of the
+        /// <paramref name="file"/> provided.</returns>
+        public static IEnumerable<OilexerGrammarTokenEntry> GetSortedTokens(this IOilexerGrammarFile file)
+        {
+            return from e in file
+                   let iE = e as OilexerGrammarTokenEntry
                    where iE != null
                    orderby iE.Name
                    select iE;
@@ -499,35 +498,41 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// <summary>
         /// Obtains the rules associated to a grammar description file.
         /// </summary>
-        /// <param name="file">The <see cref="IGDFile"/> which contains the rules 
+        /// <param name="file">The <see cref="IOilexerGrammarFile"/> which contains the rules 
         /// to enumerate.</param>
         /// <returns>A <see cref="IEnumerable{T}"/> associated to the rules of the
         /// <paramref name="file"/> provided.</returns>
-        public static IEnumerable<IProductionRuleEntry> GetRules(this IGDFile file)
+        public static IEnumerable<IOilexerGrammarProductionRuleEntry> GetRules(this IOilexerGrammarFile file)
         {
             return from e in file
-                   let iE = e as IProductionRuleEntry
+                   let iE = e as IOilexerGrammarProductionRuleEntry
                    where iE != null
                    orderby iE.Name
                    select iE;
         }
 
-        public static SyntacticalNFAState BuildNFA(this IProductionRuleSeries series, IGrammarSymbolSet symbols, ParserBuilder builder)
+        public static SyntacticalNFAState BuildNFA(this IProductionRuleSeries series, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
         {
-            return series.BuildNFA(null, symbols, builder);
+            return series.BuildNFA(null, symbols, lookup, replacements);
         }
 
-        public static SyntacticalNFAState BuildNFA(this IProductionRuleSeries series, SyntacticalNFAState root, IGrammarSymbolSet symbols, ParserBuilder builder)
+        public static SyntacticalNFAState BuildNFA(this IProductionRuleSeries series, SyntacticalNFAState root, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
         {
+#if ShortcircuitToFinishLexer
+            return root;
+#else
             SyntacticalNFAState state = root;
             bool first = true;
             foreach (var expression in series)
             {
                 if (state == null)
-                    state = expression.BuildNFA(symbols, builder);
+                {
+                    state = expression.BuildNFA(symbols, lookup, replacements);
+                    first = false;
+                }
                 else
                 {
-                    var expressionNFA = expression.BuildNFA(symbols, builder);
+                    var expressionNFA = expression.BuildNFA(symbols, lookup, replacements);
                     if (first)
                     {
                         bool isEdge = expressionNFA.IsEdge;
@@ -544,80 +549,303 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             {
                 List<SyntacticalNFAState> flatForm = new List<SyntacticalNFAState>();
                 SyntacticalNFAState.FlatlineState(state, flatForm);
+                var source = (replacements.ContainsKey(series) ? (IProductionRuleSource)replacements[series] : (IProductionRuleSource)series);
+                state.SetInitial(source);
                 foreach (var fState in flatForm)
-                    fState.SetIntermediate(series);
-                state.SetInitial(series);
+                    fState.SetIntermediate(source);
                 foreach (var edge in state.ObtainEdges())
-                    edge.SetFinal(series);
+                    edge.SetFinal(source);
             }
             return state;
+#endif
         }
 
-        public static SyntacticalNFAState BuildNFA(this IProductionRule rule, IGrammarSymbolSet symbols, ParserBuilder builder)
+        public static SyntacticalNFAState BuildNFA(this IProductionRule rule, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
         {
             SyntacticalNFAState state = null;
             foreach (var item in rule)
                 if (state == null)
-                    state = item.BuildNFA(symbols, builder);
+                    state = item.BuildNFA(symbols, lookup, replacements);
                 else
-                    state.Concat(item.BuildNFA(symbols, builder));
+                {
+                    var nextState = item.BuildNFA(symbols, lookup, replacements);
+                    if (nextState != null)
+                        state.Concat(nextState);
+                }
             return state;
         }
 
-        public static SyntacticalNFAState BuildNFA(this IProductionRuleItem item, IGrammarSymbolSet symbols, ParserBuilder builder)
+        public static SyntacticalNFAState BuildNFA(this IProductionRuleItem item, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
         {
             SyntacticalNFAState result = null;
             if (item is IProductionRuleGroupItem)
-                result = ((IProductionRuleSeries)item).BuildNFA(symbols, builder);
+                result = ((IProductionRuleSeries)item).BuildNFA(symbols, lookup, replacements);
             else if (item is ILiteralCharReferenceProductionRuleItem)
-                result = ((ILiteralCharReferenceProductionRuleItem)(item)).BuildNFA(symbols, builder);
+                result = ((ILiteralCharReferenceProductionRuleItem)(item)).BuildNFA(symbols, lookup, replacements);
             else if (item is ILiteralStringReferenceProductionRuleItem)
-                result = ((ILiteralStringReferenceProductionRuleItem)(item)).BuildNFA(symbols, builder);
+                result = ((ILiteralStringReferenceProductionRuleItem)(item)).BuildNFA(symbols, lookup, replacements);
             else if (item is ITokenReferenceProductionRuleItem)
-                result = ((ITokenReferenceProductionRuleItem)(item)).BuildNFA(symbols, builder);
+                result = ((ITokenReferenceProductionRuleItem)(item)).BuildNFA(symbols, lookup, replacements);
             else if (item is IRuleReferenceProductionRuleItem)
-                result = ((IRuleReferenceProductionRuleItem)(item)).BuildNFA(symbols, builder);
+                result = ((IRuleReferenceProductionRuleItem)(item)).BuildNFA(symbols, lookup, replacements);
             else
                 throw new ArgumentException("series");
-            result.HandleRepeatCycle<GrammarVocabulary, SyntacticalNFAState, SyntacticalDFAState, IProductionRuleSource, SyntacticalNFARootState, IProductionRuleItem>(item, InliningCore.ProductionRuleRootStateClonerCache, () => new SyntacticalNFAState(builder));
-            result.SetInitial(item);
+            if (result == null)
+                return null;
+            var source = replacements.ContainsKey(item) ? (IProductionRuleSource)replacements[item] : (IProductionRuleSource)item;
+            result.HandleRepeatCycle<GrammarVocabulary, SyntacticalNFAState, SyntacticalDFAState, IProductionRuleSource, SyntacticalNFARootState, IProductionRuleItem>(item, item, OilexerGrammarInliningCore.ProductionRuleRootStateClonerCache, () => new SyntacticalNFAState(lookup, (GrammarSymbolSet)symbols));
             List<SyntacticalNFAState> flatForm = new List<SyntacticalNFAState>();
             SyntacticalNFAState.FlatlineState(result, flatForm);
+            result.SetInitial(source);
             foreach (var fState in flatForm)
-                fState.SetIntermediate(item);
-            result.SetInitial(item);
+                fState.SetIntermediate(source);
             foreach (var edge in result.ObtainEdges())
-                edge.SetFinal(item);
+                edge.SetFinal(source);
             return result;
         }
 
-        public static SyntacticalNFAState BuildNFA<T, TLiteral>(this ILiteralReferenceProductionRuleItem<T, TLiteral> item, IGrammarSymbolSet symbols, ParserBuilder builder)
+        public static SyntacticalNFAState BuildNFA<T, TLiteral>(this ILiteralReferenceProductionRuleItem<T, TLiteral> item, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
             where TLiteral :
                 ILiteralTokenItem<T>
         {
-            SyntacticalNFAState state = new SyntacticalNFAState(builder);
+            SyntacticalNFAState state = new SyntacticalNFAState(lookup, (GrammarSymbolSet)symbols);
             GrammarVocabulary movement = new GrammarVocabulary(symbols, symbols[item.Literal]);
-            var stateEnd = new SyntacticalNFAState(builder);
+            var stateEnd = new SyntacticalNFAState(lookup, (GrammarSymbolSet)symbols);
             state.MoveTo(movement, stateEnd);
             return state;
         }
 
-        public static SyntacticalNFAState BuildNFA(this ITokenReferenceProductionRuleItem tokenReference, IGrammarSymbolSet symbols, ParserBuilder builder)
+        public static SyntacticalNFAState BuildNFA(this ITokenReferenceProductionRuleItem tokenReference, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
         {
-            SyntacticalNFAState state = new SyntacticalNFAState(builder);
-            GrammarVocabulary movement = new GrammarVocabulary(symbols, symbols[tokenReference.Reference]);
-            var stateEnd = new SyntacticalNFAState(builder);
+            SyntacticalNFAState state = new SyntacticalNFAState(lookup, (GrammarSymbolSet)symbols);
+            var symbol = symbols[tokenReference.Reference];
+            GrammarVocabulary movement = null;
+            if (symbol is IGrammarConstantItemSymbol)
+            {
+                IGrammarConstantItemSymbol constantItemSymbol = (IGrammarConstantItemSymbol)symbol;
+                movement = new GrammarVocabulary(symbols, (from s in symbols
+                                                               let cis = s as IGrammarConstantItemSymbol
+                                                               where cis != null && cis.Source == constantItemSymbol.Source
+                                                           select cis).ToArray());
+            }
+            else
+                movement = new GrammarVocabulary(symbols, symbol);
+            var stateEnd = new SyntacticalNFAState(lookup, (GrammarSymbolSet)symbols);
             state.MoveTo(movement, stateEnd);
             return state;
         }
 
-        public static SyntacticalNFAState BuildNFA(this IRuleReferenceProductionRuleItem ruleReference, IGrammarSymbolSet symbols, ParserBuilder builder)
+        public static SyntacticalNFAState BuildNFA(this IRuleReferenceProductionRuleItem ruleReference, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
         {
-            SyntacticalNFAState state = new SyntacticalNFAState(builder);
+            SyntacticalNFAState state = new SyntacticalNFAState(lookup, (GrammarSymbolSet)symbols);
             GrammarVocabulary movement = new GrammarVocabulary(symbols, symbols[ruleReference.Reference]);
-            var stateEnd = new SyntacticalNFAState(builder);
+            var stateEnd = new SyntacticalNFAState(lookup, (GrammarSymbolSet)symbols);
             state.MoveTo(movement, stateEnd);
             return state;
         }
+
+        public static Dictionary<RegularLanguageDFAState, RegularLanguageDFAHandlingType> DetermineStateHandlingTypes(Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> multitargetLookup, RegularLanguageDFAUnicodeGraph dfaTransitionTable)
+        {
+
+            var subset = ((dfaTransitionTable.UnicodeGraph == null) ? (new IUnicodeTarget[0]) : (IEnumerable<IUnicodeTarget>)dfaTransitionTable.UnicodeGraph.Values).Select(k => k.Target);
+            var setToIterate = subset.Concat(dfaTransitionTable.Values.Where(target => multitargetLookup.ContainsKey(target))).Concat(dfaTransitionTable.Values.Intersect(subset).Where(k => !multitargetLookup.ContainsKey(k))).Distinct().ToArray();
+            var jumpTargetStates = new HashSet<RegularLanguageDFAState>(
+                from target in setToIterate
+                where !multitargetLookup.ContainsKey(target)
+                select target);
+            var externalJumpTargets = new HashSet<RegularLanguageDFAState>(
+                from target in setToIterate
+                where multitargetLookup.ContainsKey(target)
+                select target);
+            var inlineableTargets =
+                new HashSet<RegularLanguageDFAState>(dfaTransitionTable.Values.Except(jumpTargetStates.Concat(externalJumpTargets)));
+            var falsePositiveInlineableTargets = new HashSet<RegularLanguageDFAState>();
+            foreach (var inlineElement in inlineableTargets)
+            {
+                var check = dfaTransitionTable.Where(kvp => kvp.Value == inlineElement).Select(kvp => kvp.Key).Aggregate(RegularLanguageSet.UnionAggregateDelegate);
+                if (!dfaTransitionTable.ContainsKey(check))
+                    falsePositiveInlineableTargets.Add(inlineElement);
+                else
+                    /* Large groupings of characters could be quicker as an if statement across the range, i.e.: 'a' <= nextChar && nextChar <= 'z' vs 26 separate jump notations. */
+                    if (check.GetInefficientSwitchCases().Count() > 0)
+                        falsePositiveInlineableTargets.Add(inlineElement);
+            }
+            if (falsePositiveInlineableTargets.Count > 0)
+            {
+                inlineableTargets = new HashSet<RegularLanguageDFAState>(inlineableTargets.Except(falsePositiveInlineableTargets));
+                jumpTargetStates = new HashSet<RegularLanguageDFAState>(jumpTargetStates.Concat(falsePositiveInlineableTargets));
+            }
+            var allStates = new HashSet<RegularLanguageDFAState>(
+                jumpTargetStates
+                    .Concat(externalJumpTargets)
+                    .Concat(inlineableTargets));
+            var dfaHandlingMechanisms =
+                (from state in allStates
+                 let type = jumpTargetStates.Contains(state) ? RegularLanguageDFAHandlingType.LocalJump : externalJumpTargets.Contains(state) ? RegularLanguageDFAHandlingType.GlobalJump : inlineableTargets.Contains(state) ? RegularLanguageDFAHandlingType.Inline : RegularLanguageDFAHandlingType.Unknown
+                 select new { State = state, Type = type }).ToDictionary(k => k.State, v => v.Type);
+            return dfaHandlingMechanisms;
+        }
+
+        public static IEnumerable<RegularLanguageSet.SwitchPair<char, RegularLanguageSet.RangeSet>> GetInefficientSwitchCases(this RegularLanguageSet check)
+        {
+            return check.GetRange().Where(r => r.Which == RegularLanguageSet.SwitchPairElement.CharacterRange);
+        }
+
+        public static IEnumerable<ITokenSource> FilterSourceTokenItems(this IEnumerable<IInlinedTokenItem> tokenItems, IGrammarSymbolSet symbols)
+        {
+            return from item in FilterSourceTokenItemsInternal(tokenItems, symbols)
+                   orderby item is IOilexerGrammarTokenEntry ? ((IOilexerGrammarTokenEntry)(item)).Name : ((ITokenItem)(item)).Name
+                   select item;
+        }
+
+        public static IEnumerable<ITokenSource> FilterSourceTokenItemsInternal(this IEnumerable<IInlinedTokenItem> tokenItems, IGrammarSymbolSet symbols)
+        {
+            var subSymbols = symbols.Where(k => k is IGrammarTokenSymbol).Cast<IGrammarTokenSymbol>().ToArray();
+            var grouped = (from t in tokenItems
+                           group t by t.Root).ToDictionary(k => k.Key, v =>
+                           {
+                               var relevantSubset =
+                                   subSymbols.Where(k => k.Source == v.Key);
+                               var firstElement = relevantSubset.FirstOrDefault();
+                               if (firstElement == null)
+                                   return new ITokenSource[0];
+                               if (firstElement is IGrammarVariableSymbol || firstElement is IGrammarConstantEntrySymbol)
+                                   return (IEnumerable<ITokenSource>)new ITokenSource[1] { firstElement.Source };
+                               else if (firstElement is IGrammarConstantItemSymbol)
+                               {
+                                   var furtherRelevantSubset = relevantSubset.Where(k => k is IGrammarConstantItemSymbol).Cast<IGrammarConstantItemSymbol>().Where(k => Enumerable.Contains<ITokenSource>(v, k.SourceItem));
+                                   return (IEnumerable<ITokenSource>)furtherRelevantSubset.Select(k => k.SourceItem).Cast<ITokenSource>().ToArray();
+                               }
+                               return (IEnumerable<ITokenSource>)(new ITokenSource[0]);
+                           });
+            return grouped.Values.Aggregate((a, b) => a.Concat(b));
+        }
+
+        public static IEnumerable<IInlinedTokenItem> ObtainEdgeSourceTokenItems(this RegularLanguageDFAState state)
+        {
+            return ObtainEdgeSourceTokenItems(state.Sources);
+        }
+
+        public static IEnumerable<IInlinedTokenItem> ObtainEdgeSourceTokenItems(this IEnumerable<Tuple<ITokenSource, FiniteAutomationSourceKind>> sources)
+        {
+            var sourceOwners = sources.Where(k => k.Item1 is IOilexerGrammarTokenEntry).Where(k => k.Item2 == FiniteAutomationSourceKind.Final).ToArray();
+            var middletown = 
+                (from s in sources
+                 where (s.Item2 & FiniteAutomationSourceKind.Final) == FiniteAutomationSourceKind.Final
+                 let isi = s.Item1 as ICaptureTokenStructuralItem
+                 let subQuery = from s2 in isi == null ? new ITokenSource[0] : (IEnumerable<ITokenSource>)isi.Sources
+                                select s2
+                 from isiElement in subQuery.DefaultIfEmpty()
+                 let currentItem = (IInlinedTokenItem)((s.Item1 is IInlinedTokenItem) ? s.Item1 : isiElement)
+                 where currentItem != null
+                 where sourceOwners.Any(k => k.Item1 == currentItem.Root && k.Item2 == FiniteAutomationSourceKind.Final)
+                 select currentItem).ToArray();
+            return middletown;
+        }
+
+        public static IEnumerable<ITokenSource> GetActualTokenSources(this IEnumerable<Tuple<ITokenSource, FiniteAutomationSourceKind>> sources)
+        {
+            var sourceOwners = sources.Where(k => k.Item1 is IOilexerGrammarTokenEntry).Where(k => k.Item2 == FiniteAutomationSourceKind.Final).ToArray();
+            return
+                (from s in sources
+                 let isi = s.Item1 as ICaptureTokenStructuralItem
+                 let subQuery = from s2 in isi == null ? new ITokenSource[0] : (IEnumerable<ITokenSource>)isi.Sources
+                                select s2
+                 from isiElement in subQuery.DefaultIfEmpty()
+                 let currentItem = (ITokenSource)((s.Item1 is IInlinedTokenItem) ? s.Item1 : isiElement) ?? ((s.Item1 is IOilexerGrammarTokenEntry) ? s.Item1 : null)
+                 where currentItem != null
+                 select currentItem).ToArray();
+        }
+
+        public static void FilterByPrecedence(this TokenPrecedenceTable tpt, Dictionary<OilexerGrammarTokenEntry, IGrammarTokenSymbol[]> tokens)
+        {
+            if (tpt.Count > 1)
+                for (int setIndex = 1; setIndex < tpt.Count; setIndex++)
+                {
+                    var currentElements = tpt[setIndex];
+                    foreach (var tokenEntry in currentElements)
+                        tokens.Remove(tokenEntry);
+                }
+        }
+
+        public static string ToLocationDetails(this IInlinedTokenItem item, IOilexerGrammarFile file)
+        {
+            if (item.Root.FileName.ToLower().StartsWith(file.RelativeRoot.ToLower()))
+                return string.Format(@"{0}.{1} at location: line {2}, column {3}", string.IsNullOrEmpty(item.Name) ? string.Empty : string.Format("{0} in ", item.Name), item.Root.FileName.Substring(file.RelativeRoot.Length), item.Line, item.Column);
+            return item.Root.FileName;
+        }
+
+        public static string ToLocationDetails(this InlinedTokenEntry entry, IOilexerGrammarFile file)
+        {
+            if (entry.FileName.ToLower().StartsWith(file.RelativeRoot.ToLower()))
+                return string.Format(@"{0}.{1} at location: line {2}, column {3}", string.IsNullOrEmpty(entry.Name) ? string.Empty : string.Format("{0} in ", entry.Name), entry.FileName.Substring(file.RelativeRoot.Length), entry.Line, entry.Column);
+            return entry.FileName;
+        }
+
+
+        public static bool AllSourcesAreSameIdentity(this IEnumerable<IProductionRuleSource> sources)
+        {
+            var firstSource = sources.First();
+            if (firstSource is ILiteralReferenceProductionRuleItem)
+            {
+                ILiteralReferenceProductionRuleItem sourceItem = (ILiteralReferenceProductionRuleItem)(firstSource);
+                return sources.Skip(1).All(s => s is ILiteralReferenceProductionRuleItem && ((ILiteralReferenceProductionRuleItem)s).Literal == sourceItem.Literal);
+            }
+            else
+                Debug.Assert(false, "Unknown entity type for flag item.");
+            return false;
+        }
+
+        public static ProductionRuleProjectionNode GetRuleNodeFromFullSeries(this Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, IOilexerGrammarProductionRuleEntry entry)
+        {
+            return fullSeries.First(p => p.Value.Rule == entry).Value.RootNode;
+        }
+
+        public static IEnumerable<KeysValuePair<MultikeyedDictionaryKeys<TKey1, TKey2>, TValue>> Filter<TKey1, TKey2, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TValue> dict, TKey1 key1Filter)
+        {
+            return from ksvp in dict
+                   where ksvp.Keys.Key1.Equals(key1Filter)
+                   select ksvp;
+        }
+
+        public static IEnumerable<KeysValuePair<MultikeyedDictionaryKeys<TKey1, TKey2, TKey3>, TValue>> Filter<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter, TKey2 key2Filter)
+        {
+            return from ksvp in dict
+                   where ksvp.Keys.Key1.Equals(key1Filter) &&
+                         ksvp.Keys.Key2.Equals(key2Filter)
+                   select ksvp;
+        }
+
+        public static IEnumerable<KeysValuePair<MultikeyedDictionaryKeys<TKey1, TKey2, TKey3>, TValue>> Filter<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter)
+        {
+            return from ksvp in dict
+                   where ksvp.Keys.Key1.Equals(key1Filter)
+                   select ksvp;
+        }
+
+        public static IDictionary<TKey3, TValue> FilterToDictionary<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter, TKey2 key2Filter)
+        {
+            var result = new Dictionary<TKey3, TValue>();
+            foreach (var ksvp in dict.Filter(key1Filter, key2Filter))
+                result.Add(ksvp.Keys.Key3, ksvp.Value);
+            return result;
+        }
+
+        public static IDictionary<TKey2, TValue> FilterToDictionary<TKey1, TKey2, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TValue> dict, TKey1 key1Filter)
+        {
+            var result = new Dictionary<TKey2, TValue>();
+            foreach (var ksvp in dict.Filter(key1Filter))
+                result.Add(ksvp.Keys.Key2, ksvp.Value);
+            return result;
+        }
+
+        public static IMultikeyedDictionary<TKey2, TKey3, TValue> FilterToDictionary<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter)
+        {
+            var result = new MultikeyedDictionary<TKey2, TKey3, TValue>();
+            foreach (var ksvp in dict.Filter(key1Filter))
+                result.Add(ksvp.Keys.Key2, ksvp.Keys.Key3, ksvp.Value);
+            return result;
+        }
+
     }
 }

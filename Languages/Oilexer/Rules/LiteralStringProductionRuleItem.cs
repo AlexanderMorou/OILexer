@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -38,7 +38,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return result;
         }
 
-        #region ILiteralStringProductionRuleItem Members
+        //#region ILiteralStringProductionRuleItem Members
 
         /// <summary>
         /// Creates a copy of the current <see cref="LiteralStringProductionRuleItem"/>.
@@ -59,12 +59,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get { return this.caseInsensitive; }
         }
 
-        #endregion
+        //#endregion
 
         public override string ToString()
         {
-            return GrammarCore.EncodePrim(this.Value);
+            return string.Format("{0}{1}", OilexerGrammarCore.EncodePrim(this.Value), base.ToString());
         }
+
+        public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
 
     }
 }

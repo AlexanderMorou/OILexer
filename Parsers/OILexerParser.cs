@@ -9,39 +9,52 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
- /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
- |----------------------------------------------------------------------|
- | The Abstraction Project's code is provided under a contract-release  |
- | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
- \-------------------------------------------------------------------- */
+/*---------------------------------------------------------------------\
+| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+|----------------------------------------------------------------------|
+| The Abstraction Project's code is provided under a contract-release  |
+| basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
+\-------------------------------------------------------------------- */
 
 namespace AllenCopeland.Abstraction.Slf.Parsers
 {
-    public partial class OILexerParser :
-        Parser<IGDToken, IGDTokenizer, IGDFile>,
-        IGDParser
+    public partial class OilexerParser :
+        Parser<IOilexerGrammarToken, IOilexerGrammarTokenizer, IOilexerGrammarFile>,
+        IOilexerGrammarParser
     {
         private List<string> includeDirectives = new List<string>();
         private List<string> parsedIncludeDirectives = new List<string>();
         private List<int> commandDepths = new List<int>();
-        private GDParserResults currentTarget;
+        private OilexerGrammarParserResults currentTarget;
         private int templateDepth = 0;
         private int parameterDepth = 0;
-        private IDictionary<string, string> definedSymbols = new Dictionary<string,string>();
+        private IDictionary<string, string> definedSymbols = new Dictionary<string, string>();
         private delegate bool SimpleParseDelegate<T>(ref T target);
         private bool parseIncludes;
         private bool captureRegions;
-        public OILexerParser()
+        public OilexerParser()
             : this(true)
         {
 
         }
-        public OILexerParser(bool parseIncludes, bool captureRegions = false, IList<IToken> originalFormTokens = null)
+        public OilexerParser(bool parseIncludes, bool captureRegions = false, IList<IToken> originalFormTokens = null)
             : base(originalFormTokens)
         {
             this.parseIncludes = parseIncludes;
             this.captureRegions = captureRegions;
+        }
+
+        public void Define(string directiveName)
+        {
+            Define(directiveName, null);
+        }
+
+        public void Define(string directiveName, string directiveValue)
+        {
+            if (!definedSymbols.ContainsKey(directiveName))
+                definedSymbols.Add(directiveName, directiveValue);
+            else
+                throw new ArgumentException("Directive already exists.");
         }
 
         /// <summary>
@@ -50,17 +63,17 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         /// <param name="fileName">The file to parse.</param>
         /// <returns>An instance of an implementation of <see cref="IParserResults{T}"/> 
         /// that indicates the success of the operation, with an instance of 
-        /// <see cref="IGDFile"/>, if successful.</returns>
+        /// <see cref="IOilexerGrammarFile"/>, if successful.</returns>
         /// <exception cref="System.IO.FileNotFoundException">
         /// Thrown when 
         /// <paramref name="fileName"/> is not found.</exception>
-        public override IParserResults<IGDFile> Parse(string fileName)
+        public override IParserResults<IOilexerGrammarFile> Parse(string fileName)
         {
             if (!Path.IsPathRooted(fileName))
                 fileName = Path.Combine(Directory.GetCurrentDirectory(), fileName);
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("The file to parse was not found.", fileName);
-            #if WINDOWS
+#if WINDOWS
             /* *
              * Users on windows should be used to case leniency, not doing this
              * could lead to locked file runtime errors, when the same file is
@@ -68,12 +81,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
              * grammar itself or the application is invoked using a case variant
              * of the actual file name.
              * */
-            fileName = fileName.ToLower();
-            #endif
-            IParserResults<IGDFile> result = null;
-            FileStream fs = new FileStream(fileName, FileMode.Open);
+            fileName = fileName.GetFilenameProperCasing();
+#endif
+            IParserResults<IOilexerGrammarFile> result = null;
+            FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
             result = this.Parse(fs, fileName);
             fs.Close();
+            if (result.Result != null)
+            {
+                var resultFile = (OilexerGrammarFile)result.Result;
+                resultFile.DefinedSymbols = this.definedSymbols;
+            }
+
             return result;
         }
 
@@ -84,8 +103,8 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         /// <param name="fileName">The file name used provided an error is encountered in the <see cref="Stream"/>, <paramref name="s"/>.</param>
         /// <returns>An instance of an implementation of <see cref="IParserResults{T}"/> 
         /// that indicates the success of the operation with an instance of 
-        /// <see cref="IGDFile"/>, if successful.</returns>
-        public override IParserResults<IGDFile> Parse(Stream s, string fileName)
+        /// <see cref="IOilexerGrammarFile"/>, if successful.</returns>
+        public override IParserResults<IOilexerGrammarFile> Parse(Stream s, string fileName)
         {
             int count = includeDirectives.Count;
             bool addedInclude = false;
@@ -98,7 +117,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 addedInclude = true;
                 parsedIncludeDirectives.Add(fileName);
             }
-            IParserResults<IGDFile> gf = this.BeginParse();
+            IParserResults<IOilexerGrammarFile> gf = this.BeginParse();
             /* *
              * Only remove it if it was added by this call.  Which would be when
              * Count = initial_Count, this should effectively clean out the 
@@ -111,17 +130,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         parsedIncludeDirectives.Remove(includeDirectives[i]);
                     includeDirectives.RemoveAt(i--);
                 }
+            s.Close();
             return gf;
         }
 
         /* *
          * Initializes the parse process.
          * */
-        protected IParserResults<IGDFile> BeginParse()
+        protected IParserResults<IOilexerGrammarFile> BeginParse()
         {
             //Instantiate the parser results and give it a blank file to work with.
-            currentTarget = new GDParserResults();
-            currentTarget.SetResult(new GDFile(this.CurrentTokenizer.FileName));
+            currentTarget = new OilexerGrammarParserResults();
+            currentTarget.SetResult(new OilexerGrammarFile(this.CurrentTokenizer.FileName));
             while (true)
             {
                 SetMultiLineMode(true);
@@ -142,69 +162,80 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     if (its.Count == 0)
                     {
                         Expect("comment");
+                        PopAhead();
                         continue;
                     }
-                    IGDToken it = its[0];
-                    if (it == null || it.TokenType != GDTokenType.Comment)
+                    IOilexerGrammarToken it = its[0];
+                    if (it == null || it.TokenType != OilexerGrammarTokenType.Comment)
+                    {
                         Expect("comment");
-                    var commentToken = ((GDTokens.CommentToken)(it));
+                        PopAhead();
+                    }
+                    var commentToken = ((OilexerGrammarTokens.CommentToken)(it));
                     if (captureRegions && commentToken.MultiLine)
-                        (this.currentTarget.Result as GDFile).AddCommentRegion(commentToken);
-                    this.currentTarget.Result.Add(new CommentEntry(commentToken.Comment, CurrentTokenizer.FileName, it.Column, it.Line, it.Position));
+                        (this.currentTarget.Result as OilexerGrammarFile).AddCommentRegion(commentToken);
+                    this.currentTarget.Result.Add(new OilexerGrammarCommentEntry(commentToken.Comment, CurrentTokenizer.FileName, it.Column, it.Line, it.Position));
                 }
                 //Expected preprocessor.
                 else if (c == '#')
                 {
-                    GDTokens.PreprocessorDirective preprocessorToken = this.LookAhead(0) as GDTokens.PreprocessorDirective;
+                    OilexerGrammarTokens.PreprocessorDirective preprocessorToken = this.LookAhead(0) as OilexerGrammarTokens.PreprocessorDirective;
                     if (preprocessorToken != null)
                     {
                         switch (preprocessorToken.Type)
                         {
-                            case GDTokens.PreprocessorType.IfDirective:
-                            case GDTokens.PreprocessorType.IfDefinedDirective:
-                            case GDTokens.PreprocessorType.IfNotDefinedDirective:
+                            case OilexerGrammarTokens.PreprocessorType.IfDirective:
+                            case OilexerGrammarTokens.PreprocessorType.IfDefinedDirective:
+                            case OilexerGrammarTokens.PreprocessorType.IfNotDefinedDirective:
                                 PopAhead();
                                 IPreprocessorCLogicalOrConditionExp condition = null;
                                 if (ParsePreprocessorCLogicalOrConditionExp(ref condition))
                                 {
                                     var ifEntry = ParseIfDirective(condition, preprocessorToken, PreprocessorContainer.File);
-                                    ProcessIfEntry(ifEntry);
+                                    OilexerGrammarProcessIfEntry(ifEntry);
                                 }
                                 break;
-                            case GDTokens.PreprocessorType.DefineDirective:
+                            case OilexerGrammarTokens.PreprocessorType.DefineDirective:
                                 IPreprocessorDirective ipd = ParsePreprocessor(PreprocessorContainer.File);
                                 var defineDirective = ipd as IPreprocessorDefineSymbolDirective;
                                 if (defineDirective != null)
                                     if (!definedSymbols.ContainsKey(defineDirective.SymbolName))
                                         definedSymbols.Add(defineDirective.SymbolName, defineDirective.Value);
                                 break;
-                            case GDTokens.PreprocessorType.ThrowDirective:
+                            case OilexerGrammarTokens.PreprocessorType.ThrowDirective:
                                 break;
                             default:
                                 goto parseSimple;
                         }
-                        goto postSimple;;
-                    parseSimple: 
+                        goto postSimple;
+                        ;
+                    parseSimple:
                         ProcessStringTerminal(ParseStringTerminalDirective());
-                    postSimple: ;
+                    postSimple:
+                        ;
 
+                    }
+                    else
+                    {
+                        Expect("#if, #throw, #ifdef, #ifndef, #endif");
+                        break;
                     }
                 }
                 else if (Lexer.IsIdentifierChar(c))
                 {
                     /* *
-                     * All declarations must begin at the first column 
+                     * All declarations must begin at the firstSeries column 
                      * of the line.
                      * */
                     if (this.CurrentTokenizer.GetColumnIndex(this.StreamPosition) != 1)
                     {
+                        LogError(OilexerGrammarParserErrors.ExpectedEndOfLine);
                         GetAhead(1);
-                        LogError(GDParserErrors.ExpectedEndOfLine);
                         continue;
                     }
                     SetMultiLineMode(true);
                     EntryScanMode esm = EntryScanMode.Inherited;
-                    var its = GetAhead(2);
+                    var idOp = GetAhead<OilexerGrammarTokens.IdentifierToken, OilexerGrammarTokens.OperatorToken>(2);
                     /* *
                      * expected patterns:
                      * ID   = | * Language defined error 
@@ -215,46 +246,47 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                      * ID   + | * Change line-mode to multi-line (not used)
                      * ID   -   * Change line-mode to single-line (not used)
                      * */
-                    if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
+                    if (idOp.FailPoint == -1)
+                    //if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
                     {
-                        List<GDTokens.IdentifierToken> lowerPrecedences = new List<GDTokens.IdentifierToken>();
-                        GDTokens.IdentifierToken id = ((GDTokens.IdentifierToken)(its[0]));
-                        GDTokens.OperatorToken ot = ((GDTokens.OperatorToken)(its[1]));
+                        List<OilexerGrammarTokens.IdentifierToken> lowerPrecedences = new List<OilexerGrammarTokens.IdentifierToken>();
+                        //OilexerGrammarTokens.IdentifierToken id = idOp.Token1;
+                        OilexerGrammarTokens.OperatorToken ot = idOp.Token2;
                         bool elementsAreChildren = false;
                         bool forcedRecognizer = false;
                     checkOp:
                         switch (ot.Type)
                         {
                             //ID$
-                            case GDTokens.OperatorType.ForcedStringForm:
+                            case OilexerGrammarTokens.OperatorType.ForcedStringForm:
                                 forcedRecognizer = true;
-                                if (LookAhead(0).TokenType == GDTokenType.Operator)
+                                if (LookAhead(0).TokenType == OilexerGrammarTokenType.Operator)
                                 {
-                                    ot = (GDTokens.OperatorToken)PopAhead();
+                                    ot = (OilexerGrammarTokens.OperatorToken)PopAhead();
                                     goto checkOp;
                                 }
                                 else
                                 {
-                                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.GreaterThan, true);
+                                    ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.ColonEquals | OilexerGrammarTokens.OperatorType.GreaterThan, true);
                                     PopAhead();
                                 }
                                 break;
                             //ID ::=
-                            case GDTokens.OperatorType.ColonColonEquals:
-                                if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                    ot.Type == GDTokens.OperatorType.GreaterThan)
+                            case OilexerGrammarTokens.OperatorType.ColonColonEquals:
+                                if ((ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken) != null &&
+                                    ot.Type == OilexerGrammarTokens.OperatorType.GreaterThan)
                                 {
                                     elementsAreChildren = true;
                                     PopAhead();
                                 }
                                 SetMultiLineMode(true);
-                                ParseProductionRule(id, EntryScanMode.Inherited, id.Position, elementsAreChildren);
+                                ParseProductionRule(idOp.Token1, EntryScanMode.Inherited, idOp.Token1.Position, elementsAreChildren, forcedRecognizer);
                                 break;
                             //ID :=
-                            case GDTokens.OperatorType.ColonEquals:
+                            case OilexerGrammarTokens.OperatorType.ColonEquals:
                                 {
                                     SetMultiLineMode(true);
-                                    bool unhinged = false;
+                                    bool unhinged = false, contextual = false;
                                     if (TokenizerLookAhead(0) == '*')
                                     {
                                         //ID :=*
@@ -264,127 +296,187 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                          * */
                                         this.PopAhead();
                                         unhinged = true;
+                                        if (TokenizerLookAhead(0) == '-')
+                                        {
+                                            //ID :=*-
+                                            /* *
+                                             * It's not valid to have both unhinged and contextual.
+                                             * */
+                                            LogError(OilexerGrammarParserErrors.Unexpected, "-");
+                                            this.PopAhead();
+                                        }
                                     }
-                                    ParseToken(id, EntryScanMode.Inherited, id.Position, unhinged, lowerPrecedences, forcedRecognizer);
+                                    if (TokenizerLookAhead(0) == '-')
+                                    {
+                                        //ID :=-
+                                        /* *
+                                         * Token is a contextual token and might be ambiguous with others
+                                         * special care needs taken when handling them to avoid incorrect
+                                         * parse paths.
+                                         * */
+                                        this.PopAhead();
+                                        contextual = true;
+                                        if (TokenizerLookAhead(0) == '*')
+                                        {
+                                            //ID :=-*
+                                            /* *
+                                             * It's not valid to have both contextual and unhinged.
+                                             * */
+                                            LogError(OilexerGrammarParserErrors.Unexpected, "*");
+                                            this.PopAhead();
+                                        }
+                                    }
+                                    ParseToken(idOp.Token1, EntryScanMode.Inherited, idOp.Token1.Position, unhinged, lowerPrecedences, forcedRecognizer, contextual);
                                 }
                                 break;
                             //ID =
-                            case GDTokens.OperatorType.Equals:
-                                ParseError(id.Name, id.Position);
+                            case OilexerGrammarTokens.OperatorType.Equals:
+                                ParseError(idOp.Token1.Name, idOp.Token1.Position);
                                 break;
                             //ID<
-                            case GDTokens.OperatorType.LessThan:
+                            case OilexerGrammarTokens.OperatorType.LessThan:
                                 SetMultiLineMode(true);
                                 IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts(ot);
                                 if (parts == null)
                                     continue;
                                 else
                                 {
-                                    IGDToken g = null;
-                                    GDTokens.OperatorToken gdt = (g = PopAhead()) as GDTokens.OperatorToken;
+                                    IOilexerGrammarToken g = null;
+                                    OilexerGrammarTokens.OperatorToken gdt = (g = PopAhead()) as OilexerGrammarTokens.OperatorToken;
                                     if (gdt == null)
-                                        ExpectOperator(g, GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.Plus | GDTokens.OperatorType.Minus, true);
-                                        //Expect("+, -, or ::=");
-                                    if (gdt.Type == GDTokens.OperatorType.Minus)
+                                        ExpectOperator(g, OilexerGrammarTokens.OperatorType.ColonColonEquals | OilexerGrammarTokens.OperatorType.Plus | OilexerGrammarTokens.OperatorType.Minus, true);
+                                    //Expect("+, -, or ::=");
+                                    if (gdt.Type == OilexerGrammarTokens.OperatorType.Minus)
                                     {
-                                        gdt = (g = PopAhead()) as GDTokens.OperatorToken;
+                                        gdt = (g = PopAhead()) as OilexerGrammarTokens.OperatorToken;
                                         esm = EntryScanMode.SingleLine;
                                     }
-                                    else if (gdt.Type == GDTokens.OperatorType.Plus)
+                                    else if (gdt.Type == OilexerGrammarTokens.OperatorType.Plus)
                                     {
-                                        gdt = (g = PopAhead()) as GDTokens.OperatorToken;
+                                        gdt = (g = PopAhead()) as OilexerGrammarTokens.OperatorToken;
                                         esm = EntryScanMode.Multiline;
                                     }
-                                    if (gdt == null || !ExpectOperator(gdt, GDTokens.OperatorType.ColonColonEquals, true))
+                                    if (gdt == null || !ExpectOperator(gdt, OilexerGrammarTokens.OperatorType.ColonColonEquals, true))
                                     {
-                                        ExpectOperator(g, GDTokens.OperatorType.ColonColonEquals, true);
+                                        ExpectOperator(g, OilexerGrammarTokens.OperatorType.ColonColonEquals, true);
                                         //Expect("::=");
                                         break;
                                     }
-                                    this.ParseProductionRuleTemplate(id, parts, esm, id.Position);
+                                    this.ParseProductionRuleTemplate(idOp.Token1, parts, esm, idOp.Token1.Position);
                                 }
                                 break;
                             //ID>
-                            case GDTokens.OperatorType.GreaterThan:
+                            case OilexerGrammarTokens.OperatorType.GreaterThan:
                                 //Case of a token defining precedence.
-                                while (LookAhead(0).TokenType == GDTokenType.Identifier)
+                                while (LookAhead(0).TokenType == OilexerGrammarTokenType.Identifier)
                                 {
-                                    var lowerPrecedenceToken = ((GDTokens.IdentifierToken)LookAhead(0));
+                                    var lowerPrecedenceToken = ((OilexerGrammarTokens.IdentifierToken)LookAhead(0));
                                     lowerPrecedences.Add(lowerPrecedenceToken);
                                     PopAhead();
-                                    GDTokens.OperatorToken cOp = null;
+                                    OilexerGrammarTokens.OperatorToken cOp = null;
                                     //','  * More precedences exist.
-                                    if ((cOp = (LookAhead(0) as GDTokens.OperatorToken)) != null &&
-                                        cOp.Type == GDTokens.OperatorType.Comma)
+                                    if ((cOp = (LookAhead(0) as OilexerGrammarTokens.OperatorToken)) != null &&
+                                        cOp.Type == OilexerGrammarTokens.OperatorType.Comma)
                                         PopAhead();
                                     //":=" * Final precedence reached.
                                     else if (cOp != null &&
-                                        cOp.Type == GDTokens.OperatorType.ColonEquals)
+                                        cOp.Type == OilexerGrammarTokens.OperatorType.ColonEquals)
                                     {
                                         PopAhead();
-                                        goto case GDTokens.OperatorType.ColonEquals;
+                                        goto case OilexerGrammarTokens.OperatorType.ColonEquals;
                                     }
                                     else
                                     {
                                         //Syntax error.
-                                        ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Comma, true);
+                                        ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.ColonEquals | OilexerGrammarTokens.OperatorType.Comma, true);
                                         break;
                                     }
                                 }
                                 break;
                             //ID-
-                            case GDTokens.OperatorType.Minus:
+                            case OilexerGrammarTokens.OperatorType.Minus:
                             //ID+
-                            case GDTokens.OperatorType.Plus:
-                                esm = ot.Type == GDTokens.OperatorType.Minus ? EntryScanMode.SingleLine : EntryScanMode.Multiline;
-                                IGDToken ahead = PopAhead();
-                                if (ahead.TokenType == GDTokenType.Operator)
+                            case OilexerGrammarTokens.OperatorType.Plus:
+                                esm = ot.Type == OilexerGrammarTokens.OperatorType.Minus ? EntryScanMode.SingleLine : EntryScanMode.Multiline;
+                                IOilexerGrammarToken ahead = PopAhead();
+                                if (ahead.TokenType == OilexerGrammarTokenType.Operator)
                                 {
-                                    ot = ((GDTokens.OperatorToken)(ahead));
+                                    ot = ((OilexerGrammarTokens.OperatorToken)(ahead));
                                     switch (ot.Type)
                                     {
-                                        case GDTokens.OperatorType.ColonColonEquals:
+                                        case OilexerGrammarTokens.OperatorType.ColonColonEquals:
                                             SetMultiLineMode(true);
-                                            if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                                ot.Type == GDTokens.OperatorType.GreaterThan)
+                                            if ((ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken) != null &&
+                                                ot.Type == OilexerGrammarTokens.OperatorType.GreaterThan)
                                             {
                                                 elementsAreChildren = true;
                                                 PopAhead();
                                             }
-                                            ParseProductionRule(id, esm, id.Position, elementsAreChildren);
+                                            ParseProductionRule(idOp.Token1, esm, idOp.Token1.Position, elementsAreChildren, forcedRecognizer);
                                             break;
-                                        case GDTokens.OperatorType.ColonEquals:
+                                        case OilexerGrammarTokens.OperatorType.ColonEquals:
                                             {
                                                 SetMultiLineMode(true);
-                                                bool unhinged = false;
+                                                bool unhinged = false, contextual = false;
                                                 if (TokenizerLookAhead(0) == '*')
                                                 {
-                                                    //ID[+-] :=*
+                                                    //ID :=*
                                                     /* *
                                                      * Token is unbounded by grammar
                                                      * and can appear anywhere.
                                                      * */
                                                     this.PopAhead();
                                                     unhinged = true;
+                                                    if (TokenizerLookAhead(0) == '-')
+                                                    {
+                                                        //ID :=*-
+                                                        /* *
+                                                         * It's not valid to have both unhinged and contextual.
+                                                         * */
+                                                        LogError(OilexerGrammarParserErrors.Unexpected, "-");
+                                                        this.PopAhead();
+                                                    }
                                                 }
-                                                ParseToken(id, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer);
+                                                if (TokenizerLookAhead(0) == '-')
+                                                {
+                                                    //ID :=-
+                                                    /* *
+                                                     * Token is a contextual token and might be ambiguous with others
+                                                     * special care needs taken when handling them to avoid incorrect
+                                                     * parse paths.
+                                                     * */
+                                                    this.PopAhead();
+                                                    contextual = true;
+                                                    if (TokenizerLookAhead(0) == '*')
+                                                    {
+                                                        //ID :=-*
+                                                        /* *
+                                                         * It's not valid to have both contextual and unhinged.
+                                                         * */
+                                                        LogError(OilexerGrammarParserErrors.Unexpected, "*");
+                                                        this.PopAhead();
+                                                    }
+                                                }
+                                                ParseToken(idOp.Token1, esm, idOp.Token1.Position, unhinged, lowerPrecedences, forcedRecognizer, contextual);
                                             }
                                             break;
-                                        case GDTokens.OperatorType.Equals:
+                                        case OilexerGrammarTokens.OperatorType.Equals:
                                             break;
                                     }
                                 }
                                 else
-                                    ExpectOperator(ahead, GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Equals, true);
+                                    ExpectOperator(ahead, OilexerGrammarTokens.OperatorType.ColonColonEquals | OilexerGrammarTokens.OperatorType.ColonEquals | OilexerGrammarTokens.OperatorType.Equals, true);
                                 break;
                             default:
-                                ExpectOperator(ot, GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Equals |  GDTokens.OperatorType.LessThan | GDTokens.OperatorType.Minus | GDTokens.OperatorType.Plus, true);
+                                ExpectOperator(ot, OilexerGrammarTokens.OperatorType.ColonColonEquals | OilexerGrammarTokens.OperatorType.ColonEquals | OilexerGrammarTokens.OperatorType.Equals | OilexerGrammarTokens.OperatorType.LessThan | OilexerGrammarTokens.OperatorType.Minus | OilexerGrammarTokens.OperatorType.Plus, true);
                                 break;
                         }
                     }
                     else
                     {
-                        ExpectOperator(its[1], GDTokens.OperatorType.ColonColonEquals | GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.Equals | GDTokens.OperatorType.LessThan | GDTokens.OperatorType.Minus | GDTokens.OperatorType.Plus, true);
+                        var k = LookAhead(1);
+                        ExpectOperator(k, OilexerGrammarTokens.OperatorType.ColonColonEquals | OilexerGrammarTokens.OperatorType.ColonEquals | OilexerGrammarTokens.OperatorType.Equals | OilexerGrammarTokens.OperatorType.LessThan | OilexerGrammarTokens.OperatorType.Minus | OilexerGrammarTokens.OperatorType.Plus, true);
+                        PopAhead();
                         continue;
                     }
                 }
@@ -393,12 +485,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     SkipWhitespace();
                 else
                 {
-                    LogError(GDParserErrors.ExpectedEndOfLine);
+                    LogError(OilexerGrammarParserErrors.ExpectedEndOfLine);
                     GetAhead(1);
                     break;
                 }
             }
-            GDParserResults gdpr = currentTarget;
+            OilexerGrammarParserResults gdpr = currentTarget;
             currentTarget = null;
             if (this.parseIncludes)
                 ParseIncludes(gdpr);
@@ -410,12 +502,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             ((Lexer)(this.CurrentTokenizer)).ParseWhitespaceInternal();
         }
 
-        private void ProcessIfEntry(IPreprocessorIfDirective ifEntry)
+        private void OilexerGrammarProcessIfEntry(IPreprocessorIfDirective ifEntry)
         {
-            ProcessIfEntry(ifEntry, PreprocessorContainer.File, (IEntry p) => this.currentTarget.Result.Add(p));
+            OilexerGrammarProcessIfEntry(ifEntry, PreprocessorContainer.File, (IOilexerGrammarEntry p) => this.currentTarget.Result.Add(p));
         }
 
-        private void ProcessIfEntry<T>(IPreprocessorIfDirective ifEntry, PreprocessorContainer container, Action<T> adder)
+        private void OilexerGrammarProcessIfEntry<T>(IPreprocessorIfDirective ifEntry, PreprocessorContainer container, Action<T> adder)
             where T :
                 class
         {
@@ -426,7 +518,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     if (ProcessCondition(ifEntry.Condition))
                         ProcessIfBody(ifEntry.Body, container, adder);
                     else if (ifEntry.Next != null)
-                        ProcessIfEntry(ifEntry.Next);
+                        OilexerGrammarProcessIfEntry(ifEntry.Next);
                     break;
                 case EntryPreprocessorType.IfNotDefined:
                 case EntryPreprocessorType.IfDefined:
@@ -435,7 +527,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     if (check)
                         ProcessIfBody(ifEntry.Body, container, adder);
                     else if (ifEntry.Next != null)
-                        ProcessIfEntry(ifEntry.Next);
+                        OilexerGrammarProcessIfEntry(ifEntry.Next, container, adder);
                     break;
                 case EntryPreprocessorType.Else:
                     ProcessIfBody(ifEntry.Body, container, adder);
@@ -486,7 +578,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             left = definedSymbols[left];
                         else
                         {
-                            LogError(GDParserErrors.UnknownSymbol, left, eqExp.PreCEqualityExp.PreCPrimary.Identifier.Position);
+                            LogError(OilexerGrammarParserErrors.UnknownSymbol, left, eqExp.PreCEqualityExp.PreCPrimary.Identifier.Position);
                             return false;
                         }
                     }
@@ -499,7 +591,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             right = definedSymbols[right];
                         else
                         {
-                            LogError(GDParserErrors.UnknownSymbol, right, eqExp.PreCPrimary.Identifier.Position);
+                            LogError(OilexerGrammarParserErrors.UnknownSymbol, right, eqExp.PreCPrimary.Identifier.Position);
                             return false;
                         }
                     }
@@ -508,10 +600,10 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     else
                         return left != right;
                 case 3:
-                    ExpectOperator(eqExp.PreCPrimary.Token, GDTokens.OperatorType.EqualEqual | GDTokens.OperatorType.ExclaimEqual, true);
+                    ExpectOperator(eqExp.PreCPrimary.Token, OilexerGrammarTokens.OperatorType.EqualEqual | OilexerGrammarTokens.OperatorType.ExclaimEqual, true);
                     return false;
                 default:
-                    LogError(GDParserErrors.Unexpected, "Unexpected kind of equality expression", eqExp.Position);
+                    LogError(OilexerGrammarParserErrors.Unexpected, "Unexpected kind of equality expression", eqExp.Position);
                     return false;
             }
         }
@@ -528,22 +620,23 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     case EntryPreprocessorType.If:
                     case EntryPreprocessorType.IfNotDefined:
                     case EntryPreprocessorType.IfDefined:
-                        ProcessIfEntry((IPreprocessorIfDirective)item);
+                        OilexerGrammarProcessIfEntry((IPreprocessorIfDirective)item);
                         break;
                     case EntryPreprocessorType.DefineRule:
-                        LogError(GDParserErrors.Unexpected, "Unexpected rule declaration command.", item.Position);
+                        LogError(OilexerGrammarParserErrors.Unexpected, "Unexpected rule declaration command.", item.Position);
                         break;
                     case EntryPreprocessorType.AddRule:
-                        LogError(GDParserErrors.Unexpected, "Unexpected add rule command.", item.Position);
+                        LogError(OilexerGrammarParserErrors.Unexpected, "Unexpected add rule command.", item.Position);
                         break;
                     case EntryPreprocessorType.Throw:
                         throw new NotImplementedException();
                     case EntryPreprocessorType.Return:
-                        LogError(GDParserErrors.Unexpected, "Unexpected return command.", item.Position);
+                        LogError(OilexerGrammarParserErrors.Unexpected, "Unexpected return command.", item.Position);
                         break;
                     case EntryPreprocessorType.StringTerminal:
                         if (container == PreprocessorContainer.File)
                             ProcessStringTerminal((IPreprocessorStringTerminalDirective)(item));
+                        //ToDo: Add code here to handle String Termianls within conditions.
                         break;
                     case EntryPreprocessorType.EntryContainer:
                         if (container == PreprocessorContainer.File)
@@ -556,7 +649,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             if (!definedSymbols.ContainsKey(defineDirective.SymbolName))
                                 definedSymbols.Add(defineDirective.SymbolName, defineDirective.Value);
                             else
-                                LogError(GDParserErrors.Unexpected, "define directive: symbol already exists", defineDirective.Position);
+                                LogError(OilexerGrammarParserErrors.Unexpected, "define directive: symbol already exists", defineDirective.Position);
                         }
                         break;
                     case EntryPreprocessorType.ProductionRuleSeries:
@@ -580,7 +673,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             switch (stringTerminal.Kind)
             {
                 case StringTerminalKind.Unknown:
-                    LogError(GDParserErrors.UnknownSymbol, stringTerminal.Position);
+                    LogError(OilexerGrammarParserErrors.UnknownSymbol, stringTerminal.Position);
                     break;
                 case StringTerminalKind.Include:
                     ParseInclude(stringTerminal);
@@ -655,7 +748,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     return this.definedSymbols.ContainsKey(primary.Identifier.Name);
                 else
                     return !this.definedSymbols.ContainsKey(primary.Identifier.Name);
-            else 
+            else
                 Expect("identifier", primary.Position);
             return false;
         }
@@ -669,28 +762,36 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private void ParseError(string name, long position)
         {
+            ParseError(name, position, null);
+        }
+        private void ParseError(string name, long position, PreprocessorIfDirective.DirectiveBody target)
+        {
             var its = GetAhead(4);
-            if (SeriesMatch(its, GDTokenType.StringLiteral, GDTokenType.Operator, GDTokenType.NumberLiteral, GDTokenType.Operator))
+            if (SeriesMatch(its, OilexerGrammarTokenType.StringLiteral, OilexerGrammarTokenType.Operator, OilexerGrammarTokenType.NumberLiteral, OilexerGrammarTokenType.Operator))
             {
-                if (ExpectOperator(its[1], GDTokens.OperatorType.Comma, true) && 
-                    ExpectOperator(its[3], GDTokens.OperatorType.SemiColon, true))
+                if (ExpectOperator(its[1], OilexerGrammarTokens.OperatorType.Comma, true) &&
+                    ExpectOperator(its[3], OilexerGrammarTokens.OperatorType.SemiColon, true))
                 {
-                    IErrorEntry iee = new ErrorEntry(name, ((GDTokens.StringLiteralToken)(its[0])).GetCleanValue(), ((GDTokens.NumberLiteral)(its[2])).GetCleanValue(), this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position);
-                    this.currentTarget.Result.Add(iee);
+
+                    IOilexerGrammarErrorEntry iee = new OilexerGrammarErrorEntry(name, ((OilexerGrammarTokens.StringLiteralToken)(its[0])).GetCleanValue(), ((OilexerGrammarTokens.NumberLiteral)(its[2])).GetCleanValue(), this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position);
+                    if (target != null)
+                        target.Add(new PreprocessorEntryContainer(iee, iee.Column, iee.Line, iee.Position));
+                    else
+                        this.currentTarget.Result.Add(iee);
                 }
             }
-            else if (its[0].TokenType == GDTokenType.StringLiteral)
+            else if (its[0].TokenType == OilexerGrammarTokenType.StringLiteral)
             {
                 var second = its[1];
-                if (second.TokenType == GDTokenType.Operator && (((GDTokens.OperatorToken)(second)).Type == GDTokens.OperatorType.Comma))
+                if (second.TokenType == OilexerGrammarTokenType.Operator && (((OilexerGrammarTokens.OperatorToken)(second)).Type == OilexerGrammarTokens.OperatorType.Comma))
                 {
-                    if (its[2].TokenType == GDTokenType.NumberLiteral)
-                        ExpectOperator(its[3], GDTokens.OperatorType.SemiColon, true);
+                    if (its[2].TokenType == OilexerGrammarTokenType.NumberLiteral)
+                        ExpectOperator(its[3], OilexerGrammarTokens.OperatorType.SemiColon, true);
                     else
                         Expect("number", its[2].Position);
                 }
                 else
-                    ExpectOperator(second, GDTokens.OperatorType.Comma, true);
+                    ExpectOperator(second, OilexerGrammarTokens.OperatorType.Comma, true);
             }
             else
                 Expect("string", its[0].Position);
@@ -703,28 +804,26 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             if (!Path.IsPathRooted(include))
                 //Files are always relative to the one the current tokenizer is reading 
                 //from.
-                include = GrammarCore.CombinePaths(Path.GetDirectoryName(CurrentTokenizer.FileName), include);
-            #if WINDOWS
+                include = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(CurrentTokenizer.FileName), include));
+#if WINDOWS
             /* *
              * Win32 only because it's not case-sensitive on filenames.
              * This ensures that the same file isn't included twice due to case
              * inconsistencies.
              * */
-            include = include.ToLower();
-            #endif
+            include = include.GetFilenameProperCasing();
+#endif
 
             if (File.Exists(include))
             {
                 if (!(currentTarget.Result.Includes.Contains(include)))
                     currentTarget.Result.Includes.Add(include);
-                //if (!(includeDirectives.Contains(include)))
-                //    this.includeDirectives.Add(include);
             }
             else
-                LogError(GDParserErrors.IncludeFileNotFound, include, str.Position);
+                LogError(OilexerGrammarParserErrors.IncludeFileNotFound, include, str.Position);
         }
 
-        private void ParseIncludes(GDParserResults currentTarget)
+        private void ParseIncludes(OilexerGrammarParserResults currentTarget)
         {
             var currentIncludes = (from include in currentTarget.Result.Includes
                                    where !parsedIncludeDirectives.Contains(include)
@@ -735,20 +834,20 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 if (!parsedIncludeDirectives.Contains(s) && File.Exists(s))
                 {
                     parsedIncludeDirectives.Add(s);
-                    IParserResults<IGDFile> includedFile = this.Parse(s);
-                    currentTarget.SetResult(currentTarget.Result + (GDFile)includedFile.Result);
+                    IParserResults<IOilexerGrammarFile> includedFile = this.Parse(s);
+                    currentTarget.SetResult(currentTarget.Result + (OilexerGrammarFile)includedFile.Result);
                     if (!includedFile.Successful)
-                        foreach (var ce in includedFile.SyntaxErrors)
+                        foreach (var ce in includedFile.SyntaxErrors.Where(k => k is IParserSyntaxError).Cast<IParserSyntaxError>())
                             currentTarget.SyntaxErrors.SyntaxError(ce);
                 }
             }
         }
 
-        private IList<IProductionRuleTemplatePart> ParseProductionRuleTemplateParts(GDTokens.OperatorToken currentOperator)
+        private IList<IProductionRuleTemplatePart> ParseProductionRuleTemplateParts(OilexerGrammarTokens.OperatorToken currentOperator)
         {
             var currentToken = currentOperator;
             if (!(currentOperator != null &&
-                currentOperator.Type == GDTokens.OperatorType.LessThan))
+                currentOperator.Type == OilexerGrammarTokens.OperatorType.LessThan))
             {
                 Expect("<");
                 return null;
@@ -766,19 +865,19 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     Expect("+, (, or >");
                     return null;
                 }
-                if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
+                if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
                 {
-                    GDTokens.OperatorToken ot = its[1] as GDTokens.OperatorToken;
-                    GDTokens.IdentifierToken id = its[0] as GDTokens.IdentifierToken;
+                    OilexerGrammarTokens.OperatorToken ot = its[1] as OilexerGrammarTokens.OperatorToken;
+                    OilexerGrammarTokens.IdentifierToken id = its[0] as OilexerGrammarTokens.IdentifierToken;
                     switch (ot.Type)
                     {
-                        case GDTokens.OperatorType.OptionsSeparator:
+                        case OilexerGrammarTokens.OperatorType.OptionsSeparator:
                             its = GetAhead(5);
-                            if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator, GDTokenType.Identifier, GDTokenType.Operator, GDTokenType.Operator))
+                            if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator, OilexerGrammarTokenType.Operator))
                                 if (ExpectIdentifier(its[0], "expect", StringComparison.InvariantCultureIgnoreCase, true))
                                 {
                                     special = TemplatePartExpectedSpecial.None;
-                                    if (ExpectOperator(its[1], GDTokens.OperatorType.Equals, true))
+                                    if (ExpectOperator(its[1], OilexerGrammarTokens.OperatorType.Equals, true))
                                         if (ExpectIdentifier(its[2], "token", StringComparison.InvariantCultureIgnoreCase, false))
                                             special = TemplatePartExpectedSpecial.Token;
                                         else if (ExpectIdentifier(its[2], "tokenorrule", StringComparison.InvariantCultureIgnoreCase, false))
@@ -787,18 +886,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                             special = TemplatePartExpectedSpecial.Rule;
                                         else
                                         {
-                                            special =  null;
-                                            expectTarget = ((GDTokens.IdentifierToken)(its[2])).Name;
+                                            special = null;
+                                            expectTarget = ((OilexerGrammarTokens.IdentifierToken)(its[2])).Name;
                                         }
-                                    if (ExpectOperator(its[3], GDTokens.OperatorType.SemiColon, true))
+                                    if (ExpectOperator(its[3], OilexerGrammarTokens.OperatorType.SemiColon, true))
                                     {
-                                        ot = its[4] as GDTokens.OperatorToken;
-                                        if (ot.Type == GDTokens.OperatorType.Comma)
-                                            goto case GDTokens.OperatorType.Comma;
-                                        else if (ot.Type == GDTokens.OperatorType.GreaterThan)
-                                            goto case GDTokens.OperatorType.GreaterThan;
-                                        else if (ot.Type == GDTokens.OperatorType.Plus)
-                                            goto case GDTokens.OperatorType.Plus;
+                                        ot = its[4] as OilexerGrammarTokens.OperatorToken;
+                                        if (ot.Type == OilexerGrammarTokens.OperatorType.Comma)
+                                            goto case OilexerGrammarTokens.OperatorType.Comma;
+                                        else if (ot.Type == OilexerGrammarTokens.OperatorType.GreaterThan)
+                                            goto case OilexerGrammarTokens.OperatorType.GreaterThan;
+                                        else if (ot.Type == OilexerGrammarTokens.OperatorType.Plus)
+                                            goto case OilexerGrammarTokens.OperatorType.Plus;
                                         else
                                             Expect("'+', ',' or '>'", ot.Position);
                                     }
@@ -808,7 +907,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             else
                                 return null;
                             break;
-                        case GDTokens.OperatorType.Comma:
+                        case OilexerGrammarTokens.OperatorType.Comma:
                             if (special == null)
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, expectTarget, id.Line, id.Column, id.Position);
                             else
@@ -816,17 +915,17 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             this.DefineRuleTemplateParameterIdentifier(id, currentPart);
                             result.Add(currentPart);
                             break;
-                        case GDTokens.OperatorType.Plus:
+                        case OilexerGrammarTokens.OperatorType.Plus:
                             currentIsSeries = true;
-                            IGDToken gdt = PopAhead();
-                            if (ExpectOperator(gdt, GDTokens.OperatorType.Comma, false))
-                                goto case GDTokens.OperatorType.Comma;
-                            else if (ExpectOperator(gdt, GDTokens.OperatorType.GreaterThan, false))
-                                goto case GDTokens.OperatorType.GreaterThan;
+                            IOilexerGrammarToken gdt = PopAhead();
+                            if (ExpectOperator(gdt, OilexerGrammarTokens.OperatorType.Comma, false))
+                                goto case OilexerGrammarTokens.OperatorType.Comma;
+                            else if (ExpectOperator(gdt, OilexerGrammarTokens.OperatorType.GreaterThan, false))
+                                goto case OilexerGrammarTokens.OperatorType.GreaterThan;
                             else
                                 Expect("',' or '>'");
                             break;
-                        case GDTokens.OperatorType.GreaterThan:
+                        case OilexerGrammarTokens.OperatorType.GreaterThan:
                             if (special == null)
                                 currentPart = new ProductionRuleTemplatePart(id.Name, currentIsSeries, expectTarget, id.Line, id.Column, id.Position);
                             else
@@ -839,7 +938,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             return null;
                     }
                 }
-                else if ((its[0]).TokenType == GDTokenType.Identifier)
+                else if ((its[0]).TokenType == OilexerGrammarTokenType.Identifier)
                 {
                     Expect("'+', '(', ',' or '>'");
                     return null;
@@ -851,34 +950,37 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             return result;
         }
 
-        private bool ExpectIdentifier(IGDToken cur, string idValue, StringComparison comparisonType, bool error)
+        private bool ExpectIdentifier(IOilexerGrammarToken cur, string idValue, StringComparison comparisonType, bool error)
         {
-            if (cur.TokenType == GDTokenType.Identifier && (string.Compare(((GDTokens.IdentifierToken)(cur)).Name, idValue, comparisonType) == 0))
+            if (cur.TokenType == OilexerGrammarTokenType.Identifier && (string.Compare(((OilexerGrammarTokens.IdentifierToken)(cur)).Name, idValue, comparisonType) == 0))
                 return true;
             else if (error)
                 Expect(idValue);
             return false;
         }
 
-        private bool ExpectOperator(IGDToken gdt, GDTokens.OperatorType operatorType, bool error)
+        private bool ExpectOperator(IOilexerGrammarToken gdt, OilexerGrammarTokens.OperatorType operatorType, bool error)
         {
-            if (gdt != null && gdt.TokenType == GDTokenType.Operator && (((GDTokens.OperatorToken)(gdt)).Type & operatorType) != GDTokens.OperatorType.None)
+            if (gdt != null && gdt.TokenType == OilexerGrammarTokenType.Operator && (((OilexerGrammarTokens.OperatorToken)(gdt)).Type & operatorType) != OilexerGrammarTokens.OperatorType.None)
                 return true;
             else if (error)
-                Expect(operatorType.ToString(), gdt.Position);
+                if (gdt == null)
+                    Expect(operatorType.ToString(), CurrentTokenizer.Position);
+                else
+                    Expect(operatorType.ToString(), gdt.Position);
             return false;
         }
 
-        private void ParseProductionRuleTemplate(GDTokens.IdentifierToken identifier, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position)
+        private void ParseProductionRuleTemplate(OilexerGrammarTokens.IdentifierToken identifier, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position)
         {
             ParseProductionRuleTemplate(identifier, parts, scanMode, position, null);
         }
 
-        private void ParseProductionRuleTemplate(GDTokens.IdentifierToken identifier, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position, PreprocessorIfDirective.DirectiveBody target)
+        private void ParseProductionRuleTemplate(OilexerGrammarTokens.IdentifierToken identifier, IList<IProductionRuleTemplatePart> parts, EntryScanMode scanMode, long position, PreprocessorIfDirective.DirectiveBody target)
         {
             long bodyStart = this.StreamPosition;
-            IProductionRuleTemplateEntry iprte = new ProductionRuleTemplateEntry(identifier.Name, scanMode, parts, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
-            ParseProductionRule(((ProductionRuleTemplateEntry)iprte).BaseCollection, PreprocessorContainer.Template);
+            IOilexerGrammarProductionRuleTemplateEntry iprte = new OilexerGrammarProductionRuleTemplateEntry(identifier.Name, scanMode, parts, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
+            ParseProductionRule(((OilexerGrammarProductionRuleTemplateEntry)iprte).BaseCollection, PreprocessorContainer.Template);
             long bodyEnd = this.StreamPosition;
             this.DefineRuleTemplateIdentifier(identifier, iprte);
             if (captureRegions)
@@ -887,7 +989,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 int endLine = this.CurrentTokenizer.GetLineIndex(bodyEnd);
                 if (endLine > startLine + 1)
                 {
-                    var gdResult = this.currentTarget.Result as GDFile;
+                    var gdResult = this.currentTarget.Result as OilexerGrammarFile;
                     gdResult.AddRuleRegion(iprte, bodyStart, bodyEnd);
                 }
             }
@@ -901,18 +1003,19 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         {
             while (true)
             {
+                IOilexerGrammarToken la;
                 ClearAhead();
                 char c = LookPastAndSkip();
                 if (c == char.MinValue)
                     break;
                 else if (c == ';')
                 {
-                    ExpectOperator(PopAhead(), GDTokens.OperatorType.SemiColon, true);
+                    ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.SemiColon, true);
                     break;
                 }
                 else if (c == '|')
                 {
-                    if (!(ExpectOperator(PopAhead(), GDTokens.OperatorType.Pipe, true)))
+                    if (!(ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.Pipe, true)))
                         break;
                     ParseProductionRuleBody(iprte, container);
                     continue;
@@ -926,13 +1029,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 {
                     if (c == '#')
                     {
-                        var preprocessorAhead =(GDTokens.PreprocessorDirective) LookAhead(0);
-                        if (preprocessorAhead.Type == GDTokens.PreprocessorType.EndIfDirective ||
-                            preprocessorAhead.Type == GDTokens.PreprocessorType.ElseIfDirective ||
-                            preprocessorAhead.Type == GDTokens.PreprocessorType.ElseDirective ||
-                            preprocessorAhead.Type == GDTokens.PreprocessorType.ElseIfDefinedDirective)
+                        var preprocessorAhead = (OilexerGrammarTokens.PreprocessorDirective)LookAhead(0);
+                        if (preprocessorAhead.Type == OilexerGrammarTokens.PreprocessorType.EndIfDirective ||
+                            preprocessorAhead.Type == OilexerGrammarTokens.PreprocessorType.ElseIfDirective ||
+                            preprocessorAhead.Type == OilexerGrammarTokens.PreprocessorType.ElseIfInDirective ||
+                            preprocessorAhead.Type == OilexerGrammarTokens.PreprocessorType.ElseDirective ||
+                            preprocessorAhead.Type == OilexerGrammarTokens.PreprocessorType.ElseIfDefinedDirective)
                             break;
                     }
+                    ParseProductionRuleBody(iprte, container);
+                }
+                else if ((la = LookAhead(0)) != null && la.TokenType == OilexerGrammarTokenType.Comment)
+                {
                     ParseProductionRuleBody(iprte, container);
                 }
                 else if (Lexer.IsWhitespaceChar(c))
@@ -940,7 +1048,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     SkipWhitespace();
                 else
                 {
-                    Expect("string, char, identifier, preprocessor, or ';'");
+                    if (parameterDepth > 0)
+                        Expect("string, char, identifier, preprocessor, or ')'");
+                    else if (templateDepth > 0)
+                        Expect("string, char, identifier, preprocessor, or '>'");
+                    else
+                        Expect("string, char, identifier, preprocessor, or ';'");
+                    PopAhead();
                     break;
                 }
             }
@@ -955,7 +1069,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             while (true)
             {
                 IProductionRuleItem item = null;
-                IGDToken igdt = LookAhead(0);
+                IOilexerGrammarToken igdt = LookAhead(0);
                 if (igdt == null && CurrentTokenizer.CurrentError != null)
                 {
                     var ce = CurrentTokenizer.CurrentError;
@@ -966,41 +1080,42 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     goto yield;
                 switch (igdt.TokenType)
                 {
-                    case GDTokenType.Comment:
-                        var commentToken = igdt as GDTokens.CommentToken;
+                    case OilexerGrammarTokenType.Comment:
+                        var commentToken = igdt as OilexerGrammarTokens.CommentToken;
                         if (captureRegions && commentToken.MultiLine)
                         {
-                            var gdResult = currentTarget.Result as GDFile;
+                            var gdResult = currentTarget.Result as OilexerGrammarFile;
                             gdResult.AddCommentRegion(commentToken);
                         }
                         PopAhead();
                         continue;
-                    case GDTokenType.CharacterLiteral:
+                    case OilexerGrammarTokenType.CharacterLiteral:
                         item = ParseProductionRuleCharLiteral();
                         break;
-                    case GDTokenType.StringLiteral:
+                    case OilexerGrammarTokenType.StringLiteral:
                         item = ParseProductionRuleStringLiteral();
                         break;
-                    case GDTokenType.Identifier:
+                    case OilexerGrammarTokenType.Identifier:
                         item = ParseProductionRuleReferenceItem(container);
                         break;
-                    case GDTokenType.CharacterRange:
-                        LogError(GDParserErrors.Unexpected, "character range", igdt.Position);
+                    case OilexerGrammarTokenType.CharacterRange:
+                        LogError(OilexerGrammarParserErrors.Unexpected, "character range", igdt.Position);
                         PopAhead();
                         break;
-                    //case GDTokenType.CharacterRangeCommand:
-                    //    LogError(GDParserErrors.Unexpected, "CharRange(*", igdt.Position);
+                    //case OilexerGrammarTokenType.CharacterRangeCommand:
+                    //    LogError(OilexerGrammarParserErrors.Unexpected, "CharRange(*", igdt.Position);
                     //    break;
-                    case GDTokenType.NumberLiteral:
-                        LogError(GDParserErrors.Unexpected, "number", igdt.Position);
+                    case OilexerGrammarTokenType.NumberLiteral:
+                        LogError(OilexerGrammarParserErrors.Unexpected, "number", igdt.Position);
                         PopAhead();
                         break;
-                    case GDTokenType.PreprocessorDirective:
-                        GDTokens.PreprocessorDirective ppDirective = ((GDTokens.PreprocessorDirective)(igdt));
-                        if (ppDirective.Type == GDTokens.PreprocessorType.EndIfDirective ||
-                            ppDirective.Type == GDTokens.PreprocessorType.ElseIfDirective ||
-                            ppDirective.Type == GDTokens.PreprocessorType.ElseDirective ||
-                            ppDirective.Type == GDTokens.PreprocessorType.ElseIfDefinedDirective)
+                    case OilexerGrammarTokenType.PreprocessorDirective:
+                        OilexerGrammarTokens.PreprocessorDirective ppDirective = ((OilexerGrammarTokens.PreprocessorDirective)(igdt));
+                        if (ppDirective.Type == OilexerGrammarTokens.PreprocessorType.EndIfDirective ||
+                            ppDirective.Type == OilexerGrammarTokens.PreprocessorType.ElseIfDirective ||
+                            ppDirective.Type == OilexerGrammarTokens.PreprocessorType.ElseIfInDirective ||
+                            ppDirective.Type == OilexerGrammarTokens.PreprocessorType.ElseDirective ||
+                            ppDirective.Type == OilexerGrammarTokens.PreprocessorType.ElseIfDefinedDirective)
                             goto yield;
                         if (container == PreprocessorContainer.Template)
                         {
@@ -1015,71 +1130,76 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         {
                             switch (ppDirective.Type)
                             {
-                                case GDTokens.PreprocessorType.IfDirective:
-                                case GDTokens.PreprocessorType.IfDefinedDirective:
-                                case GDTokens.PreprocessorType.IfNotDefinedDirective:
+                                case OilexerGrammarTokens.PreprocessorType.IfDirective:
+                                case OilexerGrammarTokens.PreprocessorType.IfDefinedDirective:
+                                case OilexerGrammarTokens.PreprocessorType.IfNotDefinedDirective:
+                                case OilexerGrammarTokens.PreprocessorType.IfInDirective:
                                     PopAhead();
                                     IPreprocessorCLogicalOrConditionExp condition = null;
                                     if (ParsePreprocessorCLogicalOrConditionExp(ref condition))
                                     {
                                         var ifEntry = ParseIfDirective(condition, ppDirective, PreprocessorContainer.Rule);
                                         List<IProductionRule> set = new List<IProductionRule>();
-                                        bool first = true, yieldFast = false;
-                                        ProcessIfEntry(ifEntry, PreprocessorContainer.Rule, (IProductionRule current) => 
-                                            {
-                                                if (first)
+                                        //bool firstSeries = true, yieldFast = false;
+                                        if (ifEntry.Type != EntryPreprocessorType.IfIn)
+                                        {
+                                            OilexerGrammarProcessIfEntry(ifEntry, PreprocessorContainer.Rule, (IProductionRule current) =>
                                                 {
-                                                    first = false;
-                                                    foreach (var subElement in current)
-                                                        seriesItemMembers.Add(subElement);
-                                                }
-                                                else
-                                                {
-                                                    if (!yieldFast)
-                                                        yieldFast = true;
                                                     set.Add(current);
-                                                }
-                                            });
-                                        if (yieldFast)
-                                            goto yield;
+                                                });
+                                        }
+
+                                        if (set.Count > 1)
+                                            series.Add(new ProductionRule(new List<IProductionRuleItem>(new[] { new ProductionRuleGroupItem(set.ToArray(), set[0].Column, set[0].Line, set[0].Position) }), CurrentTokenizer.FileName, set[0].Column, set[0].Line, set[0].Position));
+                                        else if (set.Count == 1)
+                                            series.Add(set[0]);
+                                        //if (yieldFast)
+                                        //    goto yield;
                                     }
                                     break;
-                                case GDTokens.PreprocessorType.DefineDirective:
-                                    LogError(GDParserErrors.Unexpected, "Define directive inside production rule.", ppDirective.Position);
+                                case OilexerGrammarTokens.PreprocessorType.DefineDirective:
+                                    LogError(OilexerGrammarParserErrors.Unexpected, "Define directive inside production rule.", ppDirective.Position);
+                                    PopAhead();
                                     break;
-                                case GDTokens.PreprocessorType.AddRuleDirective:
-                                    LogError(GDParserErrors.Unexpected, "Add rule directive inside production rule.", ppDirective.Position);
+                                case OilexerGrammarTokens.PreprocessorType.AddRuleDirective:
+                                    LogError(OilexerGrammarParserErrors.Unexpected, "Add rule directive inside production rule.", ppDirective.Position);
+                                    PopAhead();
                                     break;
                                 default:
                                     Expect("#if, #ifdef, #ifndef,identifier, '(' or ';'", ppDirective.Position);
+                                    PopAhead();
                                     break;
                             }
                         }
                         break;
-                    case GDTokenType.Operator:
-                        switch (((GDTokens.OperatorToken)(igdt)).Type)
+                    case OilexerGrammarTokenType.Operator:
+                        switch (((OilexerGrammarTokens.OperatorToken)(igdt)).Type)
                         {
-                            case GDTokens.OperatorType.Pipe:
+                            case OilexerGrammarTokens.OperatorType.Pipe:
                                 ClearAhead();
                                 goto yield;
-                            case GDTokens.OperatorType.LeftParenthesis:
+                            case OilexerGrammarTokens.OperatorType.LeftParenthesis:
                                 ClearAhead();
                                 parameterDepth++;
                                 item = (IProductionRuleGroupItem)ParseProductionRuleGroup(container);
                                 parameterDepth--;
                                 break;
-                            case GDTokens.OperatorType.RightParenthesis:
+                            case OilexerGrammarTokens.OperatorType.RightParenthesis:
                                 goto yield;
-                            case GDTokens.OperatorType.GreaterThan:
-                            case GDTokens.OperatorType.Comma:
+                            case OilexerGrammarTokens.OperatorType.GreaterThan:
+                            case OilexerGrammarTokens.OperatorType.Comma:
                                 if (templateDepth <= 0)
-                                    LogError(GDParserErrors.Expected, "#if, #ifdef, #ifndef,identifier, '(', or ';'");
+                                {
+                                    LogError(OilexerGrammarParserErrors.Expected, "#if, #ifdef, #ifndef,identifier, '(', or ';'");
+                                    PopAhead();
+                                }
                                 goto yield;
-                            case GDTokens.OperatorType.SemiColon:
+                            case OilexerGrammarTokens.OperatorType.SemiColon:
                                 ClearAhead();
                                 if (templateDepth != 0 || parameterDepth != 0)
                                 {
-                                    Expect((templateDepth == 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.StreamPosition);
+                                    Expect((templateDepth > 0 ? ">" : string.Empty) + (parameterDepth > 0 ? ")" : string.Empty), this.StreamPosition);
+                                    PopAhead();
                                 }
                                 goto yield;
                             default:
@@ -1088,11 +1208,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         break;
                     default:
                     outerDefault: { }
-                    {
-                        PopAhead();
-                        LogError(GDParserErrors.Expected, "#if, #ifdef, #ifndef,identifier, '(' or ';'");
-                        break;
-                    }
+                        {
+                            if (parameterDepth > 0)
+                                LogError(OilexerGrammarParserErrors.Expected, "#if, #ifdef, #ifndef,identifier, '(', ')'");
+                            else if (templateDepth > 0)
+                            {
+                                LogError(OilexerGrammarParserErrors.Expected, "#if, #ifdef, #ifndef,identifier, '(', ',' or '>'");
+                            }
+                            else
+                                LogError(OilexerGrammarParserErrors.Expected, "#if, #ifdef, #ifndef,identifier, '(' or ';'");
+                            PopAhead();
+                            break;
+                        }
                 }
                 if (item != null)
                 {
@@ -1105,31 +1232,34 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     seriesItemMembers.Add(item);
                 }
             }
-            
-            yield:
-            series.Add(new ProductionRule(seriesItemMembers, CurrentTokenizer.FileName, l, ci, p));
+
+        yield:
+            if (seriesItemMembers.Count > 0)
+                series.Add(new ProductionRule(seriesItemMembers, CurrentTokenizer.FileName, l, ci, p));
         }
 
         private IProductionRuleGroupItem ParseProductionRuleGroup(PreprocessorContainer container)
         {
-            
-            GDTokens.OperatorToken ot = LookAhead(0) as GDTokens.OperatorToken;
-            if (ot != null && ExpectOperator(PopAhead(), GDTokens.OperatorType.LeftParenthesis, true))
+
+            OilexerGrammarTokens.OperatorToken ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken;
+            if (ot != null && ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.LeftParenthesis, true))
             {
                 List<IProductionRule> items = new List<IProductionRule>();
                 ParseProductionRule(items, container);
                 IProductionRuleGroupItem result = new ProductionRuleGroupItem(items.ToArray(), ot.Column, ot.Line, ot.Position);
                 var endTok = this.PopAhead();
-                long groupEnd = endTok.Position;
-                if (captureRegions)
+                if (ExpectOperator(endTok, OilexerGrammarTokens.OperatorType.RightParenthesis, true))
                 {
-                    var gdResult = this.currentTarget.Result as GDFile;
-                    int lineStart = ot.Line;
-                    int lineEnd = endTok.Line;
-                    if (lineEnd > lineStart + 1)
-                        gdResult.AddRuleGroupRegion(result, ot.Position, groupEnd);
+                    long groupEnd = endTok.Position;
+                    if (captureRegions)
+                    {
+                        var gdResult = this.currentTarget.Result as OilexerGrammarFile;
+                        int lineStart = ot.Line;
+                        int lineEnd = endTok.Line;
+                        if (lineEnd > lineStart + 1)
+                            gdResult.AddRuleGroupRegion(result, ot.Position, groupEnd);
+                    }
                 }
-                ExpectOperator(endTok, GDTokens.OperatorType.RightParenthesis, true);
                 return result;
             }
             return null;
@@ -1137,8 +1267,8 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private void ParseItemOptions(IScannableEntryItem item)
         {
-            GDTokens.OperatorToken ot = LookAhead(0) as GDTokens.OperatorToken;
-            if (ot != null && ExpectOperator(ot, GDTokens.OperatorType.OptionsSeparator, true))
+            OilexerGrammarTokens.OperatorToken ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken;
+            if (ot != null && ExpectOperator(ot, OilexerGrammarTokens.OperatorType.OptionsSeparator, true))
             {
                 PopAhead();
                 var its = GetAhead(2);
@@ -1147,11 +1277,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     Expect("Name and ';'");
                     return;
                 }
-                if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
+                if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
                 {
-                    GDTokens.IdentifierToken idt = its[0] as GDTokens.IdentifierToken;
-                    GDTokens.OperatorToken op = its[1] as GDTokens.OperatorToken;
-                    if (ExpectOperator(op, GDTokens.OperatorType.SemiColon, true))
+                    OilexerGrammarTokens.IdentifierToken idt = its[0] as OilexerGrammarTokens.IdentifierToken;
+                    OilexerGrammarTokens.OperatorToken op = its[1] as OilexerGrammarTokens.OperatorToken;
+                    if (ExpectOperator(op, OilexerGrammarTokens.OperatorType.SemiColon, true))
                         item.Name = idt.Name;
                 }
                 ParseFlagOption(item);
@@ -1163,18 +1293,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         {
             if (item is ITokenItem)
             {
-                if (LookAhead(0).TokenType == GDTokenType.Identifier &&
-                    LookAhead(1).TokenType == GDTokenType.Operator &&
-                    LookAhead(2).TokenType == GDTokenType.Identifier &&
-                    LookAhead(3).TokenType == GDTokenType.Operator)
-                { 
+                if (LookAhead(0).TokenType == OilexerGrammarTokenType.Identifier &&
+                    LookAhead(1).TokenType == OilexerGrammarTokenType.Operator &&
+                    LookAhead(2).TokenType == OilexerGrammarTokenType.Identifier &&
+                    LookAhead(3).TokenType == OilexerGrammarTokenType.Operator)
+                {
                     if (ExpectIdentifier(LookAhead(0), "default", StringComparison.InvariantCultureIgnoreCase, false) &&
-                        ExpectOperator(LookAhead(1), GDTokens.OperatorType.Equals, false) &&
+                        ExpectOperator(LookAhead(1), OilexerGrammarTokens.OperatorType.Equals, false) &&
                         //At this point, we can expect beyond a doubt, so error if there is no
                         //';' operator.
-                        ExpectOperator(LookAhead(3), GDTokens.OperatorType.SemiColon, true))
+                        ExpectOperator(LookAhead(3), OilexerGrammarTokens.OperatorType.SemiColon, true))
                     {
-                        string v = ((GDTokens.IdentifierToken)LookAhead(2)).Name;
+                        string v = ((OilexerGrammarTokens.IdentifierToken)LookAhead(2)).Name;
                         if (item is TokenGroupItem)
                             ((TokenGroupItem)item).DefaultSoftRefOrValue = v;
                         else if (item is TokenItem)
@@ -1185,6 +1315,90 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
         }
 
+        private AheadStream<T1, T2> GetAhead<T1, T2>(int count)
+            where T1 : class, IToken
+            where T2 : class, IToken
+        {
+            var ahead1 = this.LookAhead(0);
+            var ahead2 = this.LookAhead(1);
+            if (!(ahead1 is T1))
+                return new AheadStream<T1, T2>(null, null);
+            else if (!(ahead1 is T1 && ahead2 is T2))
+                return new AheadStream<T1, T2>((T1)ahead1, null);
+            this.ClearAhead();
+            this.StreamPosition = ahead2.Position + ahead2.Length;
+            return new AheadStream<T1, T2>((T1)ahead1, (T2)ahead2);
+        }
+
+        private AheadStream<T1, T2, T3> GetAhead<T1, T2, T3>(int count)
+            where T1 : class, IToken
+            where T2 : class, IToken
+            where T3 : class, IToken
+        {
+            var ahead1 = this.LookAhead(0);
+            var ahead2 = this.LookAhead(1);
+            var ahead3 = this.LookAhead(2);
+            if (!(ahead1 is T1))
+                return new AheadStream<T1, T2, T3>(null, null, null);
+            else if (!(ahead2 is T2))
+                return new AheadStream<T1, T2, T3>((T1)ahead1, null, null);
+            else if (!(ahead3 is T3))
+                return new AheadStream<T1, T2, T3>((T1)ahead1, (T2)ahead2, null);
+            this.ClearAhead();
+            this.StreamPosition = ahead3.Position + ahead3.Length;
+            return new AheadStream<T1, T2, T3>((T1)ahead1, (T2)ahead2, (T3)ahead3);
+        }
+
+        private AheadStream<T1, T2, T3, T4> GetAhead<T1, T2, T3, T4>(int count)
+            where T1 : class, IToken
+            where T2 : class, IToken
+            where T3 : class, IToken
+            where T4 : class, IToken
+        {
+            var ahead1 = this.LookAhead(0);
+            var ahead2 = this.LookAhead(1);
+            var ahead3 = this.LookAhead(2);
+            var ahead4 = this.LookAhead(3);
+            if (!(ahead1 is T1))
+                return new AheadStream<T1, T2, T3, T4>(null, null, null, null);
+            else if (!(ahead2 is T2))
+                return new AheadStream<T1, T2, T3, T4>((T1)ahead1, null, null, null);
+            else if (!(ahead3 is T3))
+                return new AheadStream<T1, T2, T3, T4>((T1)ahead1, (T2)ahead2, null, null);
+            else if (!(ahead4 is T4))
+                return new AheadStream<T1, T2, T3, T4>((T1)ahead1, (T2)ahead2, (T3)ahead3, null);
+            this.ClearAhead();
+            this.StreamPosition = ahead4.Position + ahead4.Length;
+            return new AheadStream<T1, T2, T3, T4>((T1)ahead1, (T2)ahead2, (T3)ahead3, (T4)ahead4);
+        }
+
+        private AheadStream<T1, T2, T3, T4, T5> GetAhead<T1, T2, T3, T4, T5>(int count)
+            where T1 : class, IToken
+            where T2 : class, IToken
+            where T3 : class, IToken
+            where T4 : class, IToken
+            where T5 : class, IToken
+        {
+            var ahead1 = this.LookAhead(0);
+            var ahead2 = this.LookAhead(1);
+            var ahead3 = this.LookAhead(2);
+            var ahead4 = this.LookAhead(3);
+            var ahead5 = this.LookAhead(4);
+            if (!(ahead1 is T1))
+                return new AheadStream<T1, T2, T3, T4, T5>(null, null, null, null, null);
+            else if (!(ahead2 is T2))
+                return new AheadStream<T1, T2, T3, T4, T5>((T1)ahead1, null, null, null, null);
+            else if (!(ahead3 is T3))
+                return new AheadStream<T1, T2, T3, T4, T5>((T1)ahead1, (T2)ahead2, null, null, null);
+            else if (!(ahead4 is T4))
+                return new AheadStream<T1, T2, T3, T4, T5>((T1)ahead1, (T2)ahead2, (T3)ahead3, null, null);
+            else if (!(ahead5 is T5))
+                return new AheadStream<T1, T2, T3, T4, T5>((T1)ahead1, (T2)ahead2, (T3)ahead3, (T4)ahead4, null);
+            this.ClearAhead();
+            this.StreamPosition = ahead5.Position + ahead5.Length;
+            return new AheadStream<T1, T2, T3, T4, T5>((T1)ahead1, (T2)ahead2, (T3)ahead3, (T4)ahead4, (T5)ahead5);
+        }
+
         private void ParseFlagOption(IScannableEntryItem item)
         {
 
@@ -1192,34 +1406,33 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             if ((isCharItem = (item is LiteralCharTokenItem)) ||
                 item is LiteralStringTokenItem)
             {
-                if (LookAhead(0).TokenType == GDTokenType.Identifier &&
-                    LookAhead(1).TokenType == GDTokenType.Operator &&
-                    LookAhead(2).TokenType == GDTokenType.Identifier &&
-                    LookAhead(3).TokenType == GDTokenType.Operator)
+                if (LookAhead(0).TokenType == OilexerGrammarTokenType.Identifier &&
+                    LookAhead(1).TokenType == OilexerGrammarTokenType.Operator &&
+                    LookAhead(2).TokenType == OilexerGrammarTokenType.Identifier &&
+                    LookAhead(3).TokenType == OilexerGrammarTokenType.Operator)
                 {
                     if (ExpectIdentifier(LookAhead(0), "flag", StringComparison.InvariantCultureIgnoreCase, false) &&
-                        ExpectOperator(LookAhead(1), GDTokens.OperatorType.Equals, false) &&
+                        ExpectOperator(LookAhead(1), OilexerGrammarTokens.OperatorType.Equals, false) &&
                         //At this point, we can expect beyond a doubt, so error if there is no
                         //boolean or ';' operator.
                         ExpectBoolean(LookAhead(2), true) &&
-                        ExpectOperator(LookAhead(3), GDTokens.OperatorType.SemiColon, true))
+                        ExpectOperator(LookAhead(3), OilexerGrammarTokens.OperatorType.SemiColon, true))
                     {
-                        var aheadFour = GetAhead(4);
-                        var thirdAhead = (GDTokens.IdentifierToken)aheadFour[2];
+                        var aheadFour = GetAhead<OilexerGrammarTokens.IdentifierToken, OilexerGrammarTokens.OperatorToken, OilexerGrammarTokens.IdentifierToken, OilexerGrammarTokens.OperatorToken>(4);
                         if (isCharItem)
                         {
                             var charItem = item as LiteralCharTokenItem;
-                            charItem.IsFlag = bool.Parse(thirdAhead.Name);
-                            charItem.IsFlagToken = thirdAhead;
+                            charItem.IsFlag = bool.Parse(aheadFour.Token3.Name);
+                            charItem.IsFlagToken = aheadFour.Token3;
                         }
                         else//LiteralStringTokenItem
                         {
                             var stringItem = item as LiteralStringTokenItem;
-                            stringItem.IsFlag = bool.Parse(thirdAhead.Name);
-                            stringItem.IsFlagToken = thirdAhead;
+                            stringItem.IsFlag = bool.Parse(aheadFour.Token3.Name);
+                            stringItem.IsFlagToken = aheadFour.Token3;
                         }
-                        DefineKeywordIdentifier((GDTokens.IdentifierToken)aheadFour[0]);
-                        DefineKeywordIdentifier(thirdAhead);
+                        DefineKeywordIdentifier(aheadFour.Token1);
+                        DefineKeywordIdentifier(aheadFour.Token3);
                     }
                 }
             }
@@ -1227,7 +1440,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private IProductionRulePreprocessorDirective ParseProductionRulePreprocessor(PreprocessorContainer container)
         {
-            GDTokens.PreprocessorDirective ppd = LookAhead(0) as GDTokens.PreprocessorDirective;
+            OilexerGrammarTokens.PreprocessorDirective ppd = LookAhead(0) as OilexerGrammarTokens.PreprocessorDirective;
             if (ppd != null)
             {
                 IPreprocessorDirective ippd = ParsePreprocessor(container);
@@ -1235,6 +1448,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     return new ProductionRulePreprocessorDirective(ippd, ppd.Column, ppd.Line, ppd.Position);
             }
             Expect("Preprocessor Directive");
+            PopAhead();
             return null;
         }
 
@@ -1243,33 +1457,34 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             IPreprocessorDirective result = null;
             bool ml = ((Lexer)this.CurrentTokenizer).MultiLineMode;
             this.SetMultiLineMode(false);
-            GDTokens.PreprocessorDirective ppd = LookAhead(0) as GDTokens.PreprocessorDirective;
+            OilexerGrammarTokens.PreprocessorDirective ppd = LookAhead(0) as OilexerGrammarTokens.PreprocessorDirective;
             if (ppd != null)
             {
                 switch (ppd.Type)
                 {
-                    case GDTokens.PreprocessorType.IncludeDirective:
-                    case GDTokens.PreprocessorType.RootDirective:
-                    case GDTokens.PreprocessorType.AssemblyNameDirective:
-                    case GDTokens.PreprocessorType.LexerNameDirective:
-                    case GDTokens.PreprocessorType.GrammarNameDirective:
-                    case GDTokens.PreprocessorType.ParserNameDirective:
-                    case GDTokens.PreprocessorType.TokenPrefixDirective:
-                    case GDTokens.PreprocessorType.TokenSuffixDirective:
-                    case GDTokens.PreprocessorType.RulePrefixDirective:
-                    case GDTokens.PreprocessorType.RuleSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.IncludeDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RootDirective:
+                    case OilexerGrammarTokens.PreprocessorType.AssemblyNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.LexerNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.GrammarNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.ParserNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenPrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RulePrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RuleSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.NamespaceDirective:
                         if (container == PreprocessorContainer.File)
                             result = ParseStringTerminalDirective();
                         else
                         {
                             string ppdS = ppd.Type.ToString();
                             ppdS = ppdS.Substring(0, ppdS.Length - 9);
-                            LogError(GDParserErrors.Unexpected, string.Format("{0} directive.", ppdS), ppd.Position);
+                            LogError(OilexerGrammarParserErrors.Unexpected, string.Format("{0} directive.", ppdS), ppd.Position);
                         }
                         break;
-                    case GDTokens.PreprocessorType.IfDefinedDirective:
-                    case GDTokens.PreprocessorType.IfNotDefinedDirective:
-                    case GDTokens.PreprocessorType.IfDirective:
+                    case OilexerGrammarTokens.PreprocessorType.IfDefinedDirective:
+                    case OilexerGrammarTokens.PreprocessorType.IfNotDefinedDirective:
+                    case OilexerGrammarTokens.PreprocessorType.IfDirective:
                         PopAhead();
                         IPreprocessorCLogicalOrConditionExp condition = null;
                         if (ParsePreprocessorCLogicalOrConditionExp(ref condition))
@@ -1277,25 +1492,25 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             result = ParseIfDirective(condition, ppd, container);
                         }
                         break;
-                    case GDTokens.PreprocessorType.AddRuleDirective:
+                    case OilexerGrammarTokens.PreprocessorType.AddRuleDirective:
                         if (container == PreprocessorContainer.Template)
                             result = ParseAddRuleDirective();
                         break;
-                    case GDTokens.PreprocessorType.DefineDirective:
+                    case OilexerGrammarTokens.PreprocessorType.DefineDirective:
                         if (container == PreprocessorContainer.Template)
                             result = ParseDefineRuleDirective();
                         else if (container == PreprocessorContainer.File)
                             result = ParseDefineSymbolDirective(ppd);
                         else
-                            LogError(GDParserErrors.Unexpected, "Define directive.", ppd.Position);
+                            LogError(OilexerGrammarParserErrors.Unexpected, "Define directive.", ppd.Position);
                         break;
-                    case GDTokens.PreprocessorType.ReturnDirective:
+                    case OilexerGrammarTokens.PreprocessorType.ReturnDirective:
                         if (container == PreprocessorContainer.Template)
                             result = ParseReturnDirective();
                         else
-                            LogError(GDParserErrors.Unexpected, "Return directive.", ppd.Position);
+                            LogError(OilexerGrammarParserErrors.Unexpected, "Return directive.", ppd.Position);
                         break;
-                    case GDTokens.PreprocessorType.ThrowDirective:
+                    case OilexerGrammarTokens.PreprocessorType.ThrowDirective:
                         result = ParseThrowDirective();
                         break;
                     default:
@@ -1309,47 +1524,51 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 long position = this.StreamPosition;
                 bool multiLine = ((Lexer)(this.CurrentTokenizer)).MultiLineMode;
                 this.SetMultiLineMode(true);
-                this.ParseProductionRuleBody(containedSet, container);
+                this.ParseProductionRule(containedSet, container);
                 this.SetMultiLineMode(multiLine);
                 return new PreprocessorProductionRuleSeries(containedSet, column, line, position);
             }
             return result;
         }
 
-        private IPreprocessorDirective ParseDefineSymbolDirective(GDTokens.PreprocessorDirective preprocessor)
+        private IPreprocessorDirective ParseDefineSymbolDirective(OilexerGrammarTokens.PreprocessorDirective preprocessor)
         {
             var stream = GetAhead(3);
-            if (SeriesMatch(stream, GDTokenType.PreprocessorDirective, GDTokenType.Identifier, GDTokenType.Operator))
+            if (SeriesMatch(stream, OilexerGrammarTokenType.PreprocessorDirective, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
             {
-                GDTokens.PreprocessorDirective def = (GDTokens.PreprocessorDirective)stream[0];
-                GDTokens.IdentifierToken id = (GDTokens.IdentifierToken)stream[1];
-                GDTokens.OperatorToken op = (GDTokens.OperatorToken)stream[2];
+                OilexerGrammarTokens.PreprocessorDirective def = (OilexerGrammarTokens.PreprocessorDirective)stream[0];
+                OilexerGrammarTokens.IdentifierToken id = (OilexerGrammarTokens.IdentifierToken)stream[1];
+                OilexerGrammarTokens.OperatorToken op = (OilexerGrammarTokens.OperatorToken)stream[2];
                 string name = id.Name;
                 string value = null;
-                if (op.Type == GDTokens.OperatorType.Equals)
+                if (op.Type == OilexerGrammarTokens.OperatorType.Equals)
                 {
                     var tok = LookAhead(0);
-                    if (tok.TokenType == GDTokenType.Identifier)
-                        value = ((GDTokens.IdentifierToken)(tok)).Name;
-                    else if (tok.TokenType == GDTokenType.StringLiteral)
-                        value = ((GDTokens.StringLiteralToken)(tok)).GetCleanValue();
+                    if (tok.TokenType == OilexerGrammarTokenType.Identifier)
+                        value = ((OilexerGrammarTokens.IdentifierToken)(tok)).Name;
+                    else if (tok.TokenType == OilexerGrammarTokenType.StringLiteral)
+                        value = ((OilexerGrammarTokens.StringLiteralToken)(tok)).GetCleanValue();
                     else
                     {
                         Expect("string or identifier", tok.Position);
+                        PopAhead();
                         return null;
                     }
                     PopAhead();
                     tok = PopAhead();
-                    if (!ExpectOperator(tok, GDTokens.OperatorType.SemiColon, true))
+                    if (!ExpectOperator(tok, OilexerGrammarTokens.OperatorType.SemiColon, true))
                         return null;
 
                 }
-                else if (!ExpectOperator(op, GDTokens.OperatorType.SemiColon, true))
+                else if (!ExpectOperator(op, OilexerGrammarTokens.OperatorType.SemiColon, true))
                     return null;
                 return new PreprocessorDefineSymbolDirective(name, value, preprocessor.Column, preprocessor.Line, preprocessor.Position);
             }
-            else if (stream.Count == 3 && (stream[1]).TokenType == GDTokenType.Identifier)
-                ExpectOperator(stream[2], GDTokens.OperatorType.Comma | GDTokens.OperatorType.SemiColon, true);
+            else if (stream.Count == 3 && (stream[1]).TokenType == OilexerGrammarTokenType.Identifier)
+            {
+                PopAhead();
+                ExpectOperator(stream[2], OilexerGrammarTokens.OperatorType.Comma | OilexerGrammarTokens.OperatorType.SemiColon, true);
+            }
             else if (stream.Count > 1)
                 Expect("identifier", stream[1].Position);
             else if (stream.Count == 1)
@@ -1360,37 +1579,38 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private IPreprocessorStringTerminalDirective ParseStringTerminalDirective()
         {
-            GDTokens.PreprocessorDirective pp = LookAhead(0) as GDTokens.PreprocessorDirective;
-            
+            OilexerGrammarTokens.PreprocessorDirective pp = LookAhead(0) as OilexerGrammarTokens.PreprocessorDirective;
+
             if (pp == null)
             {
                 Expect("#include, #AssemblyName, #LexerName, #ParserName, #GrammarName, #TokenPrefix, #TokenSuffix, #RulePrefix, or #RuleSuffix directive", pp.Position);
+                PopAhead();
                 return null;
             }
 
-            IGDToken one = LookAhead(1);
+            IOilexerGrammarToken one = LookAhead(1);
             if (one == null)
             {
                 switch (pp.Type)
                 {
-                    case GDTokens.PreprocessorType.IncludeDirective:
-                    case GDTokens.PreprocessorType.LexerNameDirective:
-                    case GDTokens.PreprocessorType.ParserNameDirective:
-                    case GDTokens.PreprocessorType.GrammarNameDirective:
-                    case GDTokens.PreprocessorType.AssemblyNameDirective:
-                    case GDTokens.PreprocessorType.RootDirective:
-                    case GDTokens.PreprocessorType.RulePrefixDirective:
-                    case GDTokens.PreprocessorType.RuleSuffixDirective:
-                    case GDTokens.PreprocessorType.TokenPrefixDirective:
-                    case GDTokens.PreprocessorType.TokenSuffixDirective:
-                    case GDTokens.PreprocessorType.NamespaceDirective:
+                    case OilexerGrammarTokens.PreprocessorType.IncludeDirective:
+                    case OilexerGrammarTokens.PreprocessorType.LexerNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.ParserNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.GrammarNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.AssemblyNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RootDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RulePrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RuleSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenPrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.NamespaceDirective:
                         break;
                     default:
-                        this.PopAhead();
                         Expect("#include, #AssemblyName, #LexerName, #ParserName, #GrammarName, #TokenPrefix, #TokenSuffix, #RulePrefix, or #RuleSuffix directive", pp.Position);
+                        this.PopAhead();
                         return null;
                 }
-                currentTarget.SyntaxErrors.SyntaxError(this.CurrentTokenizer.CurrentError);//GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, GDParserErrors.Expected, "string"));
+                currentTarget.SyntaxErrors.SyntaxError(this.CurrentTokenizer.CurrentError);//OilexerGrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, OilexerGrammarParserErrors.Expected, "string"));
                 this.PopAhead();
                 return null;
             }
@@ -1398,112 +1618,107 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             {
                 switch (pp.Type)
                 {
-                    case GDTokens.PreprocessorType.IncludeDirective:
-                    case GDTokens.PreprocessorType.LexerNameDirective:
-                    case GDTokens.PreprocessorType.ParserNameDirective:
-                    case GDTokens.PreprocessorType.GrammarNameDirective:
-                    case GDTokens.PreprocessorType.AssemblyNameDirective:
-                    case GDTokens.PreprocessorType.RootDirective:
-                    case GDTokens.PreprocessorType.RulePrefixDirective:
-                    case GDTokens.PreprocessorType.RuleSuffixDirective:
-                    case GDTokens.PreprocessorType.TokenPrefixDirective:
-                    case GDTokens.PreprocessorType.TokenSuffixDirective:
-                    case GDTokens.PreprocessorType.NamespaceDirective:
-                        if (one.TokenType != GDTokenType.StringLiteral)
+                    case OilexerGrammarTokens.PreprocessorType.IncludeDirective:
+                    case OilexerGrammarTokens.PreprocessorType.LexerNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.ParserNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.GrammarNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.AssemblyNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RootDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RulePrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RuleSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenPrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.NamespaceDirective:
+                        if (one.TokenType != OilexerGrammarTokenType.StringLiteral)
                         {
                             Expect("string", one.Position);
-                            this.PopAhead();
-                            this.PopAhead();
+                            this.GetAhead(2);
                             return null;
                         }
                         break;
                     default:
                         Expect("#include, #AssemblyName, #LexerName, #ParserName, #GrammarName, #TokenPrefix, #TokenSuffix, #RulePrefix, or #RuleSuffix directive", pp.Position);
-                        this.PopAhead();
-                        this.PopAhead();
+                        this.GetAhead(2);
                         return null;
                 }
-                currentTarget.SyntaxErrors.SyntaxError(this.CurrentTokenizer.CurrentError);//GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, GDParserErrors.Expected, ";"));
-                this.PopAhead();
-                this.PopAhead();
+                currentTarget.SyntaxErrors.SyntaxError(this.CurrentTokenizer.CurrentError);//OilexerGrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.CurrentError.Location.Line, this.CurrentTokenizer.CurrentError.Location.Column, OilexerGrammarParserErrors.Expected, ";"));
+                this.GetAhead(2);
                 return null;
             }
             var its = GetAhead(3);
 
-            if (its.Count == 3 && SeriesMatch(its, GDTokenType.PreprocessorDirective, GDTokenType.StringLiteral, GDTokenType.Operator))
+            if (its.Count == 3 && SeriesMatch(its, OilexerGrammarTokenType.PreprocessorDirective, OilexerGrammarTokenType.StringLiteral, OilexerGrammarTokenType.Operator))
             {
                 StringTerminalKind kind = StringTerminalKind.Unknown;
-                GDTokens.StringLiteralToken str = (GDTokens.StringLiteralToken)its[1];
-                GDTokens.OperatorToken op = (GDTokens.OperatorToken)its[2];
-                if (op.Type == GDTokens.OperatorType.SemiColon)
+                OilexerGrammarTokens.StringLiteralToken str = (OilexerGrammarTokens.StringLiteralToken)its[1];
+                OilexerGrammarTokens.OperatorToken op = (OilexerGrammarTokens.OperatorToken)its[2];
+                if (op.Type == OilexerGrammarTokens.OperatorType.SemiColon)
                 {
                     string literal = str.GetCleanValue();
                     switch (pp.Type)
                     {
-                        case GDTokens.PreprocessorType.IncludeDirective:
+                        case OilexerGrammarTokens.PreprocessorType.IncludeDirective:
                             kind = StringTerminalKind.Include;
                             break;
-                        case GDTokens.PreprocessorType.RootDirective:
+                        case OilexerGrammarTokens.PreprocessorType.RootDirective:
                             kind = StringTerminalKind.Root;
                             break;
-                        case GDTokens.PreprocessorType.AssemblyNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.AssemblyNameDirective:
                             kind = StringTerminalKind.AssemblyName;
                             break;
-                        case GDTokens.PreprocessorType.LexerNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.LexerNameDirective:
                             kind = StringTerminalKind.LexerName;
                             break;
-                        case GDTokens.PreprocessorType.GrammarNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.GrammarNameDirective:
                             kind = StringTerminalKind.GrammarName;
                             break;
-                        case GDTokens.PreprocessorType.ParserNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ParserNameDirective:
                             kind = StringTerminalKind.ParserName;
                             break;
-                        case GDTokens.PreprocessorType.TokenPrefixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.TokenPrefixDirective:
                             kind = StringTerminalKind.TokenPrefix;
                             break;
-                        case GDTokens.PreprocessorType.TokenSuffixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.TokenSuffixDirective:
                             kind = StringTerminalKind.TokenSuffix;
                             break;
-                        case GDTokens.PreprocessorType.RulePrefixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.RulePrefixDirective:
                             kind = StringTerminalKind.RulePrefix;
                             break;
-                        case GDTokens.PreprocessorType.RuleSuffixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.RuleSuffixDirective:
                             kind = StringTerminalKind.RuleSuffix;
                             break;
-                        case GDTokens.PreprocessorType.NamespaceDirective:
-                             kind = StringTerminalKind.Namespace;
+                        case OilexerGrammarTokens.PreprocessorType.NamespaceDirective:
+                            kind = StringTerminalKind.Namespace;
                             break;
                         default:
                             Expect("#include, #AssemblyName, #LexerName, #ParserName, #GrammarName, #TokenPrefix, #TokenSuffix, #RulePrefix, or #RuleSuffix directive", pp.Position);
                             break;
                     }
-                    return new PreprocessorStringTerminalDirective(kind, literal, pp.Column, pp.Line, pp.Position);
+                    return new PreprocessorStringTerminalDirective(kind, literal, pp, str, pp.Column, pp.Line, pp.Position);
                 }
             }
             else
             {
                 switch (pp.Type)
                 {
-                    case GDTokens.PreprocessorType.IncludeDirective:
-                    case GDTokens.PreprocessorType.LexerNameDirective:
-                    case GDTokens.PreprocessorType.ParserNameDirective:
-                    case GDTokens.PreprocessorType.GrammarNameDirective:
-                    case GDTokens.PreprocessorType.AssemblyNameDirective:
-                    case GDTokens.PreprocessorType.RootDirective:
-                    case GDTokens.PreprocessorType.RulePrefixDirective:
-                    case GDTokens.PreprocessorType.RuleSuffixDirective:
-                    case GDTokens.PreprocessorType.TokenPrefixDirective:
-                    case GDTokens.PreprocessorType.TokenSuffixDirective:
-                    case GDTokens.PreprocessorType.NamespaceDirective:
+                    case OilexerGrammarTokens.PreprocessorType.IncludeDirective:
+                    case OilexerGrammarTokens.PreprocessorType.LexerNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.ParserNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.GrammarNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.AssemblyNameDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RootDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RulePrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.RuleSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenPrefixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.TokenSuffixDirective:
+                    case OilexerGrammarTokens.PreprocessorType.NamespaceDirective:
                         if (its.Count > 1)
                         {
-                            IGDToken second = its[1];
-                            if (second.TokenType == GDTokenType.StringLiteral)
-                                ExpectOperator(its[2], GDTokens.OperatorType.SemiColon, true);
+                            IOilexerGrammarToken second = its[1];
+                            if (second.TokenType == OilexerGrammarTokenType.StringLiteral)
+                                ExpectOperator(its[2], OilexerGrammarTokens.OperatorType.SemiColon, true);
                             else
-                            {
                                 Expect("string", second.Position);
-                            }
                         }
                         break;
                     default:
@@ -1521,13 +1736,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             IPreprocessorConditionalReturnDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
             this.SetMultiLineMode(true);
-            if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
-                ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.ReturnDirective)
+            if (LookAhead(0).TokenType != OilexerGrammarTokenType.PreprocessorDirective &&
+                ((OilexerGrammarTokens.PreprocessorDirective)(LookAhead(0))).Type == OilexerGrammarTokens.PreprocessorType.ReturnDirective)
             {
                 Expect("#return");
                 return null;
             }
-            IGDToken igdt = PopAhead();
+            IOilexerGrammarToken igdt = PopAhead();
             List<IProductionRule> icipr = new List<IProductionRule>();
             ParseProductionRule(icipr, PreprocessorContainer.Template);
             result = new PreprocessorConditionalReturnDirective(icipr.ToArray(), igdt.Column, igdt.Line, igdt.Position);
@@ -1540,19 +1755,19 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             IPreprocessorAddRuleDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
             this.SetMultiLineMode(false);
-            if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
-                ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.AddRuleDirective)
+            if (LookAhead(0).TokenType != OilexerGrammarTokenType.PreprocessorDirective &&
+                ((OilexerGrammarTokens.PreprocessorDirective)(LookAhead(0))).Type == OilexerGrammarTokens.PreprocessorType.AddRuleDirective)
             {
                 Expect("#addrule");
                 return null;
             }
-            IGDToken igdt = PopAhead();
+            IOilexerGrammarToken igdt = PopAhead();
             var its = GetAhead(2);
-            if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
+            if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
             {
-                GDTokens.IdentifierToken target = its[0] as GDTokens.IdentifierToken;
-                GDTokens.OperatorToken op = its[1] as GDTokens.OperatorToken;
-                if (!ExpectOperator(op, GDTokens.OperatorType.Comma, true))
+                OilexerGrammarTokens.IdentifierToken target = its[0] as OilexerGrammarTokens.IdentifierToken;
+                OilexerGrammarTokens.OperatorToken op = its[1] as OilexerGrammarTokens.OperatorToken;
+                if (!ExpectOperator(op, OilexerGrammarTokens.OperatorType.Comma, true))
                     return null;
                 if (target == null)
                 {
@@ -1573,19 +1788,19 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             IPreprocessorDefineRuleDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
             this.SetMultiLineMode(true);
-            if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
-                ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.DefineDirective)
+            if (LookAhead(0).TokenType != OilexerGrammarTokenType.PreprocessorDirective &&
+                ((OilexerGrammarTokens.PreprocessorDirective)(LookAhead(0))).Type == OilexerGrammarTokens.PreprocessorType.DefineDirective)
             {
                 Expect("#define");
                 return null;
             }
-            IGDToken igdt = PopAhead();
+            IOilexerGrammarToken igdt = PopAhead();
             var its = GetAhead(2);
-            if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
+            if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
             {
-                GDTokens.IdentifierToken target = its[0] as GDTokens.IdentifierToken;
-                GDTokens.OperatorToken op = its[1] as GDTokens.OperatorToken;
-                if (!ExpectOperator(op, GDTokens.OperatorType.Equals, true))
+                OilexerGrammarTokens.IdentifierToken target = its[0] as OilexerGrammarTokens.IdentifierToken;
+                OilexerGrammarTokens.OperatorToken op = its[1] as OilexerGrammarTokens.OperatorToken;
+                if (!ExpectOperator(op, OilexerGrammarTokens.OperatorType.Equals, true))
                     return null;
                 if (target == null)
                 {
@@ -1607,82 +1822,89 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             IPreprocessorThrowDirective result = null;
             bool mlm = ((Lexer)(CurrentTokenizer)).MultiLineMode;
             this.SetMultiLineMode(false);
-            if (LookAhead(0).TokenType != GDTokenType.PreprocessorDirective &&
-                ((GDTokens.PreprocessorDirective)(LookAhead(0))).Type == GDTokens.PreprocessorType.ThrowDirective)
+            if (LookAhead(0).TokenType != OilexerGrammarTokenType.PreprocessorDirective &&
+                ((OilexerGrammarTokens.PreprocessorDirective)(LookAhead(0))).Type == OilexerGrammarTokens.PreprocessorType.ThrowDirective)
             {
                 Expect("#throw");
                 return null;
             }
-            IGDToken preproc = PopAhead();
+            IOilexerGrammarToken preproc = PopAhead();
             var its = GetAhead(2);
-            if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
+            if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
             {
-                GDTokens.IdentifierToken id = (GDTokens.IdentifierToken)its[0];
-                if (ExpectOperator(its[1], GDTokens.OperatorType.SemiColon, false))
-                    result = new PreprocessorThrowDirective(this.currentTarget.Result, id.Name, new IGDToken[0], preproc.Column, preproc.Line, preproc.Position);
-                else if (ExpectOperator(its[1], GDTokens.OperatorType.Comma, true))
+                OilexerGrammarTokens.IdentifierToken id = (OilexerGrammarTokens.IdentifierToken)its[0];
+                if (ExpectOperator(its[1], OilexerGrammarTokens.OperatorType.SemiColon, false))
+                    result = new PreprocessorThrowDirective(this.currentTarget.Result, id.Name, new IOilexerGrammarToken[0], preproc.Column, preproc.Line, preproc.Position);
+                else if (ExpectOperator(its[1], OilexerGrammarTokens.OperatorType.Comma, true))
                 {
-                    List<IGDToken> args = new List<IGDToken>();
+                    List<IOilexerGrammarToken> args = new List<IOilexerGrammarToken>();
                     while (true)
                     {
                         its = GetAhead(2);
-                        IGDToken arg = its[0];
+                        IOilexerGrammarToken arg = its[0];
                         if (its.Count != 2)
                             break;
-                        if (arg.TokenType == GDTokenType.Identifier || arg.TokenType == GDTokenType.StringLiteral || arg.TokenType == GDTokenType.CharacterLiteral)
+                        if (arg.TokenType == OilexerGrammarTokenType.Identifier || arg.TokenType == OilexerGrammarTokenType.StringLiteral || arg.TokenType == OilexerGrammarTokenType.CharacterLiteral)
                             args.Add(arg);
                         else
                         {
                             Expect("string, char or identifier");
                             break;
                         }
-                        if (ExpectOperator(its[1], GDTokens.OperatorType.SemiColon, false))
+                        if (ExpectOperator(its[1], OilexerGrammarTokens.OperatorType.SemiColon, false))
                         {
                             result = new PreprocessorThrowDirective(this.currentTarget.Result, id.Name, args.ToArray(), preproc.Column, preproc.Line, preproc.Position);
                             break;
                         }
-                        else if (ExpectOperator(its[1], GDTokens.OperatorType.Comma, true))
+                        else if (ExpectOperator(its[1], OilexerGrammarTokens.OperatorType.Comma, true))
                             continue;
                         else
                             break;
                     }
                 }
             }
-            else if (its.Count > 0 && its[0].TokenType == GDTokenType.Identifier)
+            else if (its.Count > 0 && its[0].TokenType == OilexerGrammarTokenType.Identifier)
             {
-                ExpectOperator(its[0], GDTokens.OperatorType.SemiColon, true);
+                ExpectOperator(its[0], OilexerGrammarTokens.OperatorType.SemiColon, true);
             }
             else
                 Expect("identifier");
-            
+
             this.SetMultiLineMode(mlm);
             return result;
         }
 
-        private IPreprocessorIfDirective ParseIfDirective(IPreprocessorCLogicalOrConditionExp condition, GDTokens.PreprocessorDirective preprocessor, PreprocessorContainer container)
+        private IPreprocessorIfDirective ParseIfDirective(IPreprocessorCLogicalOrConditionExp condition, OilexerGrammarTokens.PreprocessorDirective preprocessor, PreprocessorContainer container)
         {
             IPreprocessorIfDirective result = null;
             bool secondHalf = true;
             switch (preprocessor.Type)
             {
-                case GDTokens.PreprocessorType.IfDirective:
+                case OilexerGrammarTokens.PreprocessorType.IfDirective:
                     ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.If, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
                     break;
-                case GDTokens.PreprocessorType.IfDefinedDirective:
+                case OilexerGrammarTokens.PreprocessorType.IfInDirective:
+                    ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.IfIn, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
+                    break;
+                case OilexerGrammarTokens.PreprocessorType.IfDefinedDirective:
                     ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.IfDefined, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
                     break;
-                case GDTokens.PreprocessorType.IfNotDefinedDirective:
+                case OilexerGrammarTokens.PreprocessorType.IfNotDefinedDirective:
                     ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.IfNotDefined, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
                     break;
-                case GDTokens.PreprocessorType.ElseIfDirective:
+                case OilexerGrammarTokens.PreprocessorType.ElseIfDirective:
                     ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.ElseIf, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
                     secondHalf = false;
                     break;
-                case GDTokens.PreprocessorType.ElseIfDefinedDirective:
+                case OilexerGrammarTokens.PreprocessorType.ElseIfInDirective:
+                    ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.ElseIfIn, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
+                    secondHalf = false;
+                    break;
+                case OilexerGrammarTokens.PreprocessorType.ElseIfDefinedDirective:
                     ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.ElseIfDefined, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
                     secondHalf = false;
                     break;
-                case GDTokens.PreprocessorType.ElseDirective:
+                case OilexerGrammarTokens.PreprocessorType.ElseDirective:
                     ParseIfDirectiveBody(result = new PreprocessorIfDirective(EntryPreprocessorType.Else, condition, this.CurrentTokenizer.FileName, preprocessor.Column, preprocessor.Line, preprocessor.Position), container);
                     secondHalf = false;
                     break;
@@ -1697,21 +1919,23 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 return result;
             IPreprocessorIfDirective last = current;
             bool final = false;
-            IGDToken igdt = null;
+            IOilexerGrammarToken igdt = null;
             this.SetMultiLineMode(true);
             while (
-                (igdt = LookAhead(0)).TokenType == GDTokenType.PreprocessorDirective ||
-                igdt.TokenType == GDTokenType.Comment)
+                (igdt = LookAhead(0)) != null && 
+               (igdt.TokenType == OilexerGrammarTokenType.PreprocessorDirective ||
+                igdt.TokenType == OilexerGrammarTokenType.Comment))
             {
-                GDTokens.PreprocessorDirective ppd = igdt as GDTokens.PreprocessorDirective;
+                OilexerGrammarTokens.PreprocessorDirective ppd = igdt as OilexerGrammarTokens.PreprocessorDirective;
                 IPreprocessorCLogicalOrConditionExp subCondition = null;
                 if (ppd != null)
                 {
                     PopAhead();
                     switch (ppd.Type)
                     {
-                        case GDTokens.PreprocessorType.ElseIfDirective:
-                        case GDTokens.PreprocessorType.ElseIfDefinedDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseIfInDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseIfDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseIfDefinedDirective:
                             if (final)
                             {
                                 Expect("#endif");
@@ -1728,23 +1952,23 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 goto endWhile;
                             }
                             break;
-                        case GDTokens.PreprocessorType.ElseDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseDirective:
                             final = true;
                             current = ParseIfDirective(null, ppd, container);
                             break;
-                        case GDTokens.PreprocessorType.EndIfDirective:
+                        case OilexerGrammarTokens.PreprocessorType.EndIfDirective:
                             //There's no break² operation.
                             goto endWhile;
                         default:
                             break;
                     }
                 }
-                else if (igdt.TokenType == GDTokenType.Comment)
+                else if (igdt.TokenType == OilexerGrammarTokenType.Comment)
                 {
-                    var commentToken = igdt as GDTokens.CommentToken;
+                    var commentToken = igdt as OilexerGrammarTokens.CommentToken;
                     if (captureRegions && commentToken.MultiLine)
                     {
-                        var gdResult = currentTarget.Result as GDFile;
+                        var gdResult = currentTarget.Result as OilexerGrammarFile;
                         gdResult.AddCommentRegion(commentToken);
                     }
                     PopAhead();
@@ -1757,83 +1981,88 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 last = current;
                 this.SetMultiLineMode(true);
             }
-            endWhile:
+        endWhile:
             return result;
         }
 
         private void ParseIfDirectiveBody(IPreprocessorIfDirective ipid, PreprocessorContainer container)
         {
             var ppidb = ((PreprocessorIfDirective.DirectiveBody)ipid.Body);
-            Action<IEntry> preprocessorInserter = p => ppidb.Add(new PreprocessorEntryContainer(p, p.Column, p.Line, p.Position));
+            Action<IOilexerGrammarEntry> preprocessorInserter = p => ppidb.Add(new PreprocessorEntryContainer(p, p.Column, p.Line, p.Position));
             long bodyStart = ipid.Position;
             while (true)
             {
-                LookPastAndSkip();
                 this.SetMultiLineMode(true);
+                LookPastAndSkip();
 
                 var la0 = this.LookAhead(0);
-                GDTokens.PreprocessorDirective ppd = la0 as GDTokens.PreprocessorDirective;
+                if (la0 == null)
+                    break;
+                OilexerGrammarTokens.PreprocessorDirective ppd = la0 as OilexerGrammarTokens.PreprocessorDirective;
                 if (ppd != null)
                 {
                     switch (ppd.Type)
                     {
-                        case GDTokens.PreprocessorType.IfDirective:
-                        case GDTokens.PreprocessorType.IfDefinedDirective:
-                        case GDTokens.PreprocessorType.IfNotDefinedDirective:
-                        case GDTokens.PreprocessorType.DefineDirective:
-                        case GDTokens.PreprocessorType.ThrowDirective:
+                        case OilexerGrammarTokens.PreprocessorType.IfDirective:
+                        case OilexerGrammarTokens.PreprocessorType.IfInDirective:
+                        case OilexerGrammarTokens.PreprocessorType.IfDefinedDirective:
+                        case OilexerGrammarTokens.PreprocessorType.IfNotDefinedDirective:
+                        case OilexerGrammarTokens.PreprocessorType.DefineDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ThrowDirective:
                             {
                                 IPreprocessorDirective ipd = ParsePreprocessor(container);
                                 ppidb.Add(ipd);
                                 break;
                             }
-                        case GDTokens.PreprocessorType.AddRuleDirective:
-                        case GDTokens.PreprocessorType.ReturnDirective:
+                        case OilexerGrammarTokens.PreprocessorType.AddRuleDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ReturnDirective:
                             if (container == PreprocessorContainer.Template)
                             {
                                 IPreprocessorDirective ipd = ParsePreprocessor(container);
                                 ppidb.Add(ipd);
                             }
                             else
-                                LogError(GDParserErrors.Unexpected, string.Format("{0} directive.", ppd.Type == GDTokens.PreprocessorType.AddRuleDirective ? "Add rule" : "Return"), ppd.Position);
+                                LogError(OilexerGrammarParserErrors.Unexpected, string.Format("{0} directive.", ppd.Type == OilexerGrammarTokens.PreprocessorType.AddRuleDirective ? "Add rule" : "Return"), ppd.Position);
                             break;
-                        case GDTokens.PreprocessorType.ElseIfDirective:
-                        case GDTokens.PreprocessorType.ElseIfDefinedDirective:
-                        case GDTokens.PreprocessorType.ElseDirective:
-                        case GDTokens.PreprocessorType.EndIfDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseIfDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseIfDefinedDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ElseIfInDirective:
+                        case OilexerGrammarTokens.PreprocessorType.EndIfDirective:
                             goto endBody;
-                        case GDTokens.PreprocessorType.IncludeDirective:
-                        case GDTokens.PreprocessorType.RootDirective:
-                        case GDTokens.PreprocessorType.AssemblyNameDirective:
-                        case GDTokens.PreprocessorType.LexerNameDirective:
-                        case GDTokens.PreprocessorType.GrammarNameDirective:
-                        case GDTokens.PreprocessorType.ParserNameDirective:
-                        case GDTokens.PreprocessorType.TokenPrefixDirective:
-                        case GDTokens.PreprocessorType.TokenSuffixDirective:
-                        case GDTokens.PreprocessorType.RulePrefixDirective:
-                        case GDTokens.PreprocessorType.RuleSuffixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.IncludeDirective:
+                        case OilexerGrammarTokens.PreprocessorType.RootDirective:
+                        case OilexerGrammarTokens.PreprocessorType.AssemblyNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.LexerNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.GrammarNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.ParserNameDirective:
+                        case OilexerGrammarTokens.PreprocessorType.TokenPrefixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.TokenSuffixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.RulePrefixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.RuleSuffixDirective:
+                        case OilexerGrammarTokens.PreprocessorType.NamespaceDirective:
                             if (container == PreprocessorContainer.File)
                             {
                                 IPreprocessorDirective ipd = ParsePreprocessor(container);
                                 ppidb.Add(ipd);
                             }
                             else
-                                LogError(GDParserErrors.Unexpected, "StringTerminal directive.", ppd.Position);
+                                LogError(OilexerGrammarParserErrors.Unexpected, "StringTerminal directive.", ppd.Position);
                             break;
                         default:
                             break;
                     }
                 }
-                else if (container == PreprocessorContainer.File && la0.TokenType == GDTokenType.Identifier)
+                else if (container == PreprocessorContainer.File && la0.TokenType == OilexerGrammarTokenType.Identifier)
                 {
                     /* *
-                     * All declarations must begin at the first column 
+                     * All declarations must begin at the firstSeries column 
                      * of the line.
                      * */
                     if (this.CurrentTokenizer.GetColumnIndex(this.StreamPosition) != 1)
                     {
+                        LogError(OilexerGrammarParserErrors.ExpectedEndOfLine);
                         GetAhead(1);
-                        LogError(GDParserErrors.ExpectedEndOfLine);
                         continue;
                     }
                     EntryScanMode esm = EntryScanMode.Inherited;
@@ -1848,34 +2077,34 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                      * ID   + | * Change line-mode to multi-line (not used)
                      * ID   -   * Change line-mode to single-line (not used)
                      * */
-                    if (SeriesMatch(its, GDTokenType.Identifier, GDTokenType.Operator))
+                    if (SeriesMatch(its, OilexerGrammarTokenType.Identifier, OilexerGrammarTokenType.Operator))
                     {
-                        List<GDTokens.IdentifierToken> lowerPrecedences = new List<GDTokens.IdentifierToken>();
-                        GDTokens.IdentifierToken id = ((GDTokens.IdentifierToken)(its[0]));
-                        GDTokens.OperatorToken ot = ((GDTokens.OperatorToken)(its[1]));
+                        List<OilexerGrammarTokens.IdentifierToken> lowerPrecedences = new List<OilexerGrammarTokens.IdentifierToken>();
+                        OilexerGrammarTokens.IdentifierToken id = ((OilexerGrammarTokens.IdentifierToken)(its[0]));
+                        OilexerGrammarTokens.OperatorToken ot = ((OilexerGrammarTokens.OperatorToken)(its[1]));
                         bool elementsAreChildren = false;
                         bool forcedRecognizer = false;
                     checkOp:
                         switch (ot.Type)
                         {
                             //ID$
-                            case GDTokens.OperatorType.ForcedStringForm:
+                            case OilexerGrammarTokens.OperatorType.ForcedStringForm:
                                 forcedRecognizer = true;
-                                if (LookAhead(0).TokenType == GDTokenType.Operator)
+                                if (LookAhead(0).TokenType == OilexerGrammarTokenType.Operator)
                                 {
-                                    ot = (GDTokens.OperatorToken)PopAhead();
+                                    ot = (OilexerGrammarTokens.OperatorToken)PopAhead();
                                     goto checkOp;
                                 }
                                 else
                                 {
-                                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals | GDTokens.OperatorType.GreaterThan, true);
+                                    ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.ColonEquals | OilexerGrammarTokens.OperatorType.GreaterThan, true);
                                     PopAhead();
-                                } 
+                                }
                                 break;
                             //ID ::=
-                            case GDTokens.OperatorType.ColonColonEquals:
-                                if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                    ot.Type == GDTokens.OperatorType.GreaterThan)
+                            case OilexerGrammarTokens.OperatorType.ColonColonEquals:
+                                if ((ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken) != null &&
+                                    ot.Type == OilexerGrammarTokens.OperatorType.GreaterThan)
                                 {
                                     elementsAreChildren = true;
                                     PopAhead();
@@ -1884,10 +2113,10 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 ParseProductionRule(id, EntryScanMode.Inherited, id.Position, elementsAreChildren, preprocessorInserter, container);
                                 break;
                             //ID :=
-                            case GDTokens.OperatorType.ColonEquals:
+                            case OilexerGrammarTokens.OperatorType.ColonEquals:
                                 {
                                     SetMultiLineMode(true);
-                                    bool unhinged = false;
+                                    bool unhinged = false, contextual = false;
                                     if (TokenizerLookAhead(0) == '*')
                                     {
                                         //ID :=*
@@ -1897,37 +2126,66 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                          * */
                                         this.PopAhead();
                                         unhinged = true;
+                                        if (TokenizerLookAhead(0) == '-')
+                                        {
+                                            //ID :=*-
+                                            /* *
+                                             * It's not valid to have both unhinged and contextual.
+                                             * */
+                                            LogError(OilexerGrammarParserErrors.Unexpected, "-");
+                                            this.PopAhead();
+                                        }
                                     }
-                                    ParseToken(id, EntryScanMode.Inherited, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb);
+                                    if (TokenizerLookAhead(0) == '-')
+                                    {
+                                        //ID :=-
+                                        /* *
+                                         * Token is a contextual token and might be ambiguous with others
+                                         * special care needs taken when handling them to avoid incorrect
+                                         * parse paths.
+                                         * */
+                                        this.PopAhead();
+                                        contextual = true;
+                                        if (TokenizerLookAhead(0) == '*')
+                                        {
+                                            //ID :=-*
+                                            /* *
+                                             * It's not valid to have both contextual and unhinged.
+                                             * */
+                                            LogError(OilexerGrammarParserErrors.Unexpected, "*");
+                                            this.PopAhead();
+                                        }
+                                    }
+                                    ParseToken(id, EntryScanMode.Inherited, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb, contextual);
                                 }
                                 break;
                             //ID =
-                            case GDTokens.OperatorType.Equals:
-                                ParseError(id.Name, id.Position);
+                            case OilexerGrammarTokens.OperatorType.Equals:
+                                ParseError(id.Name, id.Position, ppidb);
                                 break;
                             //ID<
-                            case GDTokens.OperatorType.LessThan:
+                            case OilexerGrammarTokens.OperatorType.LessThan:
                                 SetMultiLineMode(true);
                                 IList<IProductionRuleTemplatePart> parts = this.ParseProductionRuleTemplateParts(ot);
                                 if (parts == null)
                                     continue;
                                 else
                                 {
-                                    IGDToken g = null;
-                                    GDTokens.OperatorToken gdt = (g = PopAhead()) as GDTokens.OperatorToken;
+                                    IOilexerGrammarToken g = null;
+                                    OilexerGrammarTokens.OperatorToken gdt = (g = PopAhead()) as OilexerGrammarTokens.OperatorToken;
                                     if (gdt == null)
                                         Expect("+, -, or ::=");
-                                    if (gdt.Type == GDTokens.OperatorType.Minus)
+                                    if (gdt.Type == OilexerGrammarTokens.OperatorType.Minus)
                                     {
-                                        gdt = PopAhead() as GDTokens.OperatorToken;
+                                        gdt = PopAhead() as OilexerGrammarTokens.OperatorToken;
                                         esm = EntryScanMode.SingleLine;
                                     }
-                                    else if (gdt.Type == GDTokens.OperatorType.Plus)
+                                    else if (gdt.Type == OilexerGrammarTokens.OperatorType.Plus)
                                     {
-                                        gdt = PopAhead() as GDTokens.OperatorToken;
+                                        gdt = PopAhead() as OilexerGrammarTokens.OperatorToken;
                                         esm = EntryScanMode.Multiline;
                                     }
-                                    if (gdt == null || !ExpectOperator(gdt, GDTokens.OperatorType.ColonColonEquals, true))
+                                    if (gdt == null || !ExpectOperator(gdt, OilexerGrammarTokens.OperatorType.ColonColonEquals, true))
                                     {
                                         Expect("::=");
                                         break;
@@ -1936,72 +2194,101 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 }
                                 break;
                             //ID>
-                            case GDTokens.OperatorType.GreaterThan:
+                            case OilexerGrammarTokens.OperatorType.GreaterThan:
                                 //Case of a token defining precedence.
-                                while (LookAhead(0).TokenType == GDTokenType.Identifier)
+                                while (LookAhead(0).TokenType == OilexerGrammarTokenType.Identifier)
                                 {
-                                    var lowerPrecedenceToken = ((GDTokens.IdentifierToken)LookAhead(0));
+                                    var lowerPrecedenceToken = ((OilexerGrammarTokens.IdentifierToken)LookAhead(0));
                                     lowerPrecedences.Add(lowerPrecedenceToken);
                                     PopAhead();
-                                    GDTokens.OperatorToken cOp = null;
+                                    OilexerGrammarTokens.OperatorToken cOp = null;
                                     //','  * More precedences exist.
-                                    if ((cOp = (LookAhead(0) as GDTokens.OperatorToken)) != null &&
-                                        cOp.Type == GDTokens.OperatorType.Comma)
+                                    if ((cOp = (LookAhead(0) as OilexerGrammarTokens.OperatorToken)) != null &&
+                                        cOp.Type == OilexerGrammarTokens.OperatorType.Comma)
                                         PopAhead();
                                     //":=" * Final precedence reached.
                                     else if (cOp != null &&
-                                        cOp.Type == GDTokens.OperatorType.ColonEquals)
+                                        cOp.Type == OilexerGrammarTokens.OperatorType.ColonEquals)
                                     {
                                         PopAhead();
-                                        goto case GDTokens.OperatorType.ColonEquals;
+                                        goto case OilexerGrammarTokens.OperatorType.ColonEquals;
                                     }
                                     else
                                     {
                                         //Syntax error.
-                                        ExpectOperator(LookAhead(0), GDTokens.OperatorType.ColonEquals, true);
+                                        ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.ColonEquals, true);
                                         break;
                                     }
                                 }
                                 break;
                             //ID-
-                            case GDTokens.OperatorType.Minus:
+                            case OilexerGrammarTokens.OperatorType.Minus:
                             //ID+
-                            case GDTokens.OperatorType.Plus:
-                                esm = ot.Type == GDTokens.OperatorType.Minus ? EntryScanMode.SingleLine : EntryScanMode.Multiline;
-                                IGDToken ahead = PopAhead();
-                                if (ahead.TokenType == GDTokenType.Operator)
+                            case OilexerGrammarTokens.OperatorType.Plus:
+                                esm = ot.Type == OilexerGrammarTokens.OperatorType.Minus ? EntryScanMode.SingleLine : EntryScanMode.Multiline;
+                                IOilexerGrammarToken ahead = PopAhead();
+                                if (ahead.TokenType == OilexerGrammarTokenType.Operator)
                                 {
-                                    ot = ((GDTokens.OperatorToken)(ahead));
+                                    ot = ((OilexerGrammarTokens.OperatorToken)(ahead));
                                     switch (ot.Type)
                                     {
-                                        case GDTokens.OperatorType.ColonColonEquals:
+                                        case OilexerGrammarTokens.OperatorType.ColonColonEquals:
                                             SetMultiLineMode(true);
-                                            if ((ot = LookAhead(0) as GDTokens.OperatorToken) != null &&
-                                                ot.Type == GDTokens.OperatorType.GreaterThan)
+                                            if ((ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken) != null &&
+                                                ot.Type == OilexerGrammarTokens.OperatorType.GreaterThan)
                                             {
                                                 elementsAreChildren = true;
                                                 PopAhead();
                                             }
                                             ParseProductionRule(id, esm, id.Position, elementsAreChildren, preprocessorInserter, container);
                                             break;
-                                        case GDTokens.OperatorType.ColonEquals:
+                                        case OilexerGrammarTokens.OperatorType.ColonEquals:
                                             {
                                                 SetMultiLineMode(true);
-                                                bool unhinged = false;
+                                                bool unhinged = false, contextual = false;
                                                 if (TokenizerLookAhead(0) == '*')
                                                 {
-                                                    //ID[+-] :=*
+                                                    //ID :=*
                                                     /* *
                                                      * Token is unbounded by grammar
                                                      * and can appear anywhere.
                                                      * */
                                                     this.PopAhead();
                                                     unhinged = true;
+                                                    if (TokenizerLookAhead(0) == '-')
+                                                    {
+                                                        //ID :=*-
+                                                        /* *
+                                                         * It's not valid to have both unhinged and contextual.
+                                                         * */
+                                                        LogError(OilexerGrammarParserErrors.Unexpected, "-");
+                                                        this.PopAhead();
+                                                    }
                                                 }
-                                                ParseToken(id, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb);
+                                                if (TokenizerLookAhead(0) == '-')
+                                                {
+                                                    //ID :=-
+                                                    /* *
+                                                     * Token is a contextual token and might be ambiguous with others
+                                                     * special care needs taken when handling them to avoid incorrect
+                                                     * parse paths.
+                                                     * */
+                                                    this.PopAhead();
+                                                    contextual = true;
+                                                    if (TokenizerLookAhead(0) == '*')
+                                                    {
+                                                        //ID :=-*
+                                                        /* *
+                                                         * It's not valid to have both contextual and unhinged.
+                                                         * */
+                                                        LogError(OilexerGrammarParserErrors.Unexpected, "*");
+                                                        this.PopAhead();
+                                                    }
+                                                }
+                                                ParseToken(id, esm, id.Position, unhinged, lowerPrecedences, forcedRecognizer, ppidb, contextual);
                                             }
                                             break;
-                                        case GDTokens.OperatorType.Equals:
+                                        case OilexerGrammarTokens.OperatorType.Equals:
                                             break;
                                     }
                                 }
@@ -2024,12 +2311,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     IPreprocessorDirective ipd = ParsePreprocessor(container);
                     ppidb.Add(ipd);
                 }
-                else if (la0.TokenType == GDTokenType.Comment)
+                else if (la0.TokenType == OilexerGrammarTokenType.Comment)
                 {
-                    var commentToken = la0 as GDTokens.CommentToken;
+                    var commentToken = la0 as OilexerGrammarTokens.CommentToken;
                     if (captureRegions && commentToken.MultiLine)
                     {
-                        var gdResult = currentTarget.Result as GDFile;
+                        var gdResult = currentTarget.Result as OilexerGrammarFile;
                         gdResult.AddCommentRegion(commentToken);
                     }
 
@@ -2044,14 +2331,15 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         endBody:
             if (captureRegions)
             {
-                var gdResult = this.currentTarget.Result as GDFile;
+                var gdResult = this.currentTarget.Result as OilexerGrammarFile;
                 long bodyEnd = this.StreamPosition;
                 int startLine = this.CurrentTokenizer.GetLineIndex(bodyStart) + 1;
                 int endLine = this.CurrentTokenizer.GetLineIndex(bodyEnd);
                 if (endLine > startLine + 1)
                 {
                     var nlLen = Environment.NewLine.Length;
-                    bodyStart = this.CurrentTokenizer.GetPositionFromLine(startLine);
+                    bodyStart = this.CurrentTokenizer.GetPositionFromLine(startLine) - nlLen;
+
                     bodyEnd = this.CurrentTokenizer.GetPositionFromLine(endLine) - nlLen;
 
                     gdResult.AddIfRegion(ipid, bodyStart, bodyEnd);
@@ -2062,7 +2350,8 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         internal virtual void SetMultiLineMode(bool value)
         {
-            ((Lexer)(this.CurrentTokenizer)).MultiLineMode = value;
+            var ct = ((Lexer)(this.CurrentTokenizer));
+            ct.MultiLineMode = value;
         }
 
         private T ParseContinuous<T>(T incoming, SimpleParseDelegate<T> parseMethod)
@@ -2074,7 +2363,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 throw new ArgumentNullException("parseMethod");
             T current = incoming;
             T result = current;
-            PushAhead(new GDTokens.ReferenceToken(current, current.Column, current.Line, current.Position));
+            PushAhead(new OilexerGrammarTokens.ReferenceToken(current, current.Column, current.Line, current.Position));
             while (true)
             {
                 parseMethod(ref result);
@@ -2085,9 +2374,9 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 if (result == current)
                     break;
                 else if (result == null)
-                    LogError(GDParserErrors.Unexpected, "SourceError");
+                    LogError(OilexerGrammarParserErrors.Unexpected, "SourceError");
                 else
-                    PushAhead(new GDTokens.ReferenceToken(result, result.Column, result.Line, result.Position));
+                    PushAhead(new OilexerGrammarTokens.ReferenceToken(result, result.Column, result.Line, result.Position));
                 current = result;
             }
             return current;
@@ -2125,10 +2414,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 IPreprocessorCLogicalOrConditionExp last = GetReference<IPreprocessorCLogicalOrConditionExp>();
                 //Check for the required '||'...
                 if (LookPastAndSkip() == '|' && TokenizerLookAhead(1) == '|')
-                    this.PopAhead();
+                    this.StreamPosition += 2;
                 else if (rResult == null)
                 {
                     Expect("||", CurrentTokenizer.Position);
+                    this.StreamPosition += 1;
                     return false;
                 }
                 else
@@ -2145,6 +2435,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 else
                 {
                     //If the last input was null, error.
+                    this.PopAhead();
                     Expect("AndExp");
                 }
             }
@@ -2179,10 +2470,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 IPreprocessorCLogicalAndConditionExp last = GetReference<IPreprocessorCLogicalAndConditionExp>();
                 //Required '&&'
                 if (LookPastAndSkip() == '&' && TokenizerLookAhead(1) == '&')
-                    this.PopAhead();
+                    this.StreamPosition += 2;
                 else if (rResult == null)
                 {
                     Expect("&&", CurrentTokenizer.Position);
+                    this.StreamPosition += 1;
                     return false;
                 }
                 else
@@ -2199,6 +2491,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 else if (rResult == null)
                 {
                     //If the last input was null, error.
+                    this.PopAhead();
                     Expect("EqualityExp");
                 }
             }
@@ -2242,6 +2535,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     else if (TokenizerLookAhead(0) != '!' && rResult == null)
                     {
                         Expect("== or !=", CurrentTokenizer.Position);
+                        this.StreamPosition += 1;
                         return false;
                     }
                     this.PopAhead();
@@ -2249,6 +2543,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 else if (rResult == null)
                 {
                     Expect("== or !=", CurrentTokenizer.Position);
+                    this.PopAhead();
                     return false;
                 }
                 else
@@ -2273,7 +2568,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             //if the next token is a '(' then we're in a sub-expression...
             if (LookPastAndSkip() == '(')
             {
-                var leftParenthesis = this.PopAhead() as GDTokens.OperatorToken;
+                var leftParenthesis = this.PopAhead() as OilexerGrammarTokens.OperatorToken;
                 IPreprocessorCLogicalOrConditionExp orExp = null;
                 if (ParsePreprocessorCLogicalOrConditionExp(ref orExp))
                 {
@@ -2283,6 +2578,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     else
                     {
                         Expect(")", CurrentTokenizer.Position);
+                        this.PopAhead();
                         return false;
                     }
                     cPrimary = new PreprocessorCPrimary(leftParenthesis, orExp, orExp.Column, orExp.Line, orExp.Position);
@@ -2296,11 +2592,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
             else
             {
-                IGDToken ahead = this.LookAhead(0);
-                if (ahead.TokenType == GDTokenType.Identifier ||
-                    ahead.TokenType == GDTokenType.StringLiteral ||
-                    ahead.TokenType == GDTokenType.CharacterLiteral || 
-                    ahead.TokenType == GDTokenType.NumberLiteral)
+                IOilexerGrammarToken ahead = this.LookAhead(0);
+                if (ahead.TokenType == OilexerGrammarTokenType.Identifier ||
+                    ahead.TokenType == OilexerGrammarTokenType.StringLiteral ||
+                    ahead.TokenType == OilexerGrammarTokenType.CharacterLiteral ||
+                    ahead.TokenType == OilexerGrammarTokenType.NumberLiteral)
                     PopAhead();
                 else
                 {
@@ -2318,14 +2614,14 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     ClearAhead();
                     return false;
                 }
-                if (ahead.TokenType == GDTokenType.Identifier)
-                    cPrimary = new PreprocessorCPrimary(((GDTokens.IdentifierToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
-                else if (ahead.TokenType == GDTokenType.StringLiteral)
-                    cPrimary = new PreprocessorCPrimary(((GDTokens.StringLiteralToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
-                else if (ahead.TokenType == GDTokenType.CharacterLiteral)
-                    cPrimary = new PreprocessorCPrimary(((GDTokens.CharLiteralToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
-                else if (ahead.TokenType == GDTokenType.NumberLiteral)
-                    cPrimary = new PreprocessorCPrimary(((GDTokens.NumberLiteral)(ahead)), ahead.Column, ahead.Line, ahead.Position);
+                if (ahead.TokenType == OilexerGrammarTokenType.Identifier)
+                    cPrimary = new PreprocessorCPrimary(((OilexerGrammarTokens.IdentifierToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
+                else if (ahead.TokenType == OilexerGrammarTokenType.StringLiteral)
+                    cPrimary = new PreprocessorCPrimary(((OilexerGrammarTokens.StringLiteralToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
+                else if (ahead.TokenType == OilexerGrammarTokenType.CharacterLiteral)
+                    cPrimary = new PreprocessorCPrimary(((OilexerGrammarTokens.CharLiteralToken)(ahead)), ahead.Column, ahead.Line, ahead.Position);
+                else if (ahead.TokenType == OilexerGrammarTokenType.NumberLiteral)
+                    cPrimary = new PreprocessorCPrimary(((OilexerGrammarTokens.NumberLiteral)(ahead)), ahead.Column, ahead.Line, ahead.Position);
                 return true;
             }
         }
@@ -2334,19 +2630,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             where T :
                 class
         {
-            if (LookAhead(0).TokenType == GDTokenType.ReferenceToken && ((GDTokens.ReferenceToken)(LookAhead(0))).Reference is T)
+            if (LookAhead(0).TokenType == OilexerGrammarTokenType.ReferenceToken && ((OilexerGrammarTokens.ReferenceToken)(LookAhead(0))).Reference is T)
             {
-                return (T)((GDTokens.ReferenceToken)(PopAhead(false))).Reference;
+                return (T)((OilexerGrammarTokens.ReferenceToken)(PopAhead(false))).Reference;
             }
             return null;
         }
 
         private bool ExpectReference<T>()
         {
-            if (LookAhead(0).TokenType == GDTokenType.ReferenceToken && ((GDTokens.ReferenceToken)(LookAhead(0))).Reference is T)
-            {
+            var ahead = LookAhead(0);
+            if (ahead.TokenType == OilexerGrammarTokenType.ReferenceToken && ((OilexerGrammarTokens.ReferenceToken)(ahead)).Reference is T)
                 return true;
-            }
             PopAhead(false);
             return false;
         }
@@ -2354,10 +2649,10 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         private IProductionRuleItem ParseProductionRuleReferenceItem(PreprocessorContainer container)
         {
             ISoftReferenceProductionRuleItem isrpri = null;
-            GDTokens.IdentifierToken id = this.LookAhead(0) as GDTokens.IdentifierToken;
+            OilexerGrammarTokens.IdentifierToken id = this.LookAhead(0) as OilexerGrammarTokens.IdentifierToken;
             if (id != null)
             {
-                GDTokens.IdentifierToken id2 = null;
+                OilexerGrammarTokens.IdentifierToken id2 = null;
                 PopAhead();
                 if (LookAhead(0) == null && CurrentTokenizer.CurrentError != null)
                 {
@@ -2365,12 +2660,25 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         currentTarget.SyntaxErrors.SyntaxError(CurrentTokenizer.CurrentError);
                     return null;
                 }
-                if (LookAhead(0).TokenType == GDTokenType.Operator &&
-                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.Period, false))
+                if (LookAhead(0).TokenType == OilexerGrammarTokenType.Operator &&
+                    ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.Period, false))
                 {
-                    id2 = LookAhead(1) as GDTokens.IdentifierToken;
+                    id2 = LookAhead(1) as OilexerGrammarTokens.IdentifierToken;
                     if (id2 != null)
                         GetAhead(2);
+                    else
+                    {
+                        var lookAhead = LookAhead(1);
+                        if (lookAhead != null)
+                        {
+                            Expect("Identifier", lookAhead.Position);
+                        }
+                        else
+                        {
+                            Expect("Identifier");
+                        }
+                        goto YieldResult;
+                    }
                     bool isFlag;
                     bool isCounter;
                     GetIsFlagOrCounter(out isFlag, out isCounter);
@@ -2386,7 +2694,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     ClearAhead();
                     if (LookPastAndSkip() == '<')
                     {
+                        //bool mlMode = this.CurrentTokenizer.
+                        bool mlMode = ((Lexer)(this.CurrentTokenizer)).MultiLineMode;
+                        SetMultiLineMode(true);
                         isrpri = ParseTemplateReference(id, container);
+                        SetMultiLineMode(mlMode);
                     }
                     else
                     {
@@ -2403,34 +2715,35 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
             else
                 Expect("identifier");
+        YieldResult:
             return isrpri;
         }
 
-        protected virtual void DefineRuleIdentifier(GDTokens.IdentifierToken identifier, IProductionRuleEntry ruleEntry)
+        protected virtual void DefineRuleIdentifier(OilexerGrammarTokens.IdentifierToken identifier, IOilexerGrammarProductionRuleEntry ruleEntry)
         {
         }
 
-        protected virtual void DefineRuleTemplateIdentifier(GDTokens.IdentifierToken ruleTemplateIdentifier, IProductionRuleTemplateEntry ruleTemplateEntry)
+        protected virtual void DefineRuleTemplateIdentifier(OilexerGrammarTokens.IdentifierToken ruleTemplateIdentifier, IOilexerGrammarProductionRuleTemplateEntry ruleTemplateEntry)
         {
         }
 
-        protected virtual void DefineCommandIdentifier(GDTokens.IdentifierToken commandIdentifier)
+        protected virtual void DefineCommandIdentifier(OilexerGrammarTokens.IdentifierToken commandIdentifier)
         {
         }
-        protected virtual void DefineKeywordIdentifier(GDTokens.IdentifierToken keywordIdentifier)
-        {
-        }
-
-        protected virtual void DefineTokenIdentifier(GDTokens.IdentifierToken identifier, ITokenEntry tokenEntry)
-        {
-            
-        }
-
-        protected virtual void DefineRuleSoftReference(GDTokens.IdentifierToken primary, GDTokens.IdentifierToken secondary = null)
+        protected virtual void DefineKeywordIdentifier(OilexerGrammarTokens.IdentifierToken keywordIdentifier)
         {
         }
 
-        protected virtual void DefineRuleTemplateParameterIdentifier(GDTokens.IdentifierToken id, IProductionRuleTemplatePart currentPart)
+        protected virtual void DefineTokenIdentifier(OilexerGrammarTokens.IdentifierToken identifier, IOilexerGrammarTokenEntry tokenEntry)
+        {
+
+        }
+
+        protected virtual void DefineRuleSoftReference(OilexerGrammarTokens.IdentifierToken primary, OilexerGrammarTokens.IdentifierToken secondary = null)
+        {
+        }
+
+        protected virtual void DefineRuleTemplateParameterIdentifier(OilexerGrammarTokens.IdentifierToken id, IProductionRuleTemplatePart currentPart)
         {
         }
 
@@ -2453,7 +2766,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
             else if (this.TokenizerLookAhead(0) == '#')
             {
-                if (LookAhead(0).TokenType == GDTokenType.Operator)
+                if (LookAhead(0).TokenType == OilexerGrammarTokenType.Operator)
                 {
                     PopAhead();
                     isCounter = true;
@@ -2467,9 +2780,9 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
         }
 
-        private ISoftTemplateReferenceProductionRuleItem ParseTemplateReference(GDTokens.IdentifierToken id, PreprocessorContainer container)
+        private ISoftTemplateReferenceProductionRuleItem ParseTemplateReference(OilexerGrammarTokens.IdentifierToken id, PreprocessorContainer container)
         {
-            if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.LessThan, true))
+            if (ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.LessThan, true))
             {
                 List<IList<IProductionRule>> serii = new List<IList<IProductionRule>>();
                 PopAhead();
@@ -2480,12 +2793,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     ParseProductionRule(current, container);
                     ClearAhead();
                     serii.Add(current);
-                    if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.Comma, false))
+                    if (ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.Comma, false))
                     {
                         PopAhead();
                         continue;
                     }
-                    else if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.GreaterThan, true))
+                    else if (ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.GreaterThan, true))
                     {
                         PopAhead();
                         break;
@@ -2504,7 +2817,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private ILiteralStringProductionRuleItem ParseProductionRuleStringLiteral()
         {
-            GDTokens.StringLiteralToken slt = LookAhead(0) as GDTokens.StringLiteralToken;
+            OilexerGrammarTokens.StringLiteralToken slt = LookAhead(0) as OilexerGrammarTokens.StringLiteralToken;
             if (slt == null)
             {
                 Expect("\"string\"");
@@ -2537,7 +2850,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private IProductionRuleItem ParseProductionRuleCharLiteral()
         {
-            GDTokens.CharLiteralToken slt = LookAhead(0) as GDTokens.CharLiteralToken;
+            OilexerGrammarTokens.CharLiteralToken slt = LookAhead(0) as OilexerGrammarTokens.CharLiteralToken;
             if (slt == null)
             {
                 Expect("'char'");
@@ -2572,16 +2885,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             return new LiteralCharProductionRuleItem(slt.GetCleanValue(), slt.CaseInsensitive, slt.Column, slt.Line, slt.Position, isFlag, isCounter);
         }
 
-        private void ParseProductionRule(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren)
+        private void ParseProductionRule(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, bool maxReduce)
         {
-            ParseProductionRule(identifier, scanMode, position, elementsAreChildren, p => this.currentTarget.Result.Add(p));
+            ParseProductionRule(identifier, scanMode, position, elementsAreChildren, p => this.currentTarget.Result.Add(p), maxReduce: maxReduce);
         }
-        private void ParseProductionRule(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, Action<IEntry> adder, PreprocessorContainer container = PreprocessorContainer.File)
+        private void ParseProductionRule(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, Action<IOilexerGrammarEntry> adder, PreprocessorContainer container = PreprocessorContainer.File, bool maxReduce = false)
         {
             long bodyStart = this.StreamPosition;
-            IProductionRuleEntry ipre = new ProductionRuleEntry(identifier.Name, scanMode, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
-            ipre.ElementsAreChildren = elementsAreChildren;
-            ParseProductionRule(((ProductionRuleEntry)ipre).BaseCollection, container);
+            IOilexerGrammarProductionRuleEntry ipre = new OilexerGrammarProductionRuleEntry(identifier.Name, scanMode, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
+            ipre.MaxReduce = maxReduce;
+
+            ipre.IsRuleCollapsePoint = elementsAreChildren;
+            ParseProductionRule(((OilexerGrammarProductionRuleEntry)ipre).BaseCollection, container);
             long bodyEnd = this.StreamPosition;
             adder(ipre);
             DefineRuleIdentifier(identifier, ipre);
@@ -2591,21 +2906,21 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 int lineEnd = this.CurrentTokenizer.GetLineIndex(bodyEnd);
                 if (lineEnd > lineStart + 1)
                 {
-                    var gdResult = currentTarget.Result as GDFile;
+                    var gdResult = (OilexerGrammarFile)currentTarget.Result;
                     gdResult.AddRuleRegion(ipre, bodyStart, bodyEnd);
                 }
             }
         }
 
-        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<GDTokens.IdentifierToken> lowerPrecedences, bool forcedRecognizer)
+        private void ParseToken(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<OilexerGrammarTokens.IdentifierToken> lowerPrecedences, bool forcedRecognizer, bool contextual)
         {
-            ParseToken(identifier, scanMode, position, unhinged, lowerPrecedences, forcedRecognizer, null);
+            ParseToken(identifier, scanMode, position, unhinged, lowerPrecedences, forcedRecognizer, null, contextual);
         }
 
-        private void ParseToken(GDTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<GDTokens.IdentifierToken> lowerPrecedences, bool forcedRecognizer, PreprocessorIfDirective.DirectiveBody target)
+        private void ParseToken(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool unhinged, List<OilexerGrammarTokens.IdentifierToken> lowerPrecedences, bool forcedRecognizer, PreprocessorIfDirective.DirectiveBody target, bool contextual)
         {
             long bodyStart = this.StreamPosition;
-            ITokenEntry ite = new TokenEntry(identifier.Name, ParseTokenExpressionSeries(), scanMode, this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position, unhinged, lowerPrecedences, forcedRecognizer);
+            IOilexerGrammarTokenEntry ite = new OilexerGrammarTokenEntry(identifier.Name, ParseTokenExpressionSeries(), scanMode, this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetColumnIndex(position), this.CurrentTokenizer.GetLineIndex(position), position, unhinged, lowerPrecedences, forcedRecognizer) { Contextual=contextual };
             if (target == null)
                 this.currentTarget.Result.Add(ite);
             else
@@ -2618,7 +2933,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 int lineEnd = this.CurrentTokenizer.GetLineIndex(bodyEnd);
                 if (lineEnd > lineStart + 1)
                 {
-                    var gdResult = currentTarget.Result as GDFile;
+                    var gdResult = (OilexerGrammarFile)currentTarget.Result;
                     gdResult.AddTokenRegion(ite, bodyStart, bodyEnd);
                 }
             }
@@ -2643,12 +2958,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 char c = LookPastAndSkip();
                 if (c == ';')
                 {
-                    ExpectOperator(PopAhead(), GDTokens.OperatorType.SemiColon, true);
+                    ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.SemiColon, true);
                     break;
                 }
                 else if (c == '|')
                 {
-                    if (!(ExpectOperator(PopAhead(), GDTokens.OperatorType.Pipe, true)))
+                    if (!(ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.Pipe, true)))
                         break;
                     ParseTokenBody(expressions);
                     continue;
@@ -2656,12 +2971,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 else if (c == '/' && (TokenizerLookAhead(1) == '*' || TokenizerLookAhead(1) == '/'))
                 {
                     var igdt = LookAhead(0);
-                    if (igdt.TokenType == GDTokenType.Comment)
+                    if (igdt.TokenType == OilexerGrammarTokenType.Comment)
                     {
-                        var commentToken = igdt as GDTokens.CommentToken;
+                        var commentToken = (OilexerGrammarTokens.CommentToken)igdt;
                         if (captureRegions && commentToken.MultiLine)
                         {
-                            var gdResult = currentTarget.Result as GDFile;
+                            var gdResult = (OilexerGrammarFile)currentTarget.Result;
                             gdResult.AddCommentRegion(commentToken);
                         }
 
@@ -2673,20 +2988,14 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 else if (c == ')' && parameterDepth > 0)
                     break;
                 else if (c == ',' && parameterDepth > 0)
-                {
                     if (commandDepths.Contains(parameterDepth))
                         break;
                     else
                         goto Expect;
-                }
                 else if (Lexer.IsIdentifierChar(c) || c == '(' || c == '\'' || c == '"' || c == '@' || c == '[')
-                {
                     ParseTokenBody(expressions);
-                }
                 else
-                {
                     goto Expect;
-                }
                 continue;
             Expect:
                 Expect("string, char, identifier, preprocessor, or ';'");
@@ -2696,9 +3005,9 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private ITokenGroupItem ParseTokenGroup()
         {
-            GDTokens.OperatorToken ot = LookAhead(0) as GDTokens.OperatorToken;
-            
-            if (ot != null && ExpectOperator(PopAhead(), GDTokens.OperatorType.LeftParenthesis, true))
+            OilexerGrammarTokens.OperatorToken ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken;
+
+            if (ot != null && ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.LeftParenthesis, true))
             {
                 List<ITokenExpression> items = new List<ITokenExpression>();
                 parameterDepth++;
@@ -2708,13 +3017,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 var endTok = PopAhead();
                 if (captureRegions)
                 {
-                    var gdResult = this.currentTarget.Result as GDFile;
+                    var gdResult = this.currentTarget.Result as OilexerGrammarFile;
                     int lineStart = ot.Line;
                     int lineEnd = endTok.Line;
                     if (lineEnd > lineStart + 1)
                         gdResult.AddTokenGroupRegion(result, ot.Position, endTok.Position);
                 }
-                ExpectOperator(endTok, GDTokens.OperatorType.RightParenthesis, true);
+                ExpectOperator(endTok, OilexerGrammarTokens.OperatorType.RightParenthesis, true);
                 return result;
             }
             return null;
@@ -2729,7 +3038,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             while (true)
             {
                 ITokenItem item = null;
-                IGDToken igdt = LookAhead(0);
+                IOilexerGrammarToken igdt = LookAhead(0);
                 if (igdt == null && CurrentTokenizer.CurrentError != null)
                 {
                     currentTarget.SyntaxErrors.SyntaxError(CurrentTokenizer.CurrentError);
@@ -2738,59 +3047,66 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 }
                 else
                 {
+                    if (igdt == null)
+                    {
+                        LogError(OilexerGrammarParserErrors.Expected, "identifier, '(' or ';'");
+                        return;
+                    }
                     switch (igdt.TokenType)
                     {
-                        case GDTokenType.Comment:
-                            var commentToken = igdt as GDTokens.CommentToken;
+                        case OilexerGrammarTokenType.Comment:
+                            var commentToken = (OilexerGrammarTokens.CommentToken)igdt;
                             if (captureRegions && commentToken.MultiLine)
                             {
-                                var gdResult = currentTarget.Result as GDFile;
+                                var gdResult = (OilexerGrammarFile)currentTarget.Result;
                                 gdResult.AddCommentRegion(commentToken);
                             }
                             PopAhead();
                             continue;
-                        case GDTokenType.CharacterLiteral:
+                        case OilexerGrammarTokenType.CharacterLiteral:
                             item = ParseTokenCharLiteral();
                             break;
-                        case GDTokenType.StringLiteral:
+                        case OilexerGrammarTokenType.StringLiteral:
                             item = ParseTokenStringLiteral();
                             break;
-                        case GDTokenType.Identifier:
+                        case OilexerGrammarTokenType.Identifier:
                             item = ParseTokenReferenceItem();
                             break;
-                        case GDTokenType.CharacterRange:
+                        case OilexerGrammarTokenType.CharacterRange:
                             item = ParseTokenCharacterRange();
                             break;
-                        case GDTokenType.NumberLiteral:
-                            LogError(GDParserErrors.Unexpected, "number", igdt.Position);
+                        case OilexerGrammarTokenType.NumberLiteral:
+                            LogError(OilexerGrammarParserErrors.Unexpected, "number", igdt.Position);
                             goto yield;
-                        case GDTokenType.PreprocessorDirective:
-                            LogError(GDParserErrors.Unexpected, "preprocessor", igdt.Position);
+                        case OilexerGrammarTokenType.PreprocessorDirective:
+                            LogError(OilexerGrammarParserErrors.Unexpected, "preprocessor", igdt.Position);
                             goto yield;
-                        case GDTokenType.Operator:
-                            switch (((GDTokens.OperatorToken)(igdt)).Type)
+                        case OilexerGrammarTokenType.Operator:
+                            switch (((OilexerGrammarTokens.OperatorToken)(igdt)).Type)
                             {
-                                case GDTokens.OperatorType.Pipe:
+                                case OilexerGrammarTokens.OperatorType.Pipe:
                                     ClearAhead();
                                     goto yield;
-                                case GDTokens.OperatorType.LeftParenthesis:
+                                case OilexerGrammarTokens.OperatorType.LeftParenthesis:
                                     ClearAhead();
                                     item = (ITokenGroupItem)ParseTokenGroup();
                                     break;
-                                case GDTokens.OperatorType.RightParenthesis:
+                                case OilexerGrammarTokens.OperatorType.RightParenthesis:
                                     if (parameterDepth <= 0)
-                                        LogError(GDParserErrors.Expected, ";", igdt.Position);
+                                        LogError(OilexerGrammarParserErrors.Expected, ";", igdt.Position);
                                     goto yield;
-                                case GDTokens.OperatorType.GreaterThan:
-                                case GDTokens.OperatorType.Comma:
+                                case OilexerGrammarTokens.OperatorType.GreaterThan:
+                                case OilexerGrammarTokens.OperatorType.Comma:
                                     if (commandDepths.Contains(parameterDepth))
                                     {
                                         ClearAhead();
                                         goto yield;
                                     }
-                                    LogError(GDParserErrors.Expected, "identifier, '(', or ';'");
+                                    PopAhead();
+                                    LogError(OilexerGrammarParserErrors.Expected, "identifier, '(', or ';'");
+                                    PopAhead();
                                     goto yield;
-                                case GDTokens.OperatorType.SemiColon:
+                                case OilexerGrammarTokens.OperatorType.SemiColon:
                                     ClearAhead();
                                     if (templateDepth != 0 || parameterDepth != 0)
                                     {
@@ -2803,8 +3119,8 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             break;
                         default:
                         default_2:
+                            LogError(OilexerGrammarParserErrors.Expected, "identifier, '(' or ';'");
                             PopAhead();
-                            LogError(GDParserErrors.Expected, "identifier, '(' or ';'");
                             break;
                     }
                 }
@@ -2827,15 +3143,125 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         {
             //Just in case -_-
             ClearAhead();
+            if (TokenizerLookAhead(0) == '$')
+            {
+                var dollar = this.PopAhead();
+
+                if (TokenizerLookAhead(0) == '?')
+                {
+                    item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrOne | ScannableEntryItemRepeatInfo.MaxReduce;
+                    this.PopAhead();
+                }
+                else if (TokenizerLookAhead(0) == '+')
+                {
+                    item.RepeatOptions = ScannableEntryItemRepeatInfo.OneOrMore | ScannableEntryItemRepeatInfo.MaxReduce;
+                    this.PopAhead();
+                }
+                else if (TokenizerLookAhead(0) == '*')
+                {
+                    if (TokenizerLookAhead(1) == '*' &&
+                        item is LiteralStringTokenItem)
+                    {
+                        item.RepeatOptions = ScannableEntryItemRepeatInfo.MaxReduce;
+                        this.PopAhead();
+                        ((LiteralStringTokenItem)(item)).SiblingAmbiguity = true;
+                    }
+                    else
+                    {
+                        item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore | ScannableEntryItemRepeatInfo.MaxReduce;
+                        this.PopAhead();
+                    }
+                }
+                else if (TokenizerLookAhead(0) == '{')
+                {
+                    this.PopAhead();
+                    var numberOp = this.GetAhead(2);
+                    //Either min unbounded or error.
+                    if (!(SeriesMatch(numberOp, OilexerGrammarTokenType.NumberLiteral, OilexerGrammarTokenType.Operator) ||
+                          SeriesMatch(numberOp, OilexerGrammarTokenType.Operator, OilexerGrammarTokenType.NumberLiteral)))
+                    {
+                        //SourceError of some kind.
+                        if (numberOp[0].TokenType == OilexerGrammarTokenType.NumberLiteral)
+                            ExpectOperator(numberOp[1], OilexerGrammarTokens.OperatorType.Minus | OilexerGrammarTokens.OperatorType.Comma, true);
+                        else
+                            Expect("Number or ','", numberOp[0].Position);
+                    }
+                    if (numberOp[0].TokenType == OilexerGrammarTokenType.Operator)
+                    {
+                        OilexerGrammarTokens.OperatorToken op = (OilexerGrammarTokens.OperatorToken)numberOp[0];
+                        if (op.Type == OilexerGrammarTokens.OperatorType.Comma)
+                            item.RepeatOptions = new ScannableEntryItemRepeatInfo(null, ((OilexerGrammarTokens.NumberLiteral)(numberOp[1])).GetCleanValue()) | ScannableEntryItemRepeatInfo.MaxReduce;
+                        else
+                            Expect("Number or ','", numberOp[0].Position);
+                        ExpectOperator(this.PopAhead(), OilexerGrammarTokens.OperatorType.RightCurlyBrace, true);
+                    }
+                    else
+                    {
+                        OilexerGrammarTokens.NumberLiteral num = (OilexerGrammarTokens.NumberLiteral)numberOp[0];
+                        OilexerGrammarTokens.OperatorToken op = (OilexerGrammarTokens.OperatorToken)numberOp[1];
+                        if (op.Type == OilexerGrammarTokens.OperatorType.Comma)
+                        {
+                            var max = this.PopAhead();
+                            if (max.TokenType == OilexerGrammarTokenType.NumberLiteral)
+                            {
+                                var maxNumber = max as OilexerGrammarTokens.NumberLiteral;
+                                var maxTail = this.PopAhead();
+                                if (maxTail.TokenType == OilexerGrammarTokenType.Operator &&
+                                    ((OilexerGrammarTokens.OperatorToken)(maxTail)).Type == OilexerGrammarTokens.OperatorType.RightCurlyBrace)
+                                    item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), maxNumber.GetCleanValue()) | ScannableEntryItemRepeatInfo.MaxReduce;
+                                else
+                                    ExpectOperator(maxTail, OilexerGrammarTokens.OperatorType.RightCurlyBrace, true);
+                            }
+                            else if (max.TokenType == OilexerGrammarTokenType.Operator)
+                            {
+                                var maxTail = max as OilexerGrammarTokens.OperatorToken;
+                                if (maxTail.Type != OilexerGrammarTokens.OperatorType.RightCurlyBrace)
+                                    Expect("Number or }", max.Position);
+                                else
+                                    item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), null) | ScannableEntryItemRepeatInfo.MaxReduce;
+                            }
+                            else
+                                Expect("Number or }", max.Position);
+                        }
+                        else if (op.Type == OilexerGrammarTokens.OperatorType.RightCurlyBrace)
+                        {
+                            int cl = num.GetCleanValue();
+                            item.RepeatOptions = new ScannableEntryItemRepeatInfo(cl, cl) | ScannableEntryItemRepeatInfo.MaxReduce;
+                        }
+                        else
+                            ExpectOperator(op, OilexerGrammarTokens.OperatorType.RightCurlyBrace | OilexerGrammarTokens.OperatorType.Comma, true);
+                    }
+                }
+                else
+                    item.RepeatOptions = ScannableEntryItemRepeatInfo.MaxReduce;
+                if (itemIsRuleItem)
+                {
+                    if (TokenizerLookAhead(0) == '@')
+                    {
+                        item.RepeatOptions |= ScannableEntryItemRepeatInfo.AnyOrder | ScannableEntryItemRepeatInfo.MaxReduce;
+                        this.PopAhead();
+                    }
+                }
+            }
             if (TokenizerLookAhead(0) == '?')
             {
                 item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrOne;
                 this.PopAhead();
+                if (TokenizerLookAhead(0) == '$')
+                {
+                    this.PopAhead();
+                    item.RepeatOptions |= ScannableEntryItemRepeatInfo.MaxReduce;
+                }
             }
             else if (TokenizerLookAhead(0) == '+')
             {
                 item.RepeatOptions = ScannableEntryItemRepeatInfo.OneOrMore;
                 this.PopAhead();
+                if (TokenizerLookAhead(0) == '$')
+                {
+                    this.PopAhead();
+                    item.RepeatOptions |= ScannableEntryItemRepeatInfo.MaxReduce;
+                }
             }
             else if (TokenizerLookAhead(0) == '*')
             {
@@ -2849,6 +3275,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 {
                     item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
                     this.PopAhead();
+                    if (TokenizerLookAhead(0) == '$')
+                    {
+                        this.PopAhead();
+                        item.RepeatOptions |= ScannableEntryItemRepeatInfo.MaxReduce;
+                    }
                 }
             }
             else if (TokenizerLookAhead(0) == '{')
@@ -2856,59 +3287,79 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 this.PopAhead();
                 var numberOp = this.GetAhead(2);
                 //Either min unbounded or error.
-                if (!(SeriesMatch(numberOp, GDTokenType.NumberLiteral, GDTokenType.Operator) ||
-                      SeriesMatch(numberOp, GDTokenType.Operator, GDTokenType.NumberLiteral)))
+                if (!(SeriesMatch(numberOp, OilexerGrammarTokenType.NumberLiteral, OilexerGrammarTokenType.Operator) ||
+                      SeriesMatch(numberOp, OilexerGrammarTokenType.Operator, OilexerGrammarTokenType.NumberLiteral)))
                 {
                     //SourceError of some kind.
-                    if (numberOp[0].TokenType == GDTokenType.NumberLiteral)
-                        ExpectOperator(numberOp[1], GDTokens.OperatorType.Minus | GDTokens.OperatorType.Comma, true);
+                    if (numberOp[0].TokenType == OilexerGrammarTokenType.NumberLiteral)
+                        ExpectOperator(numberOp[1], OilexerGrammarTokens.OperatorType.Minus | OilexerGrammarTokens.OperatorType.Comma, true);
                     else
                         Expect("Number or ','", numberOp[0].Position);
                 }
-                if (numberOp[0].TokenType == GDTokenType.Operator)
+                else if (numberOp[0].TokenType == OilexerGrammarTokenType.Operator)
                 {
-                    GDTokens.OperatorToken op = numberOp[0] as GDTokens.OperatorToken;
-                    if (op.Type == GDTokens.OperatorType.Comma)
-                        item.RepeatOptions = new ScannableEntryItemRepeatInfo(null, ((GDTokens.NumberLiteral)(numberOp[1])).GetCleanValue());
+                    OilexerGrammarTokens.OperatorToken op = (OilexerGrammarTokens.OperatorToken)numberOp[0];
+                    if (op.Type == OilexerGrammarTokens.OperatorType.Comma)
+                        item.RepeatOptions = new ScannableEntryItemRepeatInfo(null, ((OilexerGrammarTokens.NumberLiteral)(numberOp[1])).GetCleanValue());
                     else
                         Expect("Number or ','", numberOp[0].Position);
-                    ExpectOperator(this.PopAhead(), GDTokens.OperatorType.RightCurlyBrace, true);
+                    ExpectOperator(this.PopAhead(), OilexerGrammarTokens.OperatorType.RightCurlyBrace, true);
+                    if (TokenizerLookAhead(0) == '$')
+                    {
+                        this.PopAhead();
+                        item.RepeatOptions |= ScannableEntryItemRepeatInfo.MaxReduce;
+                    }
                 }
                 else
                 {
-                    GDTokens.NumberLiteral num = numberOp[0] as GDTokens.NumberLiteral;
-                    GDTokens.OperatorToken op = numberOp[1] as GDTokens.OperatorToken;
-                    if (op.Type == GDTokens.OperatorType.Comma)
+                    OilexerGrammarTokens.NumberLiteral num = (OilexerGrammarTokens.NumberLiteral)numberOp[0];
+                    OilexerGrammarTokens.OperatorToken op = (OilexerGrammarTokens.OperatorToken)numberOp[1];
+                    if (op.Type == OilexerGrammarTokens.OperatorType.Comma)
                     {
                         var max = this.PopAhead();
-                        if (max.TokenType == GDTokenType.NumberLiteral)
+                        if (max.TokenType == OilexerGrammarTokenType.NumberLiteral)
                         {
-                            var maxNumber = max as GDTokens.NumberLiteral;
+                            var maxNumber = (OilexerGrammarTokens.NumberLiteral)max;
                             var maxTail = this.PopAhead();
-                            if (maxTail.TokenType == GDTokenType.Operator &&
-                                ((GDTokens.OperatorToken)(maxTail)).Type == GDTokens.OperatorType.RightCurlyBrace)
+                            if (maxTail.TokenType == OilexerGrammarTokenType.Operator &&
+                                ((OilexerGrammarTokens.OperatorToken)(maxTail)).Type == OilexerGrammarTokens.OperatorType.RightCurlyBrace)
                                 item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), maxNumber.GetCleanValue());
                             else
-                                ExpectOperator(maxTail, GDTokens.OperatorType.RightCurlyBrace, true);
+                                ExpectOperator(maxTail, OilexerGrammarTokens.OperatorType.RightCurlyBrace, true);
+                            if (TokenizerLookAhead(0) == '$')
+                            {
+                                this.PopAhead();
+                                item.RepeatOptions |= ScannableEntryItemRepeatInfo.MaxReduce;
+                            }
                         }
-                        else if (max.TokenType == GDTokenType.Operator)
+                        else if (max.TokenType == OilexerGrammarTokenType.Operator)
                         {
-                            var maxTail = max as GDTokens.OperatorToken;
-                            if (maxTail.Type != GDTokens.OperatorType.RightCurlyBrace)
+                            var maxTail = (OilexerGrammarTokens.OperatorToken)max;
+                            if (maxTail.Type != OilexerGrammarTokens.OperatorType.RightCurlyBrace)
                                 Expect("Number or }", max.Position);
                             else
                                 item.RepeatOptions = new ScannableEntryItemRepeatInfo(num.GetCleanValue(), null);
+                            if (TokenizerLookAhead(0) == '$')
+                            {
+                                this.PopAhead();
+                                item.RepeatOptions |= ScannableEntryItemRepeatInfo.MaxReduce;
+                            }
                         }
                         else
                             Expect("Number or }", max.Position);
                     }
-                    else if (op.Type == GDTokens.OperatorType.RightCurlyBrace)
+                    else if (op.Type == OilexerGrammarTokens.OperatorType.RightCurlyBrace)
                     {
                         int cl = num.GetCleanValue();
                         item.RepeatOptions = new ScannableEntryItemRepeatInfo(cl, cl);
+                        if (TokenizerLookAhead(0) == '$')
+                        {
+                            this.PopAhead();
+                            item.RepeatOptions |= ScannableEntryItemRepeatInfo.MaxReduce;
+                        }
                     }
                     else
-                        ExpectOperator(op, GDTokens.OperatorType.RightCurlyBrace | GDTokens.OperatorType.Comma, true);
+                        ExpectOperator(op, OilexerGrammarTokens.OperatorType.RightCurlyBrace | OilexerGrammarTokens.OperatorType.Comma, true);
                 }
             }
             if (itemIsRuleItem)
@@ -2922,7 +3373,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private ICharRangeTokenItem ParseTokenCharacterRange()
         {
-            GDTokens.CharacterRangeToken crt = LookAhead(0) as GDTokens.CharacterRangeToken;
+            OilexerGrammarTokens.CharacterRangeToken crt = LookAhead(0) as OilexerGrammarTokens.CharacterRangeToken;
             if (crt != null)
             {
                 PopAhead();
@@ -2935,7 +3386,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private ILiteralStringTokenItem ParseTokenStringLiteral()
         {
-            GDTokens.StringLiteralToken slt = LookAhead(0) as GDTokens.StringLiteralToken;
+            OilexerGrammarTokens.StringLiteralToken slt = LookAhead(0) as OilexerGrammarTokens.StringLiteralToken;
             if (slt == null)
             {
                 Expect("\"string\"");
@@ -2947,7 +3398,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private ITokenItem ParseTokenCharLiteral()
         {
-            GDTokens.CharLiteralToken slt = LookAhead(0) as GDTokens.CharLiteralToken;
+            OilexerGrammarTokens.CharLiteralToken slt = LookAhead(0) as OilexerGrammarTokens.CharLiteralToken;
             if (slt == null)
             {
                 PopAhead();
@@ -2960,19 +3411,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         private ITokenItem ParseTokenReferenceItem()
         {
             ISoftReferenceTokenItem isrti = null;
-            GDTokens.IdentifierToken id = this.LookAhead(0) as GDTokens.IdentifierToken;
+            OilexerGrammarTokens.IdentifierToken id = this.LookAhead(0) as OilexerGrammarTokens.IdentifierToken;
             if (id != null)
             {
-                GDTokens.IdentifierToken id2 = null;
+                OilexerGrammarTokens.IdentifierToken id2 = null;
                 PopAhead();
-                if (IdIsCommand(id.Name))
+                if (IdIsTokenCommand(id.Name))
                     return ParseCommandTokenItem(id);
-                if (LookAhead(0).TokenType == GDTokenType.Operator &&
-                    ExpectOperator(LookAhead(0), GDTokens.OperatorType.Period, false))
+                if (LookAhead(0).TokenType == OilexerGrammarTokenType.Operator &&
+                    ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.Period, false))
                 {
-                    id2 = LookAhead(1) as GDTokens.IdentifierToken;
-                    if (id2 != null)
-                        GetAhead(2);
+                    id2 = (OilexerGrammarTokens.IdentifierToken)LookAhead(1);
+                    GetAhead(2);
                     isrti = new SoftReferenceTokenItem(id.Name, id2.Name, id.Column, id.Line, id.Position)
                     {
                         PrimaryToken = id,
@@ -2990,38 +3440,94 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             return isrti;
         }
 
-        private ICommandTokenItem ParseCommandTokenItem(GDTokens.IdentifierToken id)
+        private ICommandTokenItem ParseCommandTokenItem(OilexerGrammarTokens.IdentifierToken id)
         {
             if (id == null)
                 throw new ArgumentNullException("id");
-            if (!IdIsCommand(id.Name))
+            if (!IdIsTokenCommand(id.Name))
                 throw new ArgumentException("id");
-            if (!ExpectOperator(PopAhead(), GDTokens.OperatorType.LeftParenthesis, true))
+            if (!ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.LeftParenthesis, true))
                 return null;
             int myDepth = ++parameterDepth;
             commandDepths.Add(myDepth);
+            OilexerGrammarTokens.NumberLiteral numChars = null;
+            OilexerGrammarTokens.NumberLiteral numericBase = null;
+            OilexerGrammarTokens.StringLiteralToken stringBase = null;
+            OilexerGrammarTokens.OperatorToken lastOp = null;
+            IOilexerGrammarToken baseTok = null;
             List<ITokenExpressionSeries> commandExpressionSets = new List<ITokenExpressionSeries>();
             try
             {
             nextSet:
                 commandExpressionSets.Add(ParseTokenExpressionSeries());
-                if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.Comma, false))
+                if (ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.Comma, false))
                 {
-                    PopAhead();
-                    goto nextSet;
+                    lastOp = (OilexerGrammarTokens.OperatorToken)PopAhead();
+                    if (id.Name.ToLower() != "baseencode")
+                        goto nextSet;
+                    if (LookAhead(0).TokenType == OilexerGrammarTokenType.NumberLiteral)
+                        baseTok = numericBase = (OilexerGrammarTokens.NumberLiteral)PopAhead();
+                    else if (LookAhead(0).TokenType == OilexerGrammarTokenType.StringLiteral)
+                        baseTok = stringBase = (OilexerGrammarTokens.StringLiteralToken)PopAhead();
+                    if (ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.Comma, true))
+                    {
+                        lastOp = (OilexerGrammarTokens.OperatorToken)PopAhead();
+                        if (LookAhead(0).TokenType == OilexerGrammarTokenType.NumberLiteral)
+                            numChars = (OilexerGrammarTokens.NumberLiteral)PopAhead();
+                    }
                 }
-                if (ExpectOperator(LookAhead(0), GDTokens.OperatorType.RightParenthesis, true))
-                    PopAhead();
+                if (ExpectOperator(LookAhead(0), OilexerGrammarTokens.OperatorType.RightParenthesis, true))
+                    lastOp = (OilexerGrammarTokens.OperatorToken)PopAhead();
                 switch (id.Name.ToLower())
                 {
+                    case "baseencode":
+                        DefineCommandIdentifier(id);
+                        if (commandExpressionSets.Count != 1)
+                        {
+                            LogError(OilexerGrammarParserErrors.FixedArgumentCountError, "BaseEncode command requires exactly one lexical expression, the base, and the number of characters per encoding.", id.Position);
+                            return null;
+                        }
+                        else if (numericBase == null && stringBase == null)
+                        {
+                            Expect("Number or String", lastOp == null ? baseTok == null ? id.Position : baseTok.Position : lastOp.Position);
+                            return null;
+                        }
+                        else if (numChars == null || numChars.GetCleanValue() < 2)
+                        {
+                            Expect("Number of 2 or greater", numChars == null ? lastOp == null ? baseTok == null ? id.Position : baseTok.Position : lastOp.Position : numChars.Position);
+                            return null;
+                        }
+                        else if (numChars.GetCleanValue() < 2)
+                        {
+                            Expect("Number of 2 or greater", numChars.Position);
+                            return null;
+                        }
+                        else if (numericBase == null)
+                            return new BaseEncodeGraphCommand(commandExpressionSets[0], stringBase, numChars, id.Column, id.Line, id.Position);
+                        var cleanDigits = numericBase.GetCleanValue();
+                        switch (cleanDigits)
+                        {
+                            case 8:
+                            case 16:
+                            case 18:
+                            case 27:
+                            case 36:
+                            case 60:
+                                break;
+                            default:
+                                Expect("8, 16, 18, 27, 36, or 60", numChars.Position);
+                                LogError(OilexerGrammarParserErrors.Unexpected, cleanDigits.ToString(), numChars.Position);
+                                return null;
+                        }
+                        return new BaseEncodeGraphCommand(commandExpressionSets[0], numericBase, numChars, id.Column, id.Line, id.Position);
                     case "scan":
                         DefineCommandIdentifier(id);
                         if (commandExpressionSets.Count != 2)
                         {
 
-                            LogError(GDParserErrors.FixedArgumentCountError, "Scan command requires exactly two parameters.", id.Position);
+                            LogError(OilexerGrammarParserErrors.FixedArgumentCountError, "Scan command requires exactly two parameters.", id.Position);
                             if (commandExpressionSets.Count <= 0)
-                                return new ScanCommandTokenItem(null, false, id.Column, id.Line, id.Position);
+                                return null;
                             else
                                 return new ScanCommandTokenItem(commandExpressionSets[0], false, id.Column, id.Line, id.Position);
                         }
@@ -3051,10 +3557,10 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         DefineCommandIdentifier(id);
                         if (commandExpressionSets.Count != 2)
                         {
-                            LogError(GDParserErrors.FixedArgumentCountError, "Subtraction command requires exactly two parameters.", id.Position);
+                            LogError(OilexerGrammarParserErrors.FixedArgumentCountError, "Subtraction command requires exactly two parameters.", id.Position);
                             if (commandExpressionSets.Count <= 0)
                                 return new SubtractionCommandTokenItem(null, null, id.Column, id.Line, id.Position);
-                            else if (commandExpressionSets.Count ==1)
+                            else if (commandExpressionSets.Count == 1)
                                 return new SubtractionCommandTokenItem(commandExpressionSets[0], null, id.Column, id.Line, id.Position);
                             else
                                 return new SubtractionCommandTokenItem(commandExpressionSets[0], commandExpressionSets[1], id.Column, id.Line, id.Position);
@@ -3071,10 +3577,16 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
         }
 
-        private bool IdIsCommand(string idName)
+        private bool IdIsProductionRuleCommand(string idName)
+        {
+            return idName.ToLower() == "subtract";
+        }
+
+        private bool IdIsTokenCommand(string idName)
         {
             switch (idName.ToLower())
             {
+                case "baseencode":
                 case "scan":
                 case "subtract":
                     return true;
@@ -3082,9 +3594,9 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             return false;
         }
 
-        private bool ExpectBoolean(IGDToken boolIDToken, bool error)
+        private bool ExpectBoolean(IOilexerGrammarToken boolIDToken, bool error)
         {
-            var boolID = boolIDToken as GDTokens.IdentifierToken;
+            var boolID = boolIDToken as OilexerGrammarTokens.IdentifierToken;
             if (boolID != null &&
                 (ExpectIdentifier(boolIDToken, "true", StringComparison.InvariantCultureIgnoreCase, false) ||
                  ExpectIdentifier(boolIDToken, "false", StringComparison.InvariantCultureIgnoreCase, false)))
@@ -3097,7 +3609,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             return false;
         }
 
-        private bool SeriesMatch(ITokenStream<IGDToken> its, params GDTokenType[] gdtt)
+        private bool SeriesMatch(ITokenStream<IOilexerGrammarToken> its, params OilexerGrammarTokenType[] gdtt)
         {
             for (int i = 0; i < its.Count; i++)
                 if (i >= gdtt.Length)
@@ -3111,40 +3623,40 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
 
         private void Expect(string s)
         {
-            LogError(GDParserErrors.Expected, s);
+            LogError(OilexerGrammarParserErrors.Expected, s);
         }
 
-        private void LogError(GDParserErrors error)
+        private void LogError(OilexerGrammarParserErrors error)
         {
             this.LogError(error, string.Empty);
         }
 
-        private void LogError(GDParserErrors error, string text)
+        private void LogError(OilexerGrammarParserErrors error, string text)
         {
-            currentTarget.SyntaxErrors.SyntaxError(GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetLineIndex(this.StreamPosition), this.CurrentTokenizer.GetColumnIndex(this.StreamPosition), error, text));
+            currentTarget.SyntaxErrors.SyntaxError(OilexerGrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetLineIndex(this.StreamPosition), this.CurrentTokenizer.GetColumnIndex(this.StreamPosition), error, text));
         }
         private void Expect(string s, long position)
         {
-            LogError(GDParserErrors.Expected, s, position);
+            LogError(OilexerGrammarParserErrors.Expected, s, position);
         }
 
-        private void LogError(GDParserErrors error, long position)
+        private void LogError(OilexerGrammarParserErrors error, long position)
         {
             this.LogError(error, string.Empty, position);
         }
 
-        private void LogError(GDParserErrors error, string text, long position)
+        private void LogError(OilexerGrammarParserErrors error, string text, long position)
         {
-            currentTarget.SyntaxErrors.SyntaxError(GrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetLineIndex(position), this.CurrentTokenizer.GetColumnIndex(position), error, text));
+            currentTarget.SyntaxErrors.SyntaxError(OilexerGrammarCore.GetSyntaxError(this.CurrentTokenizer.FileName, this.CurrentTokenizer.GetLineIndex(position), this.CurrentTokenizer.GetColumnIndex(position), error, text));
         }
 
         public T NextAhead<T>()
             where T :
-                IGDToken
+                IOilexerGrammarToken
         {
             return (T)this.LookAhead(this.AheadLength);
         }
 
-        
+
     }
 }

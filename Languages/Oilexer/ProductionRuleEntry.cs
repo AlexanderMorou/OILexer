@@ -3,23 +3,24 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Utilities.Collections;
- /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
- |----------------------------------------------------------------------|
- | The Abstraction Project's code is provided under a contract-release  |
- | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
- \-------------------------------------------------------------------- */
+using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
+/*---------------------------------------------------------------------\
+| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+|----------------------------------------------------------------------|
+| The Abstraction Project's code is provided under a contract-release  |
+| basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
+\-------------------------------------------------------------------- */
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
     /// <summary>
-    /// Provides a base implementation of <see cref="IProductionRuleEntry"/> which provides 
-    /// a means for working with an <see cref="IEntry"/> production rule.
-    /// Used to express a part of syntax for a <see cref="IGDFile"/>.
+    /// Provides a base implementation of <see cref="IOilexerGrammarProductionRuleEntry"/> which provides 
+    /// a means for working with an <see cref="IOilexerGrammarEntry"/> production rule.
+    /// Used to express a part of syntax for a <see cref="IOilexerGrammarFile"/>.
     /// </summary>
-    public class ProductionRuleEntry :
-        ReadOnlyCollection<IProductionRule>,
-        IProductionRuleEntry
+    public class OilexerGrammarProductionRuleEntry :
+        ControlledCollection<IProductionRule>,
+        IOilexerGrammarProductionRuleEntry
     {
         private EntryScanMode scanMode;
         /// <summary>
@@ -43,10 +44,16 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// </summary>
         private string name;
         /// <summary>
-        /// Data member for <see cref="ElementsAreChildren"/>.
+        /// Data member for <see cref="IsRuleCollapsePoint"/>.
         /// </summary>
         private bool elementsAreChildren;
-        public ProductionRuleEntry(string name, EntryScanMode scanMode, string fileName, int column, int line, long position)
+        //#if DEBUG
+        internal string debugString;
+        //#endif
+        internal IProductionRuleCaptureStructure captureStructure;
+        private string preexpansionText;
+
+        public OilexerGrammarProductionRuleEntry(string name, EntryScanMode scanMode, string fileName, int column, int line, long position)
         {
             this.scanMode = scanMode;
             this.column = column;
@@ -65,19 +72,19 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             this.baseList.Clear();
         }
 
-        #region IScannableEntry Members
+        //#region IOilexerGrammarScannableEntry Members
 
         public EntryScanMode ScanMode
         {
             get { return this.scanMode; }
         }
 
-        #endregion
+        //#endregion
 
-        #region INamedEntry Members
+        //#region IOilexerGrammarNamedEntry Members
 
         /// <summary>
-        /// Returns the name of the <see cref="NamedEntry"/>.
+        /// Returns the name of the <see cref="OilexerGrammarNamedEntry"/>.
         /// </summary>
         public string Name
         {
@@ -87,13 +94,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        #endregion
+        //#endregion
 
-        #region IEntry Members
+        //#region IOilexerGrammarEntry Members
 
         /// <summary>
         /// Returns the column at the current <see cref="Line"/> the 
-        /// <see cref="Entry"/> was declared at.
+        /// <see cref="OilexerGrammarEntry"/> was declared at.
         /// </summary>
         public int Column
         {
@@ -101,7 +108,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         }
 
         /// <summary>
-        /// Returns the line index the <see cref="Entry"/> was declared at.
+        /// Returns the line index the <see cref="OilexerGrammarEntry"/> was declared at.
         /// </summary>
         public int Line
         {
@@ -109,7 +116,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         }
 
         /// <summary>
-        /// Returns the position in the file the <see cref="Entry"/> was declared at.
+        /// Returns the position in the file the <see cref="OilexerGrammarEntry"/> was declared at.
         /// </summary>
         public long Position
         {
@@ -117,7 +124,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         }
 
         /// <summary>
-        /// Returns the file the <see cref="Entry"/> was declared in.
+        /// Returns the file the <see cref="OilexerGrammarEntry"/> was declared in.
         /// </summary>
         public string FileName
         {
@@ -127,7 +134,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        #endregion
+        //#endregion
 
         internal ICollection<IProductionRule> BaseCollection
         {
@@ -138,38 +145,56 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         }
         public override string ToString()
         {
+#if DEBUG
+            if (this.debugString == null)
+                this.debugString = string.Format("{0}\xA0::={2}\r\n{1};", this.Name, GetBodyString(), elementsAreChildren ? ">" : string.Empty);
+            return this.debugString;
+#else
             return string.Format("{0} ::={2} {1};", this.Name, GetBodyString(), elementsAreChildren ? ">" : string.Empty);
+#endif
 
         }
 
         public string GetBodyString()
         {
             StringBuilder sb = new StringBuilder();
+            sb.Append("\t");
             bool first = true;
-            foreach (IProductionRule ite in this.baseList)
+            for (int ruleIndex = 0; ruleIndex < this.Count; ruleIndex++)
+            //foreach (IProductionRule ite in this.baseList)
             {
+                IProductionRule ite = this.baseList[ruleIndex];
                 if (first)
                     first = false;
                 else
                 {
-                    sb.AppendLine(" | ");
+                    sb.AppendLine(" |");
                     sb.Append("\t");
                 }
-                sb.Append(ite.ToString().Replace("\r\n\t", "\r\n\t\t"));
+                var current = ite.ToString();
+
+                if (current.Length > Environment.NewLine.Length)
+                {
+                    if (current.Substring(0, Environment.NewLine.Length) == Environment.NewLine)
+                        current = current.Substring(Environment.NewLine.Length);
+                    if (current.Substring(current.Length - Environment.NewLine.Length) == Environment.NewLine)
+                        current = current.Substring(0, current.Length - Environment.NewLine.Length);
+                }
+                sb.Append(current.Replace(Environment.NewLine, Environment.NewLine + "\t"));
             }
             var bodyString = sb.ToString();
             return bodyString;
         }
 
-        #region IProductionRuleEntry Members
+        //#region IOilexerGrammarProductionRuleEntry Members
 
         /// <summary>
         /// Returns/sets whether the elements of 
-        /// the <see cref="ProductionRuleEntry"/>
+        /// the <see cref="OilexerGrammarProductionRuleEntry"/>
         /// inherit the name of the 
-        /// <see cref="ProductionRuleEntry"/>.
+        /// <see cref="OilexerGrammarProductionRuleEntry"/>.
         /// </summary>
-        public bool ElementsAreChildren
+        public bool IsRuleCollapsePoint
         {
             get
             {
@@ -181,10 +206,48 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        #endregion
+        //#endregion
 
         public bool IsExtract { get; internal set; }
 
-        public IProductionRuleEntry ExtractSource { get; internal set; }
+        public IOilexerGrammarProductionRuleEntry ExtractSource { get; internal set; }
+
+        public bool MaxReduce
+        {
+            get;
+            set;
+        }
+
+        public IOilexerGrammarProductionRuleEntry Rule
+        {
+            get { return this; }
+        }
+
+        internal IProductionRuleCaptureStructure CaptureStructure
+        {
+            get
+            {
+                return this.captureStructure;
+            }
+            set
+            {
+                this.captureStructure = value;
+            }
+        }
+
+
+        public string PreexpansionText
+        {
+            get { return this.preexpansionText; }
+        }
+
+        public void CreatePreexpansionText()
+        {
+            this.preexpansionText = this.ToString();
+        }
+
+
+        public bool RepresentsAmbiguousContext { get; set; }
+
     }
 }

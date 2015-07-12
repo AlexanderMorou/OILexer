@@ -5,6 +5,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Utilities.Collections;
+using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
 /* * 
  * Oilexer is an open-source project and must be released
  * as per the license associated to the project.
@@ -24,8 +25,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         /// </summary>
         /// <param name="source">The <see cref="TokenExpression"/> from which the
         /// <see cref="InlinedTokenExpression"/> is derived.</param>
-        public InlinedTokenExpression(ITokenExpression source, ITokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
-            : base(InliningCore.Inline((IControlledCollection<ITokenItem>)source, sourceRoot, root, oldNewLookup), source.FileName, source.Column, source.Line, source.Position)
+        public InlinedTokenExpression(ITokenExpression source, IOilexerGrammarTokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
+            : base(OilexerGrammarInliningCore.Inline((IControlledCollection<ITokenItem>)source, sourceRoot, root, oldNewLookup), source.FileName, source.Column, source.Line, source.Position)
         {
             this.Source = source;
         }
@@ -36,10 +37,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         public ITokenExpression Source { get; private set; }
 
         /// <summary>
-        /// Returns the <see cref="ITokenEntry"/> which contains
+        /// Returns the <see cref="IOilexerGrammarTokenEntry"/> which contains
         /// the <see cref="Source"/>.
         /// </summary>
-        public ITokenEntry SourceRoot { get; private set; }
+        public IOilexerGrammarTokenEntry SourceRoot { get; private set; }
 
         /// <summary>
         /// Returns the <see cref="InlinedTokenEntry"/> which contains the current
@@ -47,22 +48,26 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         /// </summary>
         public InlinedTokenEntry Root { get; private set; }
 
+        public void BuildState(Dictionary<ITokenSource, ICaptureTokenStructuralItem> sourceReplacementLookup) 
+        {
+            RegularLanguageNFAState state = new RegularLanguageNFAState();
+            foreach (var item in this.Cast<IInlinedTokenItem>())
+            {
+                item.BuildState(sourceReplacementLookup);
+                state.Concat(item.State);
+            }
+
+            this.nfaState = state;
+        }
+
+
         public RegularLanguageNFAState NFAState
         {
             get
             {
-                if (this.nfaState == null)
-                    this.nfaState = this.BuildNFA();
                 return this.nfaState;
             }
         }
 
-        private RegularLanguageNFAState BuildNFA()
-        {
-            RegularLanguageNFAState state = new RegularLanguageNFAState();
-            foreach (var item in this.Cast<IInlinedTokenItem>())
-                state.Concat(item.State);
-            return state;
-        }
     }
 }

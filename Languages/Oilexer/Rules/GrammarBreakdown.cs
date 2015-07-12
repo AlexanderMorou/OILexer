@@ -5,7 +5,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -25,16 +25,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public IControlledDictionary<ITokenEntry, TokenElements> LiteralSeriesTokens { get; private set; }
+        public IControlledDictionary<IOilexerGrammarTokenEntry, TokenElements> LiteralSeriesTokens { get; private set; }
         public IControlledCollection<IGrammarConstantEntrySymbol> ConstantTokens { get; private set; }
         public IControlledCollection<IGrammarTokenSymbol> CaptureTokens { get; private set; }
         public IControlledCollection<IGrammarRuleSymbol> Rules { get; private set; }
-        public IControlledCollection<ITokenEntry> Tokens { get; private set; }
+        public IControlledCollection<IOilexerGrammarTokenEntry> Tokens { get; private set; }
         public GrammarBreakdown(IGrammarSymbol[] symbols)
         {
             /* *
-             * Obtain a sequence of the elements which are constant
-             * items within a series of other constants.
+             * Obtain a sequence of the elements which are constant items within a series of other constants (i.e.: enum field members.)
              * */
             var symbolSets = (from symbol in symbols
                               let itemSymbol = symbol as IGrammarConstantItemSymbol
@@ -44,8 +43,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             var tokenSets = (from symbol in symbolSets
                              select symbol.Source).Distinct().ToArray();
             /* *
-             * Obtain the container tokens along with the individual 
-             * elements within them relative to the symbols provided.
+             * Obtain the container tokens along with the individual elements within them relative to the symbols provided.
              * */
             var tokenSymbolSets = from entry in tokenSets
                                   join itemSymbol in symbolSets on entry equals itemSymbol.Source into entrySymbols
@@ -67,20 +65,20 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                                    (!(tokenEntry is IGrammarConstantEntrySymbol)) &&
                                    (!(tokenEntry is IGrammarConstantItemSymbol))
                                 select tokenEntry).ToArray();
-            var literalSeriesTokens = new Dictionary<ITokenEntry, TokenElements>();
+            var literalSeriesTokens = new Dictionary<IOilexerGrammarTokenEntry, TokenElements>();
             foreach (var tokenSymbolSet in tokenSymbolSets)
                 literalSeriesTokens.Add(tokenSymbolSet.Entry, new TokenElements(tokenSymbolSet.Items));
-            this.LiteralSeriesTokens = new ControlledDictionary<ITokenEntry, TokenElements>(literalSeriesTokens);
+            this.LiteralSeriesTokens = new ControlledDictionary<IOilexerGrammarTokenEntry, TokenElements>(literalSeriesTokens);
             ConstantTokens = new ControlledCollection<IGrammarConstantEntrySymbol>(constantEntries);
             CaptureTokens = new ControlledCollection<IGrammarTokenSymbol>(tokenEntries);
             Rules = new ControlledCollection<IGrammarRuleSymbol>(ruleEntries);
-            Tokens = new ReadOnlyCollection<ITokenEntry>((
+            Tokens = new ControlledCollection<IOilexerGrammarTokenEntry>((
                       from constant in ConstantTokens
                       select constant.Source).Concat(
                       from captureToken in CaptureTokens
                       select captureToken.Source).Concat(
                       from literalToken in LiteralSeriesTokens.Keys
-                      select literalToken).ToArray());
+                      select literalToken).Distinct().ToArray());
 
         }
     }

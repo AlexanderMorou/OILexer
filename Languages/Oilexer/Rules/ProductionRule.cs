@@ -4,7 +4,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,7 +13,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     public class ProductionRule :
-        ReadOnlyCollection<IProductionRuleItem>,
+        ControlledCollection<IProductionRuleItem>,
         IProductionRule
     {
         /// <summary>
@@ -53,7 +53,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             this.position = position;
         }
 
-        #region IScannableEntryItem Members
+        //#region IScannableEntryItem Members
 
         /// <summary>
         /// Returns the column at the current <see cref="Line"/> the 
@@ -91,16 +91,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        #endregion
-
-        #region IAmbiguousGDEntity Members
-
-        public void Disambiguify(IGDFile context, IEntry root)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
+        //#endregion
 
         public override string ToString()
         {
@@ -125,7 +116,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        #region IProductionRule Members
+        //#region IProductionRule Members
 
 
         public IProductionRule Clone()
@@ -136,7 +127,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return new ProductionRule(result, this.fileName, this.Column, this.Line, this.Position);
         }
 
-        #endregion
+        //#endregion
 
         internal void SetItemAt(int index, IProductionRuleItem value)
         {

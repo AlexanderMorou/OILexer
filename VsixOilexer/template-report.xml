@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TemplateReport>
+  <ItemTemplates>
+    <ItemTemplate Path="ItemTemplates\Oilexer\BlankOilexerFile\Definitions\CSharp.vstemplate" Name="Blank Grammar File" Description="Oilexer Grammar Description File" ProjectType="CSharp" ProjectSubType="" />
+    <ItemTemplate Path="ItemTemplates\Oilexer\SimpleOilexerFile\Definitions\CSharp.vstemplate" Name="Simple Grammar File" Description="Oilexer Grammar Description File" ProjectType="CSharp" ProjectSubType="" />
+  </ItemTemplates>
+  <ProjectTemplates />
+  <Snippets />
+</TemplateReport>

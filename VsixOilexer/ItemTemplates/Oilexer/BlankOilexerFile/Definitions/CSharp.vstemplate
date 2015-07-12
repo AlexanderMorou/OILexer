@@ -1,0 +1,17 @@
+﻿<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Item">
+    <TemplateData>
+        <ProjectType>CSharp</ProjectType>
+
+        <DefaultName>Oilexer.oilexer</DefaultName>
+        <Name>Blank Grammar File</Name>
+        <Description>Oilexer Grammar Description File</Description>
+        <Icon>../../../Resources/package.ico</Icon>
+        <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+    </TemplateData>
+    <TemplateContent>
+        <References />
+
+        <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.oilexer" ItemType="None" SubType="">BlankGrammar.oilexer</ProjectItem>
+
+    </TemplateContent>
+</VSTemplate>

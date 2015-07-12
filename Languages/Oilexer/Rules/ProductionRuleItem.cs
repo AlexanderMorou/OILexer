@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -38,7 +38,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             this.ConditionalConstraints = new ControlledDictionary<string, string>(constraints);
         }
 
-        #region IProductionRuleItem Members
+        //#region IProductionRuleItem Members
 
         public new IProductionRuleItem Clone()
         {
@@ -48,14 +48,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return result;
         }
 
-        public IControlledDictionary<string, string> ConditionalConstraints { get; private set; }
+        public IControlledDictionary<string, string> ConditionalConstraints { get; internal set; }
 
-        #endregion
+        //#endregion
 
         protected override string ToStringFurtherOptions()
         {
             return string.Empty;
         }
 
+        public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
     }
 }

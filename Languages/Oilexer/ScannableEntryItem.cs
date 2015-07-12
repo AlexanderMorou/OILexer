@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -75,7 +75,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             get { return this.position; }
         }
 
-        #region IScannableEntryItem Members
+        //#region IScannableEntryItem Members
 
         /// <summary>
         /// Returns the name of the <see cref="ScannableEntryItem"/>, if it was defined.
@@ -115,7 +115,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             return ((IScannableEntryItem)(this.OnClone()));
         }
 
-        #endregion
+        //#endregion
 
         /// <summary>
         /// Type-inspecific 'onclone' to allow for hiding of <see cref="Clone()"/>.

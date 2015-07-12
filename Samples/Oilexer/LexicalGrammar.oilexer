@@ -1,0 +1,357 @@
+#ifndef Lexer
+#include                        "Oilexer.oilexer";
+#elif Lexer == "ToyParser"
+#include                       "Language.oilexer";
+#endif
+
+BooleanLiteral                                  :=
+    "true":TrueValue;                            |
+   "false":FalseValue;                           ;
+
+Char$                                           :=
+    '@':IsCaseInsensitive;?
+    ('\'' CharBody  '\'')$                       ;
+
+CharBody                                        :=
+    CharEscape                                   |
+    CommonEscapes                                |
+    [^'\\]                                       ;
+
+CharEscape                                      :=
+    '\\' '\''                                    ;
+
+String                                          :=
+    EscapableString$                             |
+    MultilineString                              ;
+
+EscapableString                                 :=
+    '"' StringChar* '"'                          ;
+
+MultilineString                                 :=
+    '@':IsMultiline;flag=true;
+        ('"' ('"' '"' | [^"])* '"')$             ;
+
+StringChar                                      :=
+    CommonEscapes                                |
+    StringEscape                                 |
+    [^"\\\r\n]                                   ;
+
+StringEscape                                    :=
+    '\\' '"'                                     ;
+
+CommonEscapes                                   :=
+    '\\' ('f' /* Form Feed */                    |
+          'v' /* Vertical Tab */                 |
+          't' /* Horizontal Tab */               |
+          'r' /* Carriage Return */              |
+          'n' /* New line */                     |
+          'b' /* Backspace */                    |
+          '0' /* Null Char */                    |
+          '\\' /* Backslash Escape */            |
+          HexEscape /* Hexadecimal Escape */     |
+          OctEscape /* Octal Escape */)          ;
+
+OctEscape                                       :=
+    OctalChar{3}                                 ;
+
+OctalChar                                       :=
+    [0-7]                                        ;
+
+HexChar                                         :=
+    [0-9A-Fa-f]                                  ;
+
+HexEscape                                       :=
+    HexLongEscape                                |
+    HexByteEscape                                |
+    HexShortEscape                               ;
+
+HexByteEscape                                   :=
+    'x' HexChar{2}                               ;
+
+HexShortEscape                                  :=
+    'u' HexChar{4}                               ;
+
+HexLongEscape                                   :=
+    'U' HexChar{8}                               ;
+
+DecimalNumber                                   :=
+    [0-9]                                        ;
+
+BinaryChar                                      :=
+    [01]                                         ;
+
+SeptemvigesimalChar                             :=
+    [0-9A-Qa-q]                                  ;
+
+DozenalChar                                     :=
+    [0-9XE]                                      ;
+
+CharacterRange                                  :=
+    '[' ('^':IsNegativeSet;flag=true;? CharacterRangeEntity:Entities;+ |
+         CharacterRangeEntity:Entities;+ '^':IsNegativeSet;flag=true;?) ']';
+
+CharacterRangeEntity                            :=
+    CharacterRangeChar                           |
+    CharacterRangeUnicode                        |
+    CommonEscapes                                ;
+
+CharacterRangeUnicode                           :=
+     ":Lu:":UppercaseLetter;                     | //(letter, upper)
+     ":Ll:":LowercaseLetter;                     | //(letter, lower)
+     ":Lt:":TitlecaseLetter;                     | //(letter, titlecase)
+     ":Lm:":ModifierLetter;                      | //(letter, modifier)
+     ":Lo:":OtherLetter;                         | //(letter, other)
+      ":L:":AllLetters;                          | //(letter, upper, lower, titlecase, modifier, other)
+     ":Mn:":NonSpacingMark;                      | //(mark, nonspacing)
+     ":Mc:":SpaceCombiningMark;                  | //(mark, combining)
+     ":Me:":EnclosingMark;                       | //(mark, enclosing)
+      ":M:":AllMarks;                            | //(mark, nonspacing, combining, enclosing)
+     ":Nd:":DecimalDigitNumber;                  | //(number, decimal digit)
+     ":Nl:":LetterNumber;                        | //(number, letter)
+     ":No:":OtherNumber;                         | //(number, other)
+      ":N:":AllNumbers;                          | //(number, decimal digit, letter, other)
+     ":Zs:":SpaceSeparator;                      | //(separator, space)
+     ":Zl:":LineSeparator;                       | //(separator, line)
+     ":Zp:":ParagraphSeparator;                  | //(separator, paragraph)
+      ":Z:":AllSeparators;                       | //(separator, space, line, paragraph)
+     ":Cc:":Control;                             | //(other, control)
+     ":Cf:":Format;                              | //(other, format)
+     ":Cs:":Surrogate;                           | //(other, surrogate)
+     ":Co:":PrivateUse;                          | //(other, private use)
+     ":Cn:":OtherNotAssigned;                    | //(other, not assigned)
+      ":C:":AllOthers;                           | //(other, control, format, surrogate, private use, and not-assigned)
+     ":Pc:":ConnectorPunctuation;                | //(punctuation, connector)
+     ":Pd:":DashPunctuation;                     | //(punctuation, dash)
+     ":Ps:":OpenPunctuation;                     | //(punctuation, open /start)
+     ":Pe:":ClosePunctuation;                    | //(punctuation, close/end)
+     ":Pi:":InitialQuotePunctuation;             | //(punctuation, initial quote)
+     ":Pf:":FinalQuotePunctuation;               | //(punctuation, final quote)
+     ":Po:":OtherPunctuation;                    | //(punctuation, other)
+      ":P:":AllPunctuation;                      | //(punctuation, connector, dash, open/start, close/end, initial quote, final quote, other)
+     ":Sm:":MathSymbol;                          | //(symbol, math)
+     ":Sc:":CurrencySymbol;                      | //(symbol, currency)
+     ":Sk:":ModifierSymbol;                      | //(symbol, modifier)
+     ":So:":OtherSymbol;                         | //(symbol, other) 
+      ":S:":AllSymbols;                          ; //(symbol, math, currency, modifier, other)
+
+CharacterRangeChar                              :=
+    CharacterRangeCharEscape                     |
+    CommonEscapes                                |
+    [^\]\r\n\\\u0085\u2028\x5E\u2029\:]          ;
+
+CharacterRangeCharEscape                        :=
+    '\\' ']'                                     |
+    '\\' '^'                                     |
+    '\\' '\\'                                    |
+    '\\' ':'                                     ;
+
+Number                                          :=
+    (@"0s":Septemvigesimal;):WholePartType;
+        SeptemvigesimalChar:WholePart;+
+    (
+        @'U':Unsigned; @'L':Long;?
+    ):ValueType;?$                               |
+    (
+      (@"0b":Binary;):WholePartType;
+        BinaryChar:WholePart;+                   |
+      (@"0o":Octal;):WholePartType; 
+        OctalChar:WholePart;+                    |
+      (@"0x":Hexadecimal;):WholePartType;
+        HexChar:WholePart;+                      |
+      (@"0z":Dozenal;):WholePartType;
+        DozenalChar:WholePart;+
+    )
+    (
+        @'U':Unsigned; @'L':Long;?               |
+        @'L':Long; @'U':Unsigned;?
+    ):ValueType;?$                               |
+    DecimalNumber:WholePart;+
+    (
+        (
+            @'U':Unsigned; @'L':Long;?           |
+            @'L':Long; @'U':Unsigned;?           |
+            @'D':Double;                         |
+            @'F':Single;                         |
+            @'M':Decimal;
+        ):ValueType;$                            |
+        ('.' DecimalNumber:FloatingPart;+)?
+        (
+            @'e' 
+            (
+                '+':Positive;                    |
+                '-':Negative;
+            ):Sign;Default=Positive;?
+            DecimalNumber:Value;+
+        ):Exponent;?
+        (
+            @'D':Double;                         |
+            @'F':Single;                         |
+            @'M':Decimal;
+        ):ValueType;Default=Double;$?
+    )?;
+
+Integer                                         :=
+    (
+      @"0b" BinaryChar:WholePart;+               |
+      @"0x" HexChar:WholePart;+                  |
+      @"0s" SeptemvigesimalChar:WholePart;+      |
+      @"0z" DozenalChar:WholePart;+
+    )                                            |
+    DecimalNumber:WholePart;+                    ;
+
+Identifier$                                     :=
+    IdentifierOrKeyword                          |
+    '@' IdentifierOrKeyword                      ;
+
+BuiltInLanguageCommands                         :=
+    @"Subtract":Subtract;                        |
+    @"Scan":Scan;                                |
+    @"BaseEncode":BaseEncode;                    ;
+
+IdentifierOrKeyword                             :=
+    IdentifierStartCharacter 
+    IdentifierPartCharacter*                     ;
+
+IdentifierStartCharacter                        :=
+    LetterCharacter                              |
+    '_'                                          |
+    UnicodeEscapeSequence                        ;
+
+LetterCharacter                                 :=
+    [:Lu::Ll::Lt::Lm::Lo::Nl:]                   ;
+
+CombiningCharacter                              :=
+    [:Mn::Mc:]                                   ;
+
+DecimalDigitCharacter                           :=
+    [:Nd:]                                       ;
+
+ConnectingCharacter                             :=
+    [:Pc:]                                       ;
+
+FormattingCharacter                             :=
+    [:Cf:]                                       ;
+
+IdentifierPartCharacter                         :=
+    LetterCharacter                              |
+    CombiningCharacter                           |
+    DecimalDigitCharacter                        |
+    ConnectingCharacter                          |
+    CombiningCharacter                           |
+    FormattingCharacter                          |
+    UnicodeEscapeSequence                        ;
+    
+UnicodeEscapeSequence                           :=
+    "\\u" HexChar{4}                             ;
+
+Expect                                          :=
+    @"expect"                                    ;
+
+ProductionRuleTemplateArgumentExpectation       :=
+    @"token":Token;                              |
+    @"rule":Rule;                                ;
+
+LanguageOperatorToken                           :=
+    "::=":RuleStart;                             |
+     ":=":TokenStart;                            |
+      '=':ErrorStart;                            |
+      '|':ExpressionSeparator;                   |
+      '{':RepetitionRangeStart;                  |
+      '}':RepetitionRangeEnd;                    |
+      '(':BeginGroup;                            |
+      ')':EndGroup;                              |
+      ':':OptionsSeparator;                      |
+      '#':CounterNotifier;                       |
+      '<':TemplateStart;                         |
+      '>':TemplateEnd;                           |
+      ',':PartSeparator;                         |
+      ';':Terminal;                              |
+      '+':OneOrMore;                             |
+      '*':ZeroOrMore;                            |
+      '?':ZeroOrOne;                             |
+      '.':IdentitySeparator;                     |
+      '!':FlagCallout;                           |
+      '$':ItemIsRecognizer;                      |
+     "&&":LogicalAnd;                            |
+     "||":LogicalOr;                             |
+     "!=":NotEqualTo;                            |
+     "==":EqualTo;                               |
+     "**":SiblingAmbiguity;                      |
+  "[+/-]":VisualSpanSpecifier;                   |
+      '-':Contextual;                            ;
+
+RuleTerminals                                   :=
+          '!':IsFlag;                            |
+          '>':IsCollapsePoint;                   |
+    @"expect":TemplateRuleExpect;                ;
+
+CommonTerminals                                 :=
+        '=':Assignment;                          ;
+
+TokenTerminals                                  :=//ToDo: Evaluate why without Identifier doesn't extract an ambiguity!
+           '>':PrecedenceDeclaration;            |//ToDone: Follow ambiguities needed implemented.  Now to verify it's 100% accurate!
+           ',':PrecedenceSeparator;              |
+       @"flag":IsFlag;                           |
+    @"default":Default;                          ;
+
+StringTerminalKind                              :=
+        @"#include":Include;                     |
+           @"#root":Root;                        |
+   @"#assemblyname":AssemblyName;                |
+      @"#lexername":LexerName;                   |
+    @"#grammarname":GrammarName;                 |
+     @"#parsername":ParserName;                  |
+    @"#tokenprefix":TokenPrefix;                 |
+    @"#tokensuffix":Tokensuffix;                 |
+     @"#ruleprefix":RulePrefix;                  |
+     @"#rulesuffix":RuleSuffix;                  |
+      @"#namespace":Namespace;                   ;
+
+PreprocessorType                                :=
+         "#addrule":AddRuleDirective;            |
+          "#define":DefineDirective;             |
+           @"#elif":ElseIfDirective;             |
+        @"#elifdef":ElseIfDefinedDirective;      |
+       @"#elifndef":ElseIfNotDefinedDirective;   |
+           @"#else":ElseDirective;               |
+          @"#endif":EndIfDirective;              |
+             @"#if":IfDirective;                 |
+          @"#ifdef":IfDefinedDirective;          |
+         @"#ifndef":IfNotDefinedDirective;       |
+         @"#return":ReturnDirective;             |
+          @"#throw":ThrowDirective;              ;
+
+          
+SingleLineComment                               :=
+    "//" NotNewLineCharacter*                    ;
+ 
+RangeComment                                    :=
+    "/*" Scan("*/", true)                        ;
+
+NotNewLineCharacter                             :=
+    [^\r\n\u0085\u2028\u2029]                    ;
+
+Comment                                        :=*
+    SingleLineComment                            |
+    RangeComment                                 ;
+
+ProductionRuleTemplateArgumentExpect          ::=>
+    ProductionRuleTemplateArgumentExpectation    |
+    Identifier                                   ;
+
+NewLine                                        :=*
+    "\r\n"                                       |
+    '\r'                                         |
+    '\n'                                         |
+    '\u0085'                                     |
+    '\u2028'                                     |
+    '\u2029'                                     ;
+
+Whitespace                                     :=*
+    (
+        [:Zs:]                                   |
+        '\u0009'                                 |
+        '\v'                                     |
+        '\t'                                     |
+        '\f'
+    )+                                           ;

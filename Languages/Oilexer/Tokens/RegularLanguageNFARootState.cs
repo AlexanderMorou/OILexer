@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -15,8 +15,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
     public class RegularLanguageNFARootState :
         RegularLanguageNFAState
     {
-        private ITokenEntry entry;
-        public RegularLanguageNFARootState(ITokenEntry entry)
+        private IOilexerGrammarTokenEntry entry;
+        public RegularLanguageNFARootState(IOilexerGrammarTokenEntry entry)
             : base()
         {
             this.entry = entry;
@@ -41,6 +41,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
             return (RegularLanguageDFARootState)base.DeterminateAutomata();
         }
 
-        public ITokenEntry Source { get { return this.entry; } }
+        public IOilexerGrammarTokenEntry Source { get { return this.entry; } }
     }
 }

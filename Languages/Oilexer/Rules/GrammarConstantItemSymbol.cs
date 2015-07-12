@@ -5,7 +5,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -26,7 +26,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// with the <paramref name="source"/> and
         /// <paramref name="sourceItem"/> provided.
         /// </summary>
-        /// <param name="source">The <see cref="ITokenEntry"/> which
+        /// <param name="source">The <see cref="IOilexerGrammarTokenEntry"/> which
         /// contains the <paramref name="sourceItem"/> from which the
         /// current <see cref="GrammarConstantItemSymbol"/> is
         /// derived.</param>
@@ -35,7 +35,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// <paramref name="source"/> entry from which the
         /// <see cref="GrammarConstantItemSymbol"/> is derived.
         /// </param>
-        public GrammarConstantItemSymbol(ITokenEntry source, ILiteralTokenItem sourceItem)
+        public GrammarConstantItemSymbol(IOilexerGrammarTokenEntry source, ILiteralTokenItem sourceItem)
             : base(source)
         {
             this.SourceItem = sourceItem;
@@ -53,11 +53,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get { return GrammarConstantType.Item; }
         }
 
-        #region IGrammarConstantItemSymbol Members
+        //#region IGrammarConstantItemSymbol Members
 
         public ILiteralTokenItem SourceItem { get; private set; }
 
-        #endregion
+        //#endregion
 
         public override string ToString()
         {

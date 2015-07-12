@@ -8,7 +8,7 @@ using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -16,11 +16,142 @@ using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 
 namespace AllenCopeland.Abstraction.Slf.Parsers
 {
-    partial class OILexerParser
+    partial class OilexerParser
     {
+        private class AheadStream<T1, T2, T3, T4, T5>
+            where T1 : class, IToken
+            where T2 : class, IToken
+            where T3 : class, IToken
+            where T4 : class, IToken
+            where T5 : class, IToken
+        {
+            public T1 Token1 { get; private set; }
+            public T2 Token2 { get; private set; }
+            public T3 Token3 { get; private set; }
+            public T4 Token4 { get; private set; }
+            public T5 Token5 { get; private set; }
+
+            public AheadStream(T1 token1, T2 token2, T3 token3, T4 token4, T5 token5)
+            {
+                this.Token1 = token1;
+                this.Token2 = token2;
+                this.Token3 = token3;
+                this.Token4 = token4;
+                this.Token5 = token5;
+            }
+
+            public int FailPoint
+            {
+                get
+                {
+                    if (this.Token1 == null)
+                        return 0;
+                    if (this.Token2 == null)
+                        return 1;
+                    if (this.Token3 == null)
+                        return 2;
+                    if (this.Token4 == null)
+                        return 3;
+                    if (this.Token5 == null)
+                        return 4;
+                    return -1;
+                }
+            }
+        }
+        private class AheadStream<T1, T2, T3, T4>
+            where T1 : class, IToken
+            where T2 : class, IToken
+            where T3 : class, IToken
+            where T4 : class, IToken
+        {
+            public T1 Token1 { get; private set; }
+            public T2 Token2 { get; private set; }
+            public T3 Token3 { get; private set; }
+            public T4 Token4 { get; private set; }
+
+            public AheadStream(T1 token1, T2 token2, T3 token3, T4 token4)
+            {
+                this.Token1 = token1;
+                this.Token2 = token2;
+                this.Token3 = token3;
+                this.Token4 = token4;
+            }
+
+            public int FailPoint
+            {
+                get
+                {
+                    if (this.Token1 == null)
+                        return 0;
+                    if (this.Token2 == null)
+                        return 1;
+                    if (this.Token3 == null)
+                        return 2;
+                    if (this.Token4 == null)
+                        return 3;
+                    return -1;
+                }
+            }
+        }
+        private class AheadStream<T1, T2, T3>
+            where T1 : class, IToken
+            where T2 : class, IToken
+            where T3 : class, IToken
+        {
+            public T1 Token1 { get; private set; }
+            public T2 Token2 { get; private set; }
+            public T3 Token3 { get; private set; }
+
+            public AheadStream(T1 token1, T2 token2, T3 token3)
+            {
+                this.Token1 = token1;
+                this.Token2 = token2;
+                this.Token3 = token3;
+            }
+
+            public int FailPoint
+            {
+                get
+                {
+                    if (this.Token1 == null)
+                        return 0;
+                    if (this.Token2 == null)
+                        return 1;
+                    if (this.Token3 == null)
+                        return 2;
+                    return -1;
+                }
+            }
+        }
+        private class AheadStream<T1, T2>
+            where T1 : class, IToken
+            where T2 : class, IToken
+        {
+            public T1 Token1 { get; private set; }
+            public T2 Token2 { get; private set; }
+
+            public AheadStream(T1 token1, T2 token2)
+            {
+                this.Token1 = token1;
+                this.Token2 = token2;
+            }
+
+            public int FailPoint
+            {
+                get
+                {
+                    if (this.Token1 == null)
+                        return 0;
+                    if (this.Token2 == null)
+                        return 1;
+                    return -1;
+                }
+            }
+        }
+
         public sealed class Lexer :
-            Tokenizer<IGDToken>,
-            IGDTokenizer
+            Tokenizer<IOilexerGrammarToken>,
+            IOilexerGrammarTokenizer
         {
             /// <summary>
             /// Data member determining whether the tokenizer is in multiline mode.
@@ -95,7 +226,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     return ParseCharacterRange();
                 else if (c == '\0')
                     return new NextTokenResults();
-                return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
             }
 
             private NextTokenResults ParseCharacterRange()
@@ -116,11 +247,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 while ((c = LookAhead(lookAhead)) != ']')
                 {
                     if (lookAhead == start && c == '-')
-                        return new NextTokenResults(GrammarCore.GetSyntaxError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), GDParserErrors.Unexpected, "-"));
+                        return new NextTokenResults(OilexerGrammarCore.GetSyntaxError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), OilexerGrammarParserErrors.Unexpected, "-"));
                     else if (c == '\r' || c == '\n')
-                        return new NextTokenResults(GrammarCore.GetParserError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), GDParserErrors.UnexpectedEndOfLine));
+                        return new NextTokenResults(OilexerGrammarCore.GetParserError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), OilexerGrammarParserErrors.UnexpectedEndOfLine));
                     else if (c == char.MinValue)
-                        return new NextTokenResults(GrammarCore.GetParserError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), GDParserErrors.UnexpectedEndOfFile));
+                        return new NextTokenResults(OilexerGrammarCore.GetParserError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), OilexerGrammarParserErrors.UnexpectedEndOfFile));
                     else if (c == ':')
                     {
                         //UppercaseLetter         -- Lu (letter, upper)
@@ -554,7 +685,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 break;
                             default:
                                 //Syntax error.
-                                return new NextTokenResults(GrammarCore.GetParserError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), GDParserErrors.InvalidEscape));
+                                return new NextTokenResults(OilexerGrammarCore.GetParserError(this.FileName, this.GetLineIndex(this.Position + lookAhead), this.GetColumnIndex(this.Position + lookAhead), OilexerGrammarParserErrors.InvalidEscape));
                         }
                     }
                     if (c == '-')
@@ -582,7 +713,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 }
                 singleTons.Sort();
 
-                return new NextTokenResults(new GDTokens.CharacterRangeToken(invert, singleTons.ToArray(), ranges.ToArray(), categories.Distinct().ToArray(), lookAhead + 1, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                return new NextTokenResults(new OilexerGrammarTokens.CharacterRangeToken(invert, singleTons.ToArray(), ranges.ToArray(), categories.Distinct().ToArray(), lookAhead + 1, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
             }
 
             /// <summary>
@@ -608,7 +739,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 if (LookAhead(index) == '\'')
                 {
                     /* *
-                     * To start, obtain the locale information.
+                     * To start, obtain the extensionsClass information.
                      * */
                     int l = GetLineIndex();
                     int ci = GetColumnIndex();
@@ -624,13 +755,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             case 'x':
                                 if (IsHexadecimalChar(LookAhead(index + 3)) && IsHexadecimalChar(LookAhead(index + 4)) &&
                                     LookAhead(index + 5) == '\'')
-                                    return new NextTokenResults(new GDTokens.CharLiteralToken(new string(Flush(index + 6)), caseInsensitive, ci, l, p));
+                                    return new NextTokenResults(new OilexerGrammarTokens.CharLiteralToken(new string(Flush(index + 6)), caseInsensitive, ci, l, p));
                                 break;
                             case 'u':
                                 if (IsHexadecimalChar(LookAhead(index + 3)) && IsHexadecimalChar(LookAhead(index + 4)) &&
                                     IsHexadecimalChar(LookAhead(index + 5)) && IsHexadecimalChar(LookAhead(index + 6)) &&
                                     LookAhead(index + 7) == '\'')
-                                    return new NextTokenResults(new GDTokens.CharLiteralToken(new string(Flush(index + 8)), caseInsensitive, ci, l, p));
+                                    return new NextTokenResults(new OilexerGrammarTokens.CharLiteralToken(new string(Flush(index + 8)), caseInsensitive, ci, l, p));
                                 break;
                             case 'v':
                             case 'f':
@@ -640,17 +771,17 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             case 'n':
                             case 'r':
                                 if (LookAhead(index + 3) == '\'')
-                                    return new NextTokenResults(new GDTokens.CharLiteralToken(new string(Flush(index + 4)), caseInsensitive, ci, l, p));
+                                    return new NextTokenResults(new OilexerGrammarTokens.CharLiteralToken(new string(Flush(index + 4)), caseInsensitive, ci, l, p));
                                 else
-                                    return new NextTokenResults(GrammarCore.GetSyntaxError(FileName, l, ci + index + 3, GDParserErrors.Expected, "\\'"));
+                                    return new NextTokenResults(OilexerGrammarCore.GetSyntaxError(FileName, l, ci + index + 3, OilexerGrammarParserErrors.Expected, "\\'"));
                         }
                     }
                     else if (LookAhead(index + 2) == '\'')
                     {
-                        return new NextTokenResults(new GDTokens.CharLiteralToken(new string(Flush(index + 3)), caseInsensitive, ci, l, p));
+                        return new NextTokenResults(new OilexerGrammarTokens.CharLiteralToken(new string(Flush(index + 3)), caseInsensitive, ci, l, p));
                     }
                 }
-                return new NextTokenResults(GrammarCore.GetParserError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                return new NextTokenResults(OilexerGrammarCore.GetParserError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
             }
 
             private NextTokenResults ParseNumber()
@@ -685,19 +816,19 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                      * length of the matched string.
                      * */
                     string number = new string(Flush(lookAhead));
-                    return new NextTokenResults(new GDTokens.NumberLiteral(number, ci, l, p));
+                    return new NextTokenResults(new OilexerGrammarTokens.NumberLiteral(number, ci, l, p));
                 }
-                return new NextTokenResults(GrammarCore.GetParserError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                return new NextTokenResults(OilexerGrammarCore.GetParserError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
             }
 
             private NextTokenResults ParseComment()
             {
                 char c = LookAhead(0);
                 if (c != '/')
-                    return new NextTokenResults(GrammarCore.GetSyntaxError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), GDParserErrors.Expected, "/"));
+                    return new NextTokenResults(OilexerGrammarCore.GetSyntaxError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), OilexerGrammarParserErrors.Expected, "/"));
                 c = LookAhead(1);
                 if (!(c == '/' || c == '*'))
-                    return new NextTokenResults(GrammarCore.GetSyntaxError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), GDParserErrors.Expected, "/ or *"));
+                    return new NextTokenResults(OilexerGrammarCore.GetSyntaxError(this.FileName, this.GetLineIndex(), this.GetColumnIndex(), OilexerGrammarParserErrors.Expected, "/ or *"));
                 int ci = this.GetColumnIndex(), l = this.GetLineIndex();
                 long p = this.Position;
                 string commentHeader = new string(this.Flush(2));
@@ -715,11 +846,11 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     if (commentBody == null)
                     {
                         this.Position -= 2;
-                        return new NextTokenResults(GrammarCore.GetParserError(this.FileName, l, ci, GDParserErrors.UnexpectedEndOfFile));
+                        return new NextTokenResults(OilexerGrammarCore.GetParserError(this.FileName, l, ci, OilexerGrammarParserErrors.UnexpectedEndOfFile));
                     }
 
                 }
-                return new NextTokenResults(new GDTokens.CommentToken(string.Format("{0}{1}", commentHeader, commentBody), ci, l, p, commentBody.Contains(Environment.NewLine)));
+                return new NextTokenResults(new OilexerGrammarTokens.CommentToken(string.Format("{0}{1}", commentHeader, commentBody), ci, l, p, commentBody.Contains(Environment.NewLine)));
             }
 
             private NextTokenResults ParseWhitespace()
@@ -738,12 +869,12 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     while (IsWhitespaceChar(c = this.LookAhead(++lookAhead)))
                         if ((!(allowEOL)) && ((c == '\r') || (c == '\n')))
                         {
-                            return new NextTokenResults(GrammarCore.GetParserError(FileName, l, c, GDParserErrors.UnexpectedEndOfLine));
+                            return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, l, c, OilexerGrammarParserErrors.UnexpectedEndOfLine));
                         }
                     string whiteSpace = new string(this.Flush(lookAhead));
-                    return new NextTokenResults(new GDTokens.WhitespaceToken(whiteSpace, l, ci, p));
+                    return new NextTokenResults(new OilexerGrammarTokens.WhitespaceToken(whiteSpace, l, ci, p));
                 }
-                return new NextTokenResults(GrammarCore.GetParserError(FileName, l, c, GDParserErrors.UnknownSymbol));
+                return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, l, c, OilexerGrammarParserErrors.UnknownSymbol));
             }
 
             private NextTokenResults ParsePreprocessor()
@@ -757,13 +888,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         case 'A':
                             if (Follows("ssemblyName", 2))
                             {
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.AssemblyNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.AssemblyNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             }
                             break;
                         case 'a':
                             if (Follows("ddrule", 2))
                             {
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.AddRuleDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.AddRuleDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             }
                             break;
                         case 'i':
@@ -772,14 +903,16 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 bool isDef = false;
                                 if (IsWhitespaceOrOperatorOrNullChar(c = LookAhead(3)))
                                 {
-                                    return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.IfDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                    return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.IfDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                                 }
                                 else if (((isDef = (c == 'd')) || c == 'n') && Follows("def", isDef ? 3 : 4) && IsWhitespaceOrNullChar(LookAhead(isDef ? 6 : 7)))
-                                    return new NextTokenResults(new GDTokens.PreprocessorDirective(isDef ? GDTokens.PreprocessorType.IfDefinedDirective : GDTokens.PreprocessorType.IfNotDefinedDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                    return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(isDef ? OilexerGrammarTokens.PreprocessorType.IfDefinedDirective : OilexerGrammarTokens.PreprocessorType.IfNotDefinedDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                else if (c == 'i' && LookAhead(4) == 'n')
+                                    return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.IfInDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             }
                             else if (Follows("nclude", 2) && IsWhitespaceOrNullChar(LookAhead(8)))
                             {
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.IncludeDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.IncludeDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             }
                             break;
                         case 'e':
@@ -788,72 +921,68 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 if (IsWhitespaceOrOperatorOrNullChar(LookAhead(5)))
                                 {
                                     if (Follows("se", 3))
-                                    {
-                                        return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.ElseDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
-                                    }
+                                        return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.ElseDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                                     else if (Follows("if", 3))
-                                    {
-                                        return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.ElseIfDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
-                                    }
+                                        return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.ElseIfDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                                 }
                                 else if (IsWhitespaceOrOperatorOrNullChar(LookAhead(8)) && Follows("ifdef", 3))
-                                {
-                                    return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.ElseIfDefinedDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
-                                }
+                                    return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.ElseIfDefinedDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                else if (IsWhitespaceOrOperatorOrNullChar(LookAhead(7)) && Follows("ifin", 3))
+                                    return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.ElseIfInDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             }
                             else if (c == 'n')
                             {
                                 if (Follows("dif", 3) && IsWhitespaceOrOperatorOrNullChar(LookAhead(6)))
-                                    return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.EndIfDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                    return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.EndIfDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             }
                             break;
                         case 'L':
                             if (Follows("exerName", 2))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.LexerNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.LexerNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                         case 'P':
                             if (Follows("arserName", 2))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.ParserNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.ParserNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                         case 'd':
                             if (Follows("efine", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(7)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.DefineDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.DefineDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
 
                             break;
                         case 'n':
                         case 'N':
                             if (Follows("amespace", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(10)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.NamespaceDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.NamespaceDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                         case 't':
                             if (Follows("hrow", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(6)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.ThrowDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.ThrowDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                         case 'T':
                             if (Follows("okenPrefix", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(12)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.TokenPrefixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.TokenPrefixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             else if (Follows("okenSuffix", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(12)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.TokenSuffixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.TokenSuffixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                         case 'r':
                             if (Follows("eturn", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(7)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.ReturnDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.ReturnDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                         case 'R':
                             if (Follows("oot", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(5)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.RootDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.RootDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             else if (Follows("ulePrefix", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(11)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.RulePrefixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.RulePrefixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             else if (Follows("uleSuffix", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(11)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.RuleSuffixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.RuleSuffixDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                         case 'G':
                             if (Follows("rammarName", 2) && IsWhitespaceOrOperatorOrNullChar(LookAhead(12)))
-                                return new NextTokenResults(new GDTokens.PreprocessorDirective(GDTokens.PreprocessorType.GrammarNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
+                                return new NextTokenResults(new OilexerGrammarTokens.PreprocessorDirective(OilexerGrammarTokens.PreprocessorType.GrammarNameDirective, this.GetLineIndex(), this.GetColumnIndex(), this.Position));
                             break;
                     }
                 }
-                return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
             }
 
             private bool IsWhitespaceOrNullChar(char p)
@@ -901,14 +1030,14 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 //[A-Za-z_]+
                 if (!(IsIdentifierChar(c)))
                     //At least one.
-                    return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                    return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
                 while (true)
                 {
                     c = this.LookAhead(lookAhead);
                     if (!(IsIdentifierChar(c)))
                     {
                         if (c == char.MinValue)
-                            return new NextTokenResults(GrammarCore.GetParserError(FileName, this.GetLineIndex(), this.GetColumnIndex(), GDParserErrors.UnexpectedEndOfFile));
+                            return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, this.GetLineIndex(), this.GetColumnIndex(), OilexerGrammarParserErrors.UnexpectedEndOfFile));
                         break;
                     }
                     lookAhead++;
@@ -920,7 +1049,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     if (!(IsIdentifierChar(c, false)))
                     {
                         if (c == char.MinValue)
-                            return new NextTokenResults(GrammarCore.GetParserError(FileName, this.GetLineIndex(), this.GetColumnIndex(), GDParserErrors.UnexpectedEndOfFile));
+                            return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, this.GetLineIndex(), this.GetColumnIndex(), OilexerGrammarParserErrors.UnexpectedEndOfFile));
                         break;
                     }
                     lookAhead++;
@@ -928,7 +1057,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 int ci = this.GetColumnIndex(), l = this.GetLineIndex();
                 long p = this.Position;
                 string name = new string(this.Flush(lookAhead));
-                return new NextTokenResults(new GDTokens.IdentifierToken(name, ci, l, p));
+                return new NextTokenResults(new OilexerGrammarTokens.IdentifierToken(name, ci, l, p));
             }
 
             private NextTokenResults ParseString()
@@ -956,13 +1085,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                     if (IsHexadecimalChar(LookAhead(lookAhead + 1)) && IsHexadecimalChar(LookAhead(lookAhead + 2)))
                                         lookAhead += 2;
                                     else
-                                        return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.InvalidEscape));
+                                        return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.InvalidEscape));
                                     break;
                                 case 'u':
                                     if (IsHexadecimalChar(LookAhead(lookAhead + 1)) && IsHexadecimalChar(LookAhead(lookAhead + 2)) && IsHexadecimalChar(LookAhead(lookAhead + 3)) && IsHexadecimalChar(LookAhead(lookAhead + 4)))
                                         lookAhead += 4;
                                     else
-                                        return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.InvalidEscape));
+                                        return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.InvalidEscape));
                                     break;
                                 case 'v':
                                 case '\\':
@@ -973,7 +1102,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                 case 't':
                                     break;
                                 default:
-                                    return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.InvalidEscape));
+                                    return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.InvalidEscape));
                             }
                         }
                         else if (c == '"')
@@ -983,19 +1112,19 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         }
                         else if (c == '\0')
                         {
-                            return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnexpectedEndOfFile));
+                            return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnexpectedEndOfFile));
                         }
                         lookAhead++;
                     }
                     int ci = this.GetColumnIndex(), l = this.GetLineIndex();
                     long p = this.Position;
                     string @string = new string(this.Flush(lookAhead));
-                    return new NextTokenResults(new GDTokens.StringLiteralToken(@string, caseInsensitive, ci, l, p));
+                    return new NextTokenResults(new OilexerGrammarTokens.StringLiteralToken(@string, caseInsensitive, ci, l, p));
                 }
-                return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
             }
 
-            internal bool MultiLineMode
+            public bool MultiLineMode
             {
                 get
                 {
@@ -1010,109 +1139,109 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             private NextTokenResults ParseOperator()
             {
                 char c = LookAhead(0);
-                GDTokens.OperatorType? ot = null;
+                OilexerGrammarTokens.OperatorType? ot = null;
                 switch (c)
                 {
                     case '(':
-                        ot = GDTokens.OperatorType.LeftParenthesis;
+                        ot = OilexerGrammarTokens.OperatorType.LeftParenthesis;
                         break;
                     case ')':
-                        ot = GDTokens.OperatorType.RightParenthesis;
+                        ot = OilexerGrammarTokens.OperatorType.RightParenthesis;
                         break;
                     case '-':
-                        ot = GDTokens.OperatorType.Minus;
+                        ot = OilexerGrammarTokens.OperatorType.Minus;
                         break;
                     case ':':
                         c = LookAhead(1);
                         if (c == '=')
-                            ot = GDTokens.OperatorType.ColonEquals;
+                            ot = OilexerGrammarTokens.OperatorType.ColonEquals;
                         else if (c == ':')
                         {
                             if (LookAhead(2) == '=')
                             {
-                                ot = GDTokens.OperatorType.ColonColonEquals;
+                                ot = OilexerGrammarTokens.OperatorType.ColonColonEquals;
                             }
                             else
-                                return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                                return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
                         }
                         else
-                            ot = GDTokens.OperatorType.OptionsSeparator;
+                            ot = OilexerGrammarTokens.OperatorType.OptionsSeparator;
                         break;
                     case '*':
                         c = LookAhead(1);
                         if (c == '*')
-                            ot = GDTokens.OperatorType.AsteriskAsterisk;
+                            ot = OilexerGrammarTokens.OperatorType.AsteriskAsterisk;
                         else
-                            ot = GDTokens.OperatorType.ZeroOrMore;
+                            ot = OilexerGrammarTokens.OperatorType.ZeroOrMore;
                         break;
                     case '+':
-                        ot = GDTokens.OperatorType.Plus;
+                        ot = OilexerGrammarTokens.OperatorType.Plus;
                         break;
                     case '?':
-                        ot = GDTokens.OperatorType.ZeroOrOne;
+                        ot = OilexerGrammarTokens.OperatorType.ZeroOrOne;
                         break;
                     case '<':
-                        ot = GDTokens.OperatorType.LessThan;
+                        ot = OilexerGrammarTokens.OperatorType.LessThan;
                         break;
                     case '|':
                         c = LookAhead(1);
                         if (c == '|')
-                            ot = GDTokens.OperatorType.PipePipe;
+                            ot = OilexerGrammarTokens.OperatorType.PipePipe;
                         else
-                            ot = GDTokens.OperatorType.Pipe;
+                            ot = OilexerGrammarTokens.OperatorType.Pipe;
                         break;
                     case ';':
-                        ot = GDTokens.OperatorType.SemiColon;
+                        ot = OilexerGrammarTokens.OperatorType.SemiColon;
                         break;
                     case '>':
-                        ot = GDTokens.OperatorType.GreaterThan;
+                        ot = OilexerGrammarTokens.OperatorType.GreaterThan;
                         break;
                     case '!':
                         c = LookAhead(1);
                         if (c == '=')
-                            ot = GDTokens.OperatorType.ExclaimEqual;
+                            ot = OilexerGrammarTokens.OperatorType.ExclaimEqual;
                         else
-                            ot = GDTokens.OperatorType.Exclaim;
+                            ot = OilexerGrammarTokens.OperatorType.Exclaim;
                         break;
                     case ',':
-                        ot = GDTokens.OperatorType.Comma;
+                        ot = OilexerGrammarTokens.OperatorType.Comma;
                         break;
                     case '.':
-                        ot = GDTokens.OperatorType.Period;
+                        ot = OilexerGrammarTokens.OperatorType.Period;
                         break;
                     case '=':
                         c = LookAhead(1);
                         if (c == '=')
-                            ot = GDTokens.OperatorType.EqualEqual;
+                            ot = OilexerGrammarTokens.OperatorType.EqualEqual;
                         else
-                            ot = GDTokens.OperatorType.Equals;
+                            ot = OilexerGrammarTokens.OperatorType.Equals;
                         break;
                     case '{':
-                        ot = GDTokens.OperatorType.LeftCurlyBrace;
+                        ot = OilexerGrammarTokens.OperatorType.LeftCurlyBrace;
                         break;
                     case '}':
-                        ot = GDTokens.OperatorType.RightCurlyBrace;
+                        ot = OilexerGrammarTokens.OperatorType.RightCurlyBrace;
                         break;
                     case '#':
-                        ot = GDTokens.OperatorType.CounterNotification;
+                        ot = OilexerGrammarTokens.OperatorType.CounterNotification;
                         break;
                     case '&':
                         c = LookAhead(1);
                         if (c == '&')
-                            ot = GDTokens.OperatorType.AndAnd;
+                            ot = OilexerGrammarTokens.OperatorType.AndAnd;
                         else
-                            return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                            return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
                         break;
                     case '$':
-                        ot = GDTokens.OperatorType.ForcedStringForm;
+                        ot = OilexerGrammarTokens.OperatorType.ForcedStringForm;
                         break;
                     case '@':
-                        ot = GDTokens.OperatorType.AtSign;
+                        ot = OilexerGrammarTokens.OperatorType.AtSign;
                         break;
                     default:
-                        return new NextTokenResults(GrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), GDParserErrors.UnknownSymbol));
+                        return new NextTokenResults(OilexerGrammarCore.GetParserError(FileName, GetLineIndex(), GetColumnIndex(), OilexerGrammarParserErrors.UnknownSymbol));
                 }
-                return new NextTokenResults(new GDTokens.OperatorToken(ot.Value, this.GetColumnIndex(), this.GetLineIndex(), this.Position));
+                return new NextTokenResults(new OilexerGrammarTokens.OperatorToken(ot.Value, this.GetColumnIndex(), this.GetLineIndex(), this.Position));
             }
 
             internal static bool IsIdentifierChar(char c) { return IsIdentifierChar(c, true); }
@@ -1151,7 +1280,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 switch (p)
                 {
                     case '*':
-                        //GDTokens.OperatorType.ZeroOrMore
+                        //OilexerGrammarTokens.OperatorType.ZeroOrMore
                         if (q == char.MinValue && r == char.MinValue)
                             return true;
                         else if (q == '*' && r == char.MinValue)
@@ -1159,13 +1288,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                         return true;
                     case '=':
                     case '!':
-                        //GDTokens.OperatorType.ErrorSeparator
-                        //GDTokens.OperatorType.ProductionRuleFlag
+                        //OilexerGrammarTokens.OperatorType.ErrorSeparator
+                        //OilexerGrammarTokens.OperatorType.ProductionRuleFlag
                         if (q == char.MinValue && r == char.MinValue)
                             return true;
                         else if (q == '=' && r == char.MinValue)
-                            //GDTokens.OperatorType.EqualsEquals
-                            //GDTokens.OperatorType.ExclaimEquals
+                            //OilexerGrammarTokens.OperatorType.EqualsEquals
+                            //OilexerGrammarTokens.OperatorType.ExclaimEquals
                             return true;
                         return true;
                     case ':':
@@ -1177,41 +1306,43 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             return true;
                         return true;
                         /* *
-                         * GDTokens.OperatorType.ProductionRuleSeparator | 
-                         * GDTokens.OperatorType.TokenSeparator  
+                         * OilexerGrammarTokens.OperatorType.ProductionRuleSeparator | 
+                         * OilexerGrammarTokens.OperatorType.TokenSeparator  
                          * */
+                    case '&':
+                        //OilexerGrammarTokens.OperatorType.AndAnd
                     case '(':
-                        //GDTokens.OperatorType.LeftParenthesis
+                        //OilexerGrammarTokens.OperatorType.LeftParenthesis
                     case ')':
-                        //GDTokens.OperatorType.RightParenthesis
+                        //OilexerGrammarTokens.OperatorType.RightParenthesis
                     case '#':
-                        //GDTokens.OperatorType.CounterNotification
+                        //OilexerGrammarTokens.OperatorType.CounterNotification
                     case '-':
-                        //GDTokens.OperatorType.Minus
+                        //OilexerGrammarTokens.OperatorType.Minus
                     case '+':
-                        //GDTokens.OperatorType.OneOrMore
+                        //OilexerGrammarTokens.OperatorType.OneOrMore
                     case '@':
-                        //GDTokens.OperatorType.AtSign
+                        //OilexerGrammarTokens.OperatorType.AtSign
                     case '?':
-                        //GDTokens.OperatorType.ZeroOrOne
+                        //OilexerGrammarTokens.OperatorType.ZeroOrOne
                     case '<':
-                        //GDTokens.OperatorType.TemplatePartsStart
+                        //OilexerGrammarTokens.OperatorType.TemplatePartsStart
                     case '|':
-                        //GDTokens.OperatorType.LeafSeparator
+                        //OilexerGrammarTokens.OperatorType.LeafSeparator
                     case ';':
-                        //GDTokens.OperatorType.EntryTerminal
+                        //OilexerGrammarTokens.OperatorType.EntryTerminal
                     case '>':
-                        //GDTokens.OperatorType.TemplatePartsEnd
+                        //OilexerGrammarTokens.OperatorType.TemplatePartsEnd
                     case '.':
-                        //GDTokens.OperatorType.Period
+                        //OilexerGrammarTokens.OperatorType.Period
                     case ',':
-                        //GDTokens.OperatorType.TemplatePartsSeparator
+                        //OilexerGrammarTokens.OperatorType.TemplatePartsSeparator
                     case '{':
-                        //GDTokens.OperatorType.LeftCurlyBrace
+                        //OilexerGrammarTokens.OperatorType.LeftCurlyBrace
                     case '}':
-                        //GDTokens.OperatorType.RightCurlyBrace
+                        //OilexerGrammarTokens.OperatorType.RightCurlyBrace
                     case '$':
-                        //GDTokens.OperatorType.ForcedStringForm
+                        //OilexerGrammarTokens.OperatorType.ForcedStringForm
                         return true;
                     default:
                         return false;

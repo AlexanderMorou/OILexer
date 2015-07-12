@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -17,12 +17,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         IPreprocessorCPrimary
     {
         private int rule;
-        private GDTokens.IdentifierToken identifier;
-        private GDTokens.StringLiteralToken @string;
-        private GDTokens.CharLiteralToken @char;
-        private GDTokens.OperatorToken openingParenthesis;
+        private OilexerGrammarTokens.IdentifierToken identifier;
+        private OilexerGrammarTokens.StringLiteralToken @string;
+        private OilexerGrammarTokens.CharLiteralToken @char;
+        private OilexerGrammarTokens.OperatorToken openingParenthesis;
         private IPreprocessorCLogicalOrConditionExp preCLogicalOrExp;
-        private GDTokens.NumberLiteral number;
+        private OilexerGrammarTokens.NumberLiteral number;
 
         /// <summary>
         /// Creates a new <see cref="PreprocessorCExp"/> with the <paramref name="string"/>,
@@ -34,7 +34,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(GDTokens.StringLiteralToken @string, int column, int line, long position)
+        public PreprocessorCPrimary(OilexerGrammarTokens.StringLiteralToken @string, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 1;
@@ -51,7 +51,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(GDTokens.CharLiteralToken @char, int column, int line, long position)
+        public PreprocessorCPrimary(OilexerGrammarTokens.CharLiteralToken @char, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 2;
@@ -68,7 +68,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(GDTokens.OperatorToken openingParenthesis, IPreprocessorCLogicalOrConditionExp preCLogicalOrExp, int column, int line, long position)
+        public PreprocessorCPrimary(OilexerGrammarTokens.OperatorToken openingParenthesis, IPreprocessorCLogicalOrConditionExp preCLogicalOrExp, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 3;
@@ -87,7 +87,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(GDTokens.IdentifierToken identifier, int column, int line, long position)
+        public PreprocessorCPrimary(OilexerGrammarTokens.IdentifierToken identifier, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 4;
@@ -103,31 +103,31 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// <param name="line">The line index the <see cref="PreprocessorCExp"/> was declared at.</param>
         /// <param name="position">The position in the file the <see cref="PreprocessorCExp"/> 
         /// was declared at.</param>
-        public PreprocessorCPrimary(GDTokens.NumberLiteral number, int column, int line, long position)
+        public PreprocessorCPrimary(OilexerGrammarTokens.NumberLiteral number, int column, int line, long position)
             : base(column, line, position)
         {
             this.rule = 5;
             this.number = number;
         }
 
-        #region IPreprocessorCPrimary Members
+        //#region IPreprocessorCPrimary Members
 
         public int Rule
         {
             get { return this.rule; }
         }
 
-        public GDTokens.IdentifierToken Identifier
+        public OilexerGrammarTokens.IdentifierToken Identifier
         {
             get { return this.identifier; }
         }
 
-        public GDTokens.StringLiteralToken String
+        public OilexerGrammarTokens.StringLiteralToken String
         {
             get { return this.@string; }
         }
 
-        public GDTokens.CharLiteralToken Char
+        public OilexerGrammarTokens.CharLiteralToken Char
         {
             get { return this.@char;}
         }
@@ -137,7 +137,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             get { return preCLogicalOrExp; }
         }
 
-        public GDTokens.NumberLiteral Number
+        public OilexerGrammarTokens.NumberLiteral Number
         {
             get
             {
@@ -146,7 +146,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         }
 
 
-        public IGDToken Token
+        public IOilexerGrammarToken Token
         {
             get
             {
@@ -167,7 +167,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             }
         }
 
-        #endregion
+        //#endregion
 
         public override string ToString()
         {

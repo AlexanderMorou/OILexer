@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -97,9 +97,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
                 return string.Format("{0}{1}", this.PrimaryName, this.RepeatOptions);
         }
 
-        public GDTokens.IdentifierToken PrimaryToken { get; internal set; }
+        public OilexerGrammarTokens.IdentifierToken PrimaryToken { get; internal set; }
 
-        public GDTokens.IdentifierToken SecondaryToken { get; internal set; }
+        public OilexerGrammarTokens.IdentifierToken SecondaryToken { get; internal set; }
 
     }
 }

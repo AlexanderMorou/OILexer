@@ -17,13 +17,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// Creates a new <see cref="ParserBuilderPhaseChangeEventArgs"/>
         /// with the <paramref name="phase"/> provided.
         /// </summary>
-        /// <param name="phase">The <see cref="ParserBuilderPhase"/>
+        /// <param name="phase">The <see cref="ParserCompilerPhase"/>
         /// which has been entered.</param>
-        public ParserBuilderPhaseChangeEventArgs(ParserBuilderPhase phase)
+        public ParserBuilderPhaseChangeEventArgs(ParserCompilerPhase phase)
         {
             this.Phase = phase;
         }
 
-        public ParserBuilderPhase Phase { get; private set; }
+        public ParserCompilerPhase Phase { get; private set; }
     }
 }

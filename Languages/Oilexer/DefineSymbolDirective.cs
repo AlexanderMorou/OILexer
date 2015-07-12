@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -33,12 +33,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             get { return EntryPreprocessorType.DefineSymbol; }
         }
 
-        #region IPreprocessorDefineSymbolDirective Members
+        //#region IPreprocessorDefineSymbolDirective Members
 
         public string SymbolName { get; private set; }
 
         public string Value { get; private set; }
 
-        #endregion
+        //#endregion
     }
 }

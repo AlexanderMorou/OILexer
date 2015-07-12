@@ -1,0 +1,17 @@
+#include                   "Oilexer.oilexer";
+
+Tuple<A, B>                               ::=
+    A B                                     |
+    B A                                     ;
+
+TupleR1<A, B>                             ::=
+    A B?                                    |
+    B A?                                    ;
+
+OTuple<A, B>                              ::=
+    A? B?                                   |
+    B? A?                                   ;
+
+TupleDelimTrail<A, B, Delimiter>          ::=
+    A (Delimiter B)?                        |
+    B                                       ;

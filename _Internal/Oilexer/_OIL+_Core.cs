@@ -20,7 +20,7 @@ using AllenCopeland.Abstraction.Slf.Ast.Members;
 using AllenCopeland.Abstraction.Slf.Translation;
 using Microsoft.CSharp;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -82,41 +82,6 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                 return sb.ToString();
             }
 
-
-            internal static string GetCSharpCommentText(string commentBase, bool docComment)
-            {
-                string result = "";
-                if (docComment)
-                {
-                    if (commentBase.Contains("\r\n"))
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        string[] commentLines = commentBase.Split(new string[] { "\r\n" }, StringSplitOptions.None);
-                        bool firstItem = true;
-                        for (int i = 0; i < commentLines.Length; i++)
-                        {
-                            string s = commentLines[i];
-                            if (firstItem)
-                                firstItem = false;
-                            else
-                                sb.AppendLine();
-                            sb.Append("/// ");
-                            sb.Append(s);
-                        }
-                        result = sb.ToString();
-                    }
-                    else
-                    {
-                        result = string.Format("/// {0}", commentBase);
-                    }
-                }
-                else if (commentBase.Contains("\r\n"))
-                    result = _OIL._Core.GetBoxedCommentText(commentBase);
-                else
-                    result = string.Format("// {0}", commentBase);
-                return result;
-            }
-
             internal static string GetVBCommentText(string commentBase, bool docComment)
             {
                 string result = "";
@@ -142,9 +107,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                         result = sb.ToString();
                     }
                     else
-                    {
                         result = string.Format("''' {0}", commentBase);
-                    }
                 }
                 else if (commentBase.Contains("\r\n"))
                     result = "'" + string.Join("\r\n'", GetBoxedCommentText(commentBase).Split(new string[] { "\r\n" }, StringSplitOptions.None));
@@ -153,47 +116,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 
                 return result;
             }
-            /*
-            internal static StringBuilder GetTypesUsedComment(ref ProjectDependencyReport pdr, IIntermediateCodeTranslatorOptions options)
-            {
-                StringBuilder typesUsed;
-                typesUsed = new StringBuilder();
-                typesUsed.AppendLine(String.Format("There were {0} types used by this file", pdr.SourceData.Count));
-                var typesUsedListing = (from reference in pdr.SourceData
-                                        let externType = reference.TypeInstance as IExternType
-                                        let declType = reference.TypeInstance as IDeclaredType
-                                        let nameSpace = externType == null ?
-                                                            declType == null ?
-                                                                string.Empty :
-                                                                declType.GetNamespace().FullName :
-                                                            externType.Type.Namespace
-                                        let typeName = reference.ToString(options)
-                                        let realTypeName = typeName.Contains(nameSpace) ?
-                                                           typeName.Substring(nameSpace.Length+1) :
-                                                           typeName
-                                        orderby nameSpace ascending,
-                                                realTypeName ascending
-                                        select realTypeName).ToArray().FixedJoin(", ");
-                typesUsed.Append(typesUsedListing);
-                if (pdr.CompiledAssemblyReferences.Count > 0)
-                {
-                    typesUsed.AppendLine();
-                    typesUsed.AppendLine("-");
-                    typesUsed.AppendLine(string.Format("There were {0} assemblies referenced:", pdr.CompiledAssemblyReferences.Count));
-                    var compiledAssembliesUsedListing = (from assembly in pdr.CompiledAssemblyReferences
-                                                         let name = assembly.GetName().Name
-                                                         orderby name
-                                                         select name).ToArray().FixedJoin(", ");
-                    typesUsed.Append(compiledAssembliesUsedListing);
-                }
-                return typesUsed;
-            }
-            //*/
-
 
             /// <summary>
             /// Determines whether the <paramref name="declaration"/> is a candidate for a module in
-            /// the Visual Basic.NET language.
+            /// the Visual Basic language.
             /// </summary>
             /// <param name="declaration">The <see cref="IIntermediateDeclaration"/> to check to see if it
             /// is a vb module candidate.</param>
@@ -218,7 +144,6 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                 if (@class.TypeParameters == null || @class.TypeParameters.Count == 0)
                 {
                     if (@class.Parent is IIntermediateNamespaceDeclaration && @class.SpecialModifier != AllenCopeland.Abstraction.Slf.Abstract.SpecialClassModifier.None)
-                    {
                         if (options.AllowPartials)
                         {
                             //Basically if all other partials have no members,
@@ -232,61 +157,9 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                                 return false;
                         }
                         return true;
-                    }
                 }
                 return false;
             }
-            /*//
-            public static string BuildMemberReferenceComment(IIntermediateCodeTranslatorOptions options, IIntermediateMember member)
-            {
-                if (options == null)
-                    throw new ArgumentNullException("options");
-                string parentCref = ((IType)member.Parent).BuildTypeName(options, true);
-                //If there is a build trail to go by, check to see what kind of scope
-                //is available.  If the parent of the field is available, then referencing
-                //field should be easier.
-                if (options.BuildTrail != null)
-                {
-                    var idt = member.Parent;
-                    while (idt != null && !(idt is IIntermediateNamespaceDeclaration))
-                        if (idt is IIntermediateMember)
-                            idt = ((IIntermediateMember)(idt)).Parent;
-                        else if (idt is IIntermediateType)
-                            idt = ((IIntermediateType)(idt)).Parent;
-                    IIntermediateNamespaceDeclaration currentNameSpace = null;
-                    bool importsContainsNameSpace = false;
-                    if (idt != null && options.ImportList != null)
-                        importsContainsNameSpace = options.ImportList.Contains(((IIntermediateNamespaceDeclaration)(idt)).FullName);
-                    if (!importsContainsNameSpace)
-                        for (int i = 0; i < options.BuildTrail.Count; i++)
-                            if (Special.GetThisAt(options.BuildTrail, i) is IIntermediateNamespaceDeclaration)
-                                currentNameSpace = (IIntermediateNamespaceDeclaration)Special.GetThisAt(options.BuildTrail, i);
-                            else
-                                break;
-
-                    if (currentNameSpace != null && idt != null && (currentNameSpace.FullName == ((IIntermediateNamespaceDeclaration)idt).FullName || currentNameSpace.FullName.Contains(((IIntermediateNamespaceDeclaration)idt).FullName + ".")))
-                    {
-                        /* *
-                         * The build trail's current namespace contains the full name of the 
-                         * parent namespace.
-                         * * /
-                        parentCref = parentCref.Substring(currentNameSpace.FullName.Length+1);
-                    }
-                    else if (importsContainsNameSpace)
-                    {
-                        /* *
-                         * The import list contains the namespace
-                         * * /
-                        parentCref = parentCref.Substring(((IIntermediateNamespaceDeclaration)idt).FullName.Length + 1);
-                    }
-                    else
-                        goto _verbose;
-                }
-                return string.Format(_CommentConstants.SeeCrefTag, string.Format("{0}.{1}", parentCref, member.Name));
-            _verbose:
-                return string.Format(_CommentConstants.SeeCrefTag, string.Format("{0}.{1}", parentCref, member.Name));
-            }
-            //*/
         }
     }
 }

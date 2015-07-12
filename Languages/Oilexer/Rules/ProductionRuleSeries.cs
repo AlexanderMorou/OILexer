@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -13,7 +13,7 @@ using AllenCopeland.Abstraction.Utilities.Collections;
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     public class ProductionRuleSeries :
-        ReadOnlyCollection<IProductionRule>,
+        ControlledCollection<IProductionRule>,
         IProductionRuleSeries
     {
         /// <summary>
@@ -59,5 +59,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         {
             return ToString();
         }
+
+        public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -23,10 +23,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// Creates a new <see cref="GrammarConstantEntrySymbol"/>
         /// with the <paramref name="source"/> provided.
         /// </summary>
-        /// <param name="source">The <see cref="ITokenEntry"/>
+        /// <param name="source">The <see cref="IOilexerGrammarTokenEntry"/>
         /// from which the <see cref="GrammarConstantEntrySymbol"/>
         /// is derived.</param>
-        public GrammarConstantEntrySymbol(ITokenEntry source)
+        public GrammarConstantEntrySymbol(IOilexerGrammarTokenEntry source)
             : base(source)
         {
         }
@@ -37,7 +37,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// <see cref="GrammarConstantEntrySymbol"/> is.
         /// </summary>
         /// <remarks>
-        /// Returns <see cref="GrammarConstantType.Entry"/>.
+        /// Returns <see cref="GrammarConstantType.OilexerGrammarEntry"/>.
         /// </remarks>
         public override GrammarConstantType Type
         {

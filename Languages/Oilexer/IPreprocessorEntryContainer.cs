@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -20,9 +20,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         IPreprocessorDirective
     {
         /// <summary>
-        /// Returns the <see cref="IEntry"/> contained by the entry
+        /// Returns the <see cref="IOilexerGrammarEntry"/> contained by the entry
         /// container.
         /// </summary>
-        IEntry Contained { get; }
+        IOilexerGrammarEntry Contained { get; }
     }
 }

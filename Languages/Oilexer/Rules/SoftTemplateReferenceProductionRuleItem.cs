@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -37,9 +37,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         {
             IList<IProductionRuleSeries> parts = new List<IProductionRuleSeries>();
             foreach (IList<IProductionRule> c in serii)
-                parts.Add(new SeriesEntry(c));
+                parts.Add(new OilexerGrammarSeriesEntry(c));
 
-            this.parts = new AllenCopeland.Abstraction.Utilities.Collections.ReadOnlyCollection<IProductionRuleSeries>(parts);
+            this.parts = new ControlledCollection<IProductionRuleSeries>(parts);
         }
 
         protected override object OnClone()
@@ -55,7 +55,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return srpri;
         }
 
-        #region ISoftTemplateReferenceProductionRuleItem Members
+        //#region ISoftTemplateReferenceProductionRuleItem Members
 
         public IControlledCollection<IProductionRuleSeries> Parts
         {
@@ -79,12 +79,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return string.Format("{0}{1}", base.ToString(),sb.ToString());
         }
 
-        #endregion
-        private class SeriesEntry :
-            AllenCopeland.Abstraction.Utilities.Collections.ReadOnlyCollection<IProductionRule>,
+        //#endregion
+        private class OilexerGrammarSeriesEntry :
+            ControlledCollection<IProductionRule>,
             IProductionRuleSeries
         {
-            public SeriesEntry(IList<IProductionRule> baseCollection)
+            public OilexerGrammarSeriesEntry(IList<IProductionRule> baseCollection)
                 : base(baseCollection)
             {
 
@@ -104,15 +104,16 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 return sb.ToString();
             }
 
-            #region IProductionRuleSeries Members
+            //#region IProductionRuleSeries Members
 
             public string GetBodyString()
             {
                 return this.ToString();
             }
 
-            #endregion
+            //#endregion
 
+            public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
         }
     }
 }

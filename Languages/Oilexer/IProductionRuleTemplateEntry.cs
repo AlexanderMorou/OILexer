@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -25,13 +25,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     }
     /// <summary>
     /// Defines properties and methods for working with a template for production rules.
-    /// Used to express a part of syntax for a <see cref="IGDFile"/>.
+    /// Used to express a part of syntax for a <see cref="IOilexerGrammarFile"/>.
     /// </summary>
-    public interface IProductionRuleTemplateEntry :
-        IProductionRuleEntry
+    public interface IOilexerGrammarProductionRuleTemplateEntry :
+        IOilexerGrammarProductionRuleEntry
     {
         /// <summary>
-        /// The names of the parts associated with the <see cref="IProductionRuleTemplateEntry"/>.
+        /// The names of the parts associated with the <see cref="IOilexerGrammarProductionRuleTemplateEntry"/>.
         /// </summary>
         IProductionRuleTemplateParts Parts { get; }
         TemplateArgumentInformation GetArgumentInformation();

@@ -14,7 +14,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         IInlinedTokenItem
     {
         private RegularLanguageNFAState state;
-        public InlinedLiteralCharReferenceTokenItem(ILiteralCharReferenceTokenItem source, ITokenEntry sourceRoot, InlinedTokenEntry root)
+        public InlinedLiteralCharReferenceTokenItem(ILiteralCharReferenceTokenItem source, IOilexerGrammarTokenEntry sourceRoot, InlinedTokenEntry root)
             : base(source.Literal.Value, source.Literal.CaseInsensitive, source.Column, source.Line, source.Position)
         {
             this.Source = source;
@@ -26,7 +26,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
 
         public ILiteralCharReferenceTokenItem Source { get; private set; }
 
-        public ITokenEntry SourceRoot { get; private set; }
+        public IOilexerGrammarTokenEntry SourceRoot { get; private set; }
 
         public InlinedTokenEntry Root { get; private set; }
 
@@ -41,31 +41,34 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         {
             get
             {
-                if (this.state == null)
-                {
-                    this.state = this.BuildNFAState();
-                    this.state.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, InliningCore.TokenRootStateClonerCache, InliningCore.TokenStateClonerCache);
-                }
                 return this.state;
             }
         }
 
         #endregion
 
-        private RegularLanguageNFAState BuildNFAState()
-        {
-            RegularLanguageNFAState rootState = new RegularLanguageNFAState();
-            RegularLanguageNFAState endState = new RegularLanguageNFAState();
-            rootState.MoveTo(new RegularLanguageSet(!this.CaseInsensitive, this.Value), endState);
-            rootState.SetInitial(this);
-            endState.SetFinal(this);
-            return rootState;
-        }
-
         public override string ToString()
         {
             return this.Source.ToString();
         }
 
+
+        #region IInlinedTokenItem Members
+
+
+        public void BuildState(Dictionary<ITokenSource, Captures.ICaptureTokenStructuralItem> sourceReplacementLookup)
+        {
+            var thisReplacement = sourceReplacementLookup.ContainsKey(this) ? (ITokenSource)(sourceReplacementLookup[this]) : (ITokenSource)this;
+            RegularLanguageNFAState rootState = new RegularLanguageNFAState();
+            RegularLanguageNFAState endState = new RegularLanguageNFAState();
+            rootState.MoveTo(new RegularLanguageSet(!this.CaseInsensitive, this.Value), endState);
+            rootState.SetInitial(thisReplacement);
+            endState.SetFinal(thisReplacement);
+            rootState.HandleRepeatCycle<RegularLanguageSet, RegularLanguageNFAState, RegularLanguageDFAState, ITokenSource, RegularLanguageNFARootState, IInlinedTokenItem>(this, thisReplacement, OilexerGrammarInliningCore.TokenRootStateClonerCache, OilexerGrammarInliningCore.TokenStateClonerCache);
+            this.state = rootState;
+        }
+
+
+        #endregion
     }
 }

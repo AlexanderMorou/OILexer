@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -163,6 +163,31 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
             this.buffer = new byte[128];
             this.bufferSize = 0;
         }
+        /// <summary>
+        /// Performs a lookahead in the current stream.
+        /// </summary>
+        /// <param name="howFar">The number of characters to look ahead.</param>
+        /// <returns>The character of the index in the stream, if <paramref name="howFar"/> 
+        /// is in range.  <see cref="Char.MinValue"/> otherwise.</returns>
+        public char LookAhead(long howFar)
+        {
+            lock (buffer)
+            {
+                if (Position + (howFar + 1) > stream.Length)
+                    return char.MinValue;
+                CheckBuffer(howFar + 1);
+                if (bufferSize < (howFar + 1))
+                {
+                    int readBytes = (int)((howFar + 1) - bufferSize);
+                    if (readBytes > 0)
+                        bufferSize += stream.Read(buffer, (int)bufferSize, readBytes);
+                    else
+                    {
+                    }
+                }
+                return (char)buffer[howFar];
+            }
+        }
 
         private void CheckBuffer(long chars)
         {
@@ -288,31 +313,6 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
 
         protected abstract NextTokenResults NextTokenInternal(long parserState);
 
-        /// <summary>
-        /// Performs a lookahead in the current stream.
-        /// </summary>
-        /// <param name="howFar">The number of characters to look ahead.</param>
-        /// <returns>The character of the index in the stream, if <paramref name="howFar"/> 
-        /// is in range.  <see cref="Char.MinValue"/> otherwise.</returns>
-        public char LookAhead(long howFar)
-        {
-            lock (buffer)
-            {
-                if (Position + (howFar + 1) > stream.Length)
-                    return char.MinValue;
-                CheckBuffer(howFar + 1);
-                if (bufferSize < (howFar + 1))
-                {
-                    int readBytes = (int)((howFar + 1) - bufferSize);
-                    if (readBytes > 0)
-                        bufferSize += stream.Read(buffer, (int)bufferSize, readBytes);
-                    else
-                    {
-                    }
-                }
-                return (char)buffer[howFar];
-            }
-        }
 
         /// <summary>
         /// Clears the current stream buffer and returns the characters associated.

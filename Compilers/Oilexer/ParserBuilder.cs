@@ -1,946 +1,398 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
-using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining;
-using AllenCopeland.Abstraction.Slf.Abstract;
-using AllenCopeland.Abstraction.Slf.Abstract.Members;
-using AllenCopeland.Abstraction.Slf.Cli;
+﻿using AllenCopeland.Abstraction.Slf.Abstract;
+using AllenCopeland.Abstraction.Slf.Ast;
+using AllenCopeland.Abstraction.Slf.Ast.Cli;
+using AllenCopeland.Abstraction.Slf.Ast.Members;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
-using AllenCopeland.Abstraction.Slf.Ast;
-using AllenCopeland.Abstraction.Slf.Languages.CSharp;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp.Expressions;
 using AllenCopeland.Abstraction.Slf.Ast.Expressions;
-using AllenCopeland.Abstraction.Slf.Ast.Members;
-using AllenCopeland.Abstraction.Slf.Ast.Statements;
-using AllenCopeland.Abstraction.Slf.Parsers;
-using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+
+using AllenCopeland.Abstraction.Utilities.Arrays;
 using AllenCopeland.Abstraction.Utilities.Collections;
-using AllenCopeland.Abstraction.Slf.Languages;
- /*---------------------------------------------------------------------\
- | Copyright © 2008-2011 Allen C. [Alexander Morou] Copeland Jr.        |
- |----------------------------------------------------------------------|
- | The Abstraction Project's code is provided under a contract-release  |
- | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
- \-------------------------------------------------------------------- */
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using AllenCopeland.Abstraction.Slf.Ast.Statements;
+
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
     /// <summary>
-    /// Provides a builder for the parser that results
-    /// from a grammar description file.
+    /// Provides a base implementation of a <see cref="IConstructBuilder{TInput, TOutput}"/>
+    /// which yields a given language's parser.
     /// </summary>
-    public class ParserBuilder
+    public partial class ParserBuilder :
+        IConstructBuilder<Tuple<ParserCompiler, TokenSymbolBuilder, IIntermediateAssembly, RegularLanguageDFAState>, Tuple<IIntermediateInterfaceType, IIntermediateClassType, LexerBuilder>>
     {
         /// <summary>
-        /// Returns the <see cref="GDFile"/> which describes the structure
-        /// of the grammar to build a parser for.
+        /// Data member for <see cref="Compiler"/>.
         /// </summary>
-        public GDFile Source { get; private set; }
+        private ParserCompiler compiler;
+        /// <summary>
+        /// Data member for <see cref="LexerBuilder"/>.
+        /// </summary>
+        private LexerBuilder _lexerBuilder;
+        /// <summary>
+        /// Data member for <see cref="ParserInterface"/>
+        /// </summary>
+        private IIntermediateInterfaceType _parserInterface;
+        /// <summary>
+        /// Data member for <see cref="ParserClass"/>.
+        /// </summary>
+        private IIntermediateClassType _parserClass;
+        /// <summary>
+        /// Data member maintaining a reference to the result assembly
+        /// on which the <see cref="ParserClass"/> and 
+        /// <see cref="ParserInterface"/> are constructed.
+        /// </summary>
+        private IIntermediateAssembly _assembly;
+        private SymbolStreamBuilder _symbolStreamBuilder;
+        private GenericSymbolStreamBuilder _genericSymbolStreamBuilder;
+        private TokenSymbolBuilder _tokenSymbolBuilder;
+        private RegularLanguageDFAState _lexerCore;
+        private IIntermediateClassFieldMember _parserState;
+        private IIntermediateClassPropertyMember _parserStatePropImpl;
+        private IIntermediateInterfacePropertyMember _parserStateProp;
+        private IIntermediateCliManager _identityManager;
 
         /// <summary>
-        /// Returns a series of <see cref="ICompilerErrorCollection"/> instances
-        /// which denote where errors occur in identity resolution,
-        /// usage of templates, or other base compiler errors.
+        /// Creates a new <see cref="ParserBuilder"/>.
         /// </summary>
-        public ICompilerErrorCollection CompilationErrors { get; private set; }
+        public ParserBuilder()
+        {
+        }
 
         /// <summary>
-        /// Returns the <see cref="IIntermediateAssembly"/> which represents
-        /// the resulted parser.
+        /// Handles construction of the elements yielded by the
+        /// <see cref="ParserBuilder"/> with the <paramref name="input"/>
+        /// provided.
         /// </summary>
-        public IIntermediateAssembly Project { get; private set; }
-
-        /// <summary>
-        /// Returns a dictionary containing timing information for each phase
-        /// of the build process.
-        /// </summary>
-        public Dictionary<ParserBuilderPhase, TimeSpan> PhaseTimes { get; private set; }
-
-        public ControlledDictionary<IProductionRuleEntry, SyntacticalDFARootState> RuleDFAStates { get; private set; }
-
-        public IProductionRuleEntry StartEntry { get; private set; }
-
-        /// <summary>
-        /// Returns a series of token precedences associated to the tokens.
-        /// </summary>
-        internal TokenPrecedenceTable Precedences { get; private set; }
-
-        internal RegularLanguageLexer LexicalAnalyzer { get; private set; }
-
-        internal SyntacticalParser SyntaxParser { get; private set; }
-
-        public IGrammarSymbolSet GrammarSymbols { get; private set; }
-
-        public ITokenEntry EOFToken { get; private set; }
-
-        private Dictionary<IProductionRuleEntry, SyntacticalNFAState> ruleNFAStates { get; set; }
-
-        private Dictionary<IProductionRuleEntry, SyntacticalDFARootState> ruleDFAStates { get; set; }
-
-        public IControlledCollection<string> StreamAnalysisFiles { get; private set; }
-
-        private IGDFileObjectRelationalMap fileRelationalMap;
-
-        private CharStreamClass bitStream;
-
-        public event EventHandler<ParserBuilderPhaseChangeEventArgs> PhaseChange;
-
-
-        public ParserBuilder(IGDFile source, List<string> streamAnalysisFiles)
+        /// <param name="input">The <see cref="Tuple{T1, T2, T3}"/> which provides the
+        /// <see cref="ParserCompiler"/>, <see cref="TokenSymbolBuilder"/> and 
+        /// <see cref="IIntermediateAssembly"/> necessary to perform the operation.</param>
+        /// <returns>A <see cref="Tuple{T1, T2, T3}"/> which yields the
+        /// <see cref="IIntermediateInterfaceType"/>, <see cref="IIntermediateClassType"/> 
+        /// for the result parser of the language, and 
+        /// <see cref="LexerBuilder"/> of the language which denotes the class
+        /// and interface of the tokenizer.</returns>
+        public Tuple<IIntermediateInterfaceType, IIntermediateClassType, LexerBuilder> Build(Tuple<ParserCompiler, TokenSymbolBuilder, IIntermediateAssembly, RegularLanguageDFAState> input)
         {
-            Initialize(source, streamAnalysisFiles);
-        }
-
-        protected ParserBuilder()
-        {
-        }
-
-        protected void Initialize(IGDFile source, List<string> streamAnalysisFiles)
-        {
-            this.CompilationErrors = new CompilerErrorCollection();
-            this.PhaseTimes = new Dictionary<ParserBuilderPhase, TimeSpan>();
-            this.Source = (GDFile)source;
-            this.StreamAnalysisFiles = new ReadOnlyCollection<string>(streamAnalysisFiles);
-        }
-
-        private void ConstructTokenNFA()
-        {
-            this.EOFToken = (ITokenEofEntry)this.Source.FirstOrDefault(f => f is ITokenEofEntry);
-            /* *
-             * Overview:
-             *      1. Determine each token type and construct 
-             *         appropriate data model for each token.
-             *      2. Order tokens via precedence.
-             *      3. Construct general NFA from inlined tokens.
-             * */
-            //this.Source.GetTokens().OnAll(token =>
-            //    token.BuildNFA());
-            foreach (var token in this.Source.GetTokens())
-                token.BuildNFA();
-        }
-
-        private void ConstructTokenDFA()
-        {
-            /* *
-             * Overview:
-             *      Construct the appropriate Deterministic 
-             *      state machine for each kind of token using
-             *      the information gained in the previous step,
-             *      to decide how much reduction to perform 
-             *      post-DFA construction.
-             * */
-            this.Source.GetTokens().AsParallel()
-              .ForAll(token =>
-                token.BuildDFA());
-        }
-
-        private void ReduceTokenDFA()
-        {
-            /* *
-             * Overview:
-             *      Reduce each token's deterministic
-             *      state machine to its minimal form.
-             * */
-            var tokensArr = this.Source.GetTokens().ToArray();
-            tokensArr.AsParallel().ForAll(token =>
-                token.ReduceDFA());
-        }
-
-        private void ReduceRuleDFA()
-        {
-            var rulesArr = (from rule in this.Source.GetRules()
-                           select this.ruleDFAStates[rule]).ToArray();
-            rulesArr.AsParallel().ForAll(rule => { lock (rule) rule.ReduceDFA(); });
-
-            this.LexicalAnalyzer = new RegularLanguageLexer(this);
-        }
-
-        private void ConstructRuleNFA()
-        {
-            this.GrammarSymbols = new GrammarSymbolSet(this.Source);
-            this.ruleNFAStates = new Dictionary<IProductionRuleEntry, SyntacticalNFAState>();
-            var rules = (from rule in Source.GetRules()
-                         orderby rule.Name
-                         select rule).ToArray();
-            var result = new SyntacticalNFARootState[rules.Length];
-            int i = 0;
-            rules.OnAll(p => new { Rule = p, Index = i++ }).AsParallel().ForAll(ruleAndIndex =>
-                result[ruleAndIndex.Index] = (SyntacticalNFARootState)ruleAndIndex.Rule.BuildNFA(new SyntacticalNFARootState(ruleAndIndex.Rule, this), this.GrammarSymbols, this));
-            for (i = 0; i < result.Length; i++)
-            {
-                var current = result[i];
-                this.ruleNFAStates.Add(current.Source, current);
-            }
-        }
-
-        private void ConstructRuleDFA()
-        {
-            this.ruleDFAStates = new Dictionary<IProductionRuleEntry, SyntacticalDFARootState>();
-            int i = 0;
-            var rules = (from rule in Source.GetRules()
-                         orderby rule.Name
-                         select rule).ToArray();
-            SyntacticalDFARootState[] result = new SyntacticalDFARootState[rules.Length];
-            rules.OnAll(p => new { Rule = p, Index = i++ }).AsParallel().ForAll(ruleAndIndex => result[ruleAndIndex.Index] = (SyntacticalDFARootState)this.ruleNFAStates[ruleAndIndex.Rule].DeterminateAutomata());
-            for (i = 0; i < result.Length; i++)
-            {
-                var current = result[i];
-                ruleDFAStates.Add(current.Entry, current);
-            }
-            this.RuleDFAStates = new ControlledDictionary<IProductionRuleEntry, SyntacticalDFARootState>(this.ruleDFAStates);
-        }
-
-        private void PerformStreamAnalysis()
-        {
-            this.ReduceRuleDFA();
-            this.RuleDFAStates[this.StartEntry].Connect();
-            this.SyntaxParser = new SyntacticalParser(this);
-            foreach (var file in this.StreamAnalysisFiles)
-                this.SyntaxParser.Parse(file);
-        }
-
-        private void BuildCodeModel(IIntermediateAssembly project, IIntermediateCliManager identityManager)
-        {
-            this.bitStream = BitStreamCreator.CreateBitStream(project.DefaultNamespace, identityManager);
-            this.fileRelationalMap = new GDFileObjectRelationalMap(this.Source, this.RuleDFAStates, project);
-        }
-
-        private void BuildStateMachine(InlinedTokenEntry token, IIntermediateAssembly project, CharStreamClass charStream)
-        {
-            var tokenDFA = token.DFAState;
-            var tokenName = token.Name;
-            if (tokenDFA == null)
-                return;
-
-            switch (token.CaptureKind)
-            {
-                case RegularCaptureType.Recognizer:
-                    BuildRecognizerMachine(project, charStream, tokenDFA, tokenName);
-                    break;
-                case RegularCaptureType.Capturer:
-                    BuildRecognizerMachine(project, charStream, tokenDFA, tokenName);
-                    break;
-                case RegularCaptureType.Transducer:
-                    BuildRecognizerMachine(project, charStream, tokenDFA, tokenName);
-                    break;
-                case RegularCaptureType.Undecided:
-                    break;
-            }
-        }
-
-        private void BuildTransducerMachine(IIntermediateAssembly project, RegularLanguageDFARootState tokenDFA, string tokenName)
-        {
+            this.compiler = input.Item1;
+            this._tokenSymbolBuilder = input.Item2;
+            this._assembly = input.Item3;
+            this._identityManager = (IIntermediateCliManager)this._assembly.IdentityManager;
+            this._parserInterface = _assembly.DefaultNamespace.Parts.Add().Interfaces.Add("I{0}", compiler.Source.Options.ParserName);
+            this._parserClass = _assembly.DefaultNamespace.Parts.Add().Classes.Add(compiler.Source.Options.ParserName);
+            this._genericSymbolStreamBuilder = new GenericSymbolStreamBuilder();
+            this._symbolStreamBuilder = new SymbolStreamBuilder();
+            this._lexerBuilder = new LexerBuilder();
+            this._parserClass.AccessLevel = AccessLevelModifiers.Internal;
+            this._parserInterface.AccessLevel = AccessLevelModifiers.Public;
+            this._lexerCore = input.Item4;
+            this._parserState = this._parserClass.Fields.Add(new TypedName("_state", _assembly.IdentityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
+            this._parserState.AccessLevel = AccessLevelModifiers.Private;
+            this._parserStateProp = this._parserInterface.Properties.Add(new TypedName("State", this._parserState.FieldType), true, false);
+            this._parserStatePropImpl = this._parserClass.Properties.Add(new TypedName("State", this._parserState.FieldType), true, true);
+            this._parserStatePropImpl.AccessLevel = AccessLevelModifiers.Public;
+            this._parserStatePropImpl.SetMethod.AccessLevel = AccessLevelModifiers.Private;
+            this._parserStatePropImpl.GetMethod.Return(this._parserState.GetReference());
+            this._parserStatePropImpl.SetMethod.Assign(this._parserState.GetReference(), this._parserStatePropImpl.SetMethod.ValueParameter.GetReference());
+            this._parserClass.ImplementedInterfaces.ImplementInterfaceQuick(this._parserInterface);
             
+            return Tuple.Create(this.ParserInterface, this.ParserClass, this._lexerBuilder);
         }
 
-        private void BuildRecognizerMachine(IIntermediateAssembly project, CharStreamClass charStream, RegularLanguageDFAState tokenDFA, string tokenName)
+        public IIntermediateClassPropertyMember StateImpl { get { return this._parserStatePropImpl; } }
+        public IIntermediateClassFieldMember _StateImpl { get { return this._parserState; } }
+        public IIntermediateClassFieldMember StateImplField { get { return this._parserState; } }
+        public IIntermediateInterfacePropertyMember State { get { return this._parserStateProp; } }
+
+        public void Build2()
         {
-            IIntermediateCliManager identityManager = (IIntermediateCliManager)project.IdentityManager;
-            //Setup the basic class, access level, and base-type.
-            IIntermediateNamespaceDeclaration targetNamespace = project.DefaultNamespace.Parts.Add();
-            IIntermediateClassType targetType;
-            targetType = targetNamespace.Classes.Add(string.Format("{0}StateMachine", tokenName));
-            var stateMachine = targetType;
-            stateMachine.AccessLevel = AccessLevelModifiers.Internal;
-            stateMachine.BaseType = charStream.BitStream;
-            
-            /* *
-             * Setup the 'next character' state movement method,
-             * the state and exit-length variables.
-             * */
+            /* ACC - Update May 24, 2015: Moved Lexer build into a separate method due to pruning of unused ambiguities being a necessity prior to Lexer build. */
+            this._genericSymbolStreamBuilder.Build(Tuple.Create(this.compiler, this._tokenSymbolBuilder.CommonSymbolBuilder, this._assembly));
+            this._symbolStreamBuilder.Build(Tuple.Create(this.compiler, this._tokenSymbolBuilder.CommonSymbolBuilder, this._assembly, this._genericSymbolStreamBuilder));
+            this._lexerBuilder.Build(Tuple.Create(compiler, this, _assembly, this._tokenSymbolBuilder, true, this._genericSymbolStreamBuilder, this._lexerCore));
+            this.BuildSymbolStreamImpl();
+            this.BuildTokenStreamImpl();
+            this.BuildTokenizerImpl();
+            this.Create_CurrentContextImpl();
+            this.BuildConstructor();
+            this.BuildCurrentIfNegative();
+            this.BuildGetMasterContext();
+            this.BuildSpinErrorContext();
+            this.BuildFollowState();
+            this.BuildReset();
+        }
 
-            var nextMethod = stateMachine.Methods.Add(new TypedName("Next", identityManager.ObtainTypeReference(RuntimeCoreType.Boolean)));
-            nextMethod.AccessLevel = AccessLevelModifiers.Public;
-            var nextChar = nextMethod.Parameters.Add(new TypedName("currentChar", identityManager.ObtainTypeReference(RuntimeCoreType.Char)));
-            //nextMethod.Summary = string.Format("Moves the state machine into its next state with the @p:{0};.", nextChar.Name);
-            //nextChar.DocumentationComment = "The next character used as the condition for state->state transitions.";
-            var stateField = stateMachine.Fields.Add(new TypedName("state", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
-            stateField.InitializationExpression = IntermediateGateway.NumberZero;
-            //stateField.Summary = "The state machine's current state, determining the logic path to follow for the next character.";
-            var exitLength = stateMachine.Fields.Add(new TypedName("exitLength", identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
+        private void BuildFollowState()
+        {
+            var followStateImpl = this._parserClass.Fields.Add(new TypedName("followState", RuntimeCoreType.Int32, this._identityManager));
+            this._FollowStateImpl = followStateImpl;
+            this._FollowStateImpl.AccessLevel = AccessLevelModifiers.Private;
+        }
 
-            /* *
-             * Obtain all the states in the deterministic automation.
-             * */
-            var flatForm = new List<RegularLanguageDFAState>();
-            RegularLanguageDFAState.FlatlineState(tokenDFA, flatForm);
-            if (!flatForm.Contains(tokenDFA))
-                flatForm.Add(tokenDFA);
-            flatForm = (from f in flatForm
-                        orderby f.StateValue
-                        select f).ToList();
-            /* *
-             * Setup the main state switch, and a basic anonymous-type 
-             * state-data construct.
-             * */
-            var stateSwitch = nextMethod.Switch(stateField.GetReference());
-            IUnicodeCollectiveTargetGraph collectiveGraph = new UnicodeCollectiveTargetGraph();
-            nextMethod.Return(IntermediateGateway.FalseValue);
-            var stateCodeData = GetDictionary((RegularLanguageDFAState)null,
-                new
-                {
-                    SwitchCase = (ISwitchCaseBlockStatement)null,
-                    Label = (ILabelStatement)null,
-                    Graph = (IUnicodeTargetGraph)null,
-                    GraphLabel = (ILabelStatement)null,
-                    TransitionTable = (Dictionary<RegularLanguageSet, RegularLanguageDFAState>)null,
-                });
-            ILabelStatement terminalExit = null;
-            ILabelStatement nominalExit = null;
-            ILabelStatement commonMove = null;
-            /* *
-             * Make the initial pass over the states of the machine, convert the
-             * transition tables into unicode-aware variants.
-             * *
-             * This ensures that massive thousand character sets aren't generated,
-             * while also keeping in mind partial unicode sets.
-             * */
-            var graphLabels = new Dictionary<IUnicodeTargetGraph, ILabelStatement>();
-            var insertedGraphs = new List<IUnicodeTargetGraph>();
-            var insertedStates = new List<RegularLanguageDFAState>();
-            int unicodeGraphCount = 0;
-            var sourceSet = tokenDFA.SourceSet.Cast<ITokenItem>().ToArray();
-            var sourceNames = (from s in sourceSet
-                               select s.Name).Distinct().ToArray();
-            var sources = sourceNames.ToDictionary(p => p, p => (from s in sourceSet
-                                                                 where s.Name == p
-                                                                 select s).ToArray());
-            foreach (var state in flatForm)
+        public void Build3()
+        {
+            this.FinishResetMethod();
+        }
+
+        private void FinishResetMethod()
+        {
+            this.ResetMethodImpl.Call(this.compiler.SymbolStreamBuilder.ResetMethodImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke());
+        }
+
+        private void BuildReset()
+        {
+            var resetMethod = this._parserClass.Methods.Add(new TypedName("Reset", RuntimeCoreType.VoidType, this._identityManager));
+            resetMethod.Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference(this._TokenStreamImpl.GetReference()).GetMethod("Clear").Invoke());
+            resetMethod.AccessLevel = AccessLevelModifiers.Public;
+            this.ResetMethodImpl = resetMethod;
+        }
+
+        private void BuildConstructor()
+        {
+            var ctor = this.ParserClass.Constructors.Add(new TypedName("stream", this._identityManager.ObtainTypeReference(typeof(Stream))));
+            var streamParam = ctor.Parameters["stream"];
+            ctor.Assign(this._TokenizerImpl.GetReference(), this.LexerBuilder.LexerClass.GetNewExpression(new SpecialReferenceExpression(SpecialReferenceKind.This)));
+            ctor.Call(this.LexerBuilder.InitializeMethod.GetReference(this._TokenizerImpl.GetReference()).Invoke(streamParam.GetReference()));
+            ctor.Assign(this._SymbolStreamImpl.GetReference(), this.Compiler.SymbolStreamBuilder.ResultClass.GetNewExpression(this._TokenStreamImpl.GetReference().Assign(this.Compiler.TokenStreamBuilder.ResultClass.GetNewExpression(this._TokenizerImpl.GetReference()))));
+            ctor.AccessLevel = AccessLevelModifiers.Public;
+        }
+
+        private void BuildSymbolStreamImpl()
+        {
+            var symbolStreamImpl = this.ParserClass.Fields.Add(new TypedName("_symbolStream", this.Compiler.SymbolStreamBuilder.ResultClass));
+            symbolStreamImpl.AccessLevel = AccessLevelModifiers.Private;
+            this._SymbolStreamImpl = symbolStreamImpl;
+        }
+
+        private void BuildTokenStreamImpl()
+        {
+            var tokenStream = this.ParserClass.Fields.Add(new TypedName("_tokenStream", this.Compiler.TokenStreamBuilder.ResultClass));
+            var tokenStreamImpl = this.ParserClass.Properties.Add(new TypedName("TokenStream", this.compiler.TokenStreamBuilder.ResultInterface), true, false);
+            tokenStreamImpl.AccessLevel = AccessLevelModifiers.Public;
+            tokenStreamImpl.GetMethod.Return(tokenStream.GetReference());
+            tokenStream.AccessLevel = AccessLevelModifiers.Private;
+            this._TokenStreamImpl = tokenStream;
+        }
+
+        private void BuildTokenizerImpl()
+        {
+            var tokenizer = this.ParserClass.Fields.Add(new TypedName("_tokenizer", this.LexerBuilder.LexerClass));
+            tokenizer.AccessLevel = AccessLevelModifiers.Private;
+            this._TokenizerImpl = tokenizer;
+        }
+
+        private void Create_CurrentContextImpl()
+        {
+            var _currentContextImpl = this._parserClass.Fields.Add(new TypedName("_currentContext", this.Compiler.RuleSymbolBuilder.ILanguageRuleSymbol));
+            _currentContextImpl.AccessLevel = AccessLevelModifiers.Private;
+            this._CurrentContextImpl = _currentContextImpl;
+        }
+
+        private void BuildGetMasterContext()
+        {
+            var getMasterContextImpl = this.ParserClass.Methods.Add(new TypedName("GetMasterContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol));
+            var currentContextLocal = getMasterContextImpl.Locals.Add(new TypedName("currentContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), this._CurrentContextImpl.GetReference());
+            var whileLoop = getMasterContextImpl.While(currentContextLocal.InequalTo(IntermediateGateway.NullValue));
+            whileLoop.If(this.compiler.RuleSymbolBuilder.ParentImpl.GetReference(currentContextLocal.GetReference()).InequalTo(IntermediateGateway.NullValue))
+                .Assign(currentContextLocal.GetReference(), this.compiler.RuleSymbolBuilder.ParentImpl.GetReference(currentContextLocal.GetReference()));
+            getMasterContextImpl.Return(currentContextLocal.GetReference());
+            this.GetMasterContextImpl = getMasterContextImpl;
+            GetMasterContextImpl.AccessLevel = AccessLevelModifiers.Private;
+        }
+
+        private void BuildCurrentIfNegative()
+        {
+            var currentIfOtherNegative = this.ParserClass.Methods.Add(new TypedName("CurrentIfOtherNegative", RuntimeCoreType.Int32, this._identityManager),
+                new TypedNameSeries(
+                    new TypedName("current", RuntimeCoreType.Int32, this._identityManager), 
+                    new TypedName("other", RuntimeCoreType.Int32, this._identityManager)));
+            var current = currentIfOtherNegative.Parameters["current"];
+            var other = currentIfOtherNegative.Parameters["other"];
+            currentIfOtherNegative.If(other.GetReference().LessThan(IntermediateGateway.NumberZero))
+                .Return(current.GetReference());
+            currentIfOtherNegative.Return(other.GetReference());
+            this.CurrentIfOtherNegative = currentIfOtherNegative;
+        }
+
+        private void BuildSpinErrorContext()
+        {
+            var errorContextImpl = this.ParserClass.Fields.Add(new TypedName("currentErrorContext", ((IClassType)(this._identityManager.ObtainTypeReference(typeof(List<>)))).MakeGenericClosure(this.compiler.ErrorContextBuilder.ILanguageErrorContext)));
+            var spinErrorContext = this.ParserClass.Methods.Add(new TypedName("SpinUpErrorContext", RuntimeCoreType.VoidType, this._identityManager));
+            spinErrorContext.Assign(errorContextImpl.GetReference(), errorContextImpl.FieldType.GetNewExpression());
+            spinErrorContext.AccessLevel = AccessLevelModifiers.Private;
+            this.SpinErrorContextImpl = spinErrorContext;
+            this._ErrorContextImpl = errorContextImpl;
+        }
+
+        /// <summary>
+        /// Returns the <see cref="ParserCompiler"/> instance from which the
+        /// <see cref="ParserBuilder"/> was derived.
+        /// </summary>
+        public ParserCompiler Compiler { get { return this.compiler; } }
+
+        /// <summary>
+        /// Returns the <see cref="IIntermediateInterfaceType"/> which denotes the the parser interface of the
+        /// result language.
+        /// </summary>
+        public IIntermediateInterfaceType ParserInterface { get { return this._parserInterface; } }
+
+        /// <summary>
+        /// Returns the <see cref="IIntermediateClassType"/> which denotes the parser class of the result language.
+        /// </summary>
+        public IIntermediateClassType ParserClass { get { return this._parserClass; } }
+
+        /// <summary>
+        /// Returns the <see cref="LexerBuilder"/> class which is responsible for building the resultant lexer
+        /// interface and class for the current language
+        /// </summary>
+        public LexerBuilder LexerBuilder { get { return this._lexerBuilder; } }
+
+        /// <summary>
+        /// Returns the <see cref="IControlledDictionary{TKey, TValue}"/> which denotes the series of
+        /// <see cref="IIntermediateClassMethodMember"/> instances which provide static LL(*) predictions for a
+        /// given state within a language.
+        /// </summary>
+        public IControlledDictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember> PredictionMethods { get; private set; }
+
+        /// <summary>
+        /// Returns the <see cref="IControlledDictionary{TKey, TValue}"/> which denotes the series of
+        /// <see cref="IIntermediateClassMethodMember"/> instances which provide the standard parse method
+        /// implementations of a given production rule of a language relative to the internal class of the parser.
+        /// </summary>
+        public IControlledDictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember> ParseMethods { get; private set; }
+
+        /// <summary>
+        /// Returns the <see cref="IControlledDictionary{TKey, TValue}"/> which denotes the series of
+        /// <see cref="IIntermediateInterfaceMethodMember"/> instances which provide the standard parse method of
+        /// a given production of a rule of a language relative to the public interface of the parser.
+        /// </summary>
+        public IControlledDictionary<ProductionRuleNormalAdapter, IIntermediateInterfaceMethodMember> InterfaceParseMethods { get; private set; }
+
+        public SymbolStreamBuilder SymbolStreamBuilder { get { return this._symbolStreamBuilder; } }
+        public GenericSymbolStreamBuilder GenericSymbolStreamBuilder { get { return this._genericSymbolStreamBuilder; } }
+
+        private Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember> parseMethods = new Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember>();
+
+        private Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember> parseInternalMethods = new Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember>();
+        private Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember> parseInternalOriginalMethods = new Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember>();
+
+        private Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember> predictMethods = new Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember>();
+
+        private Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember> followPredictMethods = new Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember>();
+        private Dictionary<ProductionRuleProjectionNode, IIntermediateClassMethodMember> followDiscriminatorMethods = new Dictionary<ProductionRuleProjectionNode, IIntermediateClassMethodMember>();
+
+        internal IIntermediateClassMethodMember GetEntryParseMethod(IOilexerGrammarProductionRuleEntry entry)
+        {
+            IIntermediateClassMethodMember result;
+            var adapter = this.Compiler.RuleAdapters[entry];
+            this.parseMethods.TryGetValue(adapter, out result);
+            return result;
+        }
+        internal IIntermediateClassMethodMember GetEntryInternalParseMethod(IOilexerGrammarProductionRuleEntry entry)
+        {
+            IIntermediateClassMethodMember result;
+            var adapter = this.Compiler.RuleAdapters[entry];
+            this.parseInternalMethods.TryGetValue(adapter, out result);
+            return result;
+        }
+        private static IEnumerable<Tuple<IGrammarSymbol, IIntermediateEnumFieldMember>> GetVocabularyIdentities(GrammarVocabulary vocabulary, ParserCompiler compiler)
+        {
+            var symbols = vocabulary.GetSymbols();
+            var tokens = symbols.Where(k => k is IGrammarTokenSymbol && (!(((IGrammarTokenSymbol)k).Source is IOilexerGrammarTokenEofEntry)));
+            var rules = symbols.Where(k => k is IGrammarRuleSymbol);
+            foreach (var token in tokens)
+                yield return Tuple.Create(token, compiler.LexicalSymbolModel.GetIdentitySymbolField(token));
+            foreach (var rule in rules)
             {
-                ISwitchCaseBlockStatement stateCase = null;
-                ILabelStatement graphLabel = null;
-                ILabelStatement label = null;
-                IUnicodeTargetGraph graph = null;
-                //var activeNamedSources = (from s in state.Sources
-                //                          where sourceSet.Contains(s.Item1)
-                //                          select s).ToDictionary(p => (ITokenItem)p.Item1, p => p.Item2);
+                yield return Tuple.Create(rule, compiler.SyntacticalSymbolModel.GetIdentitySymbolField(rule));
+            }
+        }
 
-                Dictionary<RegularLanguageSet, RegularLanguageDFAState> finalTransitionTable = null;
-                if (state.OutTransitions.Count == 0)
-                    goto skipGraph;
-                graph = new UnicodeTargetGraph();
-                var fullSet = state.OutTransitions.FullCheck;
-                finalTransitionTable = new Dictionary<RegularLanguageSet, RegularLanguageDFAState>();
-                foreach (var transition in state.OutTransitions)
-                {
-                    /* *
-                     * Send in the current transition's requirement, along with the full set
-                     * to breakdown the unicode subsets contained within.
-                     * */
-                    var breakdown = Breakdown(transition.Key, fullSet);
-                    /* *
-                     * If the remainder of the unicode breakdown does not overlap enough
-                     * of a category to include it, denote the remainder.
-                     * */
-                    if (breakdown.Item1 != null && !breakdown.Item1.IsEmpty)
-                        finalTransitionTable.Add(breakdown.Item1, transition.Value);
-                    /* *
-                     * If there are partial and full unicode sets,
-                     * push them into the unicode target logic graph.
-                     * */
-                    if (breakdown.Item2.Length > 0 ||
-                        breakdown.Item3.Count > 0)
-                    {
-                        IUnicodeTarget target = null;
-                        if (!graph.TryGetValue(transition.Value, out target))
-                            target = graph.Add(transition.Value, transition.Value == state);
-                        //Full sets are simple.
-                        foreach (var category in breakdown.Item2)
-                            target.Add(category);
-                        var item3 = breakdown.Item3;
-                        /* *
-                         * Partial sets are a bit more interesting.
-                         * */
-                        foreach (var partialCategory in item3.Keys)
+        public IIntermediateClassFieldMember _CurrentContextImpl { get; set; }
+
+        public IIntermediateClassFieldMember _TokenizerImpl { get; set; }
+
+        public IIntermediateClassFieldMember _TokenStreamImpl { get; set; }
+
+        public IIntermediateClassFieldMember _SymbolStreamImpl { get; set; }
+
+        public IIntermediateClassMethodMember ResetMethodImpl { get; set; }
+
+
+        public IIntermediateClassMethodMember GetMasterContextImpl { get; set; }
+
+        public IIntermediateClassMethodMember SpinErrorContextImpl { get; set; }
+
+        public IIntermediateClassFieldMember _ErrorContextImpl { get; set; }
+
+        public IIntermediateClassMethodMember CurrentIfOtherNegative { get; set; }
+
+        public IIntermediateClassFieldMember _FollowStateImpl { get; set; }
+    }
+
+    public enum SyntacticalDFAStateEnclosureHandling
+    {
+        Undecided,
+        Encapsulate,
+        EncapsulatePeek,
+        Handled,
+    }
+    public class SyntacticalDFAStateJumpData
+    {
+        public SyntacticalDFAState                  State              { get; set; }
+        public Lazy<ILabelStatement>                Label              { get; set; }
+        public BlockStatementParentContainer        BlockContainer     { get; set; }
+        public SyntacticalDFAStateEnclosureHandling EnclosureType      { get; set; }
+        private static IEnumerable<SyntacticalDFAStateJumpData> ObtainStateJumpDetailsInternal(
+            IEnumerable<SyntacticalDFAState>         statesNeedingLabels, 
+            IBlockStatementParent                    owner, 
+            string                                   labelPattern, 
+            string                                   statePattern, 
+            Func<SyntacticalDFAState, bool>          isMultiOverride,
+            IEnumerable<SyntacticalDFAState>         singularStates, 
+            params object[]                          furtherReplacements)
+        {
+            if (singularStates != null && isMultiOverride != null)
+                foreach (var state in singularStates)
+                    if (isMultiOverride(state))
+                        yield return new SyntacticalDFAStateJumpData()
                         {
-                            /* *
-                             * If the partial set doesn't contain a remainder,
-                             * the original remainder was consumed by the overall 
-                             * checks that occur before it.
-                             * *
-                             * As an example, if the category is Ll, assuming there
-                             * are other paths that utilize a-z, the original check used to
-                             * construct the unicode breakdown would note this, but
-                             * the full set sent into the breakdown method would negate
-                             * the negative set (if a-z are already checked,
-                             * there is no need to check that the character -isn't- 
-                             * in that range).
-                             * */
-                            if (item3[partialCategory] == null)
-                                target.Add(partialCategory);
-                            else
-                                target.Add(partialCategory, item3[partialCategory]);
-                        }
-                    }
-                }
-                if (graph.Count > 0)
-                {
-                    /* *
-                     * Based upon the full groups and partials above for the current
-                     * state's output, check the collective graph to see if a duplicate
-                     * exists.
-                     * *
-                     * If the target of the transition is identical to the current state,
-                     * the graph will be unique, this is to avoid unnecessary assignments
-                     * to the current state.
-                     * */
-                    IUnicodeTargetGraph findResults = collectiveGraph.Find(graph);
-                    if (findResults == null)
+                            State = state,
+                            Label = new Lazy<ILabelStatement>(() =>
+                                owner.DefineLabel(string.Format(string.Format(labelPattern, statePattern), ((object)state.StateValue).AsEnumerable().Concat(furtherReplacements).ToArray()))),
+                            BlockContainer = new BlockStatementParentContainer(owner)
+                        };
+            foreach (var state in statesNeedingLabels.OrderBy(k => k.StateValue))
+            {
+                yield return new SyntacticalDFAStateJumpData()
                     {
-                        collectiveGraph.Add(graph);
-                        graphLabels.Add(graph, graphLabel = new LabelStatement(nextMethod, string.Format("UnicodeGraph_{0}", ++unicodeGraphCount)));
-                    }
-                    else
-                    {
-                        graph = findResults;
-                        graphLabel = graphLabels[findResults];
-                    }
-                }
-                else
-                    graph = null;
-                stateCase = stateSwitch.Case(state.StateValue.ToPrimitive());
-            skipGraph:
-                if (state.InTransitions.Count > 0)
-                    /* *
-                     * No need to provide a move-to label if the state,
-                     * which designates the origin, is the state itself.
-                     * *
-                     * Such a case uses a common move or nominal exit depending
-                     * on whether the state is an edge.
-                     * */
-                    if (!(state.InTransitions.Count == 1 && state.InTransitions[0].Value.Count == 1 && state.InTransitions[0].Value[0] == state))
-                        label = new LabelStatement(nextMethod, string.Format("MoveToState_{0}", state.StateValue));
-                stateCodeData.Add(state,
-                    new
-                    {
-                        SwitchCase = stateCase,
-                        Label = label,
-                        Graph = graph,
-                        GraphLabel = graphLabel,
-                        TransitionTable = finalTransitionTable,
-                    });
-            }
-            /* *
-             * Build the individual functional areas relative to the
-             * information provided within their transition data.
-             * */
-            foreach (var state in stateCodeData.Keys)
-            {
-                var stateData = stateCodeData[state];
-                var stateCase = stateData.SwitchCase;
-                var stateGraph = stateData.Graph;
-                var graphLabel = stateData.GraphLabel;
-                var transitionTable = stateData.TransitionTable;
-                var currentTarget = (IBlockStatementParent)stateCase;
-                /* *
-                 * Assuming the entire transition table wasn't consumed by 
-                 * the unicode graph translation, emit the necessary
-                 * transitional logic for those remaining.
-                 * */
-                if (transitionTable != null)
-                    foreach (var check in transitionTable.Keys)
-                    {
-                        IExpression finalExpression = null;
-                        var target = transitionTable[check];
-                        var targetLabel = stateCodeData[target].Label;
-                        DiscernForwardTarget(charStream, nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, target, ref targetLabel);
-                        foreach (var rangeElement in check.GetRange())
-                        {
-                            IExpression currentExpression = null;
-                            switch (rangeElement.Which)
-                            {
-                                case RegularLanguageSet.SwitchPairElement.A:
-                                    currentExpression = nextChar.EqualTo(rangeElement.A.Value);
-                                    break;
-                                case RegularLanguageSet.SwitchPairElement.B:
-                                    var start = rangeElement.B.Value.Start;
-                                    var end = rangeElement.B.Value.End;
-                                    /* *
-                                     * 'start' <= nextChar && nextChar <= 'end'
-                                     * */
-                                    currentExpression = start.LessThanOrEqualTo(nextChar).LogicalAnd(nextChar.LessThanOrEqualTo(end));
-                                    break;
-                                default:
-                                    break;
-                            }
-                            if (finalExpression == null)
-                                finalExpression = currentExpression;
-                            else
-                                finalExpression = finalExpression.LogicalOr(currentExpression);
-                        }
-                        var currentCondition = currentTarget.If(finalExpression);
-                        currentCondition.GoTo(targetLabel);
-                        currentTarget = currentCondition.Next;
-                    }
-                if (stateGraph != null)
-                {
-                    if (stateGraph.Count == 1)
-                    {
-                        var first = stateGraph[0].Key;
-                        var firstTarget = stateGraph[first];
-                        if (ParserCompilerExtensions.unicodeCategoryData.Keys.All(
-                            p => firstTarget.Keys.Contains(p)))
-                        {
-                            ILabelStatement targetLabel = stateCodeData[first].Label;
-                            DiscernForwardTarget(charStream, nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, first, ref targetLabel);
-
-                            RegularLanguageSet negativeSet = null;
-                            foreach (var category in firstTarget.Values)
-                            {
-                                if (category is IUnicodeTargetPartialCategory)
-                                {
-                                    var partialCategory = (IUnicodeTargetPartialCategory)category;
-                                    if (negativeSet == null)
-                                        negativeSet = partialCategory.NegativeAssertion;
-                                    else
-                                        negativeSet |= partialCategory.NegativeAssertion;
-                                }
-                            }
-                            if (negativeSet != null)
-                                currentTarget = currentTarget.If(ObtainNegativeAssertion(nextChar, negativeSet));
-                            currentTarget.GoTo(targetLabel);
-
-                            goto FullUnicodeCoverage;
-                        }
-                    }
-                    currentTarget.GoTo(graphLabel);
-                    if (!insertedGraphs.Contains(stateGraph))
-                    {
-                        currentTarget = nextMethod;
-                        nextMethod.DefineLabel(graphLabel);
-
-                        var categoryGetExpr = identityManager.ObtainTypeReference(RuntimeCoreType.Char).GetTypeExpression().GetMethod("GetUnicodeCategory").Invoke(nextChar.GetReference());
-                        var graphSwitch = nextMethod.Switch(categoryGetExpr);
-                        nextMethod.Return(IntermediateGateway.FalseValue);
-                        foreach (var target in stateGraph.Keys)
-                        {
-                            var currentGraphTarget = stateGraph[target];
-                            List<IUnicodeTargetCategory> fullCategories = new List<IUnicodeTargetCategory>();
-                            List<IUnicodeTargetPartialCategory> partialCategories = new List<IUnicodeTargetPartialCategory>();
-                            foreach (var category in currentGraphTarget.Keys)
-                                if (currentGraphTarget[category] is IUnicodeTargetPartialCategory)
-                                    partialCategories.Add(((IUnicodeTargetPartialCategory)(currentGraphTarget[category])));
-                                else
-                                    fullCategories.Add(currentGraphTarget[category]);
-                            ILabelStatement targetLabel = stateCodeData[target].Label;
-                            DiscernForwardTarget(charStream, nextMethod, nextChar, stateField, exitLength, ref terminalExit, ref nominalExit, ref commonMove, insertedStates, state, target, ref targetLabel);
-                            var fullCategory = graphSwitch.Case();
-                            fullCategory.IsDefault = false;
-
-                            foreach (var category in fullCategories)
-                                fullCategory.Cases.Add(typeof(UnicodeCategory).GetTypeExpression(identityManager).GetField(category.TargetedCategory.ToString()));
-                            fullCategory.GoTo(targetLabel);
-
-                            foreach (var category in partialCategories)
-                            {
-                                IExpression finalExpression = ObtainNegativeAssertion(nextChar, category.NegativeAssertion);
-                                var currentCategory = graphSwitch.Case(typeof(UnicodeCategory).GetTypeExpression(identityManager).GetField(category.TargetedCategory.ToString()));
-                                var currentCondition = currentCategory.If(finalExpression);
-                                currentCondition.GoTo(targetLabel);
-                            }
-                        }
-                        insertedGraphs.Add(stateGraph);
-                    }
-                FullUnicodeCoverage: ;
-                }
+                        State = state,
+                        Label = new Lazy<ILabelStatement>(()=>
+                            owner.DefineLabel(string.Format(string.Format(labelPattern, statePattern), ((object)state.StateValue).AsEnumerable().Concat(furtherReplacements).ToArray()))),
+                        BlockContainer = new BlockStatementParentContainer(owner)
+                    };
             }
         }
 
-        private void DiscernForwardTarget(CharStreamClass charStream, IIntermediateMethodMember nextMethod, IIntermediateMethodParameterMember nextChar, IIntermediateFieldMember stateField, IIntermediateFieldMember exitLength, ref ILabelStatement terminalExit, ref ILabelStatement nominalExit, ref ILabelStatement commonMove, List<RegularLanguageDFAState> insertedStates, RegularLanguageDFAState activeState, RegularLanguageDFAState destinationState, ref ILabelStatement targetLabel)
+        public static Dictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData> ObtainStateJumpDetails(
+            IEnumerable<SyntacticalDFAState>         statesNeedingLabels, 
+            IBlockStatementParent                    owner, 
+            string                                   labelPattern, 
+            string                                   statePattern, 
+            Func<SyntacticalDFAState, bool>          isMultiOverride,
+            IEnumerable<SyntacticalDFAState>         singularStates, 
+            params object[]                          furtherReplacements)
         {
-            /* *
-             * The target transition label is normal, it targets 
-             * a known state.
-             * */
-            const int TARGET_NORMAL = 0;
-            /* *
-             * The target transition label is the active state,
-             * which is also an edge, so the nominal (satisfactory)
-             * label is targeted, since it targets itself, no state
-             * change need be made, but the exit-length is changed.
-             * */
-            const int TARGET_NOMINAL = 1;
-            /* *
-             * The target transition label is the active state,
-             * which is not an edge, so the common state
-             * move is targeted, which does not alter the state,
-             * but doesn't alter the exit length, either.
-             * */
-            const int TARGET_COMMON = 2;
-            int targetLabelKind = TARGET_NORMAL;
-            if (destinationState == activeState)
-                if (destinationState.IsEdge)
-                    targetLabelKind = TARGET_NOMINAL;
-                else
-                    targetLabelKind = TARGET_COMMON;
-            switch (targetLabelKind)
-            {
-                case TARGET_NORMAL:
-                    ImplementStateMoveCheck(charStream, nextMethod, nextChar, targetLabel, insertedStates, destinationState, ref commonMove, ref nominalExit, ref terminalExit, exitLength, stateField);
-                    break;
-                case TARGET_COMMON:
-                    ImplementCommonMoveCheck(charStream, nextMethod, nextChar, ref commonMove);
-                    targetLabel = commonMove;
-                    break;
-                case TARGET_NOMINAL:
-                    ImplementNominalExitCheck(charStream, nextMethod, nextChar, ref nominalExit, exitLength);
-                    targetLabel = nominalExit;
-                    break;
-            }
+            return ObtainStateJumpDetailsInternal(statesNeedingLabels, owner, labelPattern, statePattern, isMultiOverride, singularStates, furtherReplacements)
+                .OrderBy(k=>k.State.StateValue)
+                .ToDictionary(k => k.State, v => v);
         }
-
-        private static IExpression ObtainNegativeAssertion(IIntermediateMethodParameterMember nextChar, RegularLanguageSet regularSet)
-        {
-            IExpression finalExpression = null;
-            foreach (var rangeElement in regularSet.GetRange())
-            {
-                IExpression currentExpression = null;
-                switch (rangeElement.Which)
-                {
-                    case RegularLanguageSet.SwitchPairElement.A:
-                        var value = rangeElement.A.Value;
-                        //nextChar != 'value'
-                        currentExpression = nextChar.InequalTo(value);
-                        /* *
-                         * Old version:
-                         * *
-                         * new BinaryOperationExpression(
-                         *     nextChar.GetReference(), 
-                         *     CodeBinaryOperatorType.IdentityInequality, 
-                         *     new PrimitiveExpression(value));
-                         * */
-                        break;
-                    case RegularLanguageSet.SwitchPairElement.B:
-                        var start = rangeElement.B.Value.Start;
-                        var end = rangeElement.B.Value.End;
-                        /* *
-                         * 'start' > nextChar || nextChar > 'end'
-                         * */
-                        currentExpression = start.GreaterThan(nextChar).LogicalOr(nextChar.GreaterThan(end));
-                        /* *
-                         * Old variant below makes less sense due to the 'type verbosity'.
-                         * *
-                         * new BinaryOperationExpression(
-                         *     new BinaryOperationExpression(
-                         *         nextChar.GetReference(), 
-                         *         CodeBinaryOperatorType.LessThan, 
-                         *         new PrimitiveExpression(start)), 
-                         *      CodeBinaryOperatorType.BooleanOr, 
-                         *      new BinaryOperationExpression(
-                         *          nextChar.GetReference(), 
-                         *          CodeBinaryOperatorType.GreaterThan, 
-                         *          new PrimitiveExpression(end)));
-                         * */
-                        break;
-                    default:
-                        break;
-                }
-                if (finalExpression == null)
-                    finalExpression = currentExpression;
-                else
-                    finalExpression = finalExpression.LogicalAnd(currentExpression);
-            }
-            return finalExpression;
-        }
-
-
-        private void ImplementStateMoveCheck(CharStreamClass charStream, IIntermediateMethodMember nextMethod, IIntermediateMethodParameterMember nextChar, ILabelStatement targetLabel, List<RegularLanguageDFAState> insertedStates, RegularLanguageDFAState target, ref ILabelStatement commonMove, ref ILabelStatement nominalExit, ref ILabelStatement terminalExit, IIntermediateFieldMember exitLength, IIntermediateFieldMember stateField)
-        {
-            if (!insertedStates.Contains(target))
-            {
-                ILabelStatement followUp;
-                if (target.IsEdge)
-                {
-                    if (target.OutTransitions.Count == 0)
-                    {
-                        ImplementTerminalExitCheck(charStream, nextMethod, nextChar, ref terminalExit, exitLength);
-                        followUp = terminalExit;
-                    }
-                    else
-                    {
-                        ImplementNominalExitCheck(charStream, nextMethod, nextChar, ref nominalExit, exitLength);
-                        followUp = nominalExit;
-                    }
-                }
-                else
-                {
-                    ImplementCommonMoveCheck(charStream, nextMethod, nextChar, ref commonMove);
-                    followUp = commonMove;
-                }
-                nextMethod.DefineLabel(targetLabel);
-                nextMethod.Assign(stateField.GetReference(), target.StateValue.ToPrimitive());
-                nextMethod.GoTo(followUp);
-                insertedStates.Add(target);
-            }
-        }
-
-        private static void ImplementNominalExitCheck(CharStreamClass charStream, IIntermediateMethodMember nextMethod, IIntermediateMethodParameterMember nextChar, ref ILabelStatement nominalExit, IIntermediateFieldMember exitLength)
-        {
-            if (nominalExit == null)
-            {
-                nominalExit = nextMethod.DefineLabel("NominalExit");
-                nextMethod.Call(charStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
-                nextMethod.Assign(exitLength.GetReference(), charStream.ActualSize.GetReference());
-                nextMethod.Return(IntermediateGateway.TrueValue);
-            }
-        }
-
-        private static void ImplementTerminalExitCheck(CharStreamClass charStream, IIntermediateMethodMember nextMethod, IIntermediateMethodParameterMember nextChar, ref ILabelStatement terminalExit, IIntermediateFieldMember exitLength)
-        {
-            if (terminalExit == null)
-            {
-                terminalExit = nextMethod.DefineLabel("TerminalExit");// new LabelStatement("TerminalExit");
-                nextMethod.Call(charStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
-                nextMethod.Assign(exitLength.GetReference(), charStream.ActualSize.GetReference());
-                nextMethod.Return(IntermediateGateway.FalseValue);
-            }
-        }
-
-        private static void ImplementCommonMoveCheck(CharStreamClass charStream, IIntermediateMethodMember nextMethod, IIntermediateMethodParameterMember nextChar, ref ILabelStatement commonMove)
-        {
-            if (commonMove == null)
-            {
-                commonMove = nextMethod.DefineLabel("CommonMove");
-                nextMethod.Call(charStream.PushCharMethod.GetReference().Invoke(nextChar.GetReference()));
-                nextMethod.Return(IntermediateGateway.TrueValue);
-            }
-        }
-
-        private static IBlockStatement EmitCategoryLogic(IIntermediateMethodParameterMember nextChar, IIntermediateFieldMember stateField, IBlockStatement currentTarget, RegularLanguageDFAState targetState, RegularLanguageSet negativeAssertion)
-        {
-            if (negativeAssertion == null)
-                currentTarget.Assign(stateField.GetReference(), targetState.StateValue.ToPrimitive());
-            else
-            {
-                IExpression finalExpression = null;
-                var currentRange = negativeAssertion.GetRange();
-
-                foreach (var rangeElement in currentRange)
-                {
-                    IExpression currentExpression = null;
-                    switch (rangeElement.Which)
-                    {
-                        case RegularLanguageSet.SwitchPairElement.A:
-                            currentExpression = nextChar.EqualTo(rangeElement.A.Value);
-                            //currentExpression = new CSharpInequalityExpression(nextChar.GetReference(), false, rangeElement.A.Value.ToPrimitive());
-                            break;
-                        case RegularLanguageSet.SwitchPairElement.B:
-                            var start=rangeElement.B.Value.Start;
-                            var end=rangeElement.B.Value.End;
-                            currentExpression = start.LessThan(nextChar).LogicalOr(nextChar.GreaterThan(end));
-                            //currentExpression = new CSharpLogicalOrExpression(new BinaryOperationExpression(nextChar.GetReference(), CodeBinaryOperatorType.LessThan, new PrimitiveExpression(rangeElement.B.Value.Start)), CodeBinaryOperatorType.BooleanOr, new BinaryOperationExpression(nextChar.GetReference(), CodeBinaryOperatorType.GreaterThan, new PrimitiveExpression(rangeElement.B.Value.End)));
-                            break;
-                    }
-                    if (finalExpression == null)
-                        finalExpression = currentExpression;
-                    else
-                        finalExpression = finalExpression.LogicalAnd(currentExpression);
-                        //finalExpression = new BinaryOperationExpression(finalExpression, CodeBinaryOperatorType.BooleanAnd, currentExpression);
-                }
-                var currentCondition = currentTarget.If(finalExpression);
-                currentCondition.Assign(stateField.GetReference(), targetState.StateValue.ToPrimitive());
-                currentTarget = currentCondition.Next;
-            }
-            return currentTarget;
-        }
-
-        private static List<T> GetList<T>(T inst)
-        {
-            return new List<T>();
-        }
-
-        private static Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(TKey key,TValue value)
-        {
-            return new Dictionary<TKey, TValue>();
-        }
-
-        private static Tuple<RegularLanguageSet, UnicodeCategory[], Dictionary<UnicodeCategory, RegularLanguageSet>> Breakdown(RegularLanguageSet check, RegularLanguageSet fullCheck)
-        {
-            //if (check.IsNegativeSet)
-            //    return new Tuple<RegularLanguageSet, UnicodeCategory[], Dictionary<UnicodeCategory, RegularLanguageSet>>(check, new UnicodeCategory[0], new Dictionary<UnicodeCategory, RegularLanguageSet>());
-            var noise = fullCheck.RelativeComplement(check);
-            UnicodeCategory[] unicodeCategories;
-            Dictionary<UnicodeCategory, RegularLanguageSet> partialCategories = new Dictionary<UnicodeCategory, RegularLanguageSet>();
-            ParserCompilerExtensions.PropagateUnicodeCategoriesAndPartials(ref check, noise, out unicodeCategories, out partialCategories);
-            return new Tuple<RegularLanguageSet, UnicodeCategory[], Dictionary<UnicodeCategory, RegularLanguageSet>>(check, unicodeCategories, partialCategories);
-        }
-
-        public void BuildProject()
-        {
-            if (this.phase != ParserBuilderPhase.None)
-                throw new InvalidOperationException("Build in progress.");
-            try
-            {
-                IIntermediateAssembly project = null;
-                if (this.Source == null)
-                    goto finished;
-                IIntermediateCliManager identityManager = IntermediateGateway.CreateIdentityManager(CliGateway.CurrentPlatform, CliGateway.CurrentVersion);
-                project = (IIntermediateAssembly)LanguageVendors.AllenCopeland.GetOilexerLanguage().CreateAssembly(Source.Options.AssemblyName);
-                if (Source.Options.Namespace == null)
-                    project.DefaultNamespace = project.Namespaces.Add("OILexer.DefaultNamespace");
-                else
-                    project.DefaultNamespace = project.Namespaces.Add(Source.Options.Namespace);
-                Stopwatch timer = new Stopwatch();
-
-                Source.InitLookups();
-                ((GDFile)Source).Add(new TokenEofEntry(Source.GetTokenEnumerator().ToArray()));
-                Phase = ParserBuilderPhase.Linking;
-                timer.Start();
-                this.Source.ResolveTemplates(this.CompilationErrors);
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.Linking, timer.Elapsed);
-                timer.Reset();
-                if (CompilationErrors.HasErrors)
-                    goto finished;
-                Phase = ParserBuilderPhase.ExpandingTemplates;
-                timer.Start();
-                this.Source.ExpandTemplates(this.CompilationErrors);
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.ExpandingTemplates, timer.Elapsed);
-                timer.Reset();
-                if (CompilationErrors.HasErrors)
-                    goto finished;
-                Phase = ParserBuilderPhase.LiteralLookup;
-                timer.Start();
-                this.Source.FinalLink(this.CompilationErrors);
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.LiteralLookup, timer.Elapsed);
-                timer.Reset();
-                if (CompilationErrors.HasErrors)
-                    goto finished;
-                Phase = ParserBuilderPhase.InliningTokens;
-                timer.Start();
-                bool inlineSuccess = ParserCompilerExtensions.InlineTokens(Source);
-                if (inlineSuccess)
-                    this.Precedences = new TokenPrecedenceTable(this.Source.GetTokens());
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.InliningTokens, timer.Elapsed);
-                timer.Reset();
-                if (!inlineSuccess)
-                    goto finished;
-                ParserCompilerExtensions.CleanupRules();
-                FindStartRule();
-                if (this.StartEntry == null)
-                    goto finished;
-                Phase = ParserBuilderPhase.TokenNFAConstruction;
-                timer.Start();
-                ConstructTokenNFA();
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.TokenNFAConstruction, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.TokenDFAConstruction;
-                timer.Start();
-                ConstructTokenDFA();
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.TokenDFAConstruction, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.TokenDFAReduction;
-                timer.Start();
-                this.ReduceTokenDFA();
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.TokenDFAReduction, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.RuleNFAConstruction;
-                timer.Start();
-                this.ConstructRuleNFA();
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.RuleNFAConstruction, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.RuleDFAConstruction;
-                timer.Start();
-                this.ConstructRuleDFA();
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.RuleDFAConstruction, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.CallTreeAnalysis;
-                timer.Start();
-                this.PerformStreamAnalysis();
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.CallTreeAnalysis, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.ObjectModelRootTypesConstruction;
-                timer.Start();
-                BuildCodeModel(project, identityManager);
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.ObjectModelRootTypesConstruction, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.ObjectModelTokenCaptureConstruction;
-                timer.Start();
-                this.BuildCodeModelCaptures(project);
-                timer.Stop();
-                PhaseTimes.Add(ParserBuilderPhase.ObjectModelTokenCaptureConstruction, timer.Elapsed);
-                timer.Reset();
-                Phase = ParserBuilderPhase.ObjectModelTokenEnumConstruction;
-                this.BuildCodeModelEnums();
-                Phase = ParserBuilderPhase.ObjectModelRuleStructureConstruction;
-                Phase = ParserBuilderPhase.ObjectModelFinalTypesConstruction;
-                goto finished;
-            finished:
-                if (this.CompilationErrors.Count == 0)
-                    this.Project = project;
-            }
-            finally
-            {
-                LinkerCore.errorEntries = null;
-                LinkerCore.tokenEntries = null;
-                LinkerCore.ruleEntries = null;
-                LinkerCore.ruleTemplEntries = null;
-                this.Phase = ParserBuilderPhase.None;
-            }
-        }
-
-        private ParserBuilderPhase phase;
-        public ParserBuilderPhase Phase
-        {
-            get { return this.phase; }
-            set
-            {
-                if (value == phase)
-                    return;
-                this.phase = value;
-                this.OnPhaseChange(value);
-            }
-        }
-
-        private void OnPhaseChange(ParserBuilderPhase phase)
-        {
-            if (this.PhaseChange != null)
-                this.PhaseChange(this, new ParserBuilderPhaseChangeEventArgs(phase));
-        }
-
-        private void FindStartRule()
-        {
-            IProductionRuleEntry startRule;
-            if (Source.Options.StartEntry == null || Source.Options.StartEntry == string.Empty)
-            {
-                CompilationErrors.SourceModelError<GDFile>(GrammarCore.CompilerErrors.NoStartDefined, LineColumnPair.Zero, LineColumnPair.Zero, Source.Files[0], Source, Source.Options.GrammarName);
-                return;
-            }
-            if ((startRule = (this.Source.GetRules()).FindScannableEntry(Source.Options.StartEntry)) == null)
-            {
-                CompilationErrors.SourceModelError<GDFile>(GrammarCore.CompilerErrors.InvalidStartDefined, LineColumnPair.Zero, LineColumnPair.Zero, Source.Files[0], Source, Source.Options.StartEntry, Source.Options.GrammarName);
-                return;
-            }
-            this.StartEntry = startRule;
-        }
-
-        private void BuildCodeModelEnums()
-        {
-        }
-
-        private void BuildCodeModelCaptures(IIntermediateAssembly project)
-        {
-            foreach (var token in this.Source.GetTokens())
-                BuildStateMachine(token, project, bitStream);
-        }
-
-
-
     }
 }

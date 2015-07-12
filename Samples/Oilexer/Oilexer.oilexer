@@ -1,0 +1,114 @@
+#include                      "GrammarDefinitionFile.oilexer";
+#include                                     "Errors.oilexer";
+#include                                  "Templates.oilexer";
+#include                                      "Rules.oilexer";
+#include                                     "Tokens.oilexer";
+#ifndef Lexer
+#Namespace  "AllenCopeland.Abstraction.Slf.Languages.Oilexer";
+#define  ProjectGuid = "585421CD-DAF2-4186-973B-CA85552B03D4";
+#LexerName                                   "OilexerScanner";
+#ParserName                                   "OilexerParser";
+#AssemblyName                                 "OilexerParser";
+#GrammarName           "Oilexer Grammar Description Language";
+#Root                                                "GDFile";
+
+#include                             "LexicalGrammar.oilexer";
+#include                               "Preprocessor.oilexer";
+#include                                   "Tuple{2}.oilexer";
+#include                                   "Tuple{3}.oilexer";
+#include                                   "Tuple{4}.oilexer";
+#include                                   "Tuple{5}.oilexer";
+#elif Lexer == "ToyParser"
+#include                       "LanguagePreprocessor.oilexer";
+#endif
+
+ScannableEntryItemOptions<Delimiter>                       ::=
+    (
+        LanguageOperatorToken.OptionsSeparator
+        Identifier:Name; 
+        LanguageOperatorToken.Terminal
+        Delimiter
+    )?
+    ScannableEntryItemRepeatOptions
+        :RepeatOptions;?                                     ;
+
+#ifdef Lexer
+#if Lexer == "ToyParser"
+TemplateScannableEntryItemOptions<Delimiter>::=
+    (
+      LanguageOperatorToken.OptionsSeparator 
+      TemplateIdentifier:Name; 
+      LanguageOperatorToken.Terminal
+    )
+    Delimiter 
+    ScannableEntryItemRepeatOptions
+        :RepeatOptions;?$                    ;
+
+LanguageDeclaration                       ::=
+    (
+        "public"                            |
+        TupleR1<"internal", "protected">
+    ):Modifiers;?$
+    "partial"!:IsPartial;? "language" 
+    Identifier:Name;
+    LanguageDeclarationPLVariations<>
+    OperatorOrPunctuator.OpenBlock
+        LanguageMember:Members;*
+    OperatorOrPunctuator.CloseBlock 
+    LanguageOperatorToken.Terminal?         ;
+
+LanguageDeclarationPLVariations<_>        ::=
+    "with" LanguageDeclarationParserName<>
+    ("and" LanguageDeclarationLexerName<>)?$ |
+    "with" LanguageDeclarationLexerName<>
+    ("and" LanguageDeclarationParserName<>)?$;
+
+LanguageDeclarationParserName<_>          ::=
+    'a' "parser" "named" 
+    Identifier:ParserName;;
+
+LanguageDeclarationLexerName<_>           ::=
+    'a' "lexer" "named" 
+    Identifier:LexerName;                   ;
+
+LanguageMember                           ::=>
+    Entry                                   ;
+#endif
+#endif
+
+LeftOrRight<Left, Right>                  ::=
+    Left? Right                             |
+    Right? Left                             ;
+
+ScannableEntryItemRepeatOptions                            ::=
+    LeftOrRight<(
+        LanguageOperatorToken.ZeroOrMore:ZeroOrMore;         |
+        LanguageOperatorToken.OneOrMore:OneOrMore;           |
+        LanguageOperatorToken.ZeroOrOne:ZeroOrOne;           |
+        LanguageOperatorToken.RepetitionRangeStart
+        (
+            Integer:Min; 
+            (
+                LanguageOperatorToken.PartSeparator!:HasMax; 
+                Integer:Max;?
+            )                                                |
+            Integer:Min;?
+            LanguageOperatorToken.PartSeparator!:HasMax; 
+            Integer:Max;                                     |
+            Integer:Max;
+        )
+        LanguageOperatorToken.RepetitionRangeEnd
+    ),
+    '$'!:ReductionPoint;?>                                   ;
+
+
+SoftReferenceScannableEntryItem                            ::=
+    SoftReferenceScannableEntryItemBody:Body;
+    ScannableEntryItemOptions<>?                             ;
+
+SoftReferenceScannableEntryItemBody                        ::=
+    Identifier:PrimaryName; 
+      (
+        LanguageOperatorToken.IdentitySeparator
+        Identifier:SecondaryName;
+      )?;
