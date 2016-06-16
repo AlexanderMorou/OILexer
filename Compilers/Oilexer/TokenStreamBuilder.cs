@@ -132,7 +132,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             nextToken.AutoDeclare = false;
             this.LookAheadImpl.DefineLocal(nextToken);
             this.LookAheadImpl.Assign(this.compiler.TokenSymbolBuilder.StartTokenIndex.GetReference(nextToken.GetReference()), this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference().GetProperty("Count"));
-            this.LookAheadImpl.Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference().GetMethod("Add").Invoke(nextToken.GetReference()));
+            this.LookAheadImpl.If(this.compiler.CommonSymbolBuilder.Identity.GetReference(nextToken.GetReference()).InequalTo(this.compiler.LexerBuilder.GrammarVocabularyModel.NoIdentityField))
+                .Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference().GetMethod("Add").Invoke(nextToken.GetReference()));
             this.LookAheadImpl.Return(this.compiler.CommonSymbolBuilder.Identity.GetReference(nextToken.GetReference()));
         }
 

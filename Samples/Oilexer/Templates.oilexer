@@ -3,8 +3,7 @@
 InvalidAssociation = "Invalid association '{0}'.  Expected: Left or Right", 0x100;
 
 PrecedenceAssociation := @"Left":Left; | @"Right":Right;;
-
-BinaryOperationExpression
+/* BinaryOperationExpression
     <
         Current:Expect=Rule;, 
         Operators:Expect=Token;, 
@@ -17,10 +16,28 @@ BinaryOperationExpression
     #return Lower:Left; (Operators Current:Right;)?;
 #else
     #throw InvalidAssociation, Associativity;
-#endif;
+#endif; */
 #elif Lexer == "ToyParser"
 #include                       "Language.oilexer";
 #endif
+BinaryOperationExpression
+    <
+        Current:Expect=Rule;, 
+        Operators:Expect=Token;, 
+        Lower:Expect=Rule;, 
+        Companion:Expect=Rule;,
+        Associativity:Expect=PrecedenceAssociation;
+    >                                                         ::=
+#if Associativity == Left
+    #define Companion = Current:Left; Operators Lower:Right;;
+    #return Companion | Lower;
+#elif Associativity == Right
+    #define Companion = Lower:Left; Operators Current:Right;;
+    #return Lower | Companion;
+#else
+    #throw InvalidAssociation, Associativity;
+#endif                                                          ;
+
 
 ProductionRuleTemplateEntry                                          ::=
     Identifier:Name;
@@ -38,7 +55,8 @@ ProductionRuleTemplateArgument                                       ::=
     Identifier:Name; 
     (
         LanguageOperatorToken.OptionsSeparator
-        RuleTerminals.TemplateRuleExpect '='
+        RuleTerminals.TemplateRuleExpect /*@expect*/
+        CommonTerminals.Assignment /*=*/
         ProductionRuleTemplateArgumentExpect:Expected;
         LanguageOperatorToken.Terminal
     )?
@@ -87,22 +105,25 @@ PreprocessorIfDirectiveProductionRuleTemplateItem                   ::=>
     PreprocessorIfNotDefinedDirectiveProductionRuleTemplateItem        ;
 
 PreprocessorIfConditionDirectiveProductionRuleTemplateItem           ::=
-    @"#if" PreprocessorIfConditionLogicalOrExp:Condition;
+    PreprocessorType.IfDirective
+        PreprocessorIfConditionLogicalOrExp:Condition;
     ProductionRuleTemplateSeries:Body;
     (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?
-    @"#endif"                                                          ;
+    PreprocessorType.EndIfDirective                                    ;
 
 PreprocessorIfDefinedDirectiveProductionRuleTemplateItem             ::=
-    @"#ifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.IfDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleTemplateSeries:Body;
     (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?
-    @"#endif"                                                   ;
+    PreprocessorType.EndIfDirective                             ;
 
 PreprocessorIfNotDefinedDirectiveProductionRuleTemplateItem          ::=
-    @"#ifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.IfNotDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleTemplateSeries:Body;
     (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?
-    @"#endif"                                                          ;
+    PreprocessorType.EndIfDirective                                    ;
 
 PreprocessorElseDirectiveProductionRuleTemplateItem                 ::=>
     PreprocessorElseIfConditionDirectiveProductionRuleTemplateItem     |
@@ -111,21 +132,24 @@ PreprocessorElseDirectiveProductionRuleTemplateItem                 ::=>
     PreprocessorFinalElseDirectiveProductionRuleTemplateItem           ;
 
 PreprocessorFinalElseDirectiveProductionRuleTemplateItem             ::=
-    @"#else" 
+    PreprocessorType.ElseDirective
         ProductionRuleTemplateSeries:Body;                             ;
 
 PreprocessorElseIfConditionDirectiveProductionRuleTemplateItem       ::=
-    @"#elif" PreprocessorIfConditionLogicalOrExp:Condition;
+    PreprocessorType.ElseIfDirective
+        PreprocessorIfConditionLogicalOrExp:Condition;
     ProductionRuleTemplateSeries:Body;
     (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?;
 
 PreprocessorElseIfDefinedDirectiveProductionRuleTemplateItem         ::=
-    @"#elifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.ElseIfDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleTemplateSeries:Body;
     (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?;
 
 PreprocessorElseIfNotDefinedDirectiveProductionRuleTemplateItem      ::=
-    @"#elifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.ElseIfNotDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleTemplateSeries:Body;
     (PreprocessorElseDirectiveProductionRuleTemplateItem:Next;)?;
 
@@ -133,4 +157,4 @@ GroupProductionRuleTemplateItem                                      ::=
     LanguageOperatorToken.BeginGroup /*(*/
         ProductionRuleTemplateSeries:Items;?
     LanguageOperatorToken.EndGroup   /*)*/
-    ScannableEntryItemOptions<>?$                                      ;
+    ScannableEntryItemOptions<>?                                       ;

@@ -620,7 +620,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures
                 var currentInvocation = formatMethod.Invoke();
                 currentStateCase.Return(currentInvocation);
                 var currentFormat = string.Empty.ToPrimitive();
-                currentInvocation.Parameters.Add(currentFormat);
+                currentInvocation.Arguments.Add(currentFormat);
                 StringBuilder formatBuilder = new StringBuilder();
                 bool first = true;
                 int currentParamIndex = 0;
@@ -634,7 +634,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures
                     var parameterName = parameterEntry.BucketName;
                     var currentElement = targetStructure[parameterName];
                     IIntermediateFieldMember currentField = currentElement.AssociatedField;
-                    currentInvocation.Parameters.Add(currentField.GetReference());
+                    currentInvocation.Arguments.Add(currentField.GetReference());
                     currentCtor.Assign(currentField.GetReference(), currentCtor.Parameters[LowerFirstCharacter(parameterName)].GetReference());
                 }
                 currentFormat.Value = formatBuilder.ToString();

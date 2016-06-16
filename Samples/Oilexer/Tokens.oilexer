@@ -4,7 +4,17 @@
 #include                   "Language.oilexer";
 #endif
 
+
+TokenOptions                               ::=
+    '['
+        TupleR1<
+            GroupClause:Group;,
+            ShortIdentityClause:ShortId;>
+    ']';
+
+
 TokenEntry                                 ::=
+    TokenOptions:Options;?
     Identifier:Name; 
         OTuple<
             LanguageOperatorToken.ItemIsRecognizer!:ForceRecognizer; /*$*/,
@@ -54,27 +64,34 @@ TokenItem                                 ::=>
     GroupTokenItem                           |
     BuiltInCommandTokenItem                  ;
 
-ScanOrSubtractCommand                      ::=
-    (
-        @"Scan"                              |
-        @"Subtract"
-    ):Command;
-    '('
+ScanCommand                                ::=
+    @"Scan"                              
+    LanguageOperatorToken.BeginGroup
         TokenSeries:Left; 
-        ','
+        LanguageOperatorToken.PartSeparator
+        BooleanLiteral:Right;
+    LanguageOperatorToken.EndGroup;
+
+SubtractCommand                            ::=
+    @"Subtract"
+    LanguageOperatorToken.BeginGroup
+        TokenSeries:Left; 
+        LanguageOperatorToken.PartSeparator
         TokenSeries:Right;
-    ')';
+    LanguageOperatorToken.EndGroup;
+
 
 BuiltInCommandTokenItem                   ::=>
     BaseEncodeCommand                        |
-    ScanOrSubtractCommand                    ;
+    ScanCommand                              |
+    SubtractCommand                          ;
 
 BaseEncodeCommand                          ::=
     @"BaseEncode" '('
     TokenSeries:EncodeTarget;
-    ','
+    LanguageOperatorToken.PartSeparator
     EncodingNumber:Base;
-    ','
+    LanguageOperatorToken.PartSeparator
     Number:Characters;
     ')'                                     ;
 

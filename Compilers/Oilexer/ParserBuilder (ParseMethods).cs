@@ -7,7 +7,6 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp.Expressions;
 using AllenCopeland.Abstraction.Slf.Ast.Expressions;
-
 using AllenCopeland.Abstraction.Utilities.Arrays;
 using AllenCopeland.Abstraction.Utilities.Collections;
 using System;
@@ -21,6 +20,7 @@ using AllenCopeland.Abstraction.Slf.Ast.Statements;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.FlowAnalysis;
 using AllenCopeland.Abstraction.Slf.Abstract.Members;
+using System.Runtime.CompilerServices;
 
 
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
@@ -28,8 +28,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
     partial class ParserBuilder
     {
         private const string includeRuleContextName = "includeRuleContext";
+        private const string nonGreedyName = "nonGreedyState";
         private const string lastPredictionResultName = "lastPredictionResult";
-        private MultikeyedDictionary<ProductionRuleProjectionNode, GrammarVocabulary, IIntermediateClassMethodMember, ProductionRuleProjectionFollow[]> followDiscriminatorContext = new MultikeyedDictionary<ProductionRuleProjectionNode, GrammarVocabulary, IIntermediateClassMethodMember, ProductionRuleProjectionFollow[]>();
+        private MultikeyedDictionary<PredictionTreeLeaf, GrammarVocabulary, IIntermediateClassMethodMember, PredictionTreeFollow[]> followDiscriminatorContext = new MultikeyedDictionary<PredictionTreeLeaf, GrammarVocabulary, IIntermediateClassMethodMember, PredictionTreeFollow[]>();
+        private int _predictionCount;
         #if FALSE
         private void BuildCollapsePointRule(ProductionRuleNormalAdapter adapter, IIntermediateClassMethodMember parseMethod, IIntermediateMethodParameterMember<Abstract.Members.IClassMethodMember, IIntermediateClassMethodMember, IClassType, IIntermediateClassType> lookAheadParam, ITypedLocalMember localContext)
         {
@@ -148,6 +150,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         internal void BuildParser()
         {
             this.BuildPeekInitialContextsFor();
+            this.BuildBorrowOuterContext();
             var rulesContext = (from rule in this.Compiler.RuleDFAStates.Keys
                                 orderby rule.Name
                                 select (OilexerGrammarProductionRuleEntry)rule).ToArray();
@@ -181,36 +184,110 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                             followPredictMethods.Add(followAmbiguity.Adapter, predictMethod);
                         }
                     }
+            this._predictionCount = maxCount;
             foreach (var node in nodesNeedingDisambiguators)
                 this.BuildDiscriminatorScaffolding(node, ++predictIndex, maxCount);
             bool firstPrediction = true;
-            foreach (var advMachineNode in this.compiler.AdvanceMachines.Keys)
+            object firstPredictionLock = new object();
+#if ParallelProcessing
+            Parallel.ForEach(this.compiler.AdvanceMachines.Keys, advMachineNode =>
             {
-                var projectionAdapter = this.Compiler.AdvanceMachines[advMachineNode];
-                var predictMethod = this.predictMethods[projectionAdapter];
-                this.BuildProjection(projectionAdapter, predictMethod, advMachineNode, predictMethod.Parameters["laDepth"], firstPrediction);
-                if (firstPrediction)
-                    firstPrediction = false;
-            }
+#else
+            foreach (var advMachineNode in this.compiler.AdvanceMachines.Keys)
+#endif
+                {
+
+                    var projectionAdapter = this.Compiler.AdvanceMachines[advMachineNode];
+                    var predictMethod = this.predictMethods[projectionAdapter];
+                    bool isFirstPredictionCopy;
+#if ParallelProcessing
+                    lock (firstPredictionLock)
+#endif
+                    {
+                        isFirstPredictionCopy = firstPrediction;
+                        if (firstPrediction)
+                            firstPrediction = false;
+                    }
+                    this.BuildProjection(projectionAdapter, predictMethod, advMachineNode, predictMethod.Parameters["laDepth"], isFirstPredictionCopy);
+                }
+#if ParallelProcessing
+            });
+#endif
             firstPrediction = true;
-            HashSet<ProductionRuleProjectionAdapter> processedFollows = new HashSet<ProductionRuleProjectionAdapter>();
+            HashSet<PredictionTreeDFAdapter> processedFollows = new HashSet<PredictionTreeDFAdapter>();
             if (this.compiler.FollowAmbiguousNodes != null && this.compiler.FollowAmbiguousNodes.Length > 0)
+#if ParallelProcessing
+                Parallel.ForEach(this.compiler.FollowAmbiguousNodes, followAmbiguityNode =>
+                {
+#else
                 foreach (var followAmbiguityNode in this.compiler.FollowAmbiguousNodes)
+#endif
                     foreach (var followAmbiguity in followAmbiguityNode.FollowAmbiguities)
                     {
                         if (processedFollows.Add(followAmbiguity.Adapter))
                         {
+                            bool isFirstPrediction;
+#if ParallelProcessing
+                            lock (firstPredictionLock)
+#endif
+                                isFirstPrediction = firstPrediction;
                             var predictMethod = followPredictMethods[followAmbiguity.Adapter];
                             var predictAdapter = followAmbiguity.Adapter;
-                            this.BuildProjection(followAmbiguity.Adapter, predictMethod, followAmbiguity.EdgeNode, predictMethod.Parameters["laDepth"], firstPrediction);
-                            if (firstPrediction)
-                                firstPrediction = false;
+                            this.BuildProjection(followAmbiguity.Adapter, predictMethod, followAmbiguity.EdgeNode, predictMethod.Parameters["laDepth"], isFirstPrediction);
+#if ParallelProcessing
+                            lock (firstPredictionLock)
+#endif
+                                if (firstPrediction)
+                                    firstPrediction = false;
                         }
                     }
+#if ParallelProcessing
+                });
+#endif
+            this._predictionCount -= nodesNeedingDisambiguators.Select(k => this.followDiscriminatorContext.FilterToDictionary(k).Count + 1).Sum();
             foreach (var node in nodesNeedingDisambiguators)
                 this.BuildDiscriminatorBody(node);
+#if ParallelProcessing
+            Parallel.ForEach(rulesContext, rule =>
+            {
+#else
             foreach (var rule in rulesContext)
+#endif
                 this.BuildParseMethod(rule);
+#if ParallelProcessing
+            });
+#endif
+        }
+
+        private void BuildBorrowOuterContext()
+        {
+            var borrowContextMethod = this.ParserClass.Methods.Add(
+                new TypedName("BorrowOuterContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol),
+                new TypedNameSeries(
+                    new TypedName("laDepth", RuntimeCoreType.Int32, this._identityManager),
+                    new TypedName("borrowedIdentity", this.compiler.SymbolStoreBuilder.Identities)));
+            borrowContextMethod.AccessLevel = AccessLevelModifiers.Private;
+            borrowContextMethod.Comment("We're going to look at the symbol on the stream and if it's not the identity, check deeper as long as they exist as one nested symbol only.\r\n-\r\nAvoid calling LookAhead which might mess up the stack");
+            var laDepth = borrowContextMethod.Parameters["laDepth"];
+            var identity = borrowContextMethod.Parameters["borrowedIdentity"];
+            var currentIdentityCheck = borrowContextMethod.If(this.compiler.GenericSymbolStreamBuilder.CountImpl.GetReference(this._SymbolStreamImpl.GetReference()).Subtract(1).GreaterThanOrEqualTo(laDepth.GetReference()));
+            var currentSymbol = currentIdentityCheck.Locals.Add(new TypedName("currentSymbol", this.compiler.CommonSymbolBuilder.ILanguageSymbol), this.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this._SymbolStreamImpl.GetReference(), laDepth.GetReference()));
+            currentSymbol.AutoDeclare = false;
+            currentIdentityCheck.DefineLocal(currentSymbol);
+            var currentRule = currentIdentityCheck.Locals.Add(new TypedName("currentRule", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), currentSymbol.GetReference().As(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol));
+            currentRule.AutoDeclare = false;
+            currentIdentityCheck.DefineLocal(currentRule);
+            
+            var whileRuleNotNull = currentIdentityCheck.While(currentRule.InequalTo(IntermediateGateway.NullValue));
+            whileRuleNotNull.If(this.compiler.CommonSymbolBuilder.Identity.GetReference(currentRule.GetReference()).EqualTo(identity.GetReference()))
+                .Return(currentRule.GetReference());
+            var identityEqualToOne = whileRuleNotNull.If(this.compiler.RuleSymbolBuilder.Count.GetReference(currentRule.GetReference()).EqualTo(1));
+            identityEqualToOne.CreateNext();
+            identityEqualToOne.Next.Break();
+            identityEqualToOne.Assign(currentSymbol.GetReference(), this.compiler.RuleSymbolBuilder.Indexer.GetReference(currentRule.GetReference(), IntermediateGateway.NumberZero));
+            identityEqualToOne.Assign(currentRule.GetReference(), currentSymbol.GetReference().As(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol));
+            borrowContextMethod.Return(IntermediateGateway.NullValue);
+            this.BorrowOuterContext = borrowContextMethod;
         }
 
         private void BuildPeekInitialContextsFor()
@@ -219,11 +296,19 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             lookAheadDepths.InitializationExpression = lookAheadDepths.FieldType.GetNewExpression();
             lookAheadDepths.AccessLevel = AccessLevelModifiers.Private;
             this._LookAheadDepthsImpl = lookAheadDepths;
-            var peekInitialContextsFor = this.ParserClass.Methods.Add(
+            var peekInitialContextsForOvr = this.ParserClass.Methods.Add(
                 new TypedName("PeekStackForInitialContext", RuntimeCoreType.Boolean, this._identityManager),
                 new TypedNameSeries(
                     new TypedName("identity", this.compiler.SymbolStoreBuilder.Identities)));
+            var peekInitialContextsFor = this.ParserClass.Methods.Add(
+                new TypedName("PeekStackForInitialContext", RuntimeCoreType.Boolean, this._identityManager),
+                new TypedNameSeries(
+                    new TypedName("identity", this.compiler.SymbolStoreBuilder.Identities),
+                    new TypedName("laDepth", RuntimeCoreType.Int32, this._identityManager)));
+            peekInitialContextsForOvr.Return(peekInitialContextsFor.GetReference().Invoke(peekInitialContextsForOvr.Parameters["identity"].GetReference(), (-1).ToPrimitive()));
             var identity = peekInitialContextsFor.Parameters["identity"];
+            var laDepth = peekInitialContextsFor.Parameters["laDepth"];
+
             var currentContext =
                 peekInitialContextsFor.Locals.Add(
                     new TypedName("currentContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol),
@@ -232,10 +317,18 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 peekInitialContextsFor.Locals.Add(
                     new TypedName("laDepthEnum", ((IInterfaceType)(this._identityManager.ObtainTypeReference(typeof(IEnumerator<>)))).MakeGenericClosure(this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32))), lookAheadDepths.GetReference().GetMethod("GetEnumerator").Invoke());
             enumeratorLocal.AutoDeclare = false;
+            var stackLADepthCheck = new CSharpConditionalExpression(
+                (ICSharpLogicalOrExpression)lookAheadDepths.GetReference().GetProperty("Count").GreaterThan(IntermediateGateway.NumberZero.RightComment("If we start at a left-recursive rule...")).AffixTo(CSharpOperatorPrecedences.LogicalOrOperation),
+                (ICSharpConditionalExpression)lookAheadDepths.GetReference().GetMethod("Peek").Invoke().AffixTo(CSharpOperatorPrecedences.ConditionalOperation), 
+                (ICSharpConditionalExpression)IntermediateGateway.NumberZero.RightComment("...there would be nothing to peek.").AffixTo(CSharpOperatorPrecedences.ConditionalOperation));
+            var laDepthCheck = new CSharpConditionalExpression(
+                (ICSharpLogicalOrExpression)(laDepth.InequalTo(-1).AffixTo(CSharpOperatorPrecedences.LogicalOrOperation)),
+                (ICSharpConditionalExpression)(laDepth.GetReference().AffixTo(CSharpOperatorPrecedences.ConditionalOperation)),
+                stackLADepthCheck);
             var entryLADepth = 
                 peekInitialContextsFor.Locals.Add(
                     new TypedName("initialLADepth", RuntimeCoreType.Int32, this._identityManager),
-                    lookAheadDepths.GetReference().GetMethod("Peek").Invoke());
+                    laDepthCheck);
             var enumUsing = peekInitialContextsFor.Using(enumeratorLocal.GetDeclarationStatement());
             
             var whileMovingAndNonNull =
@@ -252,9 +345,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             peekInitialContextsFor.Return(IntermediateGateway.FalseValue);
             peekInitialContextsFor.AccessLevel = AccessLevelModifiers.Private;
             this.PeekInitialContextsForImpl = peekInitialContextsFor;
+            this.PeekInitialContextsForImplOvr = peekInitialContextsForOvr;
         }
 
-        private void BuildDiscriminatorBody(ProductionRuleProjectionNode node)
+        private void BuildDiscriminatorBody(PredictionTreeLeaf node)
         {
             var discriminatorDetails =
                 this.followDiscriminatorContext
@@ -262,6 +356,29 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             var predictMethods =
                 (from ksvp in discriminatorDetails
                  select ksvp.Keys.Key2).Distinct().ToArray();
+            var equivalentMethod = new Dictionary<IIntermediateClassMethodMember, List<IIntermediateClassMethodMember>>();
+            var inverseLookup = new Dictionary<IIntermediateClassMethodMember, IIntermediateClassMethodMember>();
+            HashSet<IIntermediateClassMethodMember> toIgnore = new HashSet<IIntermediateClassMethodMember>();
+            var walker = new DiscriminatorEquivalenceWalker();
+            foreach (var predictMethod in predictMethods)
+            {
+                if (toIgnore.Contains(predictMethod))
+                    continue;
+                foreach (var predictMethodAlt in predictMethods.Except(toIgnore.Concat(new[] { predictMethod })).ToArray())
+                {
+                    if (walker.Visit(predictMethod, predictMethodAlt))
+                    {
+                        toIgnore.Add(predictMethodAlt);
+                        List<IIntermediateClassMethodMember> currentSet;
+                        if (!equivalentMethod.TryGetValue(predictMethod, out currentSet))
+                            equivalentMethod.Add(predictMethod, currentSet = new List<IIntermediateClassMethodMember>());
+                        currentSet.Add(predictMethodAlt);
+                        predictMethod.RemarksText = string.Format("{0} discriminators merged into one.", currentSet.Count + 1);
+                        inverseLookup.Add(predictMethodAlt, predictMethod);
+                    }
+                }
+            }
+            
             var discriminatorIdentifiers =
                 new Dictionary<IIntermediateClassMethodMember, int>();
             int methodOffset = 1;
@@ -269,22 +386,26 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 discriminatorIdentifiers.Add(predictionMethod, methodOffset++);
             var discriminatorMethod = this.followDiscriminatorMethods[node];
             var lookAheadDepth = discriminatorMethod.Parameters["laDepth"];
+            BuildParseForestInRegion(discriminatorMethod, node.Veins.DFAOriginState);
             var discriminatorSwitch = GetLookAheadSwitch(discriminatorMethod, lookAheadDepth);
             var vocabs = discriminatorDetails.Select(k => k.Keys.Key1).Distinct();
             var predictionSelector = discriminatorMethod.Locals.Add(new TypedName("predictionSelector", RuntimeCoreType.Int32, this._identityManager), IntermediateGateway.NumberZero);
             var currentContext = discriminatorMethod.Locals.Add(new TypedName("currentContext", this.Compiler.RuleSymbolBuilder.ILanguageRuleSymbol), this._CurrentContextImpl.GetReference());
-            var fullLookup = new Dictionary<IIntermediateClassMethodMember, List<ProductionRuleProjectionDPath>>();
+            var fullLookup = new Dictionary<IIntermediateClassMethodMember, List<PredictionTreeBranch>>();
             foreach (var vocab in vocabs)
             {
                 // Obtain a dictionary from the follow context that denotes the paths that lead to this ambiguity
                 var invertedContext = DistributeEpsilonData(discriminatorDetails, vocab);
-                var standardContext = invertedContext.ToDictionary(k => k.Value, v => v.Key);
+                var standardContext =
+                    (from kvp in invertedContext
+                     group kvp.Key by kvp.Value).ToDictionary(k => k.Key, v => v.ToArray());
+                //var standardContext = invertedContext.ToDictionary(k => k.Value, v => v.Key);
                 foreach (var element in standardContext.Keys)
                 {
-                    List<ProductionRuleProjectionDPath> pathSets;
+                    List<PredictionTreeBranch> pathSets;
                     if (!fullLookup.TryGetValue(element, out pathSets))
-                        fullLookup.Add(element, pathSets = new List<ProductionRuleProjectionDPath>());
-                    pathSets.Add(standardContext[element]);
+                        fullLookup.Add(element, pathSets = new List<PredictionTreeBranch>());
+                    pathSets.AddRange(standardContext[element]);
                 }
                 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
                  * Once that's handled, we'll create a walkable tree that we can use to build the switch that will *
@@ -304,6 +425,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 BuildDiscriminatorBodyStep((IBlockStatementParent)currentCase, walkableTree, walkableTree.Value, currentContext, predictionSelector, discriminatorIdentifiers, standardContext);
             }
             var yieldSwitch = discriminatorMethod.Switch(predictionSelector.GetReference());
+            
             foreach (var predictionMethod in discriminatorIdentifiers.Keys)
             {
                 var id = discriminatorIdentifiers[predictionMethod];
@@ -319,19 +441,29 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     pathBuilder.Append(prediction.ToString());
                 }
                 currentCase.Comment(pathBuilder.ToString());
-                currentCase.Return(predictionMethod.GetReference().Invoke(lookAheadDepth.GetReference()));
+                var predictionTarget = predictionMethod;
+                if (inverseLookup.ContainsKey(predictionMethod))
+                    predictionTarget = inverseLookup[predictionMethod];
+                currentCase.Return(predictionTarget.GetReference().Invoke(lookAheadDepth.GetReference()));
+
             }
+
+            foreach (var predictMethod in predictMethods.Except(toIgnore))
+                predictMethod.Name = string.Format(string.Format("_Predict{{0:{0}}}Following{{1}}", new string('0', this._predictionCount.ToString().Length)), ++this._predictionCount, node.Rule.Name);
+            discriminatorMethod.Name = string.Format("_Predict{0}DiscriminatorFollowing{1}", string.Format(string.Format("{{0:{0}}}", new string('0', this._predictionCount.ToString().Length)), ++this._predictionCount), node.Rule.Name);
+            foreach (var ignored in toIgnore)
+                ignored.Parent.Methods.Remove(ignored.UniqueIdentifier);
             yieldSwitch.Case(true).Return(IntermediateGateway.NumberZero);
         }
 
         private ISwitchStatement BuildDiscriminatorBodyStep(
             IBlockStatementParent statementTarget,
-            KeyedTreeNode<ProductionRuleProjectionNode, IIntermediateClassMethodMember> discriminatorNode,
+            KeyedTreeNode<PredictionTreeLeaf, IIntermediateClassMethodMember> discriminatorNode,
             IIntermediateClassMethodMember currentPrediction,
             ITypedLocalMember currentContext,
             ITypedLocalMember predictionSelector,
             Dictionary<IIntermediateClassMethodMember, int> discriminatorIdentifiers,
-            Dictionary<IIntermediateClassMethodMember, ProductionRuleProjectionDPath> pathLookup)
+            Dictionary<IIntermediateClassMethodMember, PredictionTreeBranch[]> pathLookup)
         {
             var currentSubswitch = statementTarget.Switch(this.compiler.RuleSymbolBuilder.InitialState.GetReference(currentContext.GetReference()));
             foreach (var predictionNode in discriminatorNode.Keys)
@@ -339,7 +471,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 
                 var predictionNext = discriminatorNode[predictionNode];
                 var currentAltPrediction = predictionNext.Value ?? currentPrediction;
-                var predictionNodeCase = currentSubswitch.Case(predictionNode.Value.OriginalState.StateValue.ToPrimitive());
+                var predictionNodeCase = currentSubswitch.Case(predictionNode.Veins.DFAOriginState.StateValue.ToPrimitive());
                 if (predictionNext.Count > 0)
                 {
 
@@ -349,7 +481,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         BuildDiscriminatorBodyStep(
                             (IBlockStatementParent)ifNullCheck, 
                             predictionNext, 
-                            currentAltPrediction, 
+                            currentAltPrediction,
                             currentContext, 
                             predictionSelector, 
                             discriminatorIdentifiers, 
@@ -367,15 +499,28 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         }
 
         private static void AssignPredictionSelector(IBlockStatementParent statementTarget, ITypedLocalMember predictionSelector, Dictionary<IIntermediateClassMethodMember, int> discriminatorIdentifiers, IIntermediateClassMethodMember currentAltPrediction,
-            Dictionary<IIntermediateClassMethodMember, ProductionRuleProjectionDPath> pathLookup)
+            Dictionary<IIntermediateClassMethodMember, PredictionTreeBranch[]> pathLookup)
         {
-            statementTarget.Comment(string.Format("{0}: {1}", currentAltPrediction.Name, pathLookup[currentAltPrediction]));
+            StringBuilder pathComment = new StringBuilder();
+            pathComment.AppendFormat("{0}: ", currentAltPrediction.Name);
+
+            bool first=true;
+
+            foreach (var path in pathLookup[currentAltPrediction])
+            {
+                if (first)
+                    first = false;
+                else
+                    pathComment.AppendLine();
+                pathComment.Append(path);
+            }
+            statementTarget.Comment(pathComment.ToString());//string.Format("{0}: {1}", currentAltPrediction.Name, pathLookup[currentAltPrediction]));
             statementTarget.Assign(predictionSelector.GetReference(), discriminatorIdentifiers[currentAltPrediction].ToPrimitive());
         }
 
-        public KeyedTreeNode<ProductionRuleProjectionNode, IIntermediateClassMethodMember> CreateWalkableDeterminationTree(Dictionary<ProductionRuleProjectionDPath, IIntermediateClassMethodMember> inversionContext)
+        public KeyedTreeNode<PredictionTreeLeaf, IIntermediateClassMethodMember> CreateWalkableDeterminationTree(Dictionary<PredictionTreeBranch, IIntermediateClassMethodMember> inversionContext)
         {
-            var root = new KeyedTreeNode<ProductionRuleProjectionNode, IIntermediateClassMethodMember>();
+            var root = new KeyedTreeNode<PredictionTreeLeaf, IIntermediateClassMethodMember>();
             foreach (var predictionPath in inversionContext.Keys)
             {
                 var currentTreeNode = root;
@@ -386,7 +531,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 foreach (var predictionNode in choppedInvertedPath)
                 {
                     if (!currentTreeNode.ContainsKey(predictionNode))
-                        currentTreeNode._Add(predictionNode, new KeyedTreeNode<ProductionRuleProjectionNode, IIntermediateClassMethodMember>());
+                        currentTreeNode._Add(predictionNode, new KeyedTreeNode<PredictionTreeLeaf, IIntermediateClassMethodMember>());
                     currentTreeNode = currentTreeNode[predictionNode];
                 }
                 //At the end of the trail, we need to specify what method to call, if any.
@@ -396,7 +541,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return root;
         }
 
-        private static Dictionary<ProductionRuleProjectionDPath, IIntermediateClassMethodMember> DistributeEpsilonData(IMultikeyedDictionary<GrammarVocabulary, IIntermediateClassMethodMember, ProductionRuleProjectionFollow[]> discriminatorDetails, GrammarVocabulary vocab)
+        private static Dictionary<PredictionTreeBranch, IIntermediateClassMethodMember> DistributeEpsilonData(IMultikeyedDictionary<GrammarVocabulary, IIntermediateClassMethodMember, PredictionTreeFollow[]> discriminatorDetails, GrammarVocabulary vocab)
         {
             var vocabContext = discriminatorDetails.FilterToDictionary(vocab);
             return (from predictMethod in vocabContext.Keys
@@ -407,9 +552,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         }
 
         private void BuildProjection(
-            ProductionRuleProjectionAdapter projectionAdapter,
+            PredictionTreeDFAdapter projectionAdapter,
             IIntermediateClassMethodMember predictMethod,
-            ProductionRuleProjectionNode originatingNode,
+            PredictionTreeLeaf originatingNode,
             IIntermediateMethodParameterMember<IClassMethodMember, IIntermediateClassMethodMember, IClassType, IIntermediateClassType>
                                             lookAheadParam,
             bool firstPrediction)
@@ -455,13 +600,17 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             }
             predictMethod.Assign(this._StateImpl.GetReference(), projectionAdapter.AssociatedState.StateValue.ToPrimitive());
             var entryPointReference = multitargetLookup[projectionAdapter.AssociatedState].Label.Value;
-
-
+            //bool nonGreedyContext = false;
+            //if (projectionAdapter.AssociatedContext.LeftRecursiveType != ProductionRuleLeftRecursionType.None)
+            //{
+            //    nonGreedyContext = true;
+            //    predictMethod.Parameters.Add(new TypedName("nonGreedy", RuntimeCoreType.Boolean, this._identityManager));
+            //}
             var includeRuleContext =
-                (projectionAdapter.AssociatedContext.IsLeftRecursiveProjection && (projectionAdapter.AssociatedContext.LeftRecursiveType == ProductionRuleLeftRecursionType.Direct))
+                (projectionAdapter.AssociatedContext.RequiresLeftRecursiveCaution)
                 ? predictMethod.Parameters[includeRuleContextName]
                 : null;
-
+            //var nonGreedyParam = nonGreedyContext ? predictMethod.Parameters["nonGreedy"] : null;
             var projectionLookup = projectionAdapter.All.ToDictionary(k => k.AssociatedState, v => v);
             CommonStateMachineBodyBuilder(
                 topLevelState =>
@@ -479,7 +628,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     predictionDetails,
                     includeRuleContext,
                     topLevelState,
-                    projectionAdapter.AssociatedContext.LeftRecursiveType),
+                    projectionAdapter.AssociatedContext.RequiresLeftRecursiveCaution,
+                    projectionAdapter.AssociatedContext.LeftRecursiveType/*,
+                    nonGreedyParam*/),
                 currentToProcess =>
                     GenerateRuleProjectionParseState(remainingToProcess,
                     currentToProcess.Item2,
@@ -495,7 +646,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     predictionDetails,
                     includeRuleContext,
                     currentToProcess.Item3,
-                    projectionAdapter.AssociatedContext.LeftRecursiveType),
+                    projectionAdapter.AssociatedContext.RequiresLeftRecursiveCaution,
+                    projectionAdapter.AssociatedContext.LeftRecursiveType/*,
+                    nonGreedyParam*/),
                 multitargetLookup,
                 remainingToProcess,
                 secondaryLookups,
@@ -503,39 +656,49 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             predictMethod.Add(decisionPoint);
             var exitPointSwitch = predictMethod.Switch(prExitState.GetReference());
 
-            var decisionPoints = (from edge in projectionAdapter.AssociatedState.ObtainEdges().ToArray()
+            var destinations = (from edge in projectionAdapter.AssociatedState.ObtainEdges().ToArray()
                                   let decision = (from source in edge.Sources.Select(k => k.Item1)
-                                                  where source is ProductionRuleProjectionDecision
-                                                  select (ProductionRuleProjectionDecision)source).FirstOrDefault()
+                                                  where source is PredictionTreeDestination
+                                                  select (PredictionTreeDestination)source).FirstOrDefault()
                                   where decision != null
                                   group new { EdgeState = edge, Decision = decisionPoint } by new { decision.DecidingFactor, decision.Target }).ToDictionary(k => k.Key, v => v.ToArray());
 
-            var failPoints = (from edge in projectionAdapter.AssociatedState.ObtainEdges().ToArray()
+            var followCallerPoints = (from edge in projectionAdapter.AssociatedState.ObtainEdges().ToArray()
                               let decision = (from source in edge.Sources.Select(k => k.Item1)
-                                              where source is ProductionRuleProjectionFollowFailure
-                                              select (ProductionRuleProjectionFollowFailure)source).FirstOrDefault()
+                                              where source is PredictionTreeFollowCaller
+                                              select (PredictionTreeFollowCaller)source).FirstOrDefault()
                               where decision != null
                               group new { EdgeState = edge, Decision = decisionPoint } by decision.DecidingFactor ?? GrammarVocabulary.NullInst).ToDictionary(k => k.Key, v => v.ToArray());
 
-            foreach (var decidingFactor in decisionPoints.Keys)
+            foreach (var decidingFactor in destinations.Keys)
             {
-                var edges = decisionPoints[decidingFactor];
+                var edges = destinations[decidingFactor];
                 var currentCase = exitPointSwitch.Case(edges.Select(k => (IExpression)k.EdgeState.StateValue.ToPrimitive()).ToArray());
-                currentCase.Return(decidingFactor.Target.Value.OriginalState.StateValue.ToPrimitive().RightComment(decidingFactor.DecidingFactor.ToString().Replace("{", "{{").Replace("}", "}}")));
+                currentCase.Return(decidingFactor.Target.Veins.DFAOriginState.StateValue.ToPrimitive().RightComment(decidingFactor.DecidingFactor.ToString().Replace("{", "{{").Replace("}", "}}")));
             }
             bool hasFollow = false;
-            foreach (var failingFactor in failPoints.Keys)
+            foreach (var failingFactor in followCallerPoints.Keys)
             {
                 if(!hasFollow)
-                    hasFollow=true;
-                var edges = failPoints[failingFactor];
+                    hasFollow = true;
+                var edges = followCallerPoints[failingFactor];
                 var currentCase = exitPointSwitch.Case(edges.Select(k => (IExpression)k.EdgeState.StateValue.ToPrimitive()).ToArray());
                 currentCase.Return((-1).ToPrimitive().RightComment(string.Format("Prediction failure for {0}", failingFactor.ToString().Replace("{", "{{").Replace("}", "}}"))));
             }
+            if (projectionAdapter.AssociatedContext.IsLeftRecursiveProjection && projectionAdapter.AssociatedContext.RequiresLeftRecursiveCaution && !projectionAdapter.AssociatedContext.RequiresInnerRecursionSwap)
+                predictMethod.Parameters.Remove(predictMethod.Parameters[nonGreedyName]);
             if (hasFollow && firstPrediction)
                 predictMethod.Return(IntermediateGateway.NumberZero.RightComment("The prediction mechanism isn't necessary, so the owning state's normal execution can continue."));
             else if (firstPrediction)
-                predictMethod.Return(IntermediateGateway.NumberZero.RightComment("The prediction did not match a valid alt."));
+            {
+                predictMethod.Comment(
+@"The prediction did not match a valid alt, so yield the longest look-ahead point as a negative to avoid accidentally looking like a viable alt.
+-
+This will ensure that the Expect function can identify the proper point of failure.");
+                predictMethod.Return(prCurrentLADepth.GetReference().Negate());
+            }
+            else if (!hasFollow)
+                predictMethod.Return(prCurrentLADepth.GetReference().Negate());
             else
                 predictMethod.Return(IntermediateGateway.NumberZero);
 
@@ -558,17 +721,20 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             OilexerGrammarProductionRuleEntry rule,
             MultikeyedDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFAState, ILocalMember>
                                                 reductionHandlers,
-            Dictionary<SyntacticalDFAState, ProductionRuleProjectionAdapter>
+            Dictionary<SyntacticalDFAState, PredictionTreeDFAdapter>
                                                 adapterLookup,
             PredictionReduceDetails predictionDetails,
             IParameterMember includeRuleContext,
             SyntacticalDFAStateJumpData jumpData,
-            ProductionRuleLeftRecursionType leftRecursiveAware)
+            bool cautionaryLeftRecursion,
+            ProductionRuleLeftRecursionType leftRecursiveAware/*,
+            IParameterMember nonGreedyParam*/)
         {
             if (!visited.Add(dfaState))
                 return;
             var adapter = adapterLookup[dfaState];
             IEnumerable<IGrammarRuleSymbol> reductionsToWatchFor = this.compiler._GrammarSymbols.GetRuleSymbols(reductionHandlers.Where(k => k.Keys.Key2 == dfaState).Select(k => k.Keys.Key1));
+            //BuildParseForestInRegion(parentTarget, dfaState);
             if (dfaState.OutTransitions.Count > 0)
             {
                 var currentSwitch = GetLookAheadSwitch(parentTarget, currentLADepth);
@@ -591,12 +757,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     foreach (var tokenDet in symbolicBreakdown.Tokens.Values)
                         identityBlocks.Add(tokenDet.Symbol, currentCase);
 
-                    HandleNextProjectionParseState(targetOfTransition, currentCase, currentSwitch, transition, symbolicBreakdown, toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, reductionHandlers, adapterLookup, predictionDetails, includeRuleContext, jumpData, leftRecursiveAware);
+                    HandleNextProjectionParseState(targetOfTransition, currentCase, currentSwitch, transition, symbolicBreakdown, toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, reductionHandlers, adapterLookup, predictionDetails, includeRuleContext, jumpData, cautionaryLeftRecursion, leftRecursiveAware/*, nonGreedyParam*/);
                 }
                 var lexAmbig =
                     (from source in dfaState.Sources
-                     where source.Item1 is ProductionRuleProjectionDPathSet
-                     let decisionPathSet = (ProductionRuleProjectionDPathSet)source.Item1
+                     where source.Item1 is PredictionTree
+                     let decisionPathSet = (PredictionTree)source.Item1
                      from path in decisionPathSet
                      let pathNode = path.CurrentNode
                      where pathNode.LexicalAmbiguities != null
@@ -623,6 +789,26 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 parentTarget.GoTo(decisionPoint);
         }
 
+        private void BuildParseForestInRegion(IBlockStatementParent parentTarget, SyntacticalDFAState originState)
+        {
+            var comments = new HashSet<string>();
+            foreach (var sourcePathSet in (from source in originState.Sources
+                                            where source.Item1 is PredictionTree
+                                            let dPathSet = (PredictionTree)source.Item1
+                                            from path in dPathSet
+                                            select path).Distinct())
+                comments.Add(sourcePathSet.ToString(false));
+            if (comments.Count > 0)
+            {
+                var eslsBegin = new ExplicitStringLiteralStatement(parentTarget) { Literal = "#region Parse trace" };
+                parentTarget.Add(eslsBegin);
+                foreach (var comment in comments)
+                    parentTarget.Comment(comment);
+                 var eslsEnd = new ExplicitStringLiteralStatement(parentTarget) { Literal = "#endregion" };
+                parentTarget.Add(eslsEnd);
+            }
+        }
+
         private ISwitchStatement GetLookAheadSwitch(IBlockStatementParent parentTarget, ILocalMember currentLADepth)
         {
             return GetLookAheadSwitch(parentTarget, currentLADepth.GetReference());
@@ -638,68 +824,154 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         }
 
         private void HandleNextProjectionParseState(
-            SyntacticalDFAState targetState,
-            IBlockStatement currentTarget,
-            ISwitchStatement owningSwitch,
-            GrammarVocabulary transition,
-            GrammarVocabularySymbolicBreakdown origIdents,
+            SyntacticalDFAState                    targetState,
+            IBlockStatement                      currentTarget,
+            ISwitchStatement                      owningSwitch,
+            GrammarVocabulary                       transition,
+            GrammarVocabularySymbolicBreakdown      origIdents,
             Stack<Tuple<SyntacticalDFAState, IBlockStatementParent, SyntacticalDFAStateJumpData>>
-                                                toInsert,
-            IBlockStatementParent parentTarget,
-            SyntacticalDFAState dfaState,
-            ILabelStatement decisionPoint,
+                                                      toInsert,
+            IBlockStatementParent                 parentTarget,
+            SyntacticalDFAState                       dfaState,
+            ILabelStatement                      decisionPoint,
             Dictionary<IBlockStatementParent, Dictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData>>
-                                                secondaryLookups,
+                                              secondaryLookups,
             IDictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData>
-                                                multitargetLookups,
-            HashSet<SyntacticalDFAState> visited,
-            ILocalMember exitLADepth,
-            ILocalMember currentLADepth,
-            ILocalMember exitState,
-            OilexerGrammarProductionRuleEntry rule,
+                                            multitargetLookups,
+            HashSet<SyntacticalDFAState>               visited,
+            ILocalMember                           exitLADepth,
+            ILocalMember                        currentLADepth,
+            ILocalMember                             exitState,
+            OilexerGrammarProductionRuleEntry             rule,
             MultikeyedDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFAState, ILocalMember>
-                                                reductionHandlers,
-            Dictionary<SyntacticalDFAState, ProductionRuleProjectionAdapter>
-                                                adapterLookup,
-            PredictionReduceDetails predictionDetails,
-            IParameterMember includeRuleContext,
-            SyntacticalDFAStateJumpData jumpData,
-            ProductionRuleLeftRecursionType leftRecursiveAware)
+                                             reductionHandlers,
+            Dictionary<SyntacticalDFAState, PredictionTreeDFAdapter>
+                                                 adapterLookup,
+            PredictionReduceDetails          predictionDetails,
+            IParameterMember                includeRuleContext,
+            SyntacticalDFAStateJumpData               jumpData,
+            bool                       cautionaryLeftRecursion,
+            ProductionRuleLeftRecursionType leftRecursiveAware/*,
+            IParameterMember nonGreedyParam*/)
         {
-            var handleLeftRecursiveState =
+            //var anyOther = (from s in targetState.Sources
+            //                let decision = s.Item1 as PredictionTreeDestination
+            //                where decision != null
+            //                let symbolicDecision = decision.DecidingFactor.SymbolicBreakdown(this.compiler)
+            //                where symbolicDecision.Rules.Count > 0
+            //                let firstRule = symbolicDecision.Rules.Values.First()
+            //                let decisiveAdapter = this.compiler.AllRuleAdapters[firstRule.Rule, firstRule.DFAState]
+            //                where decisiveAdapter.AssociatedContext.Node.ContainsKey(rule)
+            //                select 1).Any();
+            BuildParseForestInRegion(currentTarget, targetState);
+
+            bool handleLeftRecursiveState = false;
+            GrammarVocabularyRuleDetail peekDetail = null;
+            handleLeftRecursiveState =
                  (leftRecursiveAware == ProductionRuleLeftRecursionType.Direct ||
                   leftRecursiveAware == ProductionRuleLeftRecursionType.DirectAndHidden ||
                   leftRecursiveAware == ProductionRuleLeftRecursionType.DirectAndIndirect) &&
                 (from s in targetState.Sources
-                 let decision = s.Item1 as ProductionRuleProjectionDecision
+                 let decision = s.Item1 as PredictionTreeDestination
                  where decision != null
                  let symbolicDecision = decision.DecidingFactor.SymbolicBreakdown(this.compiler)
                  where symbolicDecision.Rules.Count > 0
                  let firstRule = symbolicDecision.Rules.Values.First()
                  let decisiveAdapter = this.compiler.AllRuleAdapters[firstRule.Rule, firstRule.DFAState]
-                 where decisiveAdapter.AssociatedContext.Node.ContainsKey(rule)
+                 where decisiveAdapter.AssociatedContext.Leaf.ContainsKey(rule)
                  select 1).Any();
+            bool handlePeekSwap = false;
+            if (jumpData.EnclosureType == SyntacticalDFAStateEnclosureHandling.Undecided && !handleLeftRecursiveState && cautionaryLeftRecursion)
+            {
+                if (dfaState.IsEdge)
+                {
+
+                    var edgesFromTarget =
+                      (from e in dfaState.ObtainEdges()
+                       where e != dfaState
+                       select e).ToArray();
+                    var currentDecisions =
+                        dfaState.Sources
+                            .Select(k => k.Item1 as PredictionTreeDestination)
+                            .Where(k => k != null);
+
+                    var currentDecision = currentDecisions.FirstOrDefault();
+                    if (currentDecision != null)
+                    {
+                        var peekDetails = (from edge in edgesFromTarget
+                                           from detailGroup in GetEdgeLeftRecursiveDetail(edge, rule)
+                                           from detail in detailGroup
+                                           group detail by detailGroup.Key).ToDictionary(k => k.Key, v => v.Distinct().ToArray());
+
+                        foreach (var decisivePointDetailSet in peekDetails.Keys)
+                            foreach (var decisivePoint in peekDetails[decisivePointDetailSet])
+                                decisivePoint.Item4.PossibleLeftRecursiveDecision = true;
+                    }
+                }
+                {
+                    var peekDetails = (from detailGroup in GetEdgeLeftRecursiveDetail(targetState, rule)
+                                       from detail in detailGroup
+                                       group detail by detailGroup.Key).ToDictionary(k => k.Key, v => v.Distinct().ToArray());
+                    if (peekDetails.Count > 0)
+                    {
+                        handleLeftRecursiveState = peekDetails.Values.Any(k => k.Any(v => v.Item4.PossibleLeftRecursiveDecision));
+                        handlePeekSwap = true;
+                        peekDetail = peekDetails.Keys.FirstOrDefault();
+                    }
+                }
+            }
             SyntacticalDFAStateEnclosureHandling enclosureState =
                 jumpData.EnclosureType == SyntacticalDFAStateEnclosureHandling.Undecided
                     ? handleLeftRecursiveState
-                        ? SyntacticalDFAStateEnclosureHandling.Encapsulate
-                        : SyntacticalDFAStateEnclosureHandling.Undecided
+                        ? cautionaryLeftRecursion
+                            ? SyntacticalDFAStateEnclosureHandling.Encapsulate
+                            : SyntacticalDFAStateEnclosureHandling.Encapsulate
+                        : handlePeekSwap 
+                            ? SyntacticalDFAStateEnclosureHandling.EncapsulatePeek 
+                            : SyntacticalDFAStateEnclosureHandling.Undecided
                     : jumpData.EnclosureType;
             //if (enclosureState == SyntacticalDFAStateEnclosureHandling.Undecided &&
             //    noAltLeftRecursion)
             //    enclosureState = SyntacticalDFAStateEnclosureHandling.EncapsulatePeek;
-            if (enclosureState == SyntacticalDFAStateEnclosureHandling.Encapsulate)
+            if (enclosureState == SyntacticalDFAStateEnclosureHandling.Encapsulate && includeRuleContext != null)
             {
                 var newTarget = currentTarget.If(includeRuleContext.GetReference());
                 newTarget.CreateNext();
                 newTarget.Next.GoTo(decisionPoint);
-                //Nest the intended logic inside the if statement.
                 currentTarget = newTarget;
             }
-            
+            else if (enclosureState == SyntacticalDFAStateEnclosureHandling.EncapsulatePeek && peekDetail != null)
+            {
+                var advRuleMachine = this.compiler.RuleDetail[rule].ProjectionAdapter;
+                if (!advRuleMachine.AssociatedContext.RequiresInnerRecursionSwap)
+                    advRuleMachine.AssociatedContext.RequiresInnerRecursionSwap = true;
+                var newTarget = currentTarget.If(this.compiler.RuleDetail[rule].PredictMethod.Parameters[nonGreedyName].GetReference().LogicalAnd(PeekInitialContextsForImpl.GetReference().Invoke(peekDetail.Identity.GetReference(), currentLADepth.GetReference())));
+                //newTarget.Next.ToString();
+                //newTarget.CreateNext();
+                newTarget.Comment("Attempt to resolve 'Chicken before egg' issue with some left recursive rules.");
+                var swapSymbol = newTarget.Locals.Add(new TypedName("swap{0}", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol, rule.Name), this.BorrowOuterContext.GetReference().Invoke(currentLADepth.GetReference(), this.Compiler.RuleDetail[rule].Identity.GetReference()));
+                swapSymbol.AutoDeclare = false;
+                newTarget.DefineLocal(swapSymbol);
+                var swapNotNullCheck = newTarget.If(swapSymbol.InequalTo(IntermediateGateway.NullValue));
+                var currentSymbol = swapNotNullCheck.Locals.Add(new TypedName("currentSymbol", this.compiler.CommonSymbolBuilder.ILanguageSymbol), this.compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this._SymbolStreamImpl.GetReference(), currentLADepth.GetReference()));
+                currentSymbol.AutoDeclare = false;
+                swapNotNullCheck.DefineLocal(currentSymbol);
+                var currentSymbolNotNull = swapNotNullCheck.If(currentSymbol.InequalTo(IntermediateGateway.NullValue));
+                var explicitCaptureCheck = currentSymbolNotNull.If(this.compiler.RuleSymbolBuilder.GetExplicitCapture.GetReference(swapSymbol.GetReference(), this._identityManager.ObtainTypeReference(RuntimeCoreType.Boolean)).Invoke("__Swapped".ToPrimitive()).Not());
+                explicitCaptureCheck.CreateNext();
+                explicitCaptureCheck.Next.Return(IntermediateGateway.NumberZero);
+                explicitCaptureCheck.Call(this.compiler.RuleSymbolBuilder.DelineateCapture.GetReference(swapSymbol.GetReference()).Invoke("__Swapped".ToPrimitive(), IntermediateGateway.TrueValue));
+                explicitCaptureCheck.Call(this.Compiler.SymbolStreamBuilder.SwapImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(currentSymbol.GetReference(), swapSymbol.GetReference()));
+                explicitCaptureCheck.Return((-1).ToPrimitive());
+                //newTarget.Next.GoTo(decisionPoint);
+                //currentTarget = newTarget.Next;
+            }
+
             IEnumerable<IGrammarRuleSymbol> reductionsToWatchFor = this.compiler._GrammarSymbols.GetRuleSymbols(reductionHandlers.Where(k => k.Keys.Key2 == targetState).Select(k => k.Keys.Key1));
-            ExitStateCheck(currentTarget, dfaState, exitState, targetState, true);
-            var reductionPoint = targetState.Sources.Where(k => k.Item1 is ProductionRuleProjectionReduction).Select(k => k.Item1).Cast<ProductionRuleProjectionReduction>().ToArray();
+            bool emittedExitStateCheck = false;
+            
+            var reductionPoints = targetState.Sources.Where(k => k.Item1 is ProductionRuleProjectionReduction).Select(k => k.Item1).Cast<ProductionRuleProjectionReduction>().ToArray();
+            
             var reductionLocalsToAssignContext = reductionHandlers.Where(k => k.Keys.Key2 == targetState);
             /* If the start/end state are identical, then there's no look-ahead variable needed. */
             var reductionLocalsJoinContext = from rl in reductionLocalsToAssignContext
@@ -714,7 +986,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             if (reductionLocalsToAssign.Length > 0)
                 currentTarget.Add(new ExpressionStatement(currentTarget, ChainAssign(reductionLocalsToAssign, currentLADepth)));
 
-            var reduction = reductionPoint.FirstOrDefault();
+            var reduction = reductionPoints.FirstOrDefault();
             if (reduction != null)
             {
                 var firstSymbol = reduction.ReducedRule.SymbolicBreakdown(this.compiler);
@@ -737,26 +1009,41 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
                     if (localReductionContext.Length > 0)
                     {
-                        if (ruleDetails.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
-                            ruleDetails.Node.Count == 1)
-                            currentTarget = currentTarget.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDetails.Identity.GetReference()).Not());
+                        if (ruleDetails.Leaf.Veins.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
+                            ruleDetails.Leaf.Count == 1)
+                            currentTarget = currentTarget.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDetails.Identity.GetReference(), currentLADepth.GetReference()).Not());
                         var maxContext = BuildMaxContext(localReductionContext);
                         IExpression assignContext = currentLADepth.GetReference().Assign(this.CurrentIfOtherNegative.GetReference().Invoke(currentLADepth.GetReference(), (INaryOperandExpression)maxContext));
                         currentTarget.Assign(_FollowStateImpl.GetReference(), targetState.StateValue.ToPrimitive());
+                        //if (ruleDetails == null  || ruleDetails.Rule == null )
+                        //{
+
+                        //}
+                        currentTarget.Comment(string.Format("Reduce {0}.", ruleDetails.Rule.Name));
                         currentTarget.Call(ruleDetails.InternalParseMethod.GetReference().Invoke(assignContext));
-                        currentTarget.Assign(this._StateImpl.GetReference(), targetState.StateValue.ToPrimitive());
+                        //currentTarget.Assign(this._StateImpl.GetReference(), targetState.StateValue.ToPrimitive());
+                        ExitStateCheck(currentTarget, dfaState, exitState, targetState, true/*, nonGreedyParam, decisionPoint*/);
+                        emittedExitStateCheck = true;
                     }
                     else if (secondaryPredict.Length > 0)
                     {
                         secondaryPredict = secondaryPredict.Where(k => k.ReductionType == PredictionReduceType.Simple).ToArray();
+
                         if (secondaryPredict.Length > 0)
                         {
-                            if (ruleDetails.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
-                                ruleDetails.Node.Count == 1)
-                                currentTarget = currentTarget.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDetails.Identity.GetReference()).Not());
+                            if (ruleDetails.Leaf.Veins.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
+                                ruleDetails.Leaf.Count == 1)
+                                currentTarget = currentTarget.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDetails.Identity.GetReference(), currentLADepth.GetReference()).Not());
                             currentTarget.Assign(_FollowStateImpl.GetReference(), targetState.StateValue.ToPrimitive());
+                            if (ruleDetails == null || ruleDetails.Rule == null)
+                            {
+
+                            }
+                            currentTarget.Comment(string.Format("Reduce {0}.", ruleDetails.Rule.Name));
                             currentTarget.Call(ruleDetails.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference()));
-                            currentTarget.Assign(this._StateImpl.GetReference(), targetState.StateValue.ToPrimitive());
+                            //currentTarget.Assign(this._StateImpl.GetReference(), targetState.StateValue.ToPrimitive());
+                            ExitStateCheck(currentTarget, dfaState, exitState, targetState, true/*, nonGreedyParam, decisionPoint*/);
+                            emittedExitStateCheck = true;
                         }
                         else
                         {
@@ -783,29 +1070,44 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     }
                 }
             }
-
-            if (origIdents.Rules.Count == 1)
-            {
-                var ruleDet = origIdents.Rules.Values.First();
-                ExitLADepthCheck(currentTarget, exitLADepth, currentLADepth, targetState);
-            }
-            else if (origIdents.Tokens.Count > 0 || origIdents.Ambiguities.Count > 0)
-                ExitLADepthCheck(currentTarget, exitLADepth, currentLADepth, targetState);
+            if (!emittedExitStateCheck)
+                ExitStateCheck(currentTarget, dfaState, exitState, targetState, true/*, nonGreedyParam, decisionPoint*/);
+            ExitLADepthCheck(currentTarget, exitLADepth, currentLADepth, targetState);
             if (multitargetLookups.ContainsKey(targetState))
             {
                 var currentJumpInfo = multitargetLookups[targetState];
                 currentTarget.GoTo(currentJumpInfo.Label.Value);
             }
             else if (targetState.OutTransitions.Count > 0)
-                toInsert.Push(Tuple.Create(targetState, (IBlockStatementParent)currentTarget, 
-                    new SyntacticalDFAStateJumpData() 
-                    { 
+                toInsert.Push(Tuple.Create(targetState, (IBlockStatementParent)currentTarget,
+                    new SyntacticalDFAStateJumpData()
+                    {
                         EnclosureType = enclosureState == SyntacticalDFAStateEnclosureHandling.Encapsulate || enclosureState == SyntacticalDFAStateEnclosureHandling.EncapsulatePeek
-                        ? SyntacticalDFAStateEnclosureHandling.Handled 
-                        : SyntacticalDFAStateEnclosureHandling.Undecided }));
+                        ? SyntacticalDFAStateEnclosureHandling.Handled
+                        : SyntacticalDFAStateEnclosureHandling.Undecided
+                    }));
             else
                 currentTarget.GoTo(decisionPoint);
             //HandleNextProjectionTerminalEdge(toInsert, currentTarget, targetState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, reductionHandlers, adapterLookup, predictionDetails);
+        }
+
+        private IEnumerable<IGrouping<GrammarVocabularyRuleDetail, Tuple<GrammarVocabularyRuleDetail, PredictionTreeLeaf, PredictionTreeBranch, IPredictionTreeKnownDestination>>> GetEdgeLeftRecursiveDetail(SyntacticalDFAState dfaState, OilexerGrammarProductionRuleEntry rule)
+        {
+            return (from d in dfaState.Sources
+                    let decision = d.Item1 as IPredictionTreeKnownDestination
+                    where decision != null
+                    let decisionBreakdown = decision.DecidingFactor.SymbolicBreakdown(this.compiler)
+                    where decisionBreakdown.Rules.Count > 0
+                    from ruleBreakdown in decisionBreakdown.Rules.Values
+                    where ruleBreakdown.Leaf.Veins.DFAOriginState.OutTransitions.Count == 1
+                    let rootNode = this.compiler.RuleDetail[rule].Leaf
+                    from inPath in rootNode.IncomingPaths
+                    let index = inPath.IndexOf(ruleBreakdown.Leaf)
+                    let myIndex = inPath.IndexOf(rootNode)
+                    where index != -1
+                    where index < inPath.Depth && index < myIndex
+                    where inPath.GetDeviationAt(index) == 0
+                    group Tuple.Create(ruleBreakdown, rootNode, inPath, decision) by ruleBreakdown);
         }
 
         private object BuildMaxContext(ILocalMember[] localReductionContext)
@@ -875,13 +1177,16 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             }
         }
 
-        private static PredictionReduceDetails ObtainReductionDetails(ProductionRuleProjectionAdapter projectionAdapter, SyntacticalDFAFlowGraph flowGraph)
+        private static PredictionReduceDetails ObtainReductionDetails(PredictionTreeDFAdapter projectionAdapter, SyntacticalDFAFlowGraph flowGraph)
         {
+            /*************************************************************************************************************************************************************************\
+            | REWRITE IMMEDIATELY (When time permits :)                                                                                                                               |
+            \*************************************************************************************************************************************************************************/
             var predictionDetails = new PredictionReduceDetails();
             var projectionPaths = (from state in flowGraph.PluralTargets.Select(k => k.Value).Concat(flowGraph.Singletons.Select(k => k.Value)).OrderBy(k => k.StateValue)
                                    from source in state.Sources
-                                   where source.Item1 is ProductionRuleProjectionDPathSet
-                                   group source.Item1 as ProductionRuleProjectionDPathSet by state).ToDictionary(k => k.Key, v => v.ToArray());
+                                   where source.Item1 is PredictionTree
+                                   group source.Item1 as PredictionTree by state).ToDictionary(k => k.Key, v => v.ToArray());
             var projectionPathsSlim = (from projectionPathSets in projectionPaths.Values
                                        from projectionPathSet in projectionPathSets
                                        select projectionPathSet).ToArray();
@@ -890,7 +1195,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                    from projectionPathSet in projectionPathSets
                                    from path in projectionPathSet
                                    select path.CurrentNode).Distinct();
-            /* node->ProductionRuleProjectionDPathSet */
+            /* node->PredictionTree */
             var projectionNodePaths = (from projectionPathSets in projectionPaths.Values
                                        from projectionPathSet in projectionPathSets
                                        from path in projectionPathSet
@@ -1081,9 +1386,72 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 }
             }
             return predictionDetails;
+
+            /*
+            var projectionPaths = (from state in flowGraph.PluralTargets.Select(k => k.Value).Concat(flowGraph.Singletons.Select(k => k.Value)).OrderBy(k => k.StateValue)
+                                   from source in state.Sources
+                                   where source.Item1 is PredictionTree
+                                   group source.Item1 as PredictionTree by state).ToDictionary(k => k.Key, v => v.ToArray());
+            var projectionPathsSlim = (from projectionPathSets in projectionPaths.Values
+                                       from projectionPathSet in projectionPathSets
+                                       orderby projectionPathSet.Instance
+                                       group projectionPathSet by projectionPathSet.Instance).ToDictionary(k => k.Key, v => v.First()).Values.ToArray();
+
+            var projectionPathsByInstance =
+                projectionPathsSlim.ToDictionary(k => k.Instance, v => v);
+
+            var reverseLookup =
+              (from state in projectionPaths.Keys
+               from pathSet in projectionPaths[state]
+               group state by pathSet.Instance).ToDictionary(k => k.Key, v => v.ToArray());
+
+            var reductions =
+              (from key in projectionPathsSlim
+               where key.ReductionType == LookAheadReductionType.CommonForwardSymbol
+               where key.ReductionDetail != null
+               let reduction = key.ReductionDetail
+               let start = reduction.BranchPoint
+               let end = reduction.ReducePoint
+               let symbolicReducedRule = reduction.ReducedRule.SymbolicBreakdown(this.compiler)
+               let rule = symbolicReducedRule.Rules.Values.First()
+               select new
+               {
+                   Reduction = reduction,
+                   Start = start,
+                   StartStates = reverseLookup[start.Instance],
+                   End = end,
+                   EndStates = reverseLookup[end.Instance],
+                   RuleDetail = rule
+               }).ToArray();
+            PredictionReduceDetails results = new PredictionReduceDetails();
+            foreach (var reduction in reductions)
+            {
+                foreach (var startState in reduction.StartStates)
+                {
+                    
+                    HashSet<PredictionReduceDetail> detail;
+                    if (!results.TryGetValue(reduction.RuleDetail.Rule, startState, out detail))
+                        results.Add(reduction.RuleDetail.Rule, startState, detail = new HashSet<PredictionReduceDetail>());
+                    foreach (var endState in reduction.EndStates)
+                    {
+                        var newDetail = new PredictionReduceDetail
+                        {
+                            Rule = reduction.RuleDetail.Rule,
+                            ReductionType = reduction.Reduction.LookAheadDepth == 0 ? PredictionReduceType.Simple : PredictionReduceType.VariableLookAhead,
+                            FinalDiscriminator = reduction.End.Discriminator,
+                            InitialState = startState,
+                            FinalState = endState,
+                            KnownDeviation = reduction.Reduction.LookAheadDepth,
+                        };
+                        detail.Add(newDetail);
+                    }
+                }
+            }
+            return results;
+             */
         }
 
-        private static List<Tuple<GrammarVocabulary, SyntacticalDFAState>>[] ObtainProjectionPaths(ProductionRuleProjectionAdapter projectionAdapter, List<List<Tuple<GrammarVocabulary, SyntacticalDFAState>>> recursivePaths)
+        private static List<Tuple<GrammarVocabulary, SyntacticalDFAState>>[] ObtainProjectionPaths(PredictionTreeDFAdapter projectionAdapter, List<List<Tuple<GrammarVocabulary, SyntacticalDFAState>>> recursivePaths)
         {
             return (from r in recursivePaths
                     where r.Count >= 2
@@ -1137,6 +1505,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private void BuildParseMethod(OilexerGrammarProductionRuleEntry rule)
         {
+            bool noPop = false;
             var adapter = this.Compiler.RuleAdapters[rule];
             var parseMethod = this.parseInternalMethods[adapter];
             var lookAheadParam = parseMethod.Parameters["laDepth"];
@@ -1154,10 +1523,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 parseInternalOriginalMethods.Add(adapter, parseMethod);
                 parseMethod.AccessLevel = AccessLevelModifiers.Private;
                 var predictionMethod = this.predictMethods[projection];
+                parseContinuous.Call(_LookAheadDepthsImpl.GetReference().GetMethod("Push").Invoke(lookAheadParam.GetReference()));
                 BuildParseContinuousMethod(parseContinuous, parseMethod, predictionMethod, rule, lookAheadParam, projection);
                 lookAheadParam = parseMethod.Parameters["laDepth"];
+                noPop = true;
             }
-            parseMethod.Call(_LookAheadDepthsImpl.GetReference().GetMethod("Push").Invoke(lookAheadParam.GetReference()));
+            else
+                parseMethod.Call(_LookAheadDepthsImpl.GetReference().GetMethod("Push").Invoke(lookAheadParam.GetReference()));
             var entryContext = parseMethod.Locals.Add(
                 new TypedName("entryContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol),
                 this._CurrentContextImpl.GetReference());
@@ -1180,12 +1552,17 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             BuildNormalRule(rule, adapter, parseMethod, lookAheadParam, localContext, prCurrentLADepth);
             //}
             parseMethod.Assign(this._CurrentContextImpl.GetReference(), entryContext.GetReference());
-            parseMethod.Call(_LookAheadDepthsImpl.GetReference().GetMethod("Pop").Invoke());
-            var exitCheck = parseMethod.If(prCurrentLADepth.Subtract(lookAheadParam).GreaterThan(IntermediateGateway.NumberZero));
-
-            exitCheck.Return(localContext.GetReference());
-            exitCheck.CreateNext();
-            exitCheck.Next.Return(IntermediateGateway.NullValue);
+            if (!noPop)
+                parseMethod.Call(_LookAheadDepthsImpl.GetReference().GetMethod("Pop").Invoke());
+            if (adapter.AssociatedState.CanBeEmpty)
+                parseMethod.Return(localContext);
+            else
+            {
+                var exitCheck = parseMethod.If(prCurrentLADepth.Subtract(lookAheadParam).GreaterThan(IntermediateGateway.NumberZero));
+                exitCheck.Return(localContext);
+                exitCheck.CreateNext();
+                exitCheck.Next.Return(IntermediateGateway.NullValue);
+            }
         }
 
         private void BuildParseContinuousMethod(
@@ -1194,13 +1571,30 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             IIntermediateClassMethodMember predictMethod,
             OilexerGrammarProductionRuleEntry rule,
             IIntermediateMethodParameterMember<IClassMethodMember, IIntermediateClassMethodMember, IClassType, IIntermediateClassType> lookAheadParam,
-            ProductionRuleProjectionAdapter projectionAdapter)
+            PredictionTreeDFAdapter projectionAdapter)
         {
-            bool needsRuleSwitchLogic = projectionAdapter.AssociatedContext.LeftRecursiveType == ProductionRuleLeftRecursionType.Direct;
-            var lastContext = parseContinuousMethod.Locals.Add(new TypedName("lastContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), IntermediateGateway.NullValue);
-            var lastValidContext = parseContinuousMethod.Locals.Add(new TypedName("lastValidContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), IntermediateGateway.NullValue);
+            bool needsRuleSwitchLogic = projectionAdapter.AssociatedContext.RequiresLeftRecursiveCaution;
+            var currentLADepthParam = parseContinuousMethod.Parameters["laDepth"];
             var nonGreedyApproach = parseContinuousMethod.Locals.Add(
-                new TypedName("nonGreedy", RuntimeCoreType.Boolean, this._identityManager), this.PeekInitialContextsForImpl.GetReference().Invoke(this.compiler.RuleDetail[rule].Identity.GetReference()));
+                new TypedName("nonGreedy", RuntimeCoreType.Boolean, this._identityManager), this.PeekInitialContextsForImplOvr.GetReference().Invoke(this.compiler.RuleDetail[rule].Identity.GetReference()));
+            var lastContext = parseContinuousMethod.Locals.Add(new TypedName("lastContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), IntermediateGateway.NullValue);
+
+            var lastValidContext = parseContinuousMethod.Locals.Add(new TypedName("lastValidContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), lastContext.GetReference());
+            var initialState = parseContinuousMethod.Locals.Add(new TypedName("entryState", RuntimeCoreType.Int32, this._identityManager), this._StateImpl.GetReference());
+            var initialFollow = parseContinuousMethod.Locals.Add(new TypedName("entryFollow", RuntimeCoreType.Int32, this._identityManager), this._FollowStateImpl.GetReference());
+
+            initialState.AutoDeclare = initialFollow.AutoDeclare = false;
+            //Issue with this: the follow details for a left-recursive rule might cause a prediction failure if the rule has a Symbol+ at the end, causing the first entry to consume it all.
+            parseContinuousMethod.Add(initialState.GetDeclarationStatement(initialFollow));
+#if ENABLEREATTEMPT
+            ILabelStatement attemptStart = null;
+            ILocalMember reattemptChecker = null;
+            if (needsRuleSwitchLogic)
+            {
+                attemptStart = parseContinuousMethod.DefineLabel("AttemptStart");
+                reattemptChecker = parseContinuousMethod.Locals.Add(new TypedName("secondAttempt", RuntimeCoreType.Boolean, this._identityManager), IntermediateGateway.FalseValue);
+            }
+#endif
             IIntermediateMethodParameterMember<IClassMethodMember, IIntermediateClassMethodMember, IClassType, IIntermediateClassType>
                     ruleIncludeRuleContextParam = null;
             IIntermediateMethodParameterMember<IClassMethodMember, IIntermediateClassMethodMember, IClassType, IIntermediateClassType>
@@ -1215,18 +1609,30 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 includeRuleContext = parseContinuousMethod.Locals.Add(new TypedName(includeRuleContextName, RuntimeCoreType.Boolean, this._identityManager), IntermediateGateway.FalseValue);
             }
 
-            var currentLADepthParam = parseContinuousMethod.Parameters["laDepth"];
-
             var predictInvoke = predictMethod.GetReference().Invoke(lookAheadParam.GetReference());
             if (needsRuleSwitchLogic)
-                predictInvoke.Parameters.Add(includeRuleContext.GetReference());
-            var whileBlock = parseContinuousMethod.While((lastPredictionResult.GetReference().Assign(predictInvoke)).InequalTo(IntermediateGateway.NumberZero));
+            {
+                predictInvoke.Arguments.Add(includeRuleContext.GetReference());
+                if (projectionAdapter.AssociatedContext.RequiresInnerRecursionSwap)
+                    predictInvoke.Arguments.Add(nonGreedyApproach.GetReference());
+            }
+            //predictInvoke.Parameters.Add(nonGreedyApproach.GetReference());
+            var whileBlock = parseContinuousMethod.While((lastPredictionResult.GetReference().Assign(predictInvoke)).GreaterThan(IntermediateGateway.NumberZero));
+            if (projectionAdapter.AssociatedContext.RequiresInnerRecursionSwap)
+            {
+                var yieldTopLevelOuter = whileBlock.If(lastPredictionResult.EqualTo((-1).ToPrimitive()));
+                yieldTopLevelOuter.Assign(lastContext.GetReference(), new CSharpConditionalExpression((ICSharpLogicalOrExpression)nonGreedyApproach.GetReference().AffixTo(CSharpOperatorPrecedences.LogicalOrOperation), (ICSharpConditionalExpression)this.BorrowOuterContext.GetReference().Invoke(currentLADepthParam.GetReference(), this.compiler.RuleDetail[rule].Identity.GetReference()).AffixTo(CSharpOperatorPrecedences.ConditionalOperation), (ICSharpConditionalExpression)lastValidContext.GetReference().AffixTo(CSharpOperatorPrecedences.ConditionalOperation)));
+                yieldTopLevelOuter.Break();
+            }
+            whileBlock.Assign(this._StateImpl.GetReference(), initialState.GetReference());
+            whileBlock.Assign(this._FollowStateImpl.GetReference(), initialFollow.GetReference());
             if (needsRuleSwitchLogic)
                 whileBlock.Assign(lastContext.GetReference(), parseMethod.GetReference().Invoke(currentLADepthParam.GetReference(), lastPredictionResult.GetReference(), ruleIncludeRuleContextParam.GetReference()));
             else
                 whileBlock.Assign(lastContext.GetReference(), parseMethod.GetReference().Invoke(currentLADepthParam.GetReference(), lastPredictionResult.GetReference()));
             var hasErrorCheck = whileBlock.If(this.compiler.RuleSymbolBuilder.HasError.GetReference(lastContext.GetReference()).Not());
             hasErrorCheck.Assign(lastValidContext.GetReference(), lastContext.GetReference());
+
             hasErrorCheck.If(nonGreedyApproach.GetReference())
                 .Break();
             if (needsRuleSwitchLogic)
@@ -1239,19 +1645,30 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
             hasErrorCheck.Next.Break();
 
-            parseContinuousMethod.If(lastValidContext.GetReference().EqualTo(IntermediateGateway.NullValue))
-                .Return(lastContext.GetReference());
+            parseContinuousMethod.Call(_LookAheadDepthsImpl.GetReference().GetMethod("Pop").Invoke());
+            var nullValidCheck = parseContinuousMethod.If(lastValidContext.GetReference().EqualTo(IntermediateGateway.NullValue));
+
+            nullValidCheck.Return(lastContext.GetReference());
+            var currentSymbol = parseContinuousMethod.Locals.Add(new TypedName("currentSymbolOnStack", compiler.CommonSymbolBuilder.ILanguageSymbol), this.Compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this._SymbolStreamImpl.GetReference(), currentLADepthParam.GetReference()));
+            currentSymbol.AutoDeclare = false;
+            parseContinuousMethod.DefineLocal(currentSymbol);
+
+            parseContinuousMethod.If(lastValidContext.InequalTo(currentSymbol))
+                .Call(this.Compiler.SymbolStreamBuilder.SwapImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(currentSymbol.GetReference(), lastValidContext.GetReference()));
+
             parseContinuousMethod.Return(lastValidContext.GetReference());
         }
 
         private void BuildNormalRule(OilexerGrammarProductionRuleEntry rule, ProductionRuleNormalAdapter adapter, IIntermediateClassMethodMember parseMethod, IIntermediateMethodParameterMember<Abstract.Members.IClassMethodMember, IIntermediateClassMethodMember, IClassType, IIntermediateClassType> lookAheadParam, ITypedLocalMember localContext, ILocalMember prCurrentLADepth)
         {
             var flowGraph = SyntacticalDFAFlowGraph.CreateFlowGraph(this.Compiler.RuleDFAStates[rule]);
-            var prExitLADepth = parseMethod.Locals.Add(new TypedName("exitLADepth", RuntimeCoreType.Int32, this._identityManager), (-1).ToPrimitive());
-            var prExitState = parseMethod.Locals.Add(new TypedName("exitState", RuntimeCoreType.Int32, this._identityManager), (-1).ToPrimitive());
+            var prExitLADepth = parseMethod.Locals.Add(new TypedName("exitLADepth", RuntimeCoreType.Int32, this._identityManager), adapter.AssociatedState.CanBeEmpty ? (IExpression)lookAheadParam.GetReference() : (-1).ToPrimitive());
+
+            var prExitState = parseMethod.Locals.Add(new TypedName("exitState", RuntimeCoreType.Int32, this._identityManager), adapter.AssociatedState.CanBeEmpty ? adapter.AssociatedState.StateValue.ToPrimitive() : (-1).ToPrimitive());
             var maxStateIndex = flowGraph.PluralTargets.Concat(flowGraph.Singletons).Select(k => k.Value.StateValue).Max();
             var visited = new HashSet<SyntacticalDFAState>();
             var secondaryLookups = new Dictionary<IBlockStatementParent, Dictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData>>();
+            var laDepth = parseMethod.Parameters["laDepth"];
 
             var multitargetLookup =
                 SyntacticalDFAStateJumpData.ObtainStateJumpDetails(
@@ -1355,26 +1772,59 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     case ResultedDataType.String:
                     case ResultedDataType.ImportType:
                     case ResultedDataType.Enumeration:
-                        parseMethod.If(explicitCaptureLookup[importElement].InequalTo(IntermediateGateway.NullValue)).Call(this.compiler.RuleSymbolBuilder.DelineateCapture.GetReference(localContext.GetReference()).Invoke(importElement.Name.ToPrimitive(), explicitCaptureLookup[importElement].GetReference()));
+                        parseMethod.If(explicitCaptureLookup[importElement].InequalTo(IntermediateGateway.NullValue)).Call(this.compiler.RuleSymbolBuilder.DelineateCapture.GetReference(localContext.GetReference()).Invoke(importElement.BucketName.ToPrimitive(), explicitCaptureLookup[importElement].GetReference()));
                         break;
                     case ResultedDataType.ImportTypeList:
-                        parseMethod.If(explicitCaptureLookup[importElement].GetReference().GetProperty("Count").GreaterThan(0)).Call(this.compiler.RuleSymbolBuilder.DelineateCapture.GetReference(localContext.GetReference()).Invoke(importElement.Name.ToPrimitive(), explicitCaptureLookup[importElement].GetReference()));
+                        parseMethod.If(explicitCaptureLookup[importElement].GetReference().GetProperty("Count").GreaterThan(0)).Call(this.compiler.RuleSymbolBuilder.DelineateCapture.GetReference(localContext.GetReference()).Invoke(importElement.BucketName.ToPrimitive(), explicitCaptureLookup[importElement].GetReference()));
                         break;
                 }
             }
-
-            var edgeStates = adapter.AssociatedState.ObtainEdges().Select(k => k.StateValue).Distinct().Select(k => k.ToPrimitive()).ToArray();
-
-            //parseMethod.Call();
+            var edges = adapter.AssociatedState.ObtainEdges().ToList();
+            if (adapter.AssociatedState.CanBeEmpty)
+                edges.Add(adapter.AssociatedState);
+            var edgeStates = edges.Where(k => k.OutTransitions.Count == 0).Select(k => k.StateValue).Distinct().Select(k => k.ToPrimitive()).ToArray();
+            var edgeStatesWithTransition =
+                edges.Where(k => k.OutTransitions.Count > 0).Select(k => k.StateValue).Distinct().Select(k => k.ToPrimitive()).ToArray();
 
             var yieldSwitch = parseMethod.Switch(prExitState.GetReference());
+            if (edgeStatesWithTransition.Any())
+            {
+                var withTransitionCases = yieldSwitch.Case(edgeStatesWithTransition);
+                withTransitionCases.Comment("If an owner context errors out, the location here will identify the greater context at large of what's valid.");
+                withTransitionCases.Call(this.ExpectImpl.GetReference(), prExitLADepth.GetReference(), localContext.GetReference(), IntermediateGateway.FalseValue);
+                if (!adapter.AssociatedState.CanBeEmpty)
+                    withTransitionCases.Call(this.compiler.RuleSymbolBuilder.DoReductionImpl.GetReference(localContext.GetReference()).Invoke(this._SymbolStreamImpl.GetReference(), lookAheadParam.GetReference(), prExitLADepth.Subtract(lookAheadParam)));
+                else
+                {
+                    var wtcIf = withTransitionCases.If((prCurrentLADepth.Subtract(lookAheadParam)).GreaterThan(IntermediateGateway.NumberZero));
 
-            yieldSwitch.Case(edgeStates).Call(this.compiler.RuleSymbolBuilder.DoReductionImpl.GetReference(localContext.GetReference()).Invoke(this._SymbolStreamImpl.GetReference(), lookAheadParam.GetReference(), prExitLADepth.Subtract(lookAheadParam)));
+                    wtcIf.Call(this.compiler.RuleSymbolBuilder.DoReductionImpl.GetReference(localContext.GetReference()).Invoke(this._SymbolStreamImpl.GetReference(), lookAheadParam.GetReference(), prExitLADepth.Subtract(lookAheadParam)));
+                    wtcIf.CreateNext();
+                    wtcIf.Next.Call(this.Compiler.RuleSymbolBuilder.DoBlankReduction.GetReference(localContext.GetReference()).Invoke(this.compiler.SymbolStreamBuilder.GetTokenIndexImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(laDepth.GetReference())));
+                }
+            }
+            if (edgeStates.Any())
+            {
+                var currentEdgeCase = yieldSwitch.Case(edgeStates);
+                if (!adapter.AssociatedState.CanBeEmpty)
+                    currentEdgeCase.Call(this.compiler.RuleSymbolBuilder.DoReductionImpl.GetReference(localContext.GetReference()).Invoke(this._SymbolStreamImpl.GetReference(), lookAheadParam.GetReference(), prExitLADepth.Subtract(lookAheadParam)));
+                else
+                {
+                    var currentEdgeIf = currentEdgeCase.If((prCurrentLADepth.Subtract(lookAheadParam)).GreaterThan(IntermediateGateway.NumberZero));
+                    currentEdgeIf.Call(this.compiler.RuleSymbolBuilder.DoReductionImpl.GetReference(localContext.GetReference()).Invoke(this._SymbolStreamImpl.GetReference(), lookAheadParam.GetReference(), prExitLADepth.Subtract(lookAheadParam)));
+                    currentEdgeIf.CreateNext();
+                    currentEdgeIf.Next.Call(this.Compiler.RuleSymbolBuilder.DoBlankReduction.GetReference(localContext.GetReference()).Invoke(this.compiler.SymbolStreamBuilder.GetTokenIndexImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(laDepth.GetReference())));
+                }
+            }
+
             /* Yield an error, but first check to see that there isn't already one on the stack from the lexer. */
             var yieldError = yieldSwitch.Case(true);
+            yieldError.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+            yieldError.Call(this.ExpectImpl.GetReference(), prCurrentLADepth.GetReference(), localContext.GetReference(), IntermediateGateway.TrueValue);
             var yieldErrorCheck = yieldError.If((prCurrentLADepth.Subtract(lookAheadParam)).GreaterThan(IntermediateGateway.NumberZero));
             yieldErrorCheck.Call(this.compiler.RuleSymbolBuilder.DoReductionImpl.GetReference(localContext.GetReference()).Invoke(this._SymbolStreamImpl.GetReference(), lookAheadParam.GetReference(), prCurrentLADepth.Subtract(lookAheadParam)));
-            yieldErrorCheck.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+            yieldErrorCheck.CreateNext();
+            yieldErrorCheck.Next.Call(this.Compiler.RuleSymbolBuilder.DoBlankReduction.GetReference(localContext.GetReference()).Invoke(this.compiler.SymbolStreamBuilder.GetTokenIndexImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(laDepth.GetReference())));
         }
 
         private bool TargetedByAnyFollowPredictions(SyntacticalDFAState state, GrammarVocabularyRuleDetail ruleDetail)
@@ -1388,12 +1838,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                 select new { State = ruleState, AdapterContext = adapterContext }).ToDictionary(k => k.State, v => v.AdapterContext);
             var targeted =
                 (from rs in ruleAdapters.Values
-                 from follow in rs.Node.FollowAmbiguities
+                 from follow in rs.Leaf.FollowAmbiguities
                  from followAdapt in follow.Adapter.All
                  from source in followAdapt.AssociatedState.Sources
-                 where source.Item1 is ProductionRuleProjectionDecision
-                 let decision = (ProductionRuleProjectionDecision)source.Item1
-                 where decision.Target == stateContext.Node
+                 where source.Item1 is PredictionTreeDestination
+                 let decision = (PredictionTreeDestination)source.Item1
+                 where decision.Target == stateContext.Leaf
                  select 1).Any();
             /* If a follow prediction targets a given state, eject it from the inlined set to reduce repeating code.
              * Smaller code is usually faster code. */
@@ -1418,7 +1868,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             HandleStatementInjections(targetMethod, multitargetLookup);
         }
 
-        public IExpression GetPredictionInvokeExpression(IMemberReferenceExpression reference, ProductionRuleProjectionAdapter projection, IParameterMember lastPredictionResult)
+        public IExpression GetPredictionInvokeExpression(IMemberReferenceExpression reference, PredictionTreeDFAdapter projection, IParameterMember lastPredictionResult)
         {
 
             var predictMethod = this.predictMethods[projection];
@@ -1467,11 +1917,17 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                      from followAmbiguity in followAmbiguitiesKSVP.Value
                      from edgeState in followAmbiguity.DFAState.ObtainEdges()
                      from source in edgeState.Sources
-                     let decisiveSource = source.Item1 as ProductionRuleProjectionDecision
-                     where decisiveSource != null
-                     let targetState = decisiveSource.Target
+                     let decisiveSource = source.Item1 as PredictionTreeDestination
+                     let decisiveFail = source.Item1 as PredictionTreeFollowCaller
+                     where decisiveSource != null || decisiveFail != null
+                     let targetState = decisiveSource == null ? null : decisiveSource.Target
+                     let subQueryAdapterCheck = from adapterDetail in targetState == null ? (IEnumerable<KeysValuePair<MultikeyedDictionaryKeys<IOilexerGrammarProductionRuleEntry, SyntacticalDFAState>, ProductionRuleNormalAdapter>>)new KeysValuePair<MultikeyedDictionaryKeys<IOilexerGrammarProductionRuleEntry, SyntacticalDFAState>, ProductionRuleNormalAdapter>[0] : this.Compiler.AllRuleAdapters
+                                                where targetState.Veins.DFAOriginState == adapterDetail.Keys.Key2
+                                                select adapterDetail
+                     from adapterDetail in subQueryAdapterCheck.DefaultIfEmpty()
+                     where adapterDetail.Keys.Key1 == null || adapterDetail.Keys.Key1 == rule
                      group targetState by followAmbiguity.InitialPaths.Discriminator).ToDictionary(k => k.Key, v => v.Distinct().ToArray());
-                
+                //Console.WriteLine("{0} - {1} decision points", rule.Name, destinations.Sum(k => k.Value.Length));
                 foreach (var transition in decisionPoints.Keys)
                 {
                     var targetStates = decisionPoints[transition];
@@ -1487,9 +1943,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         discriminatorSwitch.Case(discriminatorSymbols);
                     var targetStateSwitch = currentCase.Switch(discriminator.GetReference().Invoke(currentLADepth.GetReference()));
 
-                    foreach (var targetNode in targetStates)
+                    foreach (var targetNode in targetStates.Where(k => k != null))
                     {
-                        var currentTargetCase = targetStateSwitch.Case(targetNode.Value.OriginalState.StateValue.ToPrimitive());
+                        var currentTargetCase = targetStateSwitch.Case(targetNode.Veins.DFAOriginState.StateValue.ToPrimitive());
                         HandleNextRuleStateTarget(
                             targetNode, currentTargetCase, symbolicBreakdown, toInsert, parentTarget,
                             dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited,
@@ -1504,7 +1960,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             GenerateNormalRuleParseStateAfterDiscriminator(toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, explicitCaptures, lastParseResult, localContext, adapter, node);
         }
 
-        private void GenerateNormalRuleParseStateAfterDiscriminator(Stack<Tuple<SyntacticalDFAState, IBlockStatementParent, SyntacticalDFAStateJumpData>> toInsert, IBlockStatementParent parentTarget, SyntacticalDFAState dfaState, ILabelStatement decisionPoint, Dictionary<IBlockStatementParent, Dictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData>> secondaryLookups, IDictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData> multitargetLookups, HashSet<SyntacticalDFAState> visited, ILocalMember exitLADepth, ILocalMember currentLADepth, ILocalMember exitState, OilexerGrammarProductionRuleEntry rule, Dictionary<IProductionRuleCaptureStructuralItem, ILocalMember> explicitCaptures, ILocalMember lastParseResult, ILocalMember localContext, ProductionRuleNormalAdapter adapter, ProductionRuleProjectionNode node)
+        private void GenerateNormalRuleParseStateAfterDiscriminator(Stack<Tuple<SyntacticalDFAState, IBlockStatementParent, SyntacticalDFAStateJumpData>> toInsert, IBlockStatementParent parentTarget, SyntacticalDFAState dfaState, ILabelStatement decisionPoint, Dictionary<IBlockStatementParent, Dictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData>> secondaryLookups, IDictionary<SyntacticalDFAState, SyntacticalDFAStateJumpData> multitargetLookups, HashSet<SyntacticalDFAState> visited, ILocalMember exitLADepth, ILocalMember currentLADepth, ILocalMember exitState, OilexerGrammarProductionRuleEntry rule, Dictionary<IProductionRuleCaptureStructuralItem, ILocalMember> explicitCaptures, ILocalMember lastParseResult, ILocalMember localContext, ProductionRuleNormalAdapter adapter, PredictionTreeLeaf node)
         {
             if (adapter.AssociatedContext.RequiresProjection)
                 GenerateNormalRulePredictionState(toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, explicitCaptures, lastParseResult, localContext, adapter, node);
@@ -1512,7 +1968,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 GenerateNormalRuleRegularState(toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, explicitCaptures, lastParseResult, localContext, node);
         }
 
-        private void BuildDiscriminatorScaffolding(ProductionRuleProjectionNode node, int prediction, int predictionCount)
+        private void BuildDiscriminatorScaffolding(PredictionTreeLeaf node, int prediction, int predictionCount)
         {
             /* Setup, start by giving each prediction method a unique identifier, then those will be the result of the first switch, 
              * which will kick off the next step which will determine which states are targeted. */
@@ -1525,7 +1981,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                                   group followAmbiguity by predictMethod).ToDictionary(k => k.Key, v => v.ToArray()));
             var predictDiscriminator =
                 this.ParserClass.Methods.Add(
-                new TypedName("_Predict{0}DiscriminatorFollowing{1}", this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32), string.Format(string.Format("{{0:{0}}}", new string('0', predictionCount.ToString().Length)), prediction), node.Rule.Name),
+                new TypedName("__Predict{0}DiscriminatorFollowing{1}", this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32), string.Format(string.Format("{{0:{0}}}", new string('0', predictionCount.ToString().Length)), prediction), node.Rule.Name),
                 new TypedNameSeries(
                     new TypedName("laDepth",RuntimeCoreType.Int32, this._identityManager)));
             this.followDiscriminatorMethods.Add(node, predictDiscriminator);
@@ -1552,7 +2008,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             ILocalMember lastParseResult,
             ILocalMember localContext,
             ProductionRuleNormalAdapter adapter,
-            ProductionRuleProjectionNode node)
+            PredictionTreeLeaf node)
         {
             //bool recursive = adapter.AssociatedContext.RequiresProjection && this.compiler.AdvanceMachines[node].AssociatedContext.LeftRecursiveType == ProductionRuleLeftRecursionType.Direct;
             IParameterMember lastPredictionResult = null;
@@ -1563,14 +2019,68 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 lastPredictionResult = this.parseInternalOriginalMethods[adapter].Parameters[ParserBuilder.lastPredictionResultName];
 
             var projectionAdapter = this.Compiler.AdvanceMachines[node];
-            var currentSwitch = parentTarget.Switch(GetPredictionInvokeExpression(currentLADepth.GetReference(), projectionAdapter, lastPredictionResult));//_StateImpl.GetReference().Assign(predictMethod.GetReference().Invoke(currentLADepth.GetReference()))
-            foreach (var targetTransition in adapter.OutgoingTransitions.Keys)
+            ILocalMember lastPredictionValue = null;
+            if (lastPredictionResult == null)
+                if (!adapter.AssociatedContext.ParseInternalMethod.Locals.TryGetValue(TypeSystemIdentifiers.GetMemberIdentifier("lastPrediction"), out lastPredictionValue))
+                    lastPredictionValue = adapter.AssociatedContext.ParseInternalMethod.Locals.Add(new TypedName("lastPrediction", RuntimeCoreType.Int32, this._identityManager), (-1).ToPrimitive());
+
+
+            var destinations = (from edge in projectionAdapter.AssociatedState.ObtainEdges().ToArray()
+                                let decision = (from source in edge.Sources.Select(k => k.Item1)
+                                                where source is PredictionTreeDestination
+                                                select (PredictionTreeDestination)source).FirstOrDefault()
+                                where decision != null
+                                group new { EdgeState = edge, Decision = decisionPoint } by new { decision.DecidingFactor, decision.Target }).ToDictionary(k => k.Key, v => v.ToArray());
+
+            var predictionExpression = (INaryOperandExpression)GetPredictionInvokeExpression(currentLADepth.GetReference(), projectionAdapter, lastPredictionResult);
+            var currentSwitch = parentTarget.Switch(lastPredictionResult == null ? lastPredictionValue.GetReference().Assign(predictionExpression) : predictionExpression);
+            foreach (var destination in destinations.Keys)
             {
-                ProductionRuleNormalAdapter targetAdapter = adapter.OutgoingTransitions[targetTransition];
+                var targetTransition = destination.DecidingFactor;
+                var destinationDetail = destinations[destination];
+
+                ProductionRuleNormalAdapter targetAdapter = this.Compiler.AllRuleAdapters[rule, destination.Target.Veins.DFAOriginState];// adapter.OutgoingTransitions[targetTransition];
                 var currentStateCase = currentSwitch.Case(targetAdapter.AssociatedState.StateValue.ToPrimitive().LeftComment(targetTransition.ToString().Replace("{", "{{").Replace("}", "}}")));
+                currentStateCase.Assign(this._StateImpl, dfaState.StateValue.ToPrimitive());
                 //currentStateCase.Assign(this._StateImpl.GetReference(), targetAdapter.AssociatedState.StateValue.ToPrimitive());
                 var symbolicBreakdown = targetTransition.SymbolicBreakdown(this.compiler);
-                HandleNextRuleStateTarget(targetAdapter.AssociatedContext.Node, currentStateCase, symbolicBreakdown, toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, explicitCaptures, lastParseResult, localContext, false, ParserRuleHandlingType.AsEither);
+                bool isPossiblySkippingCaptures =
+                    !dfaState.OutTransitions.ContainsKey(destination.DecidingFactor);
+                if (isPossiblySkippingCaptures)
+                {
+                    var nullableDfaFactors =
+                        dfaState.OutTransitions.Keys.Where(t =>
+                        {
+                            if (t.GetRuleVariant().IsEmpty)
+                                return false;
+                            return t.Breakdown.Rules.Any(r => this.compiler.RuleDetail[r.Source].DFAState.CanBeEmpty) && !dfaState.OutTransitions[t].OutTransitions.FullCheck.Intersect(targetTransition).IsEmpty;
+                        }).ToArray();
+                    if (nullableDfaFactors.Length > 0)
+                    {
+                        foreach (var factor in nullableDfaFactors)
+                        {
+                            var dfaTargetState = dfaState.OutTransitions[factor];
+                            var targetCaptures =
+                                (from source in dfaTargetState.Sources
+                                 where source.Item2 == FiniteAutomata.FiniteAutomationSourceKind.Final &&
+                                       source.Item1 is IProductionRuleCaptureStructuralItem
+                                 select (IProductionRuleCaptureStructuralItem)source.Item1).Where(k => !string.IsNullOrEmpty(k.BucketName) && explicitCaptures.ContainsKey(k)).ToArray();
+                            var currentRuleTarget = factor.Breakdown.Rules.FirstOrDefault();
+                            var ruleDet = this.Compiler.RuleDetail[currentRuleTarget.Source];
+                            ruleDet.InternalParseMethod.GetReference();
+                            if (targetCaptures.Length > 0)
+                                InjectCaptureLogic(currentStateCase, explicitCaptures, targetCaptures, ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference()));
+                        }
+                    }
+                    //var potentiallyRelevantIncomingStates = destination.Target.Veins.DFAOriginState.InTransitions.Keys.Where(k=>k.Intersect())
+                }
+                HandleNextRuleStateTarget(targetAdapter.AssociatedContext.Leaf, currentStateCase, symbolicBreakdown, toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, explicitCaptures, lastParseResult, localContext, false, ParserRuleHandlingType.AsEither/*, symbolicBreakdown.Rules.Count == 1 && symbolicBreakdown.Tokens.Count == 0*/);
+            }
+            if (lastPredictionResult == null)
+            {
+                var defaultCase = currentSwitch.Case(true);
+                defaultCase.Assign(currentLADepth, lastPredictionValue.GetReference().Negate());
+                defaultCase.GoTo(decisionPoint);
             }
         }
 
@@ -1589,12 +2099,33 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             Dictionary<IProductionRuleCaptureStructuralItem, ILocalMember> explicitCaptures,
             ILocalMember lastParseResult,
             ILocalMember localContext, 
-            ProductionRuleProjectionNode node)
+            PredictionTreeLeaf node)
         {
             if (dfaState.OutTransitions.Count > 0)
             {
+                ILocalMember lastLookAhead = null;
                 bool singleTarget = dfaState.OutTransitions.Count == 1;
-                var currentSwitch = parentTarget.Switch(this.compiler.SymbolStreamBuilder.LookAheadMethod.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(currentLADepth.GetReference()));
+                var invokeCall = this.compiler.SymbolStreamBuilder.LookAheadMethod.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(currentLADepth.GetReference());
+                var nullableRuleTransitions = dfaState.OutTransitions.Where(k =>
+                {
+                    var rulesForBreakdown = k.Key.GetRuleVariant();
+                    if (rulesForBreakdown.IsEmpty)
+                        return false;
+                    var ruleBreakdownCheck = rulesForBreakdown.Breakdown.Rules.Any(r =>
+                    {
+                        var dfa = this.Compiler.RuleDFAStates[(IOilexerGrammarProductionRuleEntry)r.Source];
+                        if (dfa.CanBeEmpty)
+                            return true;
+                        return false;
+                    });
+                    var target = dfaState.OutTransitions[k.Key];
+                    return target.IsEdge && ruleBreakdownCheck;
+                }).ToArray();
+                if (nullableRuleTransitions.Length > 0)
+                    lastLookAhead = this.GetNewLocal(exitLADepth, "lastLookAhead", this.Compiler.SymbolStoreBuilder.Identities);
+
+                var currentSwitch = parentTarget.Switch(lastLookAhead == null ? (INaryOperandExpression)invokeCall : lastLookAhead.GetReference().Assign(invokeCall));
+
                 var transitionsGroupedByOriginalTarget =
                     (from transitionKey in node.LookAhead.Keys
                      let decisionPathSet = node.LookAhead[transitionKey]
@@ -1649,7 +2180,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         var currentCase = currentSwitch.Case(
                             detail.Rules.Rules.Values.Select(ruleDet => (IExpression)ruleDet.Identity.GetReference()).ToArray());
                         HandleNextRuleStateTarget(
-                            transitionKeyInfo.Target, currentCase, transitionKeyInfo.TransitionKey, toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, explicitCaptures, lastParseResult, localContext, methodInvocationHandlingType: ParserRuleHandlingType.AsEither);
+                            transitionKeyInfo.Target, currentCase, transitionKeyInfo.TransitionKey, toInsert, parentTarget, dfaState, decisionPoint, secondaryLookups, multitargetLookups, visited, exitLADepth, currentLADepth, exitState, rule, explicitCaptures, lastParseResult, localContext, methodInvocationHandlingType: ParserRuleHandlingType.AsEither,
+                            fromRuleLeadIn: detail.Rules.Rules.Count == 1);
                     }
                 }
                 if (node.LexicalAmbiguities != null)
@@ -1668,10 +2200,44 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         newCase.Add(identityBlocks[firstTokIdent.Symbol].GetGoTo(newCase));
                     }
                 }
-                currentSwitch.Case(true).GoTo(decisionPoint);
+                var defaultCase = currentSwitch.Case(true);
+                /* Handle transitions which yield an empty (blank) rule here. */
+                /* Example: A ::= (a | b | );  <-- without this, the '|' after b, fails. */
+                if (nullableRuleTransitions.Length > 0)
+                {
+                    var targetTransitionDetail = nullableRuleTransitions.FirstOrDefault();
+                    var target = transitionsGroupedByOriginalTarget.Where(k => k.Key.Target.Veins.DFAOriginState == targetTransitionDetail.Value).FirstOrDefault();
+                    if (target.Key != null)
+                    {
+                        ILocalMember symbolAsValidSymbol = GetNewLocal(exitLADepth, "symbolAsValidSyntax", this.Compiler.LexicalSymbolModel.ValidSymbols);
+                        ILocalMember validSyntaxFor = GetNewLocal(exitLADepth, "validSyntaxFor", this.Compiler.LexicalSymbolModel.ValidSymbols);
+                        defaultCase.Assign(symbolAsValidSymbol, lastLookAhead.GetReference().Cast(this.Compiler.LexicalSymbolModel.ValidSymbols));
+                        defaultCase.Assign(validSyntaxFor, this.Compiler.ExtensionsBuilder.GetValidSyntaxMethodInternalImpl.GetReference().Invoke(targetTransitionDetail.Value.StateValue.ToPrimitive(), localContext.GetReference(), IntermediateGateway.TrueValue));
+                        var targetRule = targetTransitionDetail.Key.Breakdown.Rules.First().Source;
+                        var firstTokenRef = target.Value.Tokens.Tokens.Keys.FirstOrDefault();
+                        if (firstTokenRef == null)
+                            defaultCase.Comment("??");
+                        else
+                        {
+                            var ifStatement = defaultCase.If(symbolAsValidSymbol.BitwiseAnd(validSyntaxFor).InequalTo(this.Compiler.LexicalSymbolModel.NoIdentityField));
+                            ifStatement.Comment(string.Format("Most likely {0} is empty.", targetRule.Name));
+                            ifStatement.Add(identityBlocks[firstTokenRef].GetGoTo(defaultCase));
+                        }
+                    }
+                }
+                defaultCase.GoTo(decisionPoint);
             }
             else
                 parentTarget.GoTo(decisionPoint);
+        }
+
+        private ILocalMember GetNewLocal(ILocalMember exitLADepth, string localName, IType localType)
+        {
+            ILocalMember symbolAsValidSymbol;
+
+            if (!exitLADepth.Parent.Locals.TryGetValue(TypeSystemIdentifiers.GetMemberIdentifier(localName), out symbolAsValidSymbol))
+                symbolAsValidSymbol = exitLADepth.Parent.Locals.Add(localType.WithName(localName));
+            return symbolAsValidSymbol;
         }
 
 
@@ -1680,7 +2246,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return !transition.Intersect(transitionKey).IsEmpty;
         }
 
-        private bool Assert(string parseMethodName, GrammarVocabulary transitionKey, ProductionRuleProjectionNode node, GrammarVocabulary originalTransition, ProductionRuleProjectionNode transitionTarget)
+        private bool Assert(string parseMethodName, GrammarVocabulary transitionKey, PredictionTreeLeaf node, GrammarVocabulary originalTransition, PredictionTreeLeaf transitionTarget)
         {
             bool tKeyAssert = transitionKey != null;
             bool nodeAssert = node != null;
@@ -1709,7 +2275,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 if (!transitionTargetAssert)
                     sb.Append("transitionTarget was null");
                 else
-                    sb.AppendFormat("{0}: {2}State {1}", transitionTarget.Rule.Name, transitionTarget.Value.OriginalState.StateValue, transitionTarget.Value.OriginalState.IsEdge ? "Edge " : string.Empty);
+                    sb.AppendFormat("{0}: {2}State {1}", transitionTarget.Rule.Name, transitionTarget.Veins.DFAOriginState.StateValue, transitionTarget.Veins.DFAOriginState.IsEdge ? "Edge " : string.Empty);
                 Debug.Assert(false, sb.ToString());
             }
 
@@ -1717,7 +2283,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         }
 
         private void HandleNextRuleStateTarget(
-            ProductionRuleProjectionNode target,
+            PredictionTreeLeaf target,
             ISwitchCaseBlockStatement currentCase,
             GrammarVocabularySymbolicBreakdown origIdents,
             Stack<Tuple<SyntacticalDFAState, IBlockStatementParent, SyntacticalDFAStateJumpData>> toInsert,
@@ -1734,22 +2300,22 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             Dictionary<IProductionRuleCaptureStructuralItem, ILocalMember> explicitCaptures,
             ILocalMember lastParseResult,
             ILocalMember localContext,
-            bool assignState = true, ParserRuleHandlingType methodInvocationHandlingType = ParserRuleHandlingType.AsRule)
+            bool assignState = true, ParserRuleHandlingType methodInvocationHandlingType = ParserRuleHandlingType.AsRule,
+            bool fromRuleLeadIn = false)
         {
-            var originalState = target.Value.OriginalState;
+            var originalState = target.Veins.DFAOriginState;
             var targetCaptures =
                 (from source in originalState.Sources
                  where source.Item2 == FiniteAutomata.FiniteAutomationSourceKind.Final &&
                        source.Item1 is IProductionRuleCaptureStructuralItem
                  select (IProductionRuleCaptureStructuralItem)source.Item1).Where(k => !string.IsNullOrEmpty(k.BucketName) && explicitCaptures.ContainsKey(k)).ToArray();
-
             if (origIdents.Rules.Count > 1)
                 Debug.Assert(false, "Error: Deterministic failure.");
             else if (origIdents.Rules.Count == 1)
             {
                 var ruleDet = origIdents.Rules.Values.First();
 
-                var targetRuleNode = this.compiler.RuleAdapters[ruleDet.Rule].AssociatedContext.Node;
+                var targetRuleNode = this.compiler.RuleAdapters[ruleDet.Rule].AssociatedContext.Leaf;
                 var ruldIdentity = ruleDet.Identity;
 
                 //if (targetRuleNode.HasBeenReduced)
@@ -1759,73 +2325,107 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     case ParserRuleHandlingType.AsSymbol:
                         currentCase.Comment(string.Format("{0} was reduced.", ruleDet.Identity.Name));
                         InjectCaptureLogic(currentCase, explicitCaptures, targetCaptures, this._SymbolStreamImpl.GetReference().GetIndexer(currentLADepth.GetReference()));
+                        ExitLADepthCheck(currentCase, exitLADepth, currentLADepth, originalState);
                         break;
                     case ParserRuleHandlingType.AsRule:
                         {
                             IBlockStatement currentTarget = currentCase;
                             currentTarget.Assign(_FollowStateImpl.GetReference(), originalState.StateValue.ToPrimitive());
-                            if (ruleDet.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
-                                ruleDet.Node.Count == 1)
-                                currentTarget = currentCase.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDet.Identity.GetReference()).Not());
-
+                            if (ruleDet.Leaf.Veins.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
+                                ruleDet.Leaf.Count == 1)
+                                currentTarget = currentCase.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDet.Identity.GetReference(), currentLADepth.GetReference()).Not());
+                            assignState = true;
                             InjectCaptureLogic(currentTarget, explicitCaptures, targetCaptures, lastParseResult.GetReference().Assign(ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference())));
-                            var ifSuccesful = currentTarget.If(lastParseResult.GetReference().EqualTo(IntermediateGateway.NullValue));
-                            ifSuccesful.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+                            if (ruleDet.DFAState.CanBeEmpty)
+                                ZeroLengthCheck(exitLADepth, currentLADepth, lastParseResult, originalState, currentTarget);
+                            else
+                            {
+                                var ifNullCheck = currentTarget.If(lastParseResult.GetReference().EqualTo(IntermediateGateway.NullValue));
+                                ifNullCheck.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+                                ExitLADepthCheck(currentCase, exitLADepth, currentLADepth, originalState);
+                            }
                             break;
                         }
                     case ParserRuleHandlingType.AsEither:
                         {
                             IBlockStatement currentTarget = currentCase;
-                            if (ruleDet.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
-                                ruleDet.Node.Count == 1)
-                                currentTarget = currentCase.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDet.Identity.GetReference()).Not());
-                            var ifCheck = new ConditionBlockStatement(currentTarget);
-                            ifCheck.Condition =
-                                this.compiler.GenericSymbolStreamBuilder.CountImpl.GetReference(this._SymbolStreamImpl.GetReference())
-                                    .GreaterThan(currentLADepth)
-                                    .LogicalAnd(this.SymbolStreamBuilder.LookAheadMethodImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(currentLADepth.GetReference())
-                                    .EqualTo(ruldIdentity.GetReference()));
-                            InjectCaptureLogic(ifCheck, explicitCaptures, targetCaptures, this._SymbolStreamImpl.GetReference().GetIndexer(currentLADepth.GetReference()));
-                            if (ifCheck.Count > 0)
+                            if (!this.Compiler.ReducedRules.Contains(ruleDet.Rule) && ruleDet.Leaf.Veins.LeftRecursionType == ProductionRuleLeftRecursionType.None)
+                                goto case ParserRuleHandlingType.AsRule;
+                            bool addExitLADepthCheck = false;
+                            if (!fromRuleLeadIn)// && ruleDet.Leaf.Veins.LeftRecursionType == ProductionRuleLeftRecursionType.None)
                             {
-                                ifCheck.CreateNext();
-                                ifCheck.Next.Assign(_FollowStateImpl.GetReference(), originalState.StateValue.ToPrimitive());
-                                InjectCaptureLogic(ifCheck.Next, explicitCaptures, targetCaptures, lastParseResult.GetReference().Assign(ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference())));
-                                ifCheck.Next.Assign(this._StateImpl.GetReference(), originalState.StateValue.ToPrimitive());
-                                var ifSuccesful = ifCheck.Next.If(lastParseResult.GetReference().EqualTo(IntermediateGateway.NullValue));
-                                ifSuccesful.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+                                var ifCheck = new ConditionBlockStatement(currentTarget);
+                                ifCheck.Condition =
+                                    this.compiler.GenericSymbolStreamBuilder.CountImpl.GetReference(this._SymbolStreamImpl.GetReference())
+                                        .GreaterThan(currentLADepth)
+                                        .LogicalAnd(this.SymbolStreamBuilder.LookAheadMethodImpl.GetReference(this._SymbolStreamImpl.GetReference()).Invoke(currentLADepth.GetReference())
+                                        .EqualTo(ruldIdentity.GetReference()));
+                                InjectCaptureLogic(ifCheck, explicitCaptures, targetCaptures, this._SymbolStreamImpl.GetReference().GetIndexer(currentLADepth.GetReference()));
+                                if (ifCheck.Count > 0)
+                                {
+
+                                    ifCheck.CreateNext();
+                                    IBlockStatement currentParseTarget = ifCheck.Next;
+                                    //if (ruleDet.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
+                                    //    ruleDet.Node.Count == 1)
+                                    //    currentParseTarget = currentParseTarget.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleDet.Identity.GetReference(), currentLADepth.GetReference()).Not());
+                                    assignState = true;
+                                    currentParseTarget.Assign(_FollowStateImpl.GetReference(), originalState.StateValue.ToPrimitive());
+                                    InjectCaptureLogic(currentParseTarget, explicitCaptures, targetCaptures, lastParseResult.GetReference().Assign(ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference())));
+                                    currentParseTarget.Assign(this._StateImpl.GetReference(), originalState.StateValue.ToPrimitive());
+                                    if (ruleDet.DFAState.CanBeEmpty)
+                                        ZeroLengthCheck(exitLADepth, currentLADepth, lastParseResult, originalState, currentParseTarget);
+                                    else
+                                    {
+                                        var ifNullCheck = currentParseTarget.If(lastParseResult.GetReference().EqualTo(IntermediateGateway.NullValue));
+                                        ifNullCheck.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+                                        addExitLADepthCheck = true;
+                                    }
+                                }
+                                else
+                                {
+                                    ifCheck.Assign(_FollowStateImpl.GetReference(), originalState.StateValue.ToPrimitive());
+                                    ifCheck.Condition = new ParenthesizedExpression(ifCheck.Condition).Not();
+                                    assignState = true;
+                                    InjectCaptureLogic(ifCheck, explicitCaptures, targetCaptures, lastParseResult.GetReference().Assign(ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference())));
+                                    if (ruleDet.DFAState.CanBeEmpty)
+                                        ZeroLengthCheck(exitLADepth, currentLADepth, lastParseResult, originalState, ifCheck);
+                                    else
+                                    {
+                                        var ifNullCheck = ifCheck.If(lastParseResult.GetReference().EqualTo(IntermediateGateway.NullValue));
+                                        ifNullCheck.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+                                        addExitLADepthCheck = true;
+                                    }
+                                }
+                                currentTarget.Add(ifCheck);
                             }
                             else
                             {
-                                ifCheck.Assign(_FollowStateImpl.GetReference(), originalState.StateValue.ToPrimitive());
-                                ifCheck.Condition = new ParenthesizedExpression(ifCheck.Condition).Not();
-                                InjectCaptureLogic(ifCheck, explicitCaptures, targetCaptures, lastParseResult.GetReference().Assign(ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference())));
-                                var ifSuccesful = ifCheck.If(lastParseResult.GetReference().EqualTo(IntermediateGateway.NullValue));
-                                ifSuccesful.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
-                            }
-                            currentTarget.Add(ifCheck);
+                                int preInjectCount = currentTarget.Count;
 
+                                InjectCaptureLogic(currentTarget, explicitCaptures, targetCaptures, this._SymbolStreamImpl.GetReference().GetIndexer(currentLADepth.GetReference()));
+                                if (currentTarget.Count == preInjectCount)
+                                {
+                                    currentTarget.Assign(_FollowStateImpl.GetReference(), originalState.StateValue.ToPrimitive());
+                                    assignState = true;
+                                    InjectCaptureLogic(currentTarget, explicitCaptures, targetCaptures, lastParseResult.GetReference().Assign(ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference())));
+                                    if (ruleDet.DFAState.CanBeEmpty)
+                                        ZeroLengthCheck(exitLADepth, currentLADepth, lastParseResult, originalState, currentTarget);
+                                    else
+                                    {
+                                        var ifNullCheck = currentTarget.If(lastParseResult.GetReference().EqualTo(IntermediateGateway.NullValue));
+                                        ifNullCheck.Assign(this.compiler.RuleSymbolBuilder.HasError.GetReference(localContext.GetReference()), IntermediateGateway.TrueValue);
+                                        addExitLADepthCheck = true;
+                                    }
+                                }
+                                else
+                                    addExitLADepthCheck = true;
+                            }
+                            if (addExitLADepthCheck)
+                                ExitLADepthCheck(currentCase, exitLADepth, currentLADepth, originalState);
                             break;
                         }
                 }
-                //}
-                //else
-                //{
-                //switch (methodInvocationHandlingType)
-                //{
-                //    case ParserRuleHandlingType.AsSymbol:
-                //        break;
-                //    case ParserRuleHandlingType.AsRule:
-                //        break;
-                //    case ParserRuleHandlingType.AsEither:
-                //        break;
-                //    default:
-                //        break;
-                //}
-                //InjectCaptureLogic(currentCase, explicitCaptures, targetCaptures, ruleDet.InternalParseMethod.GetReference().Invoke(currentLADepth.GetReference()));
-                //currentCase.Assign(this._StateImpl.GetReference(), originalState.StateValue.ToPrimitive());
-                //}
-                ExitLADepthCheck(currentCase, exitLADepth, currentLADepth, originalState);
             }
             ExitStateCheck(currentCase, dfaState, exitState, originalState, assignState);
             if (origIdents.Tokens.Count > 0 || origIdents.Ambiguities.Count > 0)
@@ -1839,24 +2439,81 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 currentCase.GoTo(currentJumpInfo.Label.Value);
             }
             else if (originalState.OutTransitions.Count > 0)
+            {
+                ProductionRuleNormalAdapter normalTargetAdapter;
+
+                if (!this.Compiler.AllRuleAdapters.TryGetValue(rule, originalState, out normalTargetAdapter))
+                {
+
+                }
                 toInsert.Push(Tuple.Create(originalState, (IBlockStatementParent)currentCase, (SyntacticalDFAStateJumpData)null));
+            }
             else
             {
                 currentCase.GoTo(decisionPoint);
             }
         }
 
-        private void ExitStateCheck(IBlockStatement currentCase, SyntacticalDFAState dfaState, ILocalMember exitState, SyntacticalDFAState originalState, bool assignState)
+        private void ZeroLengthCheck(ILocalMember exitLADepth, ILocalMember currentLADepth, ILocalMember lastParseResult, SyntacticalDFAState originalState, IBlockStatement currentTarget)
         {
-            if (originalState != dfaState)
+            var ifZeroLengthCheck = currentTarget.If(this.compiler.CommonSymbolBuilder.Length.GetReference(lastParseResult.GetReference()).EqualTo(0));
+            ExitLADepthCheck(ifZeroLengthCheck, exitLADepth, currentLADepth, originalState, false);
+            if (ifZeroLengthCheck.Count == 0)
             {
-                if (originalState.IsEdge)
-                    currentCase.Assign(exitState.GetReference(), this._StateImpl.GetReference().Assign(originalState.StateValue.ToPrimitive()));
-                else
-                    currentCase.Assign(this._StateImpl.GetReference(), originalState.StateValue.ToPrimitive());
+                ifZeroLengthCheck.Condition = this.compiler.CommonSymbolBuilder.Length.GetReference(lastParseResult.GetReference()).InequalTo(0);
+                ExitLADepthCheck(ifZeroLengthCheck, exitLADepth, currentLADepth, originalState, true);
+                if (ifZeroLengthCheck.Count == 0)
+                    currentTarget.Remove(ifZeroLengthCheck);
             }
-            else if (originalState.IsEdge)
-                currentCase.Assign(exitState.GetReference(), this._StateImpl.GetReference().Assign(originalState.StateValue.ToPrimitive()));
+            else
+            {
+                ifZeroLengthCheck.CreateNext();
+                ExitLADepthCheck(ifZeroLengthCheck.Next, exitLADepth, currentLADepth, originalState, true);
+            }
+        }
+
+        private void ExitStateCheck(IBlockStatement currentTarget, SyntacticalDFAState dfaState, ILocalMember exitState, SyntacticalDFAState targetState, bool assignState/*, IParameterMember nonGreedyParam = null, ILabelStatement decisionPoint = null*/)
+        {
+            //var decision = (from source in targetState.Sources.Select(k => k.Item1)
+            //                 where source is PredictionTreeDestination
+            //                 select (PredictionTreeDestination)source).FirstOrDefault();
+            //if (decision != null)
+            //{
+            //    var symbolicDecision = decision.DecidingFactor.SymbolicBreakdown(this.compiler);
+            //    if (symbolicDecision.Rules.Count > 0)
+            //    {
+            //        var ruleDet = symbolicDecision.Rules.Values.First();
+            //        if (ruleDet.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None &&
+            //            ruleDet.Node.Count == 1)
+            //        {
+            //            var ruleTarget = ruleDet.Node.Values.First();
+            //            var ruleTargetDet = this.compiler.RuleDetail[ruleTarget.Rule];
+
+            //            currentTarget = currentTarget.If(PeekInitialContextsForImpl.GetReference().Invoke(ruleTargetDet.Identity.GetReference()).Not());
+
+            //        }
+            //    }
+            //}
+
+
+            if (targetState != dfaState || assignState)
+            {
+                if (targetState.IsEdge)
+                {
+                    currentTarget.Assign(exitState.GetReference(), this._StateImpl.GetReference().Assign(targetState.StateValue.ToPrimitive()));
+                    /*
+                    if (nonGreedyParam != null)
+                        currentTarget.If(nonGreedyParam.GetReference()).GoTo(decisionPoint);*/
+                }
+                else
+                    currentTarget.Assign(this._StateImpl.GetReference(), targetState.StateValue.ToPrimitive());
+            }
+            else if (targetState.IsEdge)
+            {
+                currentTarget.Assign(exitState.GetReference(), this._StateImpl.GetReference().Assign(targetState.StateValue.ToPrimitive()));
+                /*if (nonGreedyParam != null)
+                    currentTarget.If(nonGreedyParam.GetReference()).GoTo(decisionPoint);*/
+            }
         }
 
         private static void InjectCaptureLogic(
@@ -1923,11 +2580,14 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 currentTarget.Add(new ExpressionStatement(currentTarget, (IStatementExpression)captureExpression));
         }
 
-        private static void ExitLADepthCheck(IBlockStatement currentCase, ILocalMember exitLADepth, ILocalMember currentLADepth, SyntacticalDFAState originalState)
+        private static void ExitLADepthCheck(IBlockStatement currentCase, ILocalMember exitLADepth, ILocalMember currentLADepth, SyntacticalDFAState originalState, bool increment = true)
         {
             if (originalState.IsEdge)
-                currentCase.Assign(exitLADepth.GetReference(), currentLADepth.GetReference().Increment(false));
-            else
+                if (increment)
+                    currentCase.Assign(exitLADepth.GetReference(), currentLADepth.GetReference().Increment(false));
+                else
+                    currentCase.Assign(exitLADepth.GetReference(), currentLADepth.GetReference());
+            else if (increment)
                 currentCase.Increment(currentLADepth.GetReference());
         }
         private static void HandleStatementInjections(
@@ -1981,53 +2641,73 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private void BuildRuleScaffolding(OilexerGrammarProductionRuleEntry rule)
         {
             var adapter = this.Compiler.RuleAdapters[rule];
-            var parseMethod = this.ParserClass.Methods.Add(
-                new TypedName("Parse{0}", adapter.AssociatedContext.ModelInterface, rule.Name));
+            var ruleResultsType = this.Compiler.ParseResultsBuilder.InterfaceDetail.Type.MakeGenericClosure(adapter.AssociatedContext.ModelInterface);
             var parseInternalMethod = this.ParserClass.Methods.Add(
                 new TypedName("_Parse{0}Internal", this.Compiler.RuleSymbolBuilder.ILanguageRuleSymbol, rule.Name),
                 new TypedNameSeries(
                     new TypedName("laDepth", RuntimeCoreType.Int32, this._identityManager)));
-            parseMethod.AccessLevel = AccessLevelModifiers.Public;
             parseInternalMethod.AccessLevel = AccessLevelModifiers.Private;
-            this.parseMethods.Add(adapter, parseMethod);
+            adapter.AssociatedContext.ParseInternalMethod = parseInternalMethod;
             this.parseInternalMethods.Add(adapter, parseInternalMethod);
+
+            if (this.Compiler.Source.Options.StartEntry != rule.Name)
+                return;
+
+            var parseMethod = this.ParserClass.Methods.Add(
+                new TypedName("Parse{0}", ruleResultsType, rule.Name));
+            parseMethod.AccessLevel = AccessLevelModifiers.Public;
+            this.parseMethods.Add(adapter, parseMethod);
+            var results = parseMethod.Locals.Add(this.Compiler.ParseResultsBuilder.ClassDetail.Type.MakeGenericClosure(adapter.AssociatedContext.ModelInterface).WithName("resultsOfParse"));
+            results.InitializationExpression = results.LocalType.GetNewExpression();
             parseMethod.Call(SpinErrorContextImpl.GetReference().Invoke());
-            var resultRuleLocal = parseMethod.Locals.Add(new TypedName("result{0}", parseMethod.ReturnType, rule.Name));
-            var resultSymbolLocal = parseMethod.Locals.Add(new TypedName("result", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), parseInternalMethod.GetReference().Invoke(IntermediateGateway.NumberZero));
+            var tryBlock = parseMethod.TryCatch();
+
+            var resultRuleLocal = tryBlock.Locals.Add(new TypedName("resultRule", adapter.AssociatedContext.ModelInterface));
+            var resultSymbolLocal = tryBlock.Locals.Add(new TypedName("resultParseTree", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), parseInternalMethod.GetReference().Invoke(IntermediateGateway.NumberZero));
+            tryBlock.DefineLocal(resultRuleLocal);
+            tryBlock.DefineLocal(resultSymbolLocal);
             resultSymbolLocal.AutoDeclare = false;
-            parseMethod.DefineLocal(resultSymbolLocal);
 
-            parseMethod.Assign(resultRuleLocal.GetReference(), this.compiler.RuleSymbolBuilder.CreateRule.GetReference(resultSymbolLocal.GetReference()).Invoke().Cast(parseMethod.ReturnType));
+            tryBlock.Assign(resultRuleLocal.GetReference(), this.compiler.RuleSymbolBuilder.CreateRule.GetReference(resultSymbolLocal.GetReference()).Invoke().Cast(resultRuleLocal.LocalType));
 
-            parseMethod.If(this._ErrorContextImpl.GetReference().GetProperty("Count").GreaterThan(IntermediateGateway.NumberZero))
-                .Call(this.compiler.RuleSymbolBuilder.DelineateCaptureImpl.GetReference(resultSymbolLocal.GetReference()).Invoke(ParserCompiler.ErrorCaptureName.ToPrimitive(), this._ErrorContextImpl.GetReference()));
-
-            parseMethod.Return(resultRuleLocal.GetReference());
+            tryBlock.Call(HandleErrorContextImpl.GetReference().Invoke(results.GetReference(), resultSymbolLocal.GetReference().Cast(this.Compiler.RuleSymbolBuilder.LanguageRuleSymbol)));
+            //tryBlock.If(this._ErrorContextImpl.GetReference().GetProperty("Count").GreaterThan(IntermediateGateway.NumberZero))
+            //    .Assign(this.Compiler.ParseResultsBuilder.ClassDetail.SyntaxErrors.GetReference(results.GetReference()), this._ErrorContextImpl.GetReference());
+            tryBlock.Assign(this.Compiler.ParseResultsBuilder.ClassDetail.Result.GetReference(results.GetReference()), resultRuleLocal);
+            tryBlock.Assign(this.Compiler.ParseResultsBuilder.ClassDetail.Successful.GetReference(results.GetReference()), IntermediateGateway.TrueValue);
+            tryBlock.CatchAll.Assign(this.Compiler.ParseResultsBuilder.ClassDetail.Successful.GetReference(results.GetReference()), IntermediateGateway.FalseValue);
+            tryBlock.CatchAll.Assign(this.Compiler.ParseResultsBuilder.ClassDetail.SyntaxErrors.GetReference(results.GetReference()), this._ErrorContextImpl.GetReference());
+            parseMethod.Return(results.GetReference());
         }
 
-        private IIntermediateClassMethodMember CreatePredictParseMethod(ProductionRuleProjectionNode projectionPoint, int predictIndex, int predictCount)
+        private IIntermediateClassMethodMember CreatePredictParseMethod(PredictionTreeLeaf projectionPoint, int predictIndex, int predictCount)
         {
-            var normalAdapter = this.compiler.AllRuleAdapters[projectionPoint.Rule, projectionPoint.Value.OriginalState];
+            var normalAdapter = this.compiler.AllRuleAdapters[projectionPoint.Rule, projectionPoint.Veins.DFAOriginState];
 
             var predictMethod = this.ParserClass.Methods.Add(
-                new TypedName(string.Format("_Predict{{1:{0}}}On{{0}}", new string('0', predictCount.ToString().Length)), this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32), normalAdapter.AssociatedContext.Node.Rule.Name, predictIndex),
+                new TypedName(string.Format("_Predict{{1:{0}}}On{{0}}", new string('0', predictCount.ToString().Length)), this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32), normalAdapter.AssociatedContext.Leaf.Rule.Name, predictIndex),
                 new TypedNameSeries(
                         new TypedName("laDepth", RuntimeCoreType.Int32, this._identityManager)));
             var advMachine = this.compiler.AdvanceMachines[projectionPoint];
-            if (projectionPoint.Value.OriginalState is SyntacticalDFARootState)
-                if (advMachine.AssociatedContext.IsLeftRecursiveProjection && advMachine.AssociatedContext.LeftRecursiveType == ProductionRuleLeftRecursionType.Direct)
+            if (projectionPoint.Veins.DFAOriginState is SyntacticalDFARootState)
+            {
+                if (advMachine.AssociatedContext.IsLeftRecursiveProjection && advMachine.AssociatedContext.RequiresLeftRecursiveCaution)
+                {
                     predictMethod.Parameters.Add(new TypedName(includeRuleContextName, RuntimeCoreType.Boolean, this._identityManager));
+                    predictMethod.Parameters.Add(new TypedName(nonGreedyName, RuntimeCoreType.Boolean, this._identityManager));
+                }
+            }
             var parseParent = predictMethod.Parent;
             predictMethod.AccessLevel = AccessLevelModifiers.Private;
             return predictMethod;
         }
 
-        private IIntermediateClassMethodMember CreateFollowPredictParseMethod(ProductionRuleProjectionFollow follow, int predictIndex, int predictCount)
+        private IIntermediateClassMethodMember CreateFollowPredictParseMethod(PredictionTreeFollow follow, int predictIndex, int predictCount)
         {
 
-            var normalAdapter = this.compiler.AllRuleAdapters[follow.Rule, follow.EdgeNode.Value.OriginalState];
+            var normalAdapter = this.compiler.AllRuleAdapters[follow.Rule, follow.EdgeNode.Veins.DFAOriginState];
             var followPredictMethod = this.ParserClass.Methods.Add(
-                new TypedName(string.Format("_Predict{{1:{0}}}Following{{0}}", new string('0', predictCount.ToString().Length)), this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32), normalAdapter.AssociatedContext.Node.Rule.Name, predictIndex),
+                new TypedName(string.Format("_Predict{{1:{0}}}Following{{0}}_", new string('0', predictCount.ToString().Length)), this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32), normalAdapter.AssociatedContext.Leaf.Rule.Name, predictIndex),
                 new TypedNameSeries(
                         new TypedName("laDepth", RuntimeCoreType.Int32, this._identityManager)));
             followPredictMethod.AccessLevel = AccessLevelModifiers.Private;
@@ -2125,6 +2805,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         public IIntermediateClassFieldMember _LookAheadDepthsImpl { get; set; }
 
         public IIntermediateClassMethodMember PeekInitialContextsForImpl { get; set; }
+
+        public IIntermediateClassMethodMember BorrowOuterContext { get; set; }
+
+        public IIntermediateClassMethodMember PeekInitialContextsForImplOvr { get; set; }
     }
 
     public enum ParserRuleHandlingType

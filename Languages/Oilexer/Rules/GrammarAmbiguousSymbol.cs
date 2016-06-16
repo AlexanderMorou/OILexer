@@ -48,7 +48,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         public GrammarVocabulary AmbiguityKey { get { return this._ambiguityKey ?? (this._ambiguityKey = new GrammarVocabulary(this._symbols, this.ToArray())); } }
 
         /// <summary>Returns the <see cref="String"/> value which represents the <see cref="GrammarAmbiguousSymbol"/>'s name.</summary>
-        public string ElementName { get { return string.Format(string.Format("Ambiguity{{0:{0}}}", '0'.Repeat(this.AmbiguityCount.ToString().Length)), this.AmbiguityNumber); } }
+        public string ElementName 
+        { 
+            get 
+            {
+                var breakdown = this._ambiguityKey.Breakdown;
+                return string.Format("Ambiguity_{0}", string.Join("_", breakdown.CaptureTokens.Cast<IGrammarSymbol>().Concat(breakdown.ConstantTokens.Cast<IGrammarSymbol>().Concat(breakdown.LiteralSeriesTokens.SelectMany(k => k.Value))).Select(k => k.ElementName))); 
+            }
+        }
 
         /// <summary>Returns the <see cref="Int32"/> value denoting the ordinal number of the ambiguity relative to the full set of ambiguities.</summary>
         public int AmbiguityNumber { get; internal set; }

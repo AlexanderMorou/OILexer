@@ -41,7 +41,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\Abstraction\Build\x64\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;WINDOWS, x64,ParallelProcessing, ShowStackReductionProgress, +ShortcircuitToFinishLexer,ReduceGlobalLexer, ShortcutToFindBug13+,ReduceProjections</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;WINDOWS, x64, ParallelProcessing, ShowStackReductionProgress+, ReduceGlobalLexer, ReduceProjections</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -50,7 +50,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>..\Abstraction\Build\x64\Release\</OutputPath>
-    <DefineConstants>TRACE;WINDOWS, x64, ParallelProcessing, +ShowStackReductionProgress, ReduceGlobalLexer, ShortcircuitToFinishLexer+</DefineConstants>
+    <DefineConstants>TRACE;WINDOWS, x64, ParallelProcessing, +ShowStackReductionProgress, ReduceGlobalLexer, ShortcircuitToFinishLexer+,ReduceProjections</DefineConstants>
     <Optimize>true</Optimize>
     <PlatformTarget>x64</PlatformTarget>
     <WarningsAsErrors>67,162,168,219</WarningsAsErrors>
@@ -64,17 +64,18 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\Abstraction\Build\x86\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;WINDOWS, x86, PROCESS_STATES, ParallelProcessing, ShowStackReductionProgress, +EmitTransitionDetails, ShortcircuitToFinishLexer+, ReduceGlobalLexer</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;WINDOWS, x86, PROCESS_STATES, ParallelProcessing, +ShowStackReductionProgress, +EmitTransitionDetails, ShortcircuitToFinishLexer+, ReduceGlobalLexer,ReduceProjections</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>..\Abstraction\Build\x86\Debug\_abs.slf.languages.oilexer.XML</DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>..\Abstraction\Build\x86\Release\</OutputPath>
-    <DefineConstants>WINDOWS, x86,ParallelProcessing, ShowStackReductionProgress+, +ShortcircuitToFinishLexer,ReduceGlobalLexer, ShortcutToFindBug13+,ReduceProjections</DefineConstants>
+    <DefineConstants>WINDOWS, x86,ParallelProcessing, +ShowStackReductionProgress, +ShortcircuitToFinishLexer, ReduceGlobalLexer, ShortcutToFindBug13+, ReduceProjections</DefineConstants>
     <Optimize>true</Optimize>
     <PlatformTarget>x86</PlatformTarget>
     <WarningsAsErrors>67,162,168,219</WarningsAsErrors>
@@ -82,8 +83,8 @@
     <ErrorReport>prompt</ErrorReport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>
@@ -95,6 +96,29 @@
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile Condition=" '$(Configuration)' == 'Release' ">Allen Copeland.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>..\Abstraction\Build\Any-Cpu\Release\</OutputPath>
+    <DefineConstants>WINDOWS, x86,ParallelProcessing, ShowStackReductionProgress+, +ShortcircuitToFinishLexer, ReduceGlobalLexer, ShortcutToFindBug13+, ReduceProjections</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <WarningsAsErrors>67,162,168,219</WarningsAsErrors>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\Abstraction\Build\Any-Cpu\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;WINDOWS, x86, PROCESS_STATES, ParallelProcessing, ShowStackReductionProgress+, +EmitTransitionDetails, ShortcircuitToFinishLexer+, ReduceGlobalLexer,ReduceProjections, PLATFORM_ANY</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -112,47 +136,51 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)' == 'Abstraction'">
-    <ProjectReference Include="..\Abstraction\SLF\Ast\Abstract Syntax Tree.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\Utilities\Numerics\Numerics.csproj">
+      <Project>{ee0bb74e-bcaa-4797-87b0-4d67124f74e6}</Project>
+      <Name>Numerics</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Ast\Abstract Syntax Tree.csproj">
       <Project>{02607dc2-e98b-43ae-b906-fe151a70a68d}</Project>
       <Name>Abstract Syntax Tree</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Compilers\Abstraction Compiler Services\Abstraction Compiler Services.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Compilers\Abstraction Compiler Services\Abstraction Compiler Services.csproj">
       <Project>{df6044a9-ae48-4ac2-a170-eb839bb0058c}</Project>
       <Name>Abstraction Compiler Services</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Languages\CSharp\CSharp.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Languages\CSharp\CSharp.csproj">
       <Project>{a5e27b08-e854-40d5-b88b-0f10d1ca64af}</Project>
       <Name>CSharp</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Metadata\Metadata Library\Metadata Library.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Metadata\Metadata Library\Metadata Library.csproj">
       <Project>{a94a88da-2500-4372-a433-a07ac3bfa05f}</Project>
       <Name>Metadata Library</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\TypeSystems\Abstract\TypeSystem Abstract.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\TypeSystems\Abstract\TypeSystem Abstract.csproj">
       <Project>{161eaa8c-20c6-4b82-925a-4b8b112910ab}</Project>
       <Name>TypeSystem Abstract</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\TypeSystems\Ecma-335 Common Type System\Ecma-335 Common Type System.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\TypeSystems\Ecma-335 Common Type System\Ecma-335 Common Type System.csproj">
       <Project>{d455d4ff-54fd-431e-bd27-43da130a0faa}</Project>
       <Name>Ecma-335 Common Type System</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\Utilities\Common\Common Utilities.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\Utilities\Common\Common Utilities.csproj">
       <Project>{b449e1f5-149c-4f47-bbfc-a82eee96471a}</Project>
       <Name>Common Utilities</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\Utilities\FiniteAutomation\Finite Automation.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\Utilities\FiniteAutomation\Finite Automation.csproj">
       <Project>{ecc67b87-6eba-4f40-baae-fe838ff8afa3}</Project>
       <Name>Finite Automation</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Ecma-335 Abstract Syntax Tree\Ecma-335 Abstract Syntax Tree.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Ecma-335 Abstract Syntax Tree\Ecma-335 Abstract Syntax Tree.csproj">
       <Project>{961977fe-07e8-40dd-a738-db8dce6cc482}</Project>
       <Name>Ecma-335 Abstract Syntax Tree</Name>
       <Private>False</Private>
@@ -196,6 +224,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.util.common.dll</HintPath>
     </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x86\Release\_abs.util.numerics.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Debug|x86'">
     <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
@@ -233,6 +265,10 @@
     <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.util.common.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x86\Debug\_abs.util.numerics.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Release|x64'">
@@ -273,6 +309,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.util.common.dll</HintPath>
     </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x64\Release\_abs.util.numerics.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Debug|x64'">
     <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
@@ -310,6 +350,10 @@
     <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.util.common.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x64\Debug\_abs.util.numerics.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -353,6 +397,7 @@
     <Compile Include="Compilers\Oilexer\IConstructBuilder.cs" />
     <Compile Include="Compilers\Oilexer\MultikeyedDictionaryBuilder.cs" />
     <Compile Include="Compilers\Oilexer\ParserBuilder %28ParseMethods%29.cs" />
+    <Compile Include="Compilers\Oilexer\ParserResultsBuilder.cs" />
     <Compile Include="Compilers\Oilexer\ProjectionSymbolBuilder.cs" />
     <Compile Include="Compilers\Oilexer\RegularLanguageDFAUnicodeGraph.cs" />
     <Compile Include="Compilers\Oilexer\RootRuleBuilder.cs" />
@@ -518,7 +563,7 @@
     <Compile Include="Languages\Oilexer\IPreprocessorThrowDirective.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Languages\Oilexer\IProductionRuleEntry.cs">
+    <Compile Include="Languages\Oilexer\IOilexerGrammarProductionRuleEntry.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Languages\Oilexer\IProductionRuleTemplateEntry.cs">
@@ -630,13 +675,7 @@
     <Compile Include="Languages\Oilexer\Rules\GrammarVocabularyModel.cs" />
     <Compile Include="Languages\Oilexer\Rules\IGrammarAmbiguousSymbol.cs" />
     <Compile Include="Languages\Oilexer\Rules\IPreprocessorGroupProductionRuleItem.cs" />
-    <Compile Include="Languages\Oilexer\Rules\IProductionRuleProjectionDecision.cs" />
-    <Compile Include="Languages\Oilexer\Rules\IProductionRuleProjectionDPath.cs" />
-    <Compile Include="Languages\Oilexer\Rules\IProductionRuleProjectionNode.cs" />
-    <Compile Include="Languages\Oilexer\Rules\IProductionRuleProjectionNodeInfo.cs" />
-    <Compile Include="Languages\Oilexer\Rules\IProductionRuleProjectionPath.cs" />
-    <Compile Include="Languages\Oilexer\Rules\IProductionRuleProjectionDPathSet.cs" />
-    <Compile Include="Languages\Oilexer\Rules\IProductionRuleProjectionPathSet.cs" />
+    <Compile Include="Languages\Oilexer\Rules\IPredictionTreeDestination.cs" />
     <Compile Include="Languages\Oilexer\Rules\ISubtractCommandProductionRuleItem.cs" />
     <Compile Include="Languages\Oilexer\Rules\IGrammarConstantEntrySymbol.cs">
       <SubType>Code</SubType>
@@ -750,6 +789,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Languages\Oilexer\Rules\LookAheadReductionType.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeDestinationAvenue.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeDestinationAvenues.cs" />
     <Compile Include="Languages\Oilexer\Rules\ProductionRule.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -767,15 +808,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Languages\Oilexer\Rules\PreprocessorGroupProductionRuleItem.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionAdapter.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionContext.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionDecision.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionDPathSet.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionFollow.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionFollowFailure.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionNode.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionDPath.cs" />
-    <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionNodeInfo.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeDestinationPoint.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeDFAdapter.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeDFAContext.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeDestination.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTree.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeFollow.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeFollowCaller.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeLeaf.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeBranch.cs" />
+    <Compile Include="Languages\Oilexer\Rules\PredictionTreeLeafVeins.cs" />
     <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionReduction.cs" />
     <Compile Include="Languages\Oilexer\Rules\ProductionRuleProjectionType.cs" />
     <Compile Include="Languages\Oilexer\Rules\ProductionRuleSeries.cs">
@@ -1121,6 +1163,8 @@
     <Compile Include="_Internal\Oilexer\Captures\ProductionRuleCaptureStructuralItem.cs" />
     <Compile Include="_Internal\Oilexer\Captures\ProductionRuleCaptureStructure.cs" />
     <Compile Include="_Internal\Oilexer\Captures\ProductionRuleStructuralExtractionCore.cs" />
+    <Compile Include="_Internal\Oilexer\FlowAnalysis\DiscriminatorEquivalenceWalker.cs" />
+    <Compile Include="_Internal\Oilexer\FlowAnalysis\SwitchCaseEquivalenceWalker.cs" />
     <Compile Include="_Internal\Oilexer\FlowAnalysis\SyntacticalDFAnalysis.cs" />
     <Compile Include="_Internal\Oilexer\OilexerGrammarCore+CompilerWarnings.cs" />
     <Compile Include="_Internal\Oilexer\SyntacticAnalysisCore.cs" />
@@ -1174,7 +1218,7 @@
     <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenEntry.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenEOFEntry.cs">
+    <Compile Include="_Internal\Oilexer\Inlining\OilexerGrammarInlinedTokenEofEntry.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="_Internal\Oilexer\Inlining\InlinedTokenExpression.cs">
@@ -1229,7 +1273,6 @@
     <Compile Include="Languages\Oilexer\Rules\PathPredictionType.cs" />
     <Content Include="_Internal\Oilexer\Inlining\ReadMe.txt" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -4,7 +4,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -40,6 +40,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// </summary>
         /// <remarks>May have unintended side-effects.</remarks>
         bool MaxReduce { get; set; }
+        /// <summary>Returns/sets the nullable <see cref="Int32"/> value denoting the number of tokens, max, to look-ahead before defaulting to back-tracking methods.</summary>
+        int? LookaheadTokenLimit { get; set; }
+        /// <summary>Returns the <see cref="String"/> value denoting the definition of the <see cref="IOilexerGrammarProductionRuleEntry"/> prior to expanding the templates.</summary>
         string PreexpansionText { get; }
 
         void CreatePreexpansionText();

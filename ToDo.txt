@@ -1,0 +1,3 @@
+﻿1. Predictions should return a negative value upon failure.
+  a. This negative value should be representative of 'how far' the prediction went.
+  b. This will provide context to the caller of the prediction to know when 'no viable alt' is encountered, where the error occurred.

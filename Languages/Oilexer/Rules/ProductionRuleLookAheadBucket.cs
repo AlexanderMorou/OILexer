@@ -17,6 +17,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
         public int BucketID { get; set; }
-        public ProductionRuleProjectionContext Owner { get; set; }
+        public PredictionTreeDFAContext Owner { get; set; }
     }
 }

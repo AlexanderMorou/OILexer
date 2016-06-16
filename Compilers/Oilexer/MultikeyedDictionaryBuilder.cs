@@ -536,7 +536,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 var classGetEnumerator2 = currentClass.Methods.Add(new TypedName("GetEnumerator2", identityManager.ObtainTypeReference(typeof(IEnumerator))));
                 classGetEnumerator2.Implementations.Add(identityManager.ObtainTypeReference(typeof(IEnumerable)));
                 /* Currently due to the way C# works, this 'language specific qualifier' is necessary since the same private implementation isn't handled the same way in VB.NET. */
-                classGetEnumerator2.LanguageSpecificQualifier = "IEnumerable.";
+                classGetEnumerator2.UserSpecificQualifier = "IEnumerable.";
                 classGetEnumerator2.Name = "GetEnumerator";
                 classGetEnumerator2.Return(new SpecialReferenceExpression(SpecialReferenceKind.This).GetMethod("GetEnumerator").Invoke());
                 classKeyAccessor.AccessLevel = AccessLevelModifiers.Public;

@@ -9,7 +9,7 @@ using AllenCopeland.Abstraction.Slf.Abstract;
 using AllenCopeland.Abstraction.Slf.Cli;
 using AllenCopeland.Abstraction.Slf.Ast.Cli;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -32,7 +32,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         /// The singleton instance which which provides information about the language.
         /// </summary>
         internal static readonly OilexerLanguage LanguageInstance = new OilexerLanguage();
-        //#region IHighLevelLanguage<IOilexerGrammarFile> Members
 
         public OilexerProvider GetProvider()
         {
@@ -43,8 +42,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         {
             get { return OilexerLanguage._LanguageGuid; }
         }
-
-        //#endregion
 
         //#region ILanguage Members
 
@@ -58,23 +55,24 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             return this.GetProvider();
         }
 
-        //#endregion
-
-        //#region ILanguage Members
-
         public CompilerSupport CompilerSupport
         {
-            get { return CompilerSupport.FullSupport ^ (CompilerSupport.DebuggerSupport | CompilerSupport.COMInterop | CompilerSupport.Unsafe | CompilerSupport.Win32Resources); }
+            get 
+            {
+                return CompilerSupport.FullSupport      ^
+                    (
+                        CompilerSupport.DebuggerSupport |
+                        CompilerSupport.COMInterop      |
+                        CompilerSupport.Unsafe          |
+                        CompilerSupport.Win32Resources
+                    );
+            }
         }
 
         public ILanguageVendor Vendor
         {
             get { return LanguageVendors.AllenCopeland; }
         }
-
-        //#endregion
-
-        //#region ILanguage Members
 
         public IAssembly CreateAssembly(string name)
         {
@@ -83,8 +81,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 
         //#endregion
 
-        #region ILanguage<OilexerLanguage,OilexerProvider> Members
-
+        //#region ILanguage<OilexerLanguage,OilexerProvider> Members
 
         OilexerProvider ILanguage<OilexerLanguage,OilexerProvider>.GetProvider(IIdentityManager identityManager)
         {
@@ -93,7 +90,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             return new OilexerProvider((IIntermediateCliManager)identityManager);
         }
 
-        #endregion
+        //#endregion
 
         public OilexerProvider GetProvider(IIntermediateCliManager identityManager)
         {

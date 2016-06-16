@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OILexer", "OILexer.csproj", "{0D009988-DE0E-4362-830D-7980BEB41F6F}"
 EndProject
@@ -19,19 +19,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsixOilexer", "VsixOilexer\
 	EndProjectSection
 EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 4
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://alexandermorou.visualstudio.com/defaultcollection
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = OILexerParser.csproj
-		SccLocalPath1 = .
-		SccProjectUniqueName2 = OILexer.csproj
-		SccLocalPath2 = .
-		SccProjectUniqueName3 = VsixOilexer\\VsixOilexer.csproj
-		SccProjectName3 = VsixOilexer
-		SccLocalPath3 = VsixOilexer
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86

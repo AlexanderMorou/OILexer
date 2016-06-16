@@ -12,7 +12,7 @@ using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Collections;
 using AllenCopeland.Abstraction.Slf.Ast.Members;
 /*---------------------------------------------------------------------\
-| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+| Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
 |----------------------------------------------------------------------|
 | The Abstraction Project's code is provided under a contract-release  |
 | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -27,6 +27,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
     using AllenCopeland.Abstraction.Slf.Ast.Expressions;
     using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
 using AllenCopeland.Abstraction.Slf.Ast.Cli;
+    using System.Diagnostics;
+    using AllenCopeland.Abstraction.Slf.Cli;
 
     internal class OilexerGrammarFileObjectRelationalMap :
         ControlledDictionary<IOilexerGrammarScannableEntry, IEntryObjectRelationalMap>,
@@ -94,11 +96,14 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                 tokenPropImpl.GetMethod.Return(this.rootRuleBuilder.ContextImpl.GetReference().GetIndexer(IntermediateGateway.NumberZero).Cast(tokenProp.PropertyType));
                 this.rootRuleBuilder.Compiler.RootRuleBuilder.TokenDerived_Token = tokenPropImpl;
                 var reorm = (this[tokenAsRule] as ITokenEntryObjectRelationalMap);
-
+                IIntermediateClassType debuggerProxy = null;
                 ((TokenEntryObjectRelationalMap)reorm).ImplementationDetails = startingNode;
+
                 var variations = (from variation in reorm.Variations
                                   select variation.ToArray()).ToArray();
 
+                ((TokenEntryObjectRelationalMap)reorm).DebuggerProxy = debuggerProxy = BuildDebuggerProxyFor(startingNode, variations);
+                
                 foreach (var variation in variations)
                 {
                     var currentNode = startingNode;
@@ -106,10 +111,39 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                     {
                         var currentRootVariant = CheckRootVariant(project, _ruleVariants, variationElement);
                         currentNode = BuildVariation(currentNode, currentRootVariant, project, tokenPropImpl);
+                        var reormDT = ((TokenEntryObjectRelationalMap)reorm).DebuggerProxyTargets;
+                        if (!reormDT.Contains(currentNode.Value.Class))
+                            reormDT.Add(currentNode.Value.Class);
                     }
                 }
+
+                foreach (var property in startingNode.Value.Class.Properties.Values)
+                    ReplicatePropertyFromSourceToProxy(property, debuggerProxy);
+                foreach (var @class in ((TokenEntryObjectRelationalMap)reorm).DebuggerProxyTargets)
+                    @class.Metadata.Add(new MetadatumDefinitionParameterValueCollection(((ICliManager)@class.IdentityManager).ObtainTypeReference(typeof(DebuggerDisplayAttribute))) { "{Context.Identity,nq}: {Context}" }, new MetadatumDefinitionParameterValueCollection(((ICliManager)@class.IdentityManager).ObtainTypeReference(typeof(DebuggerTypeProxyAttribute))) { (IType)((TokenEntryObjectRelationalMap)reorm).DebuggerProxy });
+                foreach (var property in this.rootRuleBuilder.LanguageRuleRoot.Properties.Values)
+                    ReplicatePropertyFromSourceToProxy(property, debuggerProxy);
+
+
             }
 
+        }
+
+        private static IIntermediateClassType BuildDebuggerProxyFor(RuleTreeNode startingNode, IOilexerGrammarScannableEntry[][] variations)
+        {
+            IIntermediateClassType debuggerProxy = null;
+            if (variations.Any(k => k.Length > 1))
+            {
+                debuggerProxy = startingNode.Value.Class.Namespace.Parts.Add().Classes.Add("{0}DebuggerProxy", startingNode.Value.Class.Name);
+                var originalField = debuggerProxy.Fields.Add(startingNode.Value.Class.WithName("_original"));
+                originalField.AccessLevel = AccessLevelModifiers.Private;
+                var defCtor = debuggerProxy.Constructors.Add(new TypedNameSeries(startingNode.Value.Class.WithName("original")));
+                defCtor.AccessLevel = AccessLevelModifiers.Public;
+                var originalParam = defCtor.Parameters["original"];
+                defCtor.Assign(originalField.GetReference(), originalParam.GetReference());
+                debuggerProxy.AccessLevel = AccessLevelModifiers.Internal;
+            }
+            return debuggerProxy;
         }
 
         public OilexerGrammarFileObjectRelationalMap(IOilexerGrammarFile source, IControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> ruleStates, IIntermediateAssembly project, RootRuleBuilder ruleBuilder)
@@ -254,13 +288,20 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                     continue;
                 var variations = (from variation in reorm.Variations
                                   select variation.ToArray()).ToArray();
+                IIntermediateClassType debuggerProxy = null;
+                ((RuleEntryObjectRelationalMap)reorm).DebuggerProxy = debuggerProxy = BuildDebuggerProxyFor(startingNode, variations);
+
                 foreach (var variation in variations)
                 {
                     var currentNode = startingNode;
                     foreach (var variationElement in variation.Skip(1) /* First is always the current. */)
                     {
                         var currentRootVariant = CheckRootVariant(project, ruleVariants, variationElement);
+
                         currentNode = BuildVariation(currentNode, currentRootVariant, project);
+                        var reormDT = ((RuleEntryObjectRelationalMap)reorm).DebuggerProxyTargets;
+                        if (!reormDT.Contains(currentNode.Value.Class))
+                            reormDT.Add(currentNode.Value.Class);
                     }
                 }
             }
@@ -488,7 +529,9 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                     var orm = this.ImplementationDetails[topLevelRule];
                     if (!topLevelRule.IsRuleCollapsePoint)
                     {
+                        var detail = (RuleEntryObjectRelationalMap)this[topLevelRule];
                         var structure = topLevelRule.CaptureStructure;
+                        IIntermediateClassPropertyMember property = null;
                         foreach (var elementName in structure.Keys)
                         {
                             var structureItem = structure[elementName];
@@ -497,6 +540,7 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                                 case ResultedDataType.Counter:
                                     {
                                         var propImpl = GetPropImpl(identityManager, orm, structure, structureItem, identityManager.ObtainTypeReference(RuntimeCoreType.Int32));
+                                        property = propImpl;
                                         SetStandardPropGet(structureItem, propImpl);
                                     }
                                     break;
@@ -511,6 +555,7 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                                     {
                                         var propImpl = GetPropImpl(identityManager, orm, structure, structureItem, identityManager.ObtainTypeReference(RuntimeCoreType.Boolean));
                                         SetStandardPropGet(structureItem, propImpl);
+                                        property = propImpl;
                                         break;
                                     }
                                 case ResultedDataType.Enumeration:
@@ -521,6 +566,7 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                                         var nullCheck = propImpl.GetMethod.If(capture.InequalTo(IntermediateGateway.NullValue));
                                         nullCheck.Return(this.Compiler.CommonSymbolBuilder.Identity.GetReference(capture.GetReference()));
                                         propImpl.GetMethod.Return(this.Compiler.LexicalSymbolModel.NoIdentityField.GetReference());
+                                        property = propImpl;
                                         break;
                                     }
                                 case ResultedDataType.ComplexType:
@@ -529,28 +575,46 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                                 case ResultedDataType.Character:
                                     {
                                         var propImpl = GetPropImpl(identityManager, orm, structure, structureItem, identityManager.ObtainTypeReference(RuntimeCoreType.Char));
+                                        property = propImpl;
                                         break;
                                     }
                                 case ResultedDataType.String:
                                     {
                                         var propImpl = GetPropImpl(identityManager, orm, structure, structureItem, identityManager.ObtainTypeReference(RuntimeCoreType.String));
+                                        property = propImpl;
                                         break;
                                     }
                                 case ResultedDataType.ImportType:
                                     {
                                         var ruleTypeSource = GetRuleTypeSourceForListOrType(structureItem);
-                                        GenerateImportTypeFromScannableEntry(identityManager, orm, structure, structureItem, ruleTypeSource);
+                                        property = GenerateImportTypeFromScannableEntry(identityManager, orm, structure, structureItem, ruleTypeSource);
                                         break;
                                     }
                                 case ResultedDataType.ImportTypeList:
                                     {
                                         var ruleTypeSource = GetRuleTypeSourceForListOrType(structureItem);
-                                        GenerateImportListTypeFromScannableEntry(identityManager, orm, structure, structureItem, ruleTypeSource);
+                                        property = GenerateImportListTypeFromScannableEntry(identityManager, orm, structure, structureItem, ruleTypeSource);
                                         break;
                                     }
                                 default:
                                     break;
                             }
+                            if (property != null)
+                            {
+                                var debuggerProxy = detail.DebuggerProxy;
+                                ReplicatePropertyFromSourceToProxy(property, debuggerProxy);
+                            }
+                        }
+                        if (detail != null && detail.DebuggerProxy != null && detail.DebuggerProxy.Properties.Count == 0)
+                        {
+                            detail.DebuggerProxy.Parent.Classes.Remove(detail.DebuggerProxy);
+                        }
+                        else if (detail.DebuggerProxy != null)
+                        {
+                            foreach (var prop in this.rootRuleBuilder.LanguageRuleRoot.Properties.Values)
+                                ReplicatePropertyFromSourceToProxy(prop, detail.DebuggerProxy);
+                            foreach (var @class in detail.DebuggerProxyTargets)
+                                @class.Metadata.Add(new MetadatumDefinitionParameterValueCollection(identityManager.ObtainTypeReference(typeof(DebuggerDisplayAttribute))) { "{Context.Identity,nq}: {Context}" }, new MetadatumDefinitionParameterValueCollection(((ICliManager)detail.DebuggerProxy.IdentityManager).ObtainTypeReference(typeof(DebuggerTypeProxyAttribute))) { (IType)detail.DebuggerProxy });
                         }
                     }
                 }
@@ -599,6 +663,17 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                 goto RepeatCollapseCheck;
         }
 
+        private static void ReplicatePropertyFromSourceToProxy(IIntermediateClassPropertyMember property, IIntermediateClassType debuggerProxy)
+        {
+            if (debuggerProxy != null)
+            {
+                var originalField = debuggerProxy.Fields[TypeSystemIdentifiers.GetMemberIdentifier("_original")];
+                var newProp = debuggerProxy.Properties.Add(property.PropertyType.WithName(property.Name), true, false);
+                newProp.AccessLevel = AccessLevelModifiers.Public;
+                newProp.GetMethod.Return(property.GetReference(originalField.GetReference()));
+            }
+        }
+
         private IEnumerable<IIntermediateInterfaceType> GatherCollapsePointChildInterfaces(RuleTreeNode orm, OilexerGrammarProductionRuleEntry topLevelRule, GrammarVocabularySymbolicBreakdown symbolicRep)
         {
             foreach (var rule in symbolicRep.Rules.Keys)
@@ -619,7 +694,7 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
             return ruleTypeSource;
         }
 
-        private void GenerateImportListTypeFromScannableEntry(IIntermediateCliManager identityManager, RuleTreeNode orm, IProductionRuleCaptureStructure structure, IProductionRuleCaptureStructuralItem structureItem, IOilexerGrammarScannableEntry importTypeSource)
+        private IIntermediateClassPropertyMember GenerateImportListTypeFromScannableEntry(IIntermediateCliManager identityManager, RuleTreeNode orm, IProductionRuleCaptureStructure structure, IProductionRuleCaptureStructuralItem structureItem, IOilexerGrammarScannableEntry importTypeSource)
         {
             if (importTypeSource != null && (this.ImplementationDetails.ContainsKey(importTypeSource) || importTypeSource is IOilexerGrammarTokenEntry))
             {
@@ -650,11 +725,13 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                         enumerateBlock.If(enumerateBlock.Local.GetReference().Is(this.Compiler.RuleSymbolBuilder.ILanguageRuleSymbol))
                             .Call(fieldImpl.GetReference().GetMethod("Add").Invoke(this.Compiler.RuleSymbolBuilder.CreateRuleImpl.GetReference(enumerateBlock.Local.GetReference().Cast(this.Compiler.RuleSymbolBuilder.ILanguageRuleSymbol)).Invoke().Cast(targetType)));
                     propImpl.GetMethod.Return(fieldImpl.GetReference());
+                    return propImpl;
                 }
             }
+            return null;
         }
 
-        private void GenerateImportTypeFromScannableEntry(IIntermediateCliManager identityManager, RuleTreeNode orm, IProductionRuleCaptureStructure structure, IProductionRuleCaptureStructuralItem structureItem, IOilexerGrammarScannableEntry importTypeSource)
+        private IIntermediateClassPropertyMember GenerateImportTypeFromScannableEntry(IIntermediateCliManager identityManager, RuleTreeNode orm, IProductionRuleCaptureStructure structure, IProductionRuleCaptureStructuralItem structureItem, IOilexerGrammarScannableEntry importTypeSource)
         {
             if (importTypeSource != null && (this.ImplementationDetails.ContainsKey(importTypeSource) || importTypeSource is IOilexerGrammarTokenEntry))
             {
@@ -684,8 +761,10 @@ using AllenCopeland.Abstraction.Slf.Ast.Cli;
                     else
                         symbolNullCheck.Assign(fieldImpl.GetReference(), this.Compiler.RuleSymbolBuilder.CreateRuleImpl.GetReference(ruleSymbol.GetReference()).Invoke().Cast(targetType));
                     propImpl.GetMethod.Return(fieldImpl.GetReference());
+                    return propImpl;
                 }
             }
+            return null;
         }
 
         private void SetStandardPropGet(IProductionRuleCaptureStructuralItem structureItem, IIntermediateClassPropertyMember propImpl)

@@ -147,11 +147,6 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures
             }
         }
 
-        #endregion
-
-        #region IProductionRuleCaptureStructuralItem Members
-
-
         public string Name
         {
             get

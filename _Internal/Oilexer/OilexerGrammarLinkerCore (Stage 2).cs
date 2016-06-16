@@ -11,7 +11,7 @@ using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Abstract;
 using System.Threading.Tasks;
 /*---------------------------------------------------------------------\
-| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+| Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
 |----------------------------------------------------------------------|
 | The Abstraction Project's code is provided under a contract-release  |
 | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -740,7 +740,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                         }
                     }
                 }
-                var fileElements = file.ToArray();
+                /* ToDo: Evaluate the depth necessary to institute a lock associated to the base list on the oilexer grammar file type. */
+                IOilexerGrammarEntry[] fileElements;
+                lock (file)
+                    fileElements = file.ToArray();
                 foreach (IOilexerGrammarEntry ie in fileElements)
                     if (ie is IOilexerGrammarNamedEntry && ((IOilexerGrammarNamedEntry)ie).Name == search)
                     {

@@ -1,6 +1,6 @@
 #ifndef Lexer
 #include                        "Oilexer.oilexer";
-#elif Lexer == "ToyParser"
+#elif (Lexer == "ToyParser")
 #include                       "Language.oilexer";
 #endif
 
@@ -8,9 +8,9 @@ BooleanLiteral                                  :=
     "true":TrueValue;                            |
    "false":FalseValue;                           ;
 
-Char$                                           :=
+Char                                            :=
     '@':IsCaseInsensitive;?
-    ('\'' CharBody  '\'')$                       ;
+    ('\'' CharBody:Value; '\'')$                 ;
 
 CharBody                                        :=
     CharEscape                                   |
@@ -20,16 +20,18 @@ CharBody                                        :=
 CharEscape                                      :=
     '\\' '\''                                    ;
 
-String                                          :=
-    EscapableString$                             |
-    MultilineString                              ;
+/* ACC - February 21, 2016: This used to replicate the string observed in the average programming language.
+   This was inncorrect behavior and has been corrected to represent the case sensitivity semantics outlined
+   by the language. */
+String                                        ::=>
+    CaseSensitiveString                          |
+    CaseInsensitiveString                        ;
 
-EscapableString                                 :=
+CaseSensitiveString                             :=
     '"' StringChar* '"'                          ;
 
-MultilineString                                 :=
-    '@':IsMultiline;flag=true;
-        ('"' ('"' '"' | [^"])* '"')$             ;
+CaseInsensitiveString                           :=
+    '@' '"' StringChar* '"'                      ;
 
 StringChar                                      :=
     CommonEscapes                                |
@@ -92,8 +94,7 @@ CharacterRange                                  :=
 
 CharacterRangeEntity                            :=
     CharacterRangeChar                           |
-    CharacterRangeUnicode                        |
-    CommonEscapes                                ;
+    CharacterRangeUnicode                        ;
 
 CharacterRangeUnicode                           :=
      ":Lu:":UppercaseLetter;                     | //(letter, upper)
@@ -135,15 +136,62 @@ CharacterRangeUnicode                           :=
       ":S:":AllSymbols;                          ; //(symbol, math, currency, modifier, other)
 
 CharacterRangeChar                              :=
+    CharacterRangeNoSpan                         |
+    CharacterRangeSpan                           ;
+
+CharacterRangeNoSpan                            :=
     CharacterRangeCharEscape                     |
     CommonEscapes                                |
-    [^\]\r\n\\\u0085\u2028\x5E\u2029\:]          ;
+    CharacterRangeNormal                         ;
+
+CharacterRangeSpan                              :=
+    CharacterRangeNoSpan
+    '-'
+    CharacterRangeNoSpan                         ;
+
+CharacterRangeNormal                            :=
+    [^\]\r\n\\\u0085\u2028\x5E\u2029\:\-]        ;
 
 CharacterRangeCharEscape                        :=
     '\\' ']'                                     |
     '\\' '^'                                     |
     '\\' '\\'                                    |
-    '\\' ':'                                     ;
+    '\\' ':'                                     |
+    '\\' '-'                                     ;
+
+SeptemvigesimalNumber :=
+    @"0s" SeptemvigesimalChar+ UnsignedLong?     ;
+
+BinaryNumber                                    :=
+    @"0b" BinaryChar+ UnsignedLongOrLongUnsigned?;
+
+OctalNumber := 
+    @"0o" OctalChar+ UnsignedLongOrLongUnsigned? ;
+
+HexadecimalNumber                               :=
+    @"0x" HexChar+ UnsignedLongOrLongUnsigned?   ;
+
+DozenalNumber                                   :=
+    @"0z" DozenalChar+ UnsignedLongOrLongUnsigned?;
+
+DecimalNumber                                   :=
+    DecimalNumber+ DecimalNumberDataType?;
+
+UnsignedLong :=
+    @'U' @'L'?                                   ;
+
+UnsignedLongOrLongUnsigned                      :=
+    (
+        @'U' @'L'?                               |
+        @'L' @'U'?
+    )                                            ;
+
+DecimalNumberDataType                           :=
+    @'U':Unsigned; @'L':Long;?                   |
+    @'L':Long; @'U':Unsigned;?                   |
+    @'D':Double;                                 |
+    @'F':Single;                                 |
+    @'M':Decimal;                                ;
 
 Number                                          :=
     (@"0s":Septemvigesimal;):WholePartType;
@@ -188,7 +236,23 @@ Number                                          :=
             @'F':Single;                         |
             @'M':Decimal;
         ):ValueType;Default=Double;$?
-    )?;
+    )?                                           |
+    (
+        ('.' DecimalNumber:FloatingPart;+)
+        (
+            @'e' 
+            (
+                '+':Positive;                    |
+                '-':Negative;
+            ):Sign;Default=Positive;?
+            DecimalNumber:Value;+
+        ):Exponent;?
+        (
+            @'D':Double;                         |
+            @'F':Single;                         |
+            @'M':Decimal;
+        ):ValueType;Default=Double;$?
+    )                                            ;
 
 Integer                                         :=
     (
@@ -278,7 +342,9 @@ LanguageOperatorToken                           :=
      "==":EqualTo;                               |
      "**":SiblingAmbiguity;                      |
   "[+/-]":VisualSpanSpecifier;                   |
-      '-':Contextual;                            ;
+      '-':Contextual;                            |
+      '[':OptionsOpener;                         |
+      ']':OptionsCloser;                         ;
 
 RuleTerminals                                   :=
           '!':IsFlag;                            |
@@ -307,9 +373,26 @@ StringTerminalKind                              :=
      @"#rulesuffix":RuleSuffix;                  |
       @"#namespace":Namespace;                   ;
 
+
+GuidString                                      :=
+    '"' 
+        HexChar{8} '-' 
+        HexChar{4} '-' 
+        HexChar{4} '-' 
+        HexChar{4} '-' 
+        HexChar{12}
+    '"'                                          ;
+
+GuidTerminalKind                                :=
+     @"#projectguid":ProjectGuid;                |
+        @"#vsixguid":VsixGuid;                   ;
+
+LanguageCultureCallout                          :=
+@"#languageculture":LanguageCulture;             ;
+
 PreprocessorType                                :=
-         "#addrule":AddRuleDirective;            |
-          "#define":DefineDirective;             |
+        @"#addrule":AddRuleDirective;            |
+         @"#define":DefineDirective;             |
            @"#elif":ElseIfDirective;             |
         @"#elifdef":ElseIfDefinedDirective;      |
        @"#elifndef":ElseIfNotDefinedDirective;   |
@@ -355,3 +438,17 @@ Whitespace                                     :=*
         '\t'                                     |
         '\f'
     )+                                           ;
+
+CultureIdentifier                              ::=
+    Identifier:Left; ('-' Identifier:Right;)?    ;
+
+
+RuleAndTokenOptionTerminals :=
+    @"group":Group;          |
+    @"Short":Short;          |
+    @"Id":ShortIdentity;     |
+    @"Identity":Identity;    |
+    @"sub":Sub;              |
+    @"lexer":Lexer;          |
+    @"max":Maximum;          |
+    @"lookahead":LookAhead;  ;

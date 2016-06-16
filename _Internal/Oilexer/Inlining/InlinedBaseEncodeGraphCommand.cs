@@ -81,7 +81,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
             this.Root = root;
             this.RepeatOptions = source.RepeatOptions;
             this.Name = source.Name;
-
+            this.SiblingAmbiguity = source.SiblingAmbiguity;
         }
 
         public InlinedBaseEncodeGraphCommand(IBaseEncodeGraphCommand source, OilexerGrammarTokens.StringLiteralToken stringBase, IOilexerGrammarTokenEntry sourceRoot, InlinedTokenEntry root, IDictionary<ITokenItem, ITokenItem> oldNewLookup)
@@ -92,7 +92,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
             this.Root = root;
             this.RepeatOptions = source.RepeatOptions;
             this.Name = source.Name;
-
+            this.SiblingAmbiguity = source.SiblingAmbiguity;
         }
 
         public IBaseEncodeGraphCommand Source { get; private set; }

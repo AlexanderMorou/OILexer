@@ -5,7 +5,7 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Utilities.Collections;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
 /*---------------------------------------------------------------------\
-| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+| Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
 |----------------------------------------------------------------------|
 | The Abstraction Project's code is provided under a contract-release  |
 | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -246,8 +246,6 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             this.preexpansionText = this.ToString();
         }
 
-
-        public bool RepresentsAmbiguousContext { get; set; }
-
+        public int? LookaheadTokenLimit { get; set; }
     }
 }

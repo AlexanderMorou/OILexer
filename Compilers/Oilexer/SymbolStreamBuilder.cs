@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Collections;
 using AllenCopeland.Abstraction.Slf.Ast.Cli;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
+using AllenCopeland.Abstraction.Slf.Cli;
 
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
@@ -69,6 +70,33 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this.BuildResetMethod();
             this.BuildPopNone();
             this.BuildSwapImpl();
+            this.CreateGetTokenIndex();
+            this.CreateGetTokenIndexImpl();
+        }
+
+        private void CreateGetTokenIndex()
+        {
+            var gtiMethod = this.ResultInterface.Methods.Add(
+                new TypedName("GetTokenIndex", RuntimeCoreType.Int32, this._identityManager),
+                new TypedNameSeries(new TypedName("symbolOffset", RuntimeCoreType.Int32, this._identityManager)));
+            this.GetTokenIndex = gtiMethod;
+        }
+
+        private void CreateGetTokenIndexImpl()
+        {
+            var gtiMethod = this.ResultClass.Methods.Add(
+                new TypedName("GetTokenIndex", RuntimeCoreType.Int32, this._identityManager),
+                new TypedNameSeries(new TypedName("symbolOffset", RuntimeCoreType.Int32, this._identityManager)));
+            var symbolOffset = gtiMethod.Parameters["symbolOffset"];
+            gtiMethod.AccessLevel = AccessLevelModifiers.Public;
+            var offsetCheck = gtiMethod.If(symbolOffset.EqualTo(this.compiler.GenericSymbolStreamBuilder.CountImpl.GetReference()));
+            offsetCheck.Return(this._TokenOffsetImpl.GetReference());
+            offsetCheck.CreateNext(symbolOffset.LessThan(this.compiler.GenericSymbolStreamBuilder.CountImpl.GetReference()));
+            var offsetCheckNext = (IConditionBlockStatement)offsetCheck.Next;
+            offsetCheckNext.Return(this.compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(this.compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(new SpecialReferenceExpression(SpecialReferenceKind.This), symbolOffset.GetReference())));
+            offsetCheckNext.CreateNext();
+            offsetCheckNext.Next.Throw(typeof(ArgumentOutOfRangeException).GetTypeReference<IClassType>((ICliManager)this._identityManager).GetNewExpression(symbolOffset.Name.ToPrimitive()));
+            this.GetTokenIndexImpl = gtiMethod;
         }
 
         private void BuildSwapImpl()
@@ -94,11 +122,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 this.InternalStream.RemoveRange(currentIndex + 1, this.Count - (currentIndex + 1));
             this._tokenOffset = clearAfter + 1;
              */
-            var ruleCheck = swapImpl.If(replacement.GetReference().Is(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol));
+            var spaceCheck = swapImpl.If(this.compiler.CommonSymbolBuilder.TokenCount.GetReference(current.GetReference()).InequalTo(this.compiler.CommonSymbolBuilder.TokenCount.GetReference(replacement.GetReference())));
+            var ruleCheck = spaceCheck.If(replacement.GetReference().Is(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol));
             ruleCheck.Assign(_TokenOffsetImpl.GetReference(), this.compiler.RuleSymbolBuilder.EndTokenIndex.GetReference(replacement.GetReference().Cast(this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol)).Add(1));
             ruleCheck.CreateNext();
             ruleCheck.Next.Assign(_TokenOffsetImpl.GetReference(), this.compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(replacement.GetReference()).Add(1));
-            swapImpl.If(this.compiler.GenericSymbolStreamBuilder.CountImpl.Subtract(1).GreaterThan(indexOf))
+            spaceCheck.If(this.compiler.GenericSymbolStreamBuilder.CountImpl.Subtract(1).GreaterThan(indexOf))
                 .Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference()
                     .GetMethod("RemoveRange").Invoke(
                         indexOf.Add(1), this.compiler.GenericSymbolStreamBuilder.CountImpl.Subtract(indexOf.Add(1))));
@@ -269,7 +298,15 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 lookAheadMethodImpl.DefineLocal(identityResultLocal);
                 var sharedExpression = this.compiler.TokenStreamBuilder.LookAheadImpl.GetReference(TokenStreamImpl.GetReference()).Invoke(this._TokenOffsetImpl.GetReference());
                 lookAheadMethodImpl.Iterate((identityResultLocal.GetReference().Assign(sharedExpression)).AsEnumerable(), ShouldSkipImpl.GetReference().Invoke(identityResultLocal.GetReference()), new IStatementExpression[2] { this._TokenOffsetImpl.Increment(), identityResultLocal.GetReference().Assign((INaryOperandExpression)sharedExpression) });
-                lookAheadMethodImpl.Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference().GetMethod("Add").Invoke(this.compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this.TokenStreamImpl.GetReference(), this._TokenOffsetImpl.Increment())));
+                lookAheadMethodImpl.If(
+                        identityResultLocal
+                        .InequalTo(
+                            this.compiler
+                            .LexerBuilder
+                            .GrammarVocabularyModel
+                            .NoIdentityField
+                            .GetReference()))
+                    .Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference().GetMethod("Add").Invoke(this.compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this.TokenStreamImpl.GetReference(), this._TokenOffsetImpl.Increment())));
                 lookAheadMethodImpl.Return(identityResultLocal.GetReference());
             }
             else
@@ -277,7 +314,15 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 var identityResultLocal = lookAheadMethodImpl.Locals.Add(new TypedName("identityResult", lookAheadMethodImpl.ReturnType), this.compiler.TokenStreamBuilder.LookAheadImpl.GetReference(TokenStreamImpl.GetReference()).Invoke(this._TokenOffsetImpl.GetReference()));
                 identityResultLocal.AutoDeclare = false;
                 lookAheadMethodImpl.DefineLocal(identityResultLocal);
-                lookAheadMethodImpl.Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference().GetMethod("Add").Invoke(this.compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this.TokenStreamImpl.GetReference(), this._TokenOffsetImpl.Increment())));
+                lookAheadMethodImpl.If(
+                        identityResultLocal
+                        .InequalTo(
+                            this.compiler
+                            .LexerBuilder
+                            .GrammarVocabularyModel
+                            .NoIdentityField
+                            .GetReference()))
+                    .Call(this.compiler.GenericSymbolStreamBuilder.InternalStreamImpl.GetReference().GetMethod("Add").Invoke(this.compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this.TokenStreamImpl.GetReference(), this._TokenOffsetImpl.Increment())));
                 lookAheadMethodImpl.Return(identityResultLocal.GetReference());
             }
             lookAheadMethodImpl.AccessLevel = AccessLevelModifiers.Public;
@@ -287,7 +332,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         public IIntermediateInterfaceType ResultInterface { get; private set; }
         public IIntermediateClassType ResultClass { get; private set; }
-
 
         public IIntermediateClassMethodMember LookAheadMethodImpl { get; set; }
 
@@ -314,5 +358,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         public IIntermediateClassMethodMember PopNoneImpl { get; set; }
 
         public IIntermediateClassMethodMember SwapImpl { get; set; }
+
+        public IIntermediateInterfaceMethodMember GetTokenIndex { get; set; }
+
+        public IIntermediateClassMethodMember GetTokenIndexImpl { get; set; }
     }
 }

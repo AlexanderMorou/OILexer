@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -31,5 +31,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         /// is stored as a boolean value only.  Only applies to optional members.
         /// </summary>
         bool? IsFlag { get; }
+        /// <summary>
+        /// Returns whether the current <see cref="ILiteralStringTokenItem"/> can
+        /// ambiguate itself relative to a sibling within the current set.
+        /// </summary>
     }
 }

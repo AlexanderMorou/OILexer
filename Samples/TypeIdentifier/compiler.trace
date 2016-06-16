@@ -1,0 +1,23 @@
+╒═══════════════════════════════════════════════════════════════════════╕
+│ OILexer Parser Compiler version 0.5.4.0                               │
+│ Copyright (C) Allen C. Copeland Jr. 2008-2015                         │
+├───────────────────────────────────────────────────────────────────────┤
+│                                            Parsing : 00:00:00.3153431 │
+│                                Expanding templates : 00:00:00.0729223 │
+│                                   Deliteralization : 00:00:00.0293691 │
+│                                            Linking : 00:00:00.0168407 │
+├───────────────────────────────────────────────────────────────────────┤
+│                                    Number of rules : 11               │
+│                                   Number of tokens : 10               │
+│                                    Number of files : 1                │
+│                                  Number of symbols : 0                │
+├───────────────────────────────────────────────────────────────────────┤
+│                           Character set cache size : 0                │
+│                         Character set computations : 0                │
+│                              Vocabulary cache size : 0                │
+│                        Vocabulary set computations : 0                │
+╘═══════════════════════════════════════════════════════════════════════╛
+Errors written to C:\Projects\Code\C#\Oilexer\Samples\compiler.errors
+There were 1 error in 0 files.
+A total of 18,422 bytes were parsed from 1 files.
+C:\Projects\Code\C#\Oilexer\Samples\TypeIdentifier\TypeIdentifier.oilexer

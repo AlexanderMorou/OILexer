@@ -65,9 +65,9 @@ Capture              ::=>
     CommandArgumentCapture;
 
 CommandArgumentCapture :=
-    ([^" -:/] | '\\' '-' | '\\' ':')
+    ([^" -:/\t] | '\\' '-' | '\\' ':')
     (
-        [^ ":/]          |
+        [^ ":/\t]          |
         '"' '"'         |
         '\\' ':'
     )*;

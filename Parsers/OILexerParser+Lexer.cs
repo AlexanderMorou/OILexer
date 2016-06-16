@@ -8,7 +8,7 @@ using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |

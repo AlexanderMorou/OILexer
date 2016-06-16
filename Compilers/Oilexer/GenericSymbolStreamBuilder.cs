@@ -76,7 +76,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
              * declaration site of the method.
              * */
             var enumerationMethodImpl = resultClass.Methods.Add(new TypedName("_GetEnumerator", enumeratorType));
-            enumerationMethodImpl.LanguageSpecificQualifier = enumerableType.FullName;
+            enumerationMethodImpl.UserSpecificQualifier = enumerableType.FullName;
             enumerationMethodImpl.Name = enumeratorMethod.Name;
             enumerationMethodImpl.Implementations.Add(enumerableType);
             enumerationMethodImpl.Return(enumeratorMethod.GetReference().Invoke());

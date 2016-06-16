@@ -34,6 +34,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.FlowAnalysis
         {
             return FindRecursiveAvenues(FindNonRecursiveAvenues(startState));
         }
+
         public static List<List<Tuple<GrammarVocabulary, SyntacticalDFAState>>> FindRecursiveAvenues(List<List<Tuple<GrammarVocabulary, SyntacticalDFAState>>> nonRecursiveAvenues)
         {
             return FindRecursiveAvenuesInternal(nonRecursiveAvenues).Distinct(ListComparer.Singleton).ToList();
@@ -67,6 +68,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.FlowAnalysis
             IEqualityComparer<List<Tuple<GrammarVocabulary, SyntacticalDFAState>>>
         {
             private ListComparer() { }
+
             public static readonly ListComparer Singleton = new ListComparer();
 
             public bool Equals(List<Tuple<GrammarVocabulary, SyntacticalDFAState>> x, List<Tuple<GrammarVocabulary, SyntacticalDFAState>> y)

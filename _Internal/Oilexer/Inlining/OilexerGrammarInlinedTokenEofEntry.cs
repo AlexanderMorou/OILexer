@@ -8,11 +8,11 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
  * */
 namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
 {
-    internal class IOilexerGrammarnlinedTokenEofEntry :
+    internal class OilexerGrammarInlinedTokenEofEntry :
         InlinedTokenEntry,
         IOilexerGrammarTokenEofEntry
     {
-        public IOilexerGrammarnlinedTokenEofEntry(IOilexerGrammarTokenEofEntry source)
+        public OilexerGrammarInlinedTokenEofEntry(IOilexerGrammarTokenEofEntry source)
             : base(source, null)
         {
         }

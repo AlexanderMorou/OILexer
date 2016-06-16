@@ -68,17 +68,26 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         {
             var classParent = this.classParent;
             classParent.AccessLevel = AccessLevelModifiers.Public;
-            classParent.SummaryText = string.Format(@"Returns/sets the @s:{0}; which contains the current @s:{0};.", this.resultInterface.Name);
+            classParent.SummaryText = string.Format(@"Returns/sets the @s:{0}; which contains the current @s:{1};.", this.resultInterface.Name, this.resultClass.Name);
             classParent.RemarksText = @"May be null if there was no ancestor in the context stack at the time of parse.";
             var parentNullCheck = classParent.GetMethod.If(classParentField.EqualTo(IntermediateGateway.NullValue));
-            var parentContextLocal = parentNullCheck.Locals.Add(new TypedName("parentContext", this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), this.compiler.RuleSymbolBuilder.GetFirstViableParentContext.GetReference().Invoke(this.ContextImpl.GetReference()));
+            var parentContextLocal = 
+                parentNullCheck.Locals.Add(
+                    new TypedName(
+                        "parentContext",
+                        this.compiler.RuleSymbolBuilder.ILanguageRuleSymbol), 
+                    this.compiler.RuleSymbolBuilder.GetFirstViableParentContext
+                    .GetReference()
+                    .Invoke(
+                        this.compiler.RuleSymbolBuilder.Parent.GetReference(
+                            this.ContextImpl.GetReference())));
             parentContextLocal.AutoDeclare = false;
             parentNullCheck.DefineLocal(parentContextLocal);
             IConditionBlockStatement parentContextNullCheck = null;
-            if (this.compiler.Source.GetRules().Any(k=>k.IsRuleCollapsePoint))
-                parentContextNullCheck = parentNullCheck.If(parentContextLocal.InequalTo(IntermediateGateway.NullValue).LogicalAnd(parentContextLocal.InequalTo(this.classContextField.GetReference().RightComment("If we started parsing at a collapse point..."))));
-            else
-                parentContextNullCheck = parentNullCheck.If(parentContextLocal.InequalTo(IntermediateGateway.NullValue));
+            //if (this.compiler.Source.GetRules().Any(k=>k.IsRuleCollapsePoint))
+            //    parentContextNullCheck = parentNullCheck.If(parentContextLocal.InequalTo(IntermediateGateway.NullValue).LogicalAnd(parentContextLocal.InequalTo(this.classContextField.GetReference().RightComment("If we started parsing at a collapse point..."))));
+            //else
+            parentContextNullCheck = parentNullCheck.If(parentContextLocal.InequalTo(IntermediateGateway.NullValue));
             parentContextNullCheck
                 .Assign(this.classParentField.GetReference(), this.compiler.RuleSymbolBuilder.CreateRuleImpl.GetReference(parentContextLocal.GetReference()).Invoke());
             classParent.GetMethod.Return(this.classParentField.GetReference());

@@ -10,7 +10,7 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Utilities.Collections;
 /*---------------------------------------------------------------------\
-| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+| Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
 |----------------------------------------------------------------------|
 | The Abstraction Project's code is provided under a contract-release  |
 | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -179,7 +179,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 }
                 foreach (var token in transition.Breakdown.Tokens.Cast<InlinedTokenEntry>())
                 {
-                    if (token.DFAState.IsEdge &&
+                    if ((!(token is IOilexerGrammarTokenEofEntry)) && token.DFAState.IsEdge &&
                         CanBeEmptyInternal(target.OutTransitions[transition], list))
                         return true;
                 }

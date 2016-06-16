@@ -12,8 +12,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
     public class ProductionRuleNormalContext
     {
-        private ProductionRuleProjectionNode node;
+        private PredictionTreeLeaf node;
         private IIntermediateClassMethodMember parseMethod;
+        private IIntermediateClassMethodMember parseInternalMethod;
         private IControlledDictionary<SyntacticalDFAState, ProductionRuleNormalAdapter> adapterLookup;
         internal void ConnectAdapter(ProductionRuleNormalAdapter adapter, ParserCompiler associatedBuilder)
         {
@@ -49,13 +50,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 
         public ProductionRuleNormalAdapter Adapter { get; private set; }
 
-        public ProductionRuleProjectionNode Node { get { return this.node ?? (this.node = this.ConnectNode()); } }
+        public PredictionTreeLeaf Leaf { get { return this.node ?? (this.node = this.ConnectNode()); } }
 
         public IOilexerGrammarProductionRuleEntry Rule
         {
             get
             {
-                return this.Node.Rule;
+                return this.Leaf.Rule;
             }
         }
 
@@ -72,13 +73,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get
             {
                 if (this.AssociatedBuilder.FollowAmbiguousNodes != null && this.AssociatedBuilder.FollowAmbiguousNodes.Length > 0)
-                    return this.AssociatedBuilder.FollowAmbiguousNodes.Contains(this.Node);
+                    return this.AssociatedBuilder.FollowAmbiguousNodes.Contains(this.Leaf);
                 else
                     return false;
             }
         }
 
-        public ProductionRuleProjectionAdapter GetPredictiveProjection()
+        public PredictionTreeDFAdapter GetPredictiveProjection()
         {
             if (this.RequiresProjection)
                 return this.AssociatedBuilder.AdvanceMachines[this.AssociatedBuilder.AllProjectionNodes[this.Adapter.AssociatedState]];
@@ -100,7 +101,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             {
                 if (this.IsRuleNode)
                     return this.Adapter;
-                return this.AssociatedBuilder.RuleAdapters[this.Node.Rule];
+                return this.AssociatedBuilder.RuleAdapters[this.Leaf.Rule];
             }
         }
 
@@ -115,9 +116,21 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        private ProductionRuleProjectionNode ConnectNode()
+        private PredictionTreeLeaf ConnectNode()
         {
             return this.AssociatedBuilder.AllProjectionNodes[this.Adapter.AssociatedState];
+        }
+
+        public IIntermediateClassMethodMember ParseInternalMethod
+        {
+            get
+            {
+                return this.RootAdapter.AssociatedContext.parseInternalMethod;
+            }
+            set
+            {
+                this.RootAdapter.AssociatedContext.parseInternalMethod = value;
+            }
         }
     }
 }

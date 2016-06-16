@@ -8,20 +8,20 @@ using System.Threading.Tasks;
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
-    public class ProductionRuleProjectionAdapter :
-        DFAAdapter<GrammarVocabulary, SyntacticalNFAState, SyntacticalDFAState, IProductionRuleSource, ProductionRuleProjectionAdapter, ProductionRuleProjectionContext>
+    public class PredictionTreeDFAdapter :
+        DFAAdapter<GrammarVocabulary, SyntacticalNFAState, SyntacticalDFAState, IProductionRuleSource, PredictionTreeDFAdapter, PredictionTreeDFAContext>
     {
         public override void ConnectContext(object connectionContext)
         {
             this.AssociatedContext.Connect(this, connectionContext as ParserCompiler);
         }
 
-        public IEnumerable<ProductionRuleProjectionAdapter> All
+        public IEnumerable<PredictionTreeDFAdapter> All
         {
             get
             {
-                Stack<ProductionRuleProjectionAdapter> toObserve = new Stack<ProductionRuleProjectionAdapter>();
-                List<ProductionRuleProjectionAdapter> seen = new List<ProductionRuleProjectionAdapter>();
+                Stack<PredictionTreeDFAdapter> toObserve = new Stack<PredictionTreeDFAdapter>();
+                List<PredictionTreeDFAdapter> seen = new List<PredictionTreeDFAdapter>();
                 toObserve.Push(this);
                 while (toObserve.Count > 0)
                 {

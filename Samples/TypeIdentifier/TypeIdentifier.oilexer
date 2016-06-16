@@ -1,0 +1,389 @@
+#Root "QualifiedTypeName";
+#ParserName   "TypeIdentityParser";
+#AssemblyName "TypeIdParser";
+#GrammarName  "TypeIdentity";
+#TokenPrefix  "TI";
+#TokenSuffix  "Tok";
+#RulePrefix   "TI";
+#RuleSuffix   "Rule";
+#LexerName    "TypeIdentity";
+
+QualifiedIdentifierStartChar                                  :=
+    [^[\],+*&\\" ]** | QualifiedIdentifierEscapedSpecialChar   ;
+
+QualifiedIdentifier                                           :=
+    QualifiedIdentifierStartChar** 
+    QualifiedIdentifierChar***                                 ;
+
+QualifiedAssemblyIdentifier                                   :=
+    QualifiedAssemblyIdentifierStartChar
+    QualifiedAssemblyIdentifierChar*                           ;
+
+
+/* At lexical junctures where the final state of one token is reached, and no future states for that token exist, 
+   the 'valid' elements need checked to isolate cases where that identity is what is valid.  This will resolve most issues
+   with parsing TypeNames. */
+
+DummyRuleFixBug15::=>CommonSymbols;
+
+QualifiedTypeName ::=
+    TypeIdentity:Type; ',' AssemblyIdentity:Assembly;;
+
+NestedQualifiedTypeName ::=
+    TypeIdentity:Type; ',' NestedAssemblyIdentity:Assembly;;
+
+AssemblyIdentity ::=
+    AssemblyIdentityLead:LeadIn; ',' @"Version" '=' Version:Version; ',' @"Culture" '=' CultureIdentifier:CultureId; ',' @"PublicKeyToken" '=' 
+    (
+        HexQWord | 
+        @"null"
+    );
+
+AssemblyIdentityLead ::=>
+    QualifiedAssemblyIdentifier |
+    QuotedAssemblyIdentityLead;
+
+QuotedAssemblyIdentityLead ::=
+    CommonSymbols.QuoteChar QualifiedAssemblyIdentifier:Identifier; CommonSymbols.QuoteChar;
+
+NestedAssemblyIdentity ::=
+    (
+        NestedQualifiedAssemblyIdentifier | 
+        CommonSymbols.QuoteChar NestedQualifiedAssemblyIdentifier CommonSymbols.QuoteChar
+    ) ',' @"Version" '=' Version ',' @"Culture" '=' CultureIdentifier ',' @"PublicKeyToken" '=' 
+    (
+        HexQWord | 
+        @"null"
+    );
+
+AssemblyTerminals                                             :=
+    @"Version":Version;**                                      |
+    @"Culture":Culture;**                                      |
+    @"PublicKeyToken":KeyToken;**                              |
+    @"null":NullPublicKeyToken;**                              ;
+
+CultureIdentifier                                             :=
+       @"neutral":None;                                        |
+            @"af":Afrikaans;                                   |
+         @"af-ZA":Afrikaans_SouthAfrica;                       |
+            @"sq":Albanian;                                    |
+         @"sq-AL":Albanian_Albania;                            |
+            @"ar":Arabic;                                      |
+         @"ar-DZ":Arabic_Algeria;                              |
+         @"ar-BH":Arabic_Bahrain;                              |
+         @"ar-EG":Arabic_Egypt;                                |
+         @"ar-IQ":Arabic_Iraq;                                 |
+         @"ar-JO":Arabic_Jordan;                               |
+         @"ar-KW":Arabic_Kuwait;                               |
+         @"ar-LB":Arabic_Lebanon;                              |
+         @"ar-LY":Arabic_Libya;                                |
+         @"ar-MA":Arabic_Morocco;                              |
+         @"ar-OM":Arabic_Oman;                                 |
+         @"ar-QA":Arabic_Qatar;                                |
+         @"ar-SA":Arabic_SaudiArabia;                          |
+         @"ar-SY":Arabic_Syria;                                |
+         @"ar-TN":Arabic_Tunisia;                              |
+         @"ar-AE":Arabic_UnitedArabEmirates;                   |
+         @"ar-YE":Arabic_Yemen;                                |
+            @"hy":Armenian;                                    |
+         @"hy-AM":Armenian_Armenia;                            |
+            @"az":Azeri;                                       |
+    @"az-AZ-Cyrl":Azeri_Cyrillic_Azerbaijan;                   |
+    @"az-AZ-Latn":Azeri_Latin_Azerbaijan;                      |
+            @"eu":Basque;                                      |
+         @"eu-ES":Basque_Basque;                               |
+            @"be":Belarusian;                                  |
+         @"be-BY":Belarusian_Belarus;                          |
+            @"bg":Bulgarian;                                   |
+         @"bg-BG":Bulgarian_Bulgaria;                          |
+            @"ca":Catalan;                                     |
+         @"ca-ES":Catalan_Catalan;                             |
+         @"zh-HK":Chinese_HongKongSAR;                         |
+         @"zh-MO":Chinese_MacaoSAR;                            |
+         @"zh-CN":Chinese_China;                               |
+        @"zh-CHS":Chinese_Simplified;                          |
+         @"zh-SG":Chinese_Singapore;                           |
+         @"zh-TW":Chinese_Taiwan;                              |
+        @"zh-CHT":Chinese_Traditional;                         |
+            @"hr":Croatian;                                    |
+         @"hr-HR":Croatian_Croatia;                            |
+            @"cs":Czech;                                       |
+         @"cs-CZ":Czech_CzechRepublic;                         |
+            @"da":Danish;                                      |
+         @"da-DK":Danish_Denmark;                              |
+           @"div":Dhivehi;                                     |
+        @"div-MV":Dhivehi_Maldives;                            |
+            @"nl":Dutch;                                       |
+         @"nl-BE":Dutch_Belgium;                               |
+         @"nl-NL":Dutch_TheNetherlands;                        |
+            @"en":English;                                     |
+         @"en-AU":English_Australia;                           |
+         @"en-BZ":English_Belize;                              |
+         @"en-CA":English_Canada;                              |
+         @"en-CB":English_Caribbean;                           |
+         @"en-IE":English_Ireland;                             |
+         @"en-JM":English_Jamaica;                             |
+         @"en-NZ":English_NewZealand;                          |
+         @"en-PH":English_Philippines;                         |
+         @"en-ZA":English_SouthAfrica;                         |
+         @"en-TT":English_TrinidadAndTobago;                   |
+         @"en-GB":English_UnitedKingdom;                       |
+         @"en-US":English_UnitedStates;                        |
+         @"en-ZW":English_Zimbabwe;                            |
+            @"et":Estonian;                                    |
+         @"et-EE":Estonian_Estonia;                            |
+            @"fo":Faroese;                                     |
+         @"fo-FO":Faroese_FaroeIslands;                        |
+            @"fa":Farsi;                                       |
+         @"fa-IR":Farsi_Iran;                                  |
+            @"fi":Finnish;                                     |
+         @"fi-FI":Finnish_Finland;                             |
+            @"fr":French;                                      |
+         @"fr-BE":French_Belgium;                              |
+         @"fr-CA":French_Canada;                               |
+         @"fr-FR":French_France;                               |
+         @"fr-LU":French_Luxembourg;                           |
+         @"fr-MC":French_Monaco;                               |
+         @"fr-CH":French_Switzerland;                          |
+            @"gl":Galician;                                    |
+         @"gl-ES":Galician_Galician;                           |
+            @"ka":Georgian;                                    |
+         @"ka-GE":Georgian_Georgia;                            |
+            @"de":German;                                      |
+         @"de-AT":German_Austria;                              |
+         @"de-DE":German_Germany;                              |
+         @"de-LI":German_Liechtenstein;                        |
+         @"de-LU":German_Luxembourg;                           |
+         @"de-CH":German_Switzerland;                          |
+            @"el":Greek;                                       |
+         @"el-GR":Greek_Greece;                                |
+            @"gu":Gujarati;                                    |
+         @"gu-IN":Gujarati_India;                              |
+            @"he":Hebrew;                                      |
+         @"he-IL":Hebrew_Israel;                               |
+            @"hi":Hindi;                                       |
+         @"hi-IN":Hindi_India;                                 |
+            @"hu":Hungarian;                                   |
+         @"hu-HU":Hungarian_Hungary;                           |
+            @"is":Icelandic;                                   |
+         @"is-IS":Icelandic_Iceland;                           |
+            @"id":Indonesian;                                  |
+         @"id-ID":Indonesian_Indonesia;                        |
+            @"it":Italian;                                     |
+         @"it-IT":Italian_Italy;                               |
+         @"it-CH":Italian_Switzerland;                         |
+            @"ja":Japanese;                                    |
+         @"ja-JP":Japanese_Japan;                              |
+            @"kn":Kannada;                                     |
+         @"kn-IN":Kannada_India;                               |
+            @"kk":Kazakh;                                      |
+         @"kk-KZ":Kazakh_Kazakhstan;                           |
+           @"kok":Konkani;                                     |
+        @"kok-IN":Konkani_India;                               |
+            @"ko":Korean;                                      |
+         @"ko-KR":Korean_Korea;                                |
+            @"ky":Kyrgyz;                                      |
+         @"ky-KZ":Kyrgyz_Kyrgyzstan;                           |
+            @"lv":Latvian;                                     |
+         @"lv-LV":Latvian_Latvia;                              |
+            @"lt":Lithuanian;                                  |
+         @"lt-LT":Lithuanian_Lithuania;                        |
+            @"mk":Macedonian;                                  |
+         @"mk-MK":Macedonian_FormerYugoslavRepublicOfMacedonia;|
+            @"ms":Malay;                                       |
+         @"ms-BN":Malay_Brunei;                                |
+         @"ms-MY":Malay_Malaysia;                              |
+            @"mr":Marathi;                                     |
+         @"mr-IN":Marathi_India;                               |
+            @"mn":Mongolian;                                   |
+         @"mn-MN":Mongolian_Mongolia;                          |
+            @"no":Norwegian;                                   |
+         @"nb-NO":Norwegian_Bokmal_Norway;                     |
+         @"nn-NO":Norwegian_Nynorsk_Norway;                    |
+            @"pl":Polish;                                      |
+         @"pl-PL":Polish_Poland;                               |
+            @"pt":Portuguese;                                  |
+         @"pt-BR":Portuguese_Brazil;                           |
+         @"pt-PT":Portuguese_Portugal;                         |
+            @"pa":Punjabi;                                     |
+         @"pa-IN":Punjabi_India;                               |
+            @"ro":Romanian;                                    |
+         @"ro-RO":Romanian_Romania;                            |
+            @"ru":Russian;                                     |
+         @"ru-RU":Russian_Russia;                              |
+            @"sa":Sanskrit;                                    |
+         @"sa-IN":Sanskrit_India;                              |
+    @"sr-SP-Cyrl":Serbian_Cyrillic_Serbia;                     |
+    @"sr-SP-Latn":Serbian_Latin_Serbia;                        |
+            @"sk":Slovak;                                      |
+         @"sk-SK":Slovak_Slovakia;                             |
+            @"sl":Slovenian;                                   |
+         @"sl-SI":Slovenian_Slovenia;                          |
+            @"es":Spanish;                                     |
+         @"es-AR":Spanish_Argentina;                           |
+         @"es-BO":Spanish_Bolivia;                             |
+         @"es-CL":Spanish_Chile;                               |
+         @"es-CO":Spanish_Colombia;                            |
+         @"es-CR":Spanish_CostaRica;                           |
+         @"es-DO":Spanish_DominicanRepublic;                   |
+         @"es-EC":Spanish_Ecuador;                             |
+         @"es-SV":Spanish_ElSalvador;                          |
+         @"es-GT":Spanish_Guatemala;                           |
+         @"es-HN":Spanish_Honduras;                            |
+         @"es-MX":Spanish_Mexico;                              |
+         @"es-NI":Spanish_Nicaragua;                           |
+         @"es-PA":Spanish_Panama;                              |
+         @"es-PY":Spanish_Paraguay;                            |
+         @"es-PE":Spanish_Peru;                                |
+         @"es-PR":Spanish_PuertoRico;                          |
+         @"es-ES":Spanish_Spain;                               |
+      @"es-ES-Ts":Spanish_Spain_TraditionalSort;               |
+      @"es-ES-Is":Spanish_Spain_InternationalSort;             |
+         @"es-UY":Spanish_Uruguay;                             |
+         @"es-VE":Spanish_Venezuela;                           |
+            @"sw":Swahili;                                     |
+         @"sw-KE":Swahili_Kenya;                               |
+            @"sv":Swedish;                                     |
+         @"sv-FI":Swedish_Finland;                             |
+         @"sv-SE":Swedish_Sweden;                              |
+           @"syr":Syriac;                                      |
+        @"syr-SY":Syriac_Syria;                                |
+            @"ta":Tamil;                                       |
+         @"ta-IN":Tamil_India;                                 |
+            @"tt":Tatar;                                       |
+         @"tt-RU":Tatar_Russia;                                |
+            @"te":Telugu;                                      |
+         @"te-IN":Telugu_India;                                |
+            @"th":Thai;                                        |
+         @"th-TH":Thai_Thailand;                               |
+            @"tr":Turkish;                                     |
+         @"tr-TR":Turkish_Turkey;                              |
+            @"uk":Ukrainian;                                   |
+         @"uk-UA":Ukrainian_Ukraine;                           |
+            @"ur":Urdu;                                        |
+         @"ur-PK":Urdu_Pakistan;                               |
+            @"uz":Uzbek;                                       |
+    @"uz-UZ-Cyrl":Uzbek_Cyrillic_Uzbekistan;                   |
+    @"uz-UZ-Latn":Uzbek_Latin_Uzbekistan;                      |
+            @"vi":Vietnamese;                                  |
+         @"vi-VN":Vietnamese_Vietnam;                          ;
+
+CommonSymbols                                                 :=
+    '.':Period;**                                              | 
+    ',':Comma;                                                 | 
+    '[':LeftSquareBracket;                                     | 
+    ']':RightSquareBracket;                                    | 
+    '=':Equals;**                                              | 
+    '+':NestingQualifier;**                                    | 
+    '`':GenericParameterSignal;                                |
+    '*':PointerCallout;                                        |
+    '&':ByRefCallout;                                          |
+    '"':QuoteChar;                                             ;
+NestedQualifiedAssemblyIdentifier                             :=
+    NestedQualifiedAssemblyIdentifierStartChar
+    NestedQualifiedAssemblyIdentifierChar*                     ;
+
+
+QualifiedIdentifierChar                                       :=
+    [^[\],+*&\\"] | QualifiedIdentifierEscapedSpecialChar      ;
+
+QualifiedAssemblyIdentifierStartChar                          :=
+    [^=,\\" ] | QualifiedAssemblyIdentifierEscapedChar         ;
+
+QualifiedAssemblyIdentifierChar                               :=
+    [^=,\\"] | QualifiedAssemblyIdentifierEscapedChar          ;
+
+NestedQualifiedAssemblyIdentifierChar                         :=
+    [^=,\]\\"] | NestedQualifiedAssemblyIdentifierEscapedChar  ;
+
+NestedQualifiedAssemblyIdentifierStartChar                    :=
+    [^=,\]\\" ] | NestedQualifiedAssemblyIdentifierEscapedChar ;
+
+QualifiedIdentifierEscapedSpecialChar$ := 
+    '\\' (
+             '['     |
+             ']'     |
+             ','     |
+             '&'     |
+             '+'     |
+             '*'     |
+             '\\'    |
+             '"'
+         );
+
+QualifiedAssemblyIdentifierEscapedChar$ :=
+    '\\' ',' | '\\' '=' | '\\' '"';
+
+NestedQualifiedAssemblyIdentifierEscapedChar$ :=
+    '\\' ']' | '\\' ',' | '\\' '=' | '\\' '"';
+
+TypeIdentity ::=
+    (
+        TypeIdentityNamePart:Namespace; CommonSymbols.Period
+    )? NestingNames:FullNestedName;
+    TypeIdentityParameters:TypeParameters;?
+    ElementClassification:Classifications;*
+    CommonSymbols.ByRefCallout!:IsByRef;?;
+
+NestingNames ::=
+    QualifiedIdentifier:Names;
+    (
+        CommonSymbols.NestingQualifier QualifiedIdentifier:Names;
+    )*;
+
+TypeIdentityNamePart ::=
+    QualifiedIdentifier:Name; 
+    (
+        CommonSymbols.Period QualifiedIdentifier:Name;
+    )*;
+
+TypeIdentityParameters ::=
+    '[' 
+        TypeParameterIdentity:Parameter;
+        (
+            ',' TypeParameterIdentity:Parameter;
+        )*
+    ']';
+
+TypeRankSpecifier ::=
+    CommonSymbols.LeftSquareBracket CommonSymbols.Comma* CommonSymbols.RightSquareBracket;
+
+ElementClassification         ::=
+    TypeRankSpecifier           |
+    CommonSymbols.PointerCallout;
+
+FullyQualifiedTypeParameter ::=
+    CommonSymbols.LeftSquareBracket NestedQualifiedTypeName CommonSymbols.RightSquareBracket;
+
+TypeParameterIdentity        ::=>
+    FullyQualifiedTypeParameter |
+    TypeIdentity                ;
+
+DecimalDigit :=
+    [0-9];
+
+Number :=
+    DecimalDigit+;
+
+
+Version :=
+    (Number:Major; CommonSymbols.Period Number:Minor; (CommonSymbols.Period Number:Build; (CommonSymbols.Period Number:Revision;)?)?)**;
+
+HexByte :=
+    HexChar HexChar;
+    
+HexWord :=
+    HexByte HexByte;
+
+HexDWord :=
+    HexWord HexWord;
+
+HexQWord := 
+    HexDWord HexDWord;
+
+HexChar :=
+    [A-F0-9a-f];
+
+WhitespaceChar := ' ' | "\r\n" | '\t' | '\r' | '\n' | '\v';
+
+Whitespace :=* WhitespaceChar+;

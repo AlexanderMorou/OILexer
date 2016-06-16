@@ -1,0 +1,922 @@
+#LexerName "ComplexCalcTokenizer";
+#ParserName "ComplexCalcParser";
+#AssemblyName "ComplexCalc";
+#GrammarName "ComplexCalc";
+#TokenPrefix "ComplexCalc";
+#TokenSuffix "Token";
+#RulePrefix "ComplexCalc";
+#RuleSuffix "Rule";
+#Root "Expression";
+#Namespace "AllenCopeland.Abstraction.Slf.Languages.ComplexCalc";
+
+Expression                      ::=>
+    AssignmentExpression           |
+    NonAssignmentExpression        ;
+
+NonAssignmentExpression         ::=>
+    ConditionalExpression          |
+    LambdaExpression               ;
+
+ConditionalExpression            ::=>
+    ConditionalOrExpression         |
+    RecursiveConditionalExpression  ;
+
+RecursiveConditionalExpression   ::=
+    ConditionalOrExpression:Left;
+    '?' Expression:TrueExpression; 
+    ':' Expression:FalseExpression;;
+
+ConditionalOrExpression          ::=>
+    RecursiveConditionalOrExpression|
+    ConditionalAndExpression        ;
+
+RecursiveConditionalOrExpression ::=
+    ConditionalOrExpression:Left;
+    "||"
+    ConditionalAndExpression:Right;;
+
+ConditionalAndExpression            ::=>
+    RecursiveConditionalAndExpression  |
+    InclusiveOrExpression;
+
+RecursiveConditionalAndExpression   ::=
+    ConditionalAndExpression:Left;
+    "&&"
+    InclusiveOrExpression:Right;      ;
+
+InclusiveOrExpression               ::=>
+    ExclusiveOrExpression              |
+    RecursiveInclusiveOrExpression     ;
+
+RecursiveInclusiveOrExpression        ::=
+    InclusiveOrExpression:Left; 
+    '|' 
+    ExclusiveOrExpression:Right;        ;
+
+ExclusiveOrExpression               ::=>
+    RecursiveExclusiveOrExpression     |
+    AndExpression                      ;
+
+RecursiveExclusiveOrExpression      ::=
+    ExclusiveOrExpression:Left;
+    '^'
+    AndExpression:Right;              ;
+
+AndExpression                      ::=>
+    RecursiveAndExpression            |
+    EqualityExpression                ;
+
+RecursiveAndExpression              ::=
+    AndExpression:Left; '&'
+    EqualityExpression:Right;         ;
+
+EqualityExpression                 ::=>
+    RecursiveEqualityExpression      |
+    RelationalExpression;
+
+RecursiveEqualityExpression          ::=
+    EqualityExpression:Left; 
+    ("==" | "!="):Operator;
+    RelationalExpression:Right;        ;
+
+RelationalExpression                ::=>
+    RecursiveRelationalExpression      |
+    ShiftExpression                    ;
+
+RecursiveRelationalExpression       ::=>
+    RecursiveTypeRelationalExpression  |
+    RecursiveValueRelationalExpression ;
+
+RecursiveTypeRelationalExpression    ::=
+    RelationalExpression:Value; 
+    ("is" | "as"):Operator;
+    Type:Type;                         ;
+
+RecursiveValueRelationalExpression   ::=
+    RelationalExpression:Left;
+    ('>' | ">=" | '<' | "<="):Operator;
+    ShiftExpression:Right;             ;
+
+ShiftExpression                      ::=>
+    RecursiveShiftExpression            |
+    AdditiveExpression                  ;
+
+RecursiveShiftExpression              ::=
+    ShiftExpression:Left;
+    ("<<"|'>' '>'):Operator;
+    AdditiveExpression:Right;           ;
+
+AdditiveExpression                   ::=>
+    RecursiveAdditiveExpression         |
+    MultiplicitiveExpression            ;
+
+RecursiveAdditiveExpression           ::=
+    AdditiveExpression:Left;
+    ('+' | '-'):Operator;
+    MultiplicitiveExpression:Right;     ;
+
+MultiplicitiveExpression             ::=>
+    RecursiveMultiplicitiveExpression   |
+    UnaryExpression                     ;
+
+RecursiveMultiplicitiveExpression     ::=
+    MultiplicitiveExpression:Left;
+    ('*' | '/' | '%'):Operator;
+    UnaryExpression:Right;              ;
+
+AssignmentExpression           ::=
+    UnaryExpression:Left;
+    (
+        '=' |
+        "-=" |
+        "+=" |
+        "*=" |
+        "/=" |
+        "<<=" |
+        ">>=" |
+        "^="
+    ):Operator;
+    AssignmentExpression:Right;;
+
+UnaryExpression                          ::=>
+    UnaryOpExpression                       |
+    PrecrementExpression                    |
+    AwaitExpression                         ;
+
+UnaryOpRecursive                         ::=>
+    PrimaryExpression                       ;
+
+UnaryOpNonRecursive                       ::=
+    UnaryOperator:Operators;+
+    PrimaryExpression:Operand;              ;
+    
+UnaryOpExpression                        ::=>
+    UnaryOpNonRecursive                     |
+    UnaryOpRecursive                        ;
+
+AwaitExpression                           ::=
+    "await" UnaryExpression                 ;
+
+
+PrecrementExpression                      ::=
+    (
+        "++"      |
+        "--"
+    ):Operator;
+    UnaryExpression:Term;                   ;
+
+PostcrementExpression                     ::=
+    PrimaryExpression:Term;
+    (
+        "++"      |
+        "--"
+    ):Operator;                             ;
+
+
+UnaryOperator                             ::=
+    (
+        '+'                                 |
+        '-'                                 |
+        '!'                                 |
+        '~'
+    ):Operator;                             ;
+
+
+PrimaryExpression                        ::=>
+    ArrayCreationExpression                 |
+    PrimaryNoArrayCreationExpression        ;
+
+PrimaryNoArrayCreationExpression         ::=>
+    NoCreationExpressionWithScope           |
+    PrimaryCreationSansArrayExpression      ;
+
+NoCreationExpressionWithScope            ::=>
+    PrimaryNoCreationExpression             ;
+
+PrimaryCreationSansArrayExpression       ::=>
+    ObjectCreationExpression                |
+    DelegateCreationExpression              |
+    AnonymousObjectCreationExpression       |
+    AnonymousMethodExpression               ;
+
+    
+DelegateCreationExpression                ::=
+    "new"
+    ClassType:Type;
+    '('
+        Expression:MethodReference;
+    ')'                                     ;
+
+
+ObjectCreationExpression                  ::=
+  "new" NonArrayType:TargetType; 
+  ArgumentList<
+    '(',
+    ')'>? 
+  ObjectOrCollectionInitializer:Initializer;;
+
+
+ArgumentList<Left, Right>                 ::=
+    Left DelimitedList<Argument:Items;, ','>?
+    Right                                   ;
+
+DelimitedList<Term, Delimiter>            ::=
+    (Term (Delimiter Term)*)                ;
+
+
+ObjectOrCollectionInitializer            ::=>
+    CollectionInitializer                   |
+    ObjectInitializer                       ;
+
+CollectionInitializer                     ::=
+    '{'
+        ElementInitializer:Elements;
+        (
+            ','
+            ElementInitializer:Elements;
+        )*
+        ','?
+    '}';
+
+ElementInitializer                       ::=>
+    NonAssignmentExpression                 |
+    CurlyExpressionList                     ;
+
+    
+CurlyExpressionList                       ::=
+    EnclosedExpressionList<
+    '{', 
+    '}'>;
+
+EnclosedExpressionList<Left, Right>       ::=
+    (Left ExpressionList:Items; Right)      ;
+
+ExpressionList                            ::=
+    DelimitedList<Expression:Items;, ','>   ;
+
+ObjectInitializer                         ::=
+    '{'
+        (
+            DelimitedList<
+                MemberInitializer:Members;, 
+                ','>
+            ','?
+        )?
+    '}';
+    
+MemberInitializer                         ::=
+    Identifier:Target; '=' 
+    InitializerValue:Value;                 ;
+
+InitializerValue                         ::=>
+    Expression                              |
+    ObjectOrCollectionInitializer           ;
+
+ArrayCreationExpression                  ::=>
+    ArraySizeCreationExpression             |
+    ArrayInitializerCreationExpression      |
+    ArrayTypelessCreationExpression         ;
+
+ArraySizeCreationExpression               ::=
+    "new" NonArrayType:Type;
+    '['
+        DelimitedList<
+            Expression:SizeInitializers;,
+            ','>
+    ']'
+    RankSpecifier:Ranks;* 
+    ArrayInitializer:Initializer;           ;
+
+ArrayInitializerCreationExpression        ::=
+    "new" ArrayType:Type;
+    ArrayInitializer:Initializer;           ;
+ArrayTypelessCreationExpression           ::=
+    "new"
+    '['
+    ']' 
+    ArrayInitializer:Details;               ;
+
+RankSpecifier                             ::=
+    '['
+    ',':Rank;*
+    ']' ;
+
+ArrayType                                 ::=
+    NonArrayType:ElementType; 
+        RankSpecifier:DimensionInfo;+       ;
+
+NonArrayType                             ::=>
+    StructType                              |
+    ClassType                               ;
+
+ArrayInitializer                          ::=
+    '{'
+        (
+            DelimitedList<
+                VariableInitializer:Values;,
+                ','>
+            ','?
+        )?
+    '}';
+
+VariableInitializer                      ::=>
+    Expression                              |
+    ArrayInitializer                        ;
+
+/* *
+ * Update 5/9/2013 - Cleaned up type structure.
+ * */
+
+/* B.2.1: Basic Concepts */
+TypeName                                 ::=>
+    NamespaceOrTypeName                     ;
+/* ---------------------------------------- *\
+|* B.2.2 Types                              *|
+\* ---------------------------------------- */
+TypeArgumentList ::=
+    '<'
+        Type:Arguments; 
+        (
+            ','
+            Type:Arguments;
+        )* 
+    '>';
+
+Type                                     ::=>
+    ReferenceType                           ;
+
+StructType                               ::=>
+    IntegralDataTypes                       |
+    EnumBaseTypes                           |
+    NullableType                            ;
+
+NullableType                              ::=
+    Type:NonNullableType; 
+    '?'       ;
+
+ReferenceType                            ::=>
+    NonArrayType                            |
+    ArrayType                               ;
+
+ClassType                                ::=>
+    TypeName                                ;
+
+/* B.3. Grammar extensions for unsafe code */
+
+TypeParameter                            ::=>
+    Identifier                              ;
+/* --------------------------------------- *\
+|*              B.2.7: Classes             *|
+\* --------------------------------------- */
+
+ReturnType                               ::=>
+    VoidDataType                            |
+    Type                                    ;
+
+VoidDataType>Identifier                    := 
+    "void"                                  ;
+
+Argument                                  ::=
+    (
+        "ref"                               | 
+        "out"
+    ):Direction;? Expression:Value;         ;
+
+PrimaryNoCreationExpression              ::=>
+    Literal                                 |
+    ParenthesizedOrCastExpression           |
+    MemberAccess                            |
+    InvocationExpression                    |
+    ElementAccess                           |
+    ThisAccess                              |
+    BaseAccess                              |
+    PostcrementExpression                   |
+    OfExpression                            |
+    CheckedExpression                       |
+    UncheckedExpression                     |
+    DefaultValueExpression                  ;
+
+Literal                                  ::=>
+    Number                                  |
+    String                                  |
+    Char                                    |
+    BooleanLiteral                          ;
+
+ParenInnerExpression                     ::=>
+    IntegralDataTypes                       |
+    EnumBaseTypes                           |
+/*    NullableType                          |*/
+    Expression                              ;
+
+    
+ParenthesizedOrCastExpression             ::=
+    '('
+    ParenInnerExpression:Inner;
+    ')'   ;
+
+PrimaryMemberAccess                       ::=
+    PrimaryExpression:PreviousAccess; 
+    '.'
+    ComplexName:CurrentAccess;              ;
+
+ComplexName                               ::=
+    Identifier:Name;
+    TypeArgumentList:TypeParameters;?      ;
+
+PredefinedTypeMemberAccess                ::=
+    (
+        EnumBaseTypes                       | 
+        IntegralDataTypes
+    ):PreviousAccess;
+    '.'
+    ComplexName:CurrentAccess;              ;
+
+EnumBaseTypes>Identifier                   :=
+                  "byte":Byte;              |
+                   "int":Int32;             |
+                  "long":Int64;             |
+                  "uint":UInt32;            |
+                 "ulong":UInt64;            |
+                "ushort":UInt16;            |
+                 "sbyte":SByte;             |
+                 "short":Int16;             ;
+
+
+Identifier$                                := 
+    IdentifierOrKeyword                     |
+    '@' IdentifierOrKeyword                 ;
+
+
+UnicodeEscapeSequence                      :=
+    "\\u" HexChar{4}                        ;
+
+IdentifierStartCharacter                   :=
+    LetterCharacter                         |
+    '_'                                     |
+    UnicodeEscapeSequence                   ;
+
+IdentifierOrKeyword                        :=
+    IdentifierStartCharacter 
+    IdentifierPartCharacter*                ;
+
+IdentifierPartCharacterNoEscape            :=
+    LetterCharacter                         |
+    CombiningCharacter                      |
+    DecimalDigitCharacter                   |
+    ConnectingCharacter                     |
+    CombiningCharacter                      |
+    FormattingCharacter                     ;
+
+IdentifierPartCharacter                    :=
+    IdentifierPartCharacterNoEscape         |
+    UnicodeEscapeSequence                   ;
+
+LetterCharacter                            :=
+    [:Lu::Ll::Lt::Lm::Lo::Nl:];
+
+CombiningCharacter                         :=
+    [:Mn::Mc:];
+
+DecimalDigitCharacter                      :=
+    [:Nd:];
+
+ConnectingCharacter                        :=
+    [:Pc:];
+
+FormattingCharacter                        :=
+    [:Cf:];
+
+
+HexChar                                    :=
+    [0-9A-Fa-f]                             ;
+
+Number                                     :=
+    (@"0s":Septemvigesimal;):WholePartType;
+        SeptemvigesimalChar:WholePart;+
+    (
+        @'U':Unsigned; @'L':Long;?
+    ):ValueType;?$                          |
+    (
+      (@"0b":Binary;):WholePartType;
+        BinaryChar:WholePart;+              |
+      (@"0o":Octal;):WholePartType; 
+        OctalChar:WholePart;+               |
+      (@"0x":Hexadecimal;):WholePartType;
+        HexChar:WholePart;+                 |
+      (@"0z":Dozenal;):WholePartType;
+        DozenalChar:WholePart;+
+    )
+    (
+        @'U':Unsigned; @'L':Long;?          | 
+        @'L':Long; @'U':Unsigned;?
+    ):ValueType;?$                          |
+    DecimalNumber:WholePart;+
+    (
+        (
+            @'U':Unsigned; @'L':Long;?      | 
+            @'L':Long; @'U':Unsigned;?      | 
+            @'D':Double;                    | 
+            @'F':Single;                    | 
+            @'M':Decimal;
+        ):ValueType;$                       | 
+        ('.' DecimalNumber:FloatingPart;+)?
+        (
+            @'e' 
+            (
+                '+':Positive;               | 
+                '-':Negative;
+            ):Sign;Default=Positive;? 
+            DecimalNumber:Value;+
+        ):Exponent;?
+        (
+            @'D':Double;                    | 
+            @'F':Single;                    | 
+            @'M':Decimal;
+        ):ValueType;Default=Double;$?
+    )?                                      ;
+
+DecimalNumber                              :=
+    [0-9]                                   ;
+
+BinaryChar                                 :=
+    [01]                                    ;
+
+SeptemvigesimalChar                        :=
+    [0-9A-Qa-q]                             ;
+
+DozenalChar                                :=
+    [0-9XE];
+
+Integer                                    :=
+    (
+      @"0b" BinaryChar:WholePart;+          |
+      @"0x" HexChar:WholePart;+             |
+      @"0s" SeptemvigesimalChar:WholePart;+ |
+      @"0z" DozenalChar:WholePart;+
+    )                                       |
+    DecimalNumber:WholePart;+               ;
+
+OctalChar                                  :=
+    [0-7]                                   ;
+
+BooleanLiteral>Identifier                  :=
+    "true":TrueValue;                       |
+   "false":FalseValue;                      ;
+
+Char                                       :=
+    '@':IsCaseInsensitive;?
+    ('\'' CharBody:Value; '\'')$            ;
+
+CharBody                                   :=
+    CharEscape                              |
+    CommonEscapes                           |
+    [^'\\]                                  ;
+
+CharEscape                                 :=
+    '\\' "'"                                ;
+
+String                                     :=
+    EscapableString                         |
+    MultilineString                         ;
+
+EscapableString                            :=
+    ('"':SingleLine;):LineType; 
+    StringChar$*  '"'                       ;
+
+MultilineString                            :=
+    ('@':Multiline;):LineType;
+       ('"' ('"' '"' | [^"])* '"')$         ;
+
+StringChar                                 :=
+    CommonEscapes                           |
+    StringEscape                            |
+    [^"\\\r\n]                              ;
+
+StringEscape                               :=
+    '\\' '"'                                ;
+
+CommonEscapes                              :=
+    '\\' ('f' /* Form Feed */               |
+          'v' /* Vertical Tab */            |
+          't' /* Horizontal Tab */          |
+          'r' /* Carriage Return */         |
+          'n' /* New line */                |
+          'b' /* Backspace */               |
+          '0' /* Null Char */               |
+          '\\' /* Backslash Escape */       |
+          HexEscape /* Hexadecimal Escape */|
+          OctEscape /* Octal Escape */)     ;
+
+OctEscape                                  :=
+    OctalChar{3}                            ;
+
+HexEscape                                  := 
+    HexByteEscape                           |
+    HexShortEscape                          |
+    HexLongEscape                           ;
+
+HexByteEscape                              :=
+    'x' HexChar{2}                          ;
+
+HexShortEscape                             :=
+    'u' HexChar{4}                          ;
+
+HexLongEscape                             :=
+    'U' HexChar{8}                          ;
+NamespaceName                            ::=>
+    NamespaceOrTypeName                     ;
+
+NamespaceOrTypeName                       ::=
+    (
+        QualifiedAliasMember:AliasPart;     |
+        ComplexName:Names;
+    ) ('.' ComplexName:Names;)*              ;
+
+QualifiedIdentifier ::=
+    DelimitedList<Identifier:Names;, '.'>   ;
+
+QualifiedAliasMember                      ::=
+    Identifier:AliasName; "::" 
+    ComplexName:Name;                        ;
+   
+ThisAccess                                ::=
+    "this"                                  ;
+
+MemberAccess                             ::=>
+    PrimaryMemberAccess                     |
+    PredefinedTypeMemberAccess              |
+    QualifiedAliasMemberAccess              |
+    ComplexName                             ;
+
+ElementAccess                             ::=
+   PrimaryNoArrayCreationExpression:CallSite; 
+   EnclosedExpressionList<
+    '[', 
+    ']'>;
+
+BaseAccess                               ::=>
+    BaseMemberAccess                        |
+    BaseElementAccess                       ;
+
+BaseMemberAccess                          ::=
+    "base" 
+    '.'
+    Identifier:Target;                      ;
+
+BaseElementAccess                         ::=
+    "base"
+    EnclosedExpressionList<
+    '[',
+    ']'>;
+
+QualifiedAliasMemberAccess                ::=
+    QualifiedAliasMember:PreviousAccess;
+    '.'
+    Identifier:CurrentAccess;               ;
+
+AnonymousObjectCreationExpression         ::=
+    "new"
+    AnonymousObjectInitializer:Type;        ;
+    
+AnonymousObjectInitializer                ::=
+    '{'
+        (
+            DelimitedList<MemberDeclarator:Members;, ','>
+            ','?
+        )?
+    '}';
+
+
+MemberDeclarator                         ::=>
+    MemberAccess                            |
+    MemberAssignmentDeclarator              ;
+
+MemberAssignmentDeclarator                ::=
+    Identifier:Name; '=' Expression:Value;  ;
+AnonymousMethodExpression                 ::=
+    "delegate" 
+    ExplicitAnonymousFunctionSignature:Signature;?
+    '{' Expression:Body; '}';
+
+ExplicitAnonymousFunctionSignature        ::=
+    '(' 
+    DelimitedList<
+        ExplicitAnonymousFunctionParameter:Parameters;,
+        ','>
+    ')';
+
+ExplicitAnonymousFunctionParameter        ::=
+    ("ref" | "out"):Modifier;? Type:Type;
+    Identifier:Name;                        ;
+
+IntegralDataTypes>Identifier               :=
+                  "bool":Boolean;           |
+                  "char":Char;              |
+               "decimal":Decimal;           |
+                "double":Double;            |
+                 "float":Float;             |
+                "object":Object;            |
+                "string":String;            ;
+
+OfExpression                              ::=
+    (
+        "nameof"                            |
+        "typeof"                            |
+        "memberof"                          |
+        "imemberof"
+    ):ExpressionType;
+    '('
+        OfTargetExpression:Target;
+    ')';
+
+OfTargetExpression                       ::=>
+    Type                                    |
+    VoidDataType                            |
+    UnboundTypeName                         ;
+
+UnboundTypeNameAlias                      ::=
+    (
+        Identifier:Alias;
+        "::"
+    )                                       ;
+
+UnboundTypeName                           ::=
+    UnboundTypeNameAlias?
+    (
+        (
+            UnboundGenericPart              |
+            Identifier
+        )
+        '.'
+    )*
+    UnboundGenericPart
+    (
+        '.'
+        (
+            UnboundGenericPart              |
+            Identifier
+        )
+    )*;
+
+UnboundGenericPartOrIdentifier           ::=>
+    UnboundGenericPart                      |
+    Identifier                              ;
+
+UnboundGenericPart                        ::=
+    Identifier:Names; 
+    GenericDimensionSpecifier:Dimensions;   ;
+
+GenericDimensionSpecifier                 ::=
+    '<'
+        ',':Commas;*
+    '>';
+InvocationExpression                      ::=
+    PrimaryExpression:CallSite;
+    ArgumentList<
+        '(',
+        ')'
+        >  ;
+
+LambdaExpression                          ::= 
+    AnonymousFunctionSignature:Signature;
+    "=>"
+    AnonymousFunctionBody:Body;             ;
+    
+AnonymousFunctionSignature               ::=>
+    ExplicitAnonymousFunctionSignature      |
+    ImplicitAnonymousFunctionSignature      ;
+
+ImplicitAnonymousFunctionSignature       ::=>
+    /*Identifier                              |*/
+    ImplicitAnonymousFunctionParameterList  ;
+ImplicitAnonymousFunctionParameterList    ::=
+    '(' DelimitedList<Identifier:Names;, ','>?  ')';
+
+
+CheckedExpression                         ::=
+    "checked" 
+    '('
+    Expression:Target;
+    ')'   ;
+UncheckedExpression                       ::=
+    "unchecked"
+    '('
+    Expression:Target;
+    ')'   ;
+
+DefaultValueExpression                    ::=
+    "default"
+    '('
+    Type:Target;
+    ')'   ;
+
+AnonymousFunctionBody                    ::=>
+    Expression                              ;
+
+Keywords>Identifier                        :=
+             "__arglist":__ArgList;         |
+             "__makeref":__MakeRef;         |
+             "__reftype":__RefType;         |
+            "__refvalue":__RefValue;        |
+                 "await":AwaitReturn;       |
+                  "base":Base;              |
+                 "break":Break;             |
+                  "case":Case;              |
+                 "catch":Catch;             |
+               "checked":Checked;           |
+                 "class":Class;             |
+              "continue":Continue;          |
+               "default":_Default;          |
+              "delegate":Delegate;          |
+                    "do":Do;                |
+                  "else":Else;              |
+                  "enum":Enum;              |
+                 "event":Event;             |
+               "finally":Finally;           |
+                 "fixed":Fixed;             |
+                   "for":For;               |
+               "foreach":ForEach;           |
+                  "goto":GoTo;              |
+                    "if":If;                |
+                    "in":In;                |
+             "interface":Interface;         |
+                  "lock":Lock;              |
+             "namespace":Namespace;         |
+                   "new":New;               |
+                    "on":On;                |
+              "operator":Operator;          |
+                   "out":Out;               |
+                "params":Params;            |
+                   "ref":Ref;               |
+                "return":Return;            |
+                "sizeof":SizeOf;            |
+            "stackalloc":StackAlloc;        |
+                "struct":Struct;            |
+                "switch":Switch;            |
+              "template":Template;          |
+                  "this":This;              |
+                 "throw":Throw;             |
+                   "try":Try;               |
+                "typeof":TypeOf;            |
+             "unchecked":UnChecked;         |
+                 "using":Using;             |
+                 "while":While;             |
+                "nameof":NameOf;            |
+              "memberof":MemberOf;          |
+             "imemberof":IMemberOf;         ;
+
+OperatorOrPunctuator>Identifier            :=
+          '{':OpenBlock;                    |
+          '}':CloseBlock;                   |
+          '[':LeftSquareBracket;            |
+          ']':RightSquareBracket;           |
+          '(':LeftParenthesis;              |
+          ')':RightParenthesis;             |
+          '.':MemberSeparator;              |
+          ',':Comma;                        |
+          ':':Colon;                        |
+          ';':LineTerminal;                 |
+          '+':Plus;                         |
+          '-':Minus;                        |
+          '*':Asterisk;                     |
+          '/':Divide;                       |
+          '%':Modulus;                      |
+          '&':BitwiseAnd;                   |
+          '|':BitwiseOr;                    |
+          '^':BitwiseExclusiveOr;           |
+          '!':BooleanInversion;             |
+          '~':BitwiseComplement;            |
+          '=':Assignment;                   |
+          '<':LessThan;                     |
+          '>':GreaterThan;                  |
+          '?':QuestionMark;                 |
+         "as":AsType;                       |
+         "is":IsType;                       |
+         "??":NullableCheck;                |
+         "::":NamespaceAliasQualifier;      |
+         "++":Increment;                    |
+         "--":Decrement;                    |
+         "&&":BooleanAnd;                   |
+         "||":BooleanOr;                    |
+         "->":Dereference;                  |
+         "==":EqualTo;                      |
+         "!=":NotEqualTo;                   |
+         "<=":LessThanOrEqualTo;            |
+         ">=":GreaterThanOrEqualTo;         |
+         "+=":AddAssignment;                |
+         "-=":SubtractAssignment;           |
+         "*=":MultiplyAssignment;           |
+         "/=":DivideAssignment;             |
+         "%=":ModulusAssignment;            |
+         "&=":BitwiseAndAssignment;         |
+         "|=":BitwiseOrAssignment;          |
+         "^=":BitwiseExclusiveOrAssignment; |
+         "<<":LeftShift;                    |
+        "<<=":LeftShiftAssignment;          |
+         "=>":LambdaSpecifier;              |
+        ">>=":RightShiftAssignment;         | 
+          '@':IsCaseInsensitive;            ;
+
+Whitespace :=*
+    [ \t]+;
+

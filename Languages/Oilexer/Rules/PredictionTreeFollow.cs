@@ -17,31 +17,26 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     /// steps, which would include the call chain needed to cause the
     /// ambiguity.
     /// </summary>
-    public class ProductionRuleProjectionFollow :
+    public class PredictionTreeFollow :
         IProductionRuleSource
     {
-        private ProductionRuleProjectionDPath[] initialVariations;
+        private PredictionTreeBranch[] initialVariations;
         /// <summary>
-        /// The <see cref="ProductionRuleProjectionDPathSet"/> which denotes
+        /// The <see cref="PredictionTree"/> which denotes
         /// the series of paths which are in an initial deadlock for 
         /// disambiguation.
         /// </summary>
-        private ProductionRuleProjectionDPathSet initialPaths;
+        private PredictionTree initialPaths;
         /// <summary>
-        /// The <see cref="ProductionRuleProjectionNode"/> which delineates
-        /// the ambiguity.
+        /// The <see cref="PredictionTreeLeaf"/> which delineates the ambiguity.
         /// </summary>
-        private ProductionRuleProjectionNode edgeNode;
+        private PredictionTreeLeaf edgeNode;
         private SyntacticalNFAState nfaState;
         private SyntacticalDFAState dfaState;
         /// <summary>
-        /// Returns the <see cref="Int32"/> value denoting the
-        /// number of original paths which tied for the given 
-        /// transition.
+        /// Returns the <see cref="Int32"/> value denoting the number of original paths which tied for the given transition.
         /// </summary>
-        /// <remarks>
-        /// This context is largely used to simplify building the resultant
-        /// predictor.</remarks>
+        /// <remarks>This context is largely used to simplify building the resultant predictor.</remarks>
         public int TyingPaths
         {
             get
@@ -51,10 +46,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         }
 
         /// <summary>
-        /// Returns the <see cref="ProductionRuleProjectionNode"/> which
+        /// Returns the <see cref="PredictionTreeLeaf"/> which
         /// delineates the ambiguity.
         /// </summary>
-        public ProductionRuleProjectionNode EdgeNode
+        public PredictionTreeLeaf EdgeNode
         {
             get
             {
@@ -62,7 +57,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public ProductionRuleProjectionDPathSet InitialPaths
+        public PredictionTree InitialPaths
         {
             get
             {
@@ -70,20 +65,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        /// <summary>
-        /// Creates a new <see cref="ProductionRuleProjectionFollow"/> instance
-        /// with the <paramref name="initialPaths"/>, and <paramref name="edgeNode"/>
-        /// provided.
-        /// </summary>
-        /// <param name="initialPaths">
-        /// The <see cref="ProductionRuleProjectionDPathSet"/> built from the
-        /// analysis of the incoming paths to a rule which are in an initial
-        /// deadlock for disambiguation upon the rule entering the 
-        /// <paramref name="edgeNode"/>.
-        /// </param>
-        /// <param name="edgeNode">The <see cref="ProductionRuleProjectionNode"/> which
-        /// delineates the ambiguity.</param>
-        internal ProductionRuleProjectionFollow(ProductionRuleProjectionDPathSet initialPaths, ProductionRuleProjectionNode edgeNode)
+        /// <summary>Creates a new <see cref="PredictionTreeFollow"/> instance with the <paramref name="initialPaths"/>, and <paramref name="edgeNode"/> provided.</summary>
+        /// <param name="initialPaths">The <see cref="PredictionTree"/> built from the analysis of the incoming paths to a rule which are in an initial deadlock for disambiguation upon the rule entering the <paramref name="edgeNode"/>.</param>
+        /// <param name="edgeNode">The <see cref="PredictionTreeLeaf"/> which delineates the ambiguity.</param>
+        internal PredictionTreeFollow(PredictionTree initialPaths, PredictionTreeLeaf edgeNode)
         {
             this.initialPaths = initialPaths;
             this.edgeNode = edgeNode;
@@ -99,13 +84,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         }
 
 
-        internal void BuildNFA(Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> allProjectionNodes, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> ruleDFAStates, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleGrammarLookup, GrammarSymbolSet grammarSymbolSet, ICompilerErrorCollection compilerErrorCollection)
+        internal void BuildNFA(ParserCompiler compiler)//Dictionary<SyntacticalDFAState, PredictionTreeLeaf> allLeaves, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> ruleDFAStates, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleGrammarLookup, GrammarSymbolSet grammarSymbolSet, ICompilerErrorCollection compilerErrorCollection)
         {
-            this.nfaState = new SyntacticalNFAState(ruleDFAStates, grammarSymbolSet);
+            this.nfaState = new SyntacticalNFAState(compiler.RuleDFAStates, compiler._GrammarSymbols);
             this.nfaState.SetInitial(this);
-            var targetState = this.InitialPaths.GetNFAState(ruleDFAStates, (GrammarSymbolSet)grammarSymbolSet);
+            var targetState = this.InitialPaths.GetNFAState(compiler);
 
-            this.InitialPaths.BuildNFA(allProjectionNodes, ruleGrammarLookup, compilerErrorCollection, ruleDFAStates, (GrammarSymbolSet)grammarSymbolSet);
+            this.InitialPaths.BuildNFA(compiler);//allLeaves, ruleGrammarLookup, compilerErrorCollection, ruleDFAStates, (GrammarSymbolSet)grammarSymbolSet);
             nfaState.MoveTo(this.InitialPaths.Discriminator, targetState);
         }
 
@@ -142,9 +127,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         {
             if (this.dfaState != null)
             {
-                var adaptLookup = new Dictionary<SyntacticalDFAState, ProductionRuleProjectionAdapter>();
-                this.Adapter = ProductionRuleProjectionAdapter.Adapt(this.dfaState, ref adaptLookup, compiler);
-                this.Adapter.AssociatedContext.StateAdapterLookup =  new ControlledDictionary<SyntacticalDFAState,ProductionRuleProjectionAdapter>(adaptLookup);
+                var adaptLookup = new Dictionary<SyntacticalDFAState, PredictionTreeDFAdapter>();
+                this.Adapter = PredictionTreeDFAdapter.Adapt(this.dfaState, ref adaptLookup, compiler);
+                this.Adapter.AssociatedContext.StateAdapterLookup =  new ControlledDictionary<SyntacticalDFAState,PredictionTreeDFAdapter>(adaptLookup);
                 foreach (var adapter in adaptLookup.Values)
                     adapter.AssociatedContext.PostConnect(this.EdgeNode, this.Adapter);
             }
@@ -157,9 +142,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get { return this.edgeNode.Rule; }
         }
 
-        public ProductionRuleProjectionAdapter Adapter { get; private set; }
+        public PredictionTreeDFAdapter Adapter { get; private set; }
 
-        internal void ReplaceState(SyntacticalDFAState replacement, ProductionRuleProjectionAdapter adapter)
+        internal void ReplaceState(SyntacticalDFAState replacement, PredictionTreeDFAdapter adapter)
         {
             this.dfaState = replacement;
             this.Adapter = adapter;

@@ -2,6 +2,7 @@
 using AllenCopeland.Abstraction.Slf.Abstract.Members;
 using AllenCopeland.Abstraction.Slf.Ast;
 using AllenCopeland.Abstraction.Slf.Ast.Cli;
+using AllenCopeland.Abstraction.Slf.Cli;
 using AllenCopeland.Abstraction.Slf.Ast.Expressions;
 using AllenCopeland.Abstraction.Slf.Ast.Members;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp;
@@ -77,6 +78,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this._bodyContextImpl = this.BuildBodyContextImpl();
             this.__indexImpl = this.Build_IndexImpl();
             this._captureContextImpl = this.BuildCaptureContextImpl();
+            this.ClearErrorContextImpl = this.BuildClearErrorContextImpl();
             this.__parentImpl = this.Build_ParentImpl();
             this._parentImpl = this.BuildParentImpl();
             this._getNextOfTImpl = this.BuildNextOfTImpl();
@@ -89,6 +91,15 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this._firstChildImpl = this.BuildFirstChildImpl();
             this._childrenImpl = this.BuildChildrenImpl();
             this._resultClass.ImplementedInterfaces.ImplementInterfaceQuick(this._resultInterface);
+        }
+
+        private IIntermediateClassMethodMember BuildClearErrorContextImpl()
+        {
+            var result = this._resultClass.Methods.Add(new TypedName("ClearErrorContext", RuntimeCoreType.VoidType, this._identityManager));
+            var ckCheck = result.If(this._captureContextImpl.GetReference().GetMethod("ContainsKey").Invoke(ParserCompiler.ErrorCaptureName.ToPrimitive()));
+            ckCheck.Call(this._captureContextImpl.GetReference().GetMethod("Remove").Invoke(ParserCompiler.ErrorCaptureName.ToPrimitive()));
+            result.AccessLevel = AccessLevelModifiers.Internal;
+            return result;
         }
 
         private void BuildRuleField()
@@ -117,6 +128,17 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             _indexImpl.AccessLevel = AccessLevelModifiers.Private;
             return _indexImpl;
         }
+
+
+        private IIntermediateInterfaceMethodMember BuildDoBlankReduction()
+        {
+            var doBlankReduction = this._resultInterface.Methods.Add(
+                new TypedName("DoBlankReduction", RuntimeCoreType.VoidType, this._identityManager),
+                new TypedNameSeries(new TypedName("symbolStart", RuntimeCoreType.Int32, this._identityManager)));
+            doBlankReduction.SummaryText = "Handles a reduction which is zero symbols in width.";
+            return doBlankReduction;
+        }
+
         private IIntermediateInterfaceMethodMember BuildDoReduction()
         {
             var doReductionImpl = this._resultInterface.Methods.Add(
@@ -125,8 +147,25 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     new TypedName("symbolStream", this._compiler.SymbolStreamBuilder.ResultInterface),
                     new TypedName("symbolStart", RuntimeCoreType.Int32, this._identityManager),
                     new TypedName("symbolCount", RuntimeCoreType.Int32, this._identityManager)));
+
             return doReductionImpl;
         }
+
+        private IIntermediateClassMethodMember BuildDoBlankReductionImpl()
+        {
+            var doBlankReduction = this._resultClass.Methods.Add(
+                new TypedName("DoBlankReduction", RuntimeCoreType.VoidType, this._identityManager),
+                new TypedNameSeries(new TypedName("symbolStart", RuntimeCoreType.Int32, this._identityManager)));
+            doBlankReduction.SummaryText = "Handles a reduction which is zero symbols in width.";
+            doBlankReduction.AccessLevel = AccessLevelModifiers.Public;
+            this._IsBlankImpl = this._resultClass.Fields.Add(new TypedName("_isBlank", RuntimeCoreType.Boolean, this._identityManager));
+            var symbolStart = doBlankReduction.Parameters["symbolStart"];
+            doBlankReduction.Assign(this.__startTokenIndexImpl, this.__endTokenIndexImpl.GetReference().LeftNewLine().Assign(symbolStart.GetReference()));
+            doBlankReduction.Assign(this._bodyContextImpl, this._compiler.CommonSymbolBuilder.ILanguageSymbol.MakeArrayExpression(0));
+            doBlankReduction.Assign(_IsBlankImpl, IntermediateGateway.TrueValue);
+            return doBlankReduction;
+        }
+
 
         private IIntermediateClassMethodMember BuildDoReductionImpl()
         {
@@ -137,50 +176,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     new TypedName("symbolStart", RuntimeCoreType.Int32, this._identityManager),
                     new TypedName("symbolCount", RuntimeCoreType.Int32, this._identityManager)));
 
-            var symbolStreamParam = doReductionImpl.Parameters["symbolStream"];
-            var symbolStart = doReductionImpl.Parameters["symbolStart"];
-            var symbolCount = doReductionImpl.Parameters["symbolCount"];
-            doReductionImpl.Assign(this._bodyContextImpl.GetReference(), this._compiler.SymbolStreamBuilder
-                .ReduceMethod.GetReference(
-                    symbolStreamParam.GetReference())
-                    .Invoke(symbolStart.GetReference(), symbolCount.GetReference(), new SpecialReferenceExpression(SpecialReferenceKind.This)));
-            doReductionImpl.If(symbolCount.GetReference().LessThanOrEqualTo(IntermediateGateway.NumberZero))
-                .Return();
-
-            var first = doReductionImpl.Locals.Add(new TypedName("first", this._compiler.CommonSymbolBuilder.ILanguageSymbol), _bodyContextImpl.GetReference().GetIndexer(IntermediateGateway.NumberZero));
-            var last = doReductionImpl.Locals.Add(new TypedName("last", this._compiler.CommonSymbolBuilder.ILanguageSymbol), _bodyContextImpl.GetReference().GetIndexer(symbolCount.Subtract(1)));
-            first.AutoDeclare = false;
-            last.AutoDeclare = false;
-            doReductionImpl.DefineLocal(first);
-            doReductionImpl.DefineLocal(last);
-            var firstCheck = doReductionImpl.If(first.GetReference().Is(this._compiler.TokenSymbolBuilder.ILanguageToken));
-            firstCheck.Assign(this.__startTokenIndexImpl.GetReference(), this._compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(first.GetReference().Cast(this._compiler.TokenSymbolBuilder.ILanguageToken)));
-            firstCheck.CreateNext(first.GetReference().Is(this._resultInterface));
-            firstCheck.Next.Assign(this.__startTokenIndexImpl.GetReference(), this._compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(first.GetReference().Cast(this.ILanguageRuleSymbol)));
-
-
-            var lastCheck = doReductionImpl.If(last.GetReference().Is(this._compiler.TokenSymbolBuilder.ILanguageToken));
-            lastCheck.Assign(this.__endTokenIndexImpl.GetReference(), this._compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(last.GetReference().Cast(this._compiler.TokenSymbolBuilder.ILanguageToken)));
-            lastCheck.CreateNext(last.GetReference().Is(this._resultInterface));
-            lastCheck.Next.Assign(this.__endTokenIndexImpl.GetReference(), this.EndTokenIndex.GetReference(last.GetReference().Cast(this.ILanguageRuleSymbol)));
-
-            doReductionImpl.Comment("Set each of their indices, so get first/last handling can be done.");
-            var symbolIndex = doReductionImpl.Locals.Add(new TypedName("symbolIndex", RuntimeCoreType.Int32, this._identityManager), IntermediateGateway.NumberZero);
-            symbolIndex.AutoDeclare = false;
-            var forLoop = doReductionImpl.Iterate(symbolIndex.GetDeclarationStatement(), symbolIndex.LessThan(symbolCount), symbolIndex.Increment().AsEnumerable());
-            var currentSymbol = forLoop.Locals.Add(new TypedName("currentSymbol", this._compiler.CommonSymbolBuilder.ILanguageSymbol), _bodyContextImpl.GetReference().GetIndexer(symbolIndex.GetReference()));
-            currentSymbol.AutoDeclare = false;
-            forLoop.DefineLocal(currentSymbol);
-            var forRuleCheck = forLoop.If(currentSymbol.GetReference().Is(this.LanguageRuleSymbol));
-            var ruleSymbol = forRuleCheck.Locals.Add(new TypedName("ruleSymbol", LanguageRuleSymbol), currentSymbol.GetReference().As(LanguageRuleSymbol));
-
-            ruleSymbol.AutoDeclare = false;
-            forRuleCheck.DefineLocal(ruleSymbol);
-            forRuleCheck.Assign(this.__indexImpl.GetReference(ruleSymbol.GetReference()), symbolIndex.GetReference());
-            forRuleCheck.Assign(this.ParentImpl.GetReference(ruleSymbol.GetReference()), new SpecialReferenceExpression(SpecialReferenceKind.This));
-            forRuleCheck.If(this.HasErrorImpl.GetReference().Not().LogicalAnd(this.HasError.GetReference(ruleSymbol.GetReference())))
-                .Assign(this.HasErrorImpl.GetReference(),IntermediateGateway.TrueValue);
-            doReductionImpl.AccessLevel = AccessLevelModifiers.Public;
             return doReductionImpl;
         }
 
@@ -303,6 +298,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             parentImpl.GetMethod.Return(this.__parentImpl.GetReference());
             parentImpl.SetMethod.Assign(this.__parentImpl.GetReference(), parentImpl.SetMethod.ValueParameter.GetReference());
             parentImpl.SetMethod.AccessLevel = AccessLevelModifiers.Internal;
+            parentImpl.SummaryText = string.Format(@"Returns the @s:{0}; which contains the current @s:{1}; as a sub-context.", this._resultInterface.Name, this._resultClass.Name);
+            parentImpl.RemarksText = @"May be null if the current context was the first entered into the context stack.";
             return parentImpl;
         }
 
@@ -357,6 +354,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this.BuildCreateRuleImpl();
             this.DoReductionImpl = this.BuildDoReductionImpl();
             this.DoReduction = this.BuildDoReduction();
+            this.DoBlankReductionImpl = this.BuildDoBlankReductionImpl();
+            this.DoBlankReduction = this.BuildDoBlankReduction();
             this.CreateTokenCountImpl();
             this.Create_TokenStreamImpl();
             this.CreateLengthImpl();
@@ -373,7 +372,73 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this.BuildStartPositionImpl();
             this.BuildEndPosition();
             this.BuildEndPositionImpl();
+            this.FinishDoReductionImpl();
         }
+
+        private void FinishDoReductionImpl()
+        {
+            var doReductionImpl = this.DoReductionImpl;
+            var symbolStreamParam = doReductionImpl.Parameters["symbolStream"];
+            var symbolStart = doReductionImpl.Parameters["symbolStart"];
+            var symbolCount = doReductionImpl.Parameters["symbolCount"];
+
+            doReductionImpl.Assign(this._bodyContextImpl.GetReference(), this._compiler.SymbolStreamBuilder
+                .ReduceMethod.GetReference(
+                    symbolStreamParam.GetReference())
+                    .Invoke(symbolStart.GetReference(), symbolCount.GetReference(), new SpecialReferenceExpression(SpecialReferenceKind.This)));
+            doReductionImpl.If(symbolCount.GetReference().LessThanOrEqualTo(IntermediateGateway.NumberZero))
+                .Return();
+
+            var first = doReductionImpl.Locals.Add(new TypedName("first", this._compiler.CommonSymbolBuilder.ILanguageSymbol), _bodyContextImpl.GetReference().GetIndexer(IntermediateGateway.NumberZero));
+            var last = doReductionImpl.Locals.Add(new TypedName("last", this._compiler.CommonSymbolBuilder.ILanguageSymbol), _bodyContextImpl.GetReference().GetIndexer(symbolCount.Subtract(1)));
+            first.AutoDeclare = false;
+            last.AutoDeclare = false;
+            doReductionImpl.DefineLocal(first);
+            doReductionImpl.DefineLocal(last);
+            var firstCheck = doReductionImpl.If(first.GetReference().Is(this._compiler.TokenSymbolBuilder.ILanguageToken));
+            firstCheck.Assign(this.__startTokenIndexImpl.GetReference(), this._compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(first.GetReference().Cast(this._compiler.TokenSymbolBuilder.ILanguageToken)));
+            firstCheck.CreateNext(first.GetReference().Is(this._resultInterface));
+            firstCheck.Next.Assign(this.__startTokenIndexImpl.GetReference(), this._compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(first.GetReference().Cast(this.ILanguageRuleSymbol)));
+
+
+            var lastCheck = doReductionImpl.If(last.GetReference().Is(this._compiler.TokenSymbolBuilder.ILanguageToken));
+            lastCheck.Assign(this.__endTokenIndexImpl.GetReference(), this._compiler.CommonSymbolBuilder.StartTokenIndex.GetReference(last.GetReference().Cast(this._compiler.TokenSymbolBuilder.ILanguageToken)));
+            lastCheck.CreateNext(last.GetReference().Is(this._resultInterface));
+            lastCheck.Next.Assign(this.__endTokenIndexImpl.GetReference(), this.EndTokenIndex.GetReference(last.GetReference().Cast(this.ILanguageRuleSymbol)));
+
+            doReductionImpl.Comment("Set each of their indices, so get first/last handling can be done.");
+            var symbolIndex = doReductionImpl.Locals.Add(new TypedName("symbolIndex", RuntimeCoreType.Int32, this._identityManager), IntermediateGateway.NumberZero);
+            symbolIndex.AutoDeclare = false;
+            var forLoop = doReductionImpl.Iterate(symbolIndex.GetDeclarationStatement(), symbolIndex.LessThan(symbolCount), symbolIndex.Increment().AsEnumerable());
+            var currentSymbol = forLoop.Locals.Add(new TypedName("currentSymbol", this._compiler.CommonSymbolBuilder.ILanguageSymbol), _bodyContextImpl.GetReference().GetIndexer(symbolIndex.GetReference()));
+            currentSymbol.AutoDeclare = false;
+            forLoop.DefineLocal(currentSymbol);
+            var forRuleCheck = forLoop.If(currentSymbol.GetReference().Is(this.LanguageRuleSymbol));
+            var ruleSymbol = forRuleCheck.Locals.Add(new TypedName("ruleSymbol", LanguageRuleSymbol), currentSymbol.GetReference().As(LanguageRuleSymbol));
+
+            ruleSymbol.AutoDeclare = false;
+            forRuleCheck.DefineLocal(ruleSymbol);
+            forRuleCheck.Assign(this.__indexImpl.GetReference(ruleSymbol.GetReference()), symbolIndex.GetReference());
+            forRuleCheck.Assign(this.ParentImpl.GetReference(ruleSymbol.GetReference()), new SpecialReferenceExpression(SpecialReferenceKind.This));
+            var hasErrorCheck = forRuleCheck.If(this.HasError.GetReference(ruleSymbol.GetReference()));
+            hasErrorCheck.If(this.HasErrorImpl.GetReference().Not())
+                .Assign(this.HasErrorImpl.GetReference(), IntermediateGateway.TrueValue);
+            var listTypeGeneric = typeof(List<int>).GetTypeReference<IClassType>(this._identityManager);
+            var childErrorList = hasErrorCheck.Locals.Add(listTypeGeneric.WithName("childErrors"), this.GetExplicitCaptureImpl.GetReference(ruleSymbol.GetReference(), listTypeGeneric).Invoke(ParserCompiler.ErrorCaptureName.ToPrimitive()));
+            var myErrorList = hasErrorCheck.Locals.Add(listTypeGeneric.WithName("myErrors"), this.GetExplicitCaptureImpl.GetReference(new SpecialReferenceExpression(SpecialReferenceKind.This), listTypeGeneric).Invoke(ParserCompiler.ErrorCaptureName.ToPrimitive()));
+            childErrorList.AutoDeclare = myErrorList.AutoDeclare = false;
+            hasErrorCheck.DefineLocal(childErrorList);
+            hasErrorCheck.DefineLocal(myErrorList);
+            var hecErrorIndices = hasErrorCheck.If(childErrorList.InequalTo(IntermediateGateway.NullValue));
+            var myErrorsNull = hecErrorIndices.If(myErrorList.InequalTo(IntermediateGateway.NullValue));
+            myErrorsNull.Call(this.DelineateCaptureImpl.GetReference().Invoke(ParserCompiler.ErrorCaptureName.ToPrimitive(), myErrorList.GetReference().GetMethod("Concat").Invoke(childErrorList.GetReference()).GetMethod("ToList").Invoke()));
+            myErrorsNull.CreateNext();
+            myErrorsNull.Next.Call(this.DelineateCaptureImpl.GetReference().Invoke(ParserCompiler.ErrorCaptureName.ToPrimitive(), childErrorList.GetReference()));
+            hecErrorIndices.Call(this.ClearErrorContextImpl.GetReference(ruleSymbol.GetReference()));
+
+            doReductionImpl.AccessLevel = AccessLevelModifiers.Public;
+        }
+
 
         internal void Build3()
         {
@@ -402,10 +467,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private void BuildEndPositionImpl()
         {
-            var startPosition = this.LanguageRuleSymbol.Properties.Add(new TypedName("EndPosition", RuntimeCoreType.Int32, this._identityManager), true, false);
-            startPosition.AccessLevel = AccessLevelModifiers.Public;
-            startPosition.GetMethod.Return(this._compiler.TokenSymbolBuilder.EndPosition.GetReference(this._compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this._TokenStreamImpl.GetReference(), this.__endTokenIndexImpl.GetReference())));
-            this.EndPositionImpl = startPosition;
+            var endPosition = this.LanguageRuleSymbol.Properties.Add(new TypedName("EndPosition", RuntimeCoreType.Int32, this._identityManager), true, false);
+            endPosition.AccessLevel = AccessLevelModifiers.Public;
+            endPosition.GetMethod.If(this._IsBlankImpl.GetReference())
+                .Return(StartPositionImpl.GetReference());
+            endPosition.GetMethod.Return(this._compiler.TokenSymbolBuilder.EndPosition.GetReference(this._compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this._TokenStreamImpl.GetReference(), this.__endTokenIndexImpl.GetReference())));
+            this.EndPositionImpl = endPosition;
         }
 
         private void BuildToStringOverride()
@@ -427,7 +494,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         {
             var hasErrorImpl = this._resultClass.Properties.Add(new TypedName("HasError", RuntimeCoreType.Boolean, this._identityManager), true, true);
             hasErrorImpl.GetMethod.Return(this.GetExplicitCapture.GetReference(new SpecialReferenceExpression(SpecialReferenceKind.This), this._identityManager.ObtainTypeReference(RuntimeCoreType.Boolean)).Invoke("__HasError".ToPrimitive()));
-            hasErrorImpl.SetMethod.Assign(this._captureContextImpl.GetReference().GetIndexer("__HasError".ToPrimitive()), IntermediateGateway.TrueValue);
+            hasErrorImpl.SetMethod.Assign(this._captureContextImpl.GetReference().GetIndexer("__HasError".ToPrimitive()), hasErrorImpl.SetMethod.ValueParameter);
             hasErrorImpl.AccessLevel = AccessLevelModifiers.Public;
             this.HasErrorImpl = hasErrorImpl;
         }
@@ -478,7 +545,16 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     new TypedName("capture", RuntimeCoreType.RootType, this._identityManager)));
 
             this._delineateCaptureImpl.AccessLevel = AccessLevelModifiers.Public;
-            this._delineateCaptureImpl.Call(this._captureContextImpl.GetReference().GetMethod("Add").Invoke(this._delineateCaptureImpl.Parameters["name"].GetReference(), this._delineateCaptureImpl.Parameters["capture"].GetReference()));
+            var iNameParam = this._delineateCapture.Parameters["name"];
+            var nameParam = this._delineateCaptureImpl.Parameters["name"];
+            var captureParam = this._delineateCaptureImpl.Parameters["capture"];
+            var iCaptureParam = this._delineateCapture.Parameters["capture"];
+            this._delineateCaptureImpl.Assign(this._captureContextImpl.GetReference().GetIndexer(nameParam.GetReference()), captureParam.GetReference());
+            var summaryTextBase = "Delineates a capture for the resultant rule that is derived from this @s:{0};, with the @p:{1}; and @p:{2}; provided.";
+            this._delineateCaptureImpl.SummaryText = string.Format(summaryTextBase, this._resultClass.Name, nameParam.Name, captureParam.Name);
+            this._delineateCapture.SummaryText = string.Format(summaryTextBase, this._resultInterface.Name, iNameParam.Name, iCaptureParam.Name);
+            iNameParam.SummaryText = nameParam.SummaryText = "Denotes the @s:String; name of the resulted capture element.";
+            iCaptureParam.SummaryText = captureParam.SummaryText = "Denotes the @s:Object; value which is to be captured.";
         }
 
         private void BuildIdentityImpl()
@@ -548,6 +624,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         {
             var lengthImpl = this._resultClass.Properties.Add(new TypedName("Length", RuntimeCoreType.Int32, this._identityManager), true, false);
             lengthImpl.AccessLevel = AccessLevelModifiers.Public;
+            lengthImpl.GetMethod.If(this._IsBlankImpl.GetReference())
+                .Return(IntermediateGateway.NumberZero);
             var firstTok = lengthImpl.GetMethod.Locals.Add(new TypedName("firstTok", this._compiler.TokenSymbolBuilder.ILanguageToken), this._compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this._TokenStreamImpl.GetReference(), this.__startTokenIndexImpl.GetReference()));
             var lastTok = lengthImpl.GetMethod.Locals.Add(new TypedName("lastTok", this._compiler.TokenSymbolBuilder.ILanguageToken), this._compiler.GenericSymbolStreamBuilder.IndexerImpl.GetReference(this._TokenStreamImpl.GetReference(), this.__endTokenIndexImpl.GetReference()));
             lengthImpl.GetMethod.Return(this._compiler.TokenSymbolBuilder.EndPosition.GetReference(lastTok.GetReference()).Subtract(this._compiler.TokenSymbolBuilder.StartPosition.GetReference(firstTok.GetReference())));
@@ -569,7 +647,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             enumerable.YieldReturn(enumerable.Local.GetReference());
             var oldEnumerator = this._resultClass.Methods.Add(new TypedName("GetEnumerator2", ((IInterfaceType)(this._identityManager.ObtainTypeReference(typeof(IEnumerator))))));
             oldEnumerator.Implementations.Add(this._identityManager.ObtainTypeReference(typeof(IEnumerable)));
-            oldEnumerator.LanguageSpecificQualifier = "IEnumerable";
+            oldEnumerator.UserSpecificQualifier = "IEnumerable";
             oldEnumerator.Name = "GetEnumerator";
             oldEnumerator.Return(genericGetEnumerator.GetReference().Invoke());
             genericGetEnumerator.AccessLevel = AccessLevelModifiers.Public;
@@ -588,7 +666,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private void BuildGetFirstViableContext()
         {
             var firstViableContext = this._resultClass.Methods.Add(new TypedName("GetFirstViableContext", this._resultInterface));
-            firstViableContext.AccessLevel = AccessLevelModifiers.Private;
+            firstViableContext.AccessLevel = AccessLevelModifiers.Internal;
             var repeatLabel = firstViableContext.DefineLabel("Repeat");
             var collapseRules =
                 this._compiler._GrammarSymbols.GetRuleSymbols(this._compiler.Source.GetRules().Where(r => r.IsRuleCollapsePoint))
@@ -608,7 +686,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             {
                 var idSwitchContext = idSwitchCase.Locals.Add(new TypedName("firstChildSymbol", this._compiler.CommonSymbolBuilder.ILanguageSymbol), this.IndexerImpl.GetReference(currentContext.GetReference(), IntermediateGateway.NumberZero));
                 var idSwitchCaseSwitch = idSwitchCase.Switch(this._compiler.CommonSymbolBuilder.Identity.GetReference(idSwitchContext.GetReference()));
-                var idSwitchCaseSwitchCase = idSwitchCaseSwitch.Case(this._compiler.LexicalSymbolModel.GetIdentitySymbolsFieldReferences(this._compiler._GrammarSymbols.GetSymbolsFromEntries(this._compiler.TokensCastAsRules)).ToArray());
+                var tokensAsRuleSymbols = this._compiler._GrammarSymbols.GetSymbolsFromEntries(this._compiler.TokensCastAsRules).ToArray();
+                var tokensAsRuleGrammar = new GrammarVocabulary(this._compiler._GrammarSymbols, tokensAsRuleSymbols);
+                var ambiguitySymbols = this._compiler._GrammarSymbols.AmbiguousSymbols.Where(k => (k.AmbiguityKey & tokensAsRuleGrammar).Equals(k.AmbiguityKey)).OfType<IGrammarSymbol>().ToArray();
+
+                var idSwitchCaseSwitchCase = idSwitchCaseSwitch.Case(this._compiler.LexicalSymbolModel.GetIdentitySymbolsFieldReferences(tokensAsRuleSymbols.Concat(ambiguitySymbols)).ToArray());
+
                 idSwitchCaseSwitchCase.Comment("Tokens aren't rules, so we have to use the entity that has no base rule of its own.  The CreateRule() will find the proper identity for it.");
                 idSwitchCaseSwitchCase.Return(currentContext.GetReference());
                 idSwitchCaseSwitch.Case(true).Assign(currentContext.GetReference(), idSwitchContext.GetReference().Cast(currentContext.LocalType)).FollowedBy()
@@ -641,6 +724,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 this._compiler._GrammarSymbols.GetRuleSymbols(this._compiler.Source.GetRules().Where(r => r.IsRuleCollapsePoint))
                     .Select(grs => this._compiler.SyntacticalSymbolModel.GetIdentitySymbolField(grs).GetReference());
             var currentContext = firstViableParentContext.Locals.Add(new TypedName("currentContext", this._resultInterface), originParam.GetReference());
+            firstViableParentContext
+                .If(currentContext.EqualTo(IntermediateGateway.NullValue))
+                .Return(IntermediateGateway.NullValue);
             var idSwitch = firstViableParentContext.Switch(this._compiler.CommonSymbolBuilder.Identity.GetReference(currentContext.GetReference()));
             idSwitch
                 .Case(collapseRules.ToArray())
@@ -664,7 +750,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 .Return(createRule.GetReference(activeContextLocal.GetReference()).Invoke());
             createRule.If(this.RuleCreated.GetReference()).Return(this._RuleImpl.GetReference());
             var orm = this._compiler.RelationalModelMapping;
-            var tokens = this._compiler.LexicalSymbolModel.GetIdentitySymbolsFieldReferences(this._compiler._GrammarSymbols.GetSymbolsFromEntries(this._compiler.TokensCastAsRules)).ToArray();
+            var tokensAsRuleSymbols = this._compiler._GrammarSymbols.GetSymbolsFromEntries(this._compiler.TokensCastAsRules).ToArray();
+            var tokensAsRuleGrammar = new GrammarVocabulary(this._compiler._GrammarSymbols, tokensAsRuleSymbols);
+            var ambiguitySymbols = this._compiler._GrammarSymbols.AmbiguousSymbols.Where(k => (k.AmbiguityKey & tokensAsRuleGrammar).Equals(k.AmbiguityKey)).OfType<IGrammarSymbol>().ToArray();
+
+            var tokens = this._compiler.LexicalSymbolModel.GetIdentitySymbolsFieldReferences(tokensAsRuleSymbols.Concat(ambiguitySymbols)).ToArray();
             var rules = orm.Keys.Where(k => k is IOilexerGrammarProductionRuleEntry).Cast<IOilexerGrammarProductionRuleEntry>().ToList();
             var ruleSwitch = HandleOrmScaffolding(createRule, rules.Where(r=>!r.IsRuleCollapsePoint), activeContextLocal.GetReference(), orm.ImplementationDetails, true);
             var collapseRules = rules.Where(r => r.IsRuleCollapsePoint);
@@ -683,7 +773,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             }
             createRule.Return(_RuleImpl.GetReference());
             createRule.AccessLevel = AccessLevelModifiers.Public;
-
+            createRule.SummaryText = "Creates the rule appropriate for the given context by evaluating the rule's parented hierarchy.";
+            createRule.RemarksText = "Collapse points within the language cause the parent hierarchy to be evaluated further.  If there are five collapse points in a row, then there will be at least five possible parents that will be evaluated.";
+            
             this.CreateRuleImpl = createRule;
         }
 
@@ -894,5 +986,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         public IIntermediateClassPropertyMember EndPositionImpl { get; set; }
 
         public IIntermediateInterfacePropertyMember EndPosition { get; set; }
+
+        public IIntermediateInterfaceMethodMember DoBlankReduction { get; set; }
+
+        public IIntermediateClassFieldMember _IsBlankImpl { get; set; }
+
+        public IIntermediateClassMethodMember DoBlankReductionImpl { get; set; }
+
+        public IIntermediateClassMethodMember ClearErrorContextImpl { get; set; }
     }
 }

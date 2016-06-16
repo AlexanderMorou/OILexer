@@ -1,8 +1,9 @@
+using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Text;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -134,6 +135,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
             if (target.RepeatOptions == ScannableEntryItemRepeatInfo.None 
              && target.RepeatOptions != this.RepeatOptions)
                 target.RepeatOptions = this.repeatOptions;
+            if (this is TokenItem)
+                ((TokenItem)(target)).SiblingAmbiguity = ((TokenItem)(this)).SiblingAmbiguity;
             if (!string.IsNullOrEmpty(this.name))
                 if (target.Name != this.Name)
                     target.Name = name;

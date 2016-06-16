@@ -3,3 +3,17 @@
 ################################################################################
 
 /.vs/OILexer/v14/.suo
+/obj
+/OilexerTests/Allen Copeland.pfx
+/VsixOilexer/obj
+/VsixOilexer/bin
+/Samples/CSharp (Formal)
+/Samples/DateTime
+/Samples/InputMaskFormat
+/Samples/Oilexer.Next
+/Samples/OilexerCommandLine
+/Samples/SimpleCalc
+/Samples/SLR
+/Samples/ToySharp
+/Samples/WIP
+/Samples/Youtube Sample

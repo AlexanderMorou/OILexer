@@ -4,10 +4,30 @@
 #include                   "Language.oilexer";
 #endif
 
+ProductionRuleOptions                      ::=  
+    '['
+        TupleR1<
+            GroupClause:Group;,
+            MaxLookaheadClause:MaxLookahead;,
+            ShortIdentityClause:ShortId;>
+    ']';
+
+GroupClause                                ::=
+    @"group" ':' Identifier:Group; ';';
+
+MaxLookaheadClause ::= 
+    @"max" @"lookahead" ':'
+        Integer:LookAheadLimit; ';'          ;
+
+ShortIdentityClause                        ::=
+    @"Short" (@"Id" | @"Identity") ':'
+        Identifier:Name; ';'                 ;
+
 ProductionRuleEntry                        ::=
-    Identifier:Name; 
+    ProductionRuleOptions:Options;?
+    Identifier:Name; ('{' Integer:LookAheadLimit; '}')?
         OTuple<
-            "[+/-]"!:VisualSpan; 
+            LanguageOperatorToken.VisualSpanSpecifier!:VisualSpan; /*[+/-]*/
             (
                 LanguageOperatorToken.OptionsSeparator /*:*/
                     SpanName:SpanName; 
@@ -24,20 +44,20 @@ ProductionRuleSeries                       ::=
         (
             LanguageOperatorToken.ExpressionSeparator
             ProductionRule:Items;
-        )*$;
+        )*;
 
 ProductionRule                             ::=
     ProductionRuleItem:Items;*               ;
 
 ProductionRuleItem                        ::=>
     LiteralProductionRuleItem                |
-    SoftReferencProductionRuleItem           |
+    SoftReferenceProductionRuleItem          |
     GroupProductionRuleItem                  |
     PreprocessorProductionRuleItem           |
     TemplateReferenceProductionRuleItem      ;
 
 TemplateReferenceProductionRuleItem        ::=
-    Identifier:Name; 
+    Identifier:PrimaryName; 
         LanguageOperatorToken.TemplateStart /*<*/
             (
                 ProductionRuleSeries:Arguments;
@@ -52,13 +72,13 @@ TemplateReferenceProductionRuleItem        ::=
 PreprocessorProductionRuleItem            ::=>
     PreprocessorIfDirectiveProductionRuleItem;
 
-    
-SoftReferencProductionRuleItem                               ::=
+SoftReferenceProductionRuleItem                              ::=
     Identifier:PrimaryName; 
       (
-        LanguageOperatorToken.IdentitySeparator
+        LanguageOperatorToken.IdentitySeparator /*.*/
         Identifier:SecondaryName;
-      )?$ '!'!:IsFlag;? ScannableEntryItemOptions<>?$          ;
+      )? ('!'!:IsFlag; | '#':CounterNotifier;)?
+       ScannableEntryItemOptions<>?                            ;
 
 PreprocessorIfDirectiveProductionRuleItem                   ::=>
     PreprocessorIfConditionDirectiveProductionRuleItem         |
@@ -66,22 +86,25 @@ PreprocessorIfDirectiveProductionRuleItem                   ::=>
     PreprocessorIfNotDefinedDirectiveProductionRuleItem        ;
 
 PreprocessorIfConditionDirectiveProductionRuleItem           ::=
-    @"#if" PreprocessorIfConditionLogicalOrExp:Condition;
+    PreprocessorType.IfDirective
+        PreprocessorIfConditionLogicalOrExp:Condition;
     ProductionRuleSeries:Body;
-    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      
-    @"#endif"                                                   ;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?       
+    PreprocessorType.EndIfDirective                             ;
 
 PreprocessorIfDefinedDirectiveProductionRuleItem             ::=
-    @"#ifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.IfDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleSeries:Body;
-    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      
-    @"#endif"                                                   ;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?      
+    PreprocessorType.EndIfDirective                             ;
 
 PreprocessorIfNotDefinedDirectiveProductionRuleItem          ::=
-    @"#ifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.IfNotDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleSeries:Body;
-    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      
-    @"#endif"                                                   ;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?       
+    PreprocessorType.EndIfDirective                            ;
 
 PreprocessorElseDirectiveProductionRuleItem                 ::=>
     PreprocessorElseIfConditionDirectiveProductionRuleItem     |
@@ -90,23 +113,26 @@ PreprocessorElseDirectiveProductionRuleItem                 ::=>
     PreprocessorFinalElseDirectiveProductionRuleItem           ;
 
 PreprocessorFinalElseDirectiveProductionRuleItem             ::=
-    @"#else" 
+    PreprocessorType.ElseDirective
         ProductionRuleSeries:Body;                             ;
 
 PreprocessorElseIfConditionDirectiveProductionRuleItem       ::=
-    @"#elif" PreprocessorIfConditionLogicalOrExp:Condition;
+    PreprocessorType.ElseIfDirective
+        PreprocessorIfConditionLogicalOrExp:Condition;
     ProductionRuleSeries:Body;
-    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      ;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?       ;
 
 PreprocessorElseIfDefinedDirectiveProductionRuleItem         ::=
-    @"#elifdef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.ElseIfDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleSeries:Body;
-    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      ;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?       ;
 
 PreprocessorElseIfNotDefinedDirectiveProductionRuleItem      ::=
-    @"#elifndef" PreprocessorIfDefConditionLogicalOrExp:Condition;
+    PreprocessorType.ElseIfNotDefinedDirective
+        PreprocessorIfDefConditionLogicalOrExp:Condition;
     ProductionRuleSeries:Body;
-    (PreprocessorElseDirectiveProductionRuleItem:Next;)?$      ;
+    (PreprocessorElseDirectiveProductionRuleItem:Next;)?       ;
 
 
 LiteralProductionRuleItem                 ::=>
@@ -120,11 +146,11 @@ GroupProductionRuleItem                    ::=
     ScannableEntryItemOptions<>?             ;
 
 StringProductionRuleItem                   ::=
-    String:Value; '!'!:IsFlag;?
+    String:Value; ('!'!:IsFlag; | '#':CounterNotifier;)?
     ScannableEntryItemOptions<>?             ;
 
 CharProductionRuleItem                     ::=
-    Char:Value; '!'!:IsFlag;?
+    Char:Value; ('!'!:IsFlag; | '#':CounterNotifier;)?
     ScannableEntryItemOptions<>?             ;
 
 

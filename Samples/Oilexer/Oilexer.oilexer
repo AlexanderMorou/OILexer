@@ -10,7 +10,9 @@
 #ParserName                                   "OilexerParser";
 #AssemblyName                                 "OilexerParser";
 #GrammarName           "Oilexer Grammar Description Language";
-#Root                                                "GDFile";
+#Root                                                  "File";
+#RulePrefix                                  "OilexerGrammar";
+#TokenPrefix                                 "OilexerGrammar";
 
 #include                             "LexicalGrammar.oilexer";
 #include                               "Preprocessor.oilexer";
@@ -21,6 +23,7 @@
 #elif Lexer == "ToyParser"
 #include                       "LanguagePreprocessor.oilexer";
 #endif
+#define LanguageCulture = "en-US";
 
 ScannableEntryItemOptions<Delimiter>                       ::=
     (
@@ -42,13 +45,13 @@ TemplateScannableEntryItemOptions<Delimiter>::=
     )
     Delimiter 
     ScannableEntryItemRepeatOptions
-        :RepeatOptions;?$                    ;
+        :RepeatOptions;?                     ;
 
 LanguageDeclaration                       ::=
     (
         "public"                            |
         TupleR1<"internal", "protected">
-    ):Modifiers;?$
+    ):Modifiers;? 
     "partial"!:IsPartial;? "language" 
     Identifier:Name;
     LanguageDeclarationPLVariations<>
@@ -59,9 +62,9 @@ LanguageDeclaration                       ::=
 
 LanguageDeclarationPLVariations<_>        ::=
     "with" LanguageDeclarationParserName<>
-    ("and" LanguageDeclarationLexerName<>)?$ |
+    ("and" LanguageDeclarationLexerName<>)?  |
     "with" LanguageDeclarationLexerName<>
-    ("and" LanguageDeclarationParserName<>)?$;
+    ("and" LanguageDeclarationParserName<>)? ;
 
 LanguageDeclarationParserName<_>          ::=
     'a' "parser" "named" 
@@ -99,16 +102,24 @@ ScannableEntryItemRepeatOptions                            ::=
         )
         LanguageOperatorToken.RepetitionRangeEnd
     ),
-    '$'!:ReductionPoint;?>                                   ;
+    '$'!:ReductionPoint;>                                    ;
 
 
 SoftReferenceScannableEntryItem                            ::=
-    SoftReferenceScannableEntryItemBody:Body;
+    SoftReferenceScannableEntryItemBody<>
     ScannableEntryItemOptions<>?                             ;
 
-SoftReferenceScannableEntryItemBody                        ::=
+SoftReferenceScannableEntryItemBody<A>                     ::=
     Identifier:PrimaryName; 
       (
         LanguageOperatorToken.IdentitySeparator
+        Identifier:SecondaryName;
+      )?;
+
+SoftReferenceScannableEntryItemBody                       ::=
+    Identifier:PrimaryName; 
+      (
+        LanguageOperatorToken.IdentitySeparator
+
         Identifier:SecondaryName;
       )?;

@@ -14,7 +14,7 @@ using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Abstract;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining;
 /*---------------------------------------------------------------------\
-| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+| Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
 |----------------------------------------------------------------------|
 | The Abstraction Project's code is provided under a contract-release  |
 | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -556,7 +556,11 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                                 entry is IOilexerGrammarProductionRuleEntry ||
                                 entry is IOilexerGrammarProductionRuleTemplateEntry
                           select entry;
+#if ParallelProcessing
             entries.AsParallel().ForAll(entry =>
+#else
+            foreach (var entry in entries)
+#endif
             {
                 if (entry is IOilexerGrammarTokenEntry)
                     ((IOilexerGrammarTokenEntry)(entry)).ResolveToken(file, errors);
@@ -564,7 +568,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     ((IOilexerGrammarProductionRuleEntry)(entry)).ResolveProductionRule(file, errors);
                 else if (entry is IOilexerGrammarProductionRuleTemplateEntry)
                     ((IOilexerGrammarProductionRuleTemplateEntry)(entry)).ResolveProductionRule(file, errors);
-            });
+            }
+#if ParallelProcessing
+            );
+#endif
 
         }
 

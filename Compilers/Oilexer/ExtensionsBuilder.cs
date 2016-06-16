@@ -32,7 +32,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         public void Build(ParserCompiler compiler, ParserBuilder parserBuilder, IIntermediateCliManager identityManager)
         {
-            
             /* *
              * After much of the static analysis has been completed on the grammar, it's now time to generate the parser's full state transition detail.
              * */
@@ -114,7 +113,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 string ruleNameParameter = rule.Name.LowerFirstCharacter();
                 var targetInterface = compiler.RuleDetail[rule].RelativeInterface;
                 object target = rule;
-
+                if (rule.IsRuleCollapsePoint)
+                    continue;
                 AddVisitMethodToVisitor(returnType, visitorInterface, voidType, rtType, methods, ruleNameParameter, targetInterface, target);
             }
 
@@ -134,7 +134,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             {
                 var orm = compiler.RelationalModelMapping.ImplementationDetails[tokenDerived];
                 var tokenDerivedVisit = BuildMethodOn(returnType, visitorInterface, voidType, null, orm.Value.Class, true);
-                var call= tokenSymbolVisitMethod.GetReference(compiler.RootRuleBuilder.TokenDerived_Token.GetReference()).Invoke(tokenDerivedVisit.Parameters["visitor"].GetReference());
+                var call = rootVisit.GetReference(compiler.RootRuleBuilder.TokenDerived_Token.GetReference()).Invoke(tokenDerivedVisit.Parameters["visitor"].GetReference());
                 if (voidType != returnType)
                     tokenDerivedVisit.Return(call);
                 else
@@ -147,7 +147,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private static IIntermediateClassMethodMember AddVisitMethodToClass(IType returnType, IType voidType, IIntermediateInterfaceType visitorInterface, IIntermediateClassType visitedClass, bool isAbstract, IIntermediateInterfaceMethodMember memberToVisit)
         {
             var rootVisit = visitedClass.Methods.Add(
-                new TypedName("Visit", returnType),
+                new TypedName("Accept", returnType),
                     new TypedNameSeries(new TypedName("visitor", visitorInterface)));
             if (returnType.IsGenericTypeParameter)
                 rootVisit.TypeParameters.Add(returnType.Name);
@@ -167,7 +167,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         {
 
             var resultVisitMethod = interfaceTarget.Methods.Add(
-                new TypedName("Visit", returnType),
+                new TypedName("Accept", returnType),
                     new TypedNameSeries(new TypedName("visitor", visitorInterface)));
             if (returnType.IsGenericTypeParameter)
                 resultVisitMethod.TypeParameters.Add(returnType.Name);
@@ -192,7 +192,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private static IIntermediateClassMethodMember BuildMethodOn(IType returnType, IIntermediateInterfaceType visitorInterface, IType voidType, IIntermediateInterfaceMethodMember method, IIntermediateClassType ruleClass, bool skipBody = false)
         {
             var ruleVisit = ruleClass.Methods.Add(
-                new TypedName("Visit", returnType),
+                new TypedName("Accept", returnType),
                 new TypedNameSeries(new TypedName("visitor", visitorInterface)));
             if (returnType.IsGenericTypeParameter)
                 ruleVisit.TypeParameters.Add(returnType.Name);
@@ -318,7 +318,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         (a, b) =>
                             a.Concat(b));
             if (advanceAdapters == null)
-                advanceAdapters = new ProductionRuleProjectionAdapter[0];
+                advanceAdapters = new PredictionTreeDFAdapter[0];
             var adapters = compiler.FollowAdapters.Select(k => k.Value.AssociatedState).Concat(compiler.AllRuleAdapters.Select(k => k.Value.AssociatedState)).Concat(advanceAdapters.DefaultIfEmpty().Where(k => k != null).Select(k => k.AssociatedState)).Distinct().OrderBy(k => k.StateValue).ToArray();
             var distinctStateValues = adapters.Select(k => k.StateValue).Distinct().ToArray();
             var stateSymbolStoreEntry =
@@ -326,7 +326,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                  /* Since the other adapters are state-machines derived from the projection of a given state of a rule, normal adapters (derived from non-expanded lookahead) must be aggregated */
                  join normalAdapter in compiler.AllRuleAdapters on state equals normalAdapter.Value.AssociatedState into normalVariantSet
                  from normalAdapter in normalVariantSet.DefaultIfEmpty()
-                 let fc = normalAdapter.Value == null || normalAdapter.Value.OutgoingTransitions.Count == 0 ? state.OutTransitions.FullCheck : normalAdapter.Value.AssociatedContext.Node.LookAhead.Keys.Aggregate(GrammarVocabulary.UnionAggregateDelegate)
+                 let fc = (normalAdapter.Value == null || normalAdapter.Value.OutgoingTransitions.Count == 0 || normalAdapter.Value.AssociatedContext.Leaf.LookAhead.Count == 0) ? state.OutTransitions.FullCheck : normalAdapter.Value.AssociatedContext.Leaf.LookAhead.Keys.Aggregate(GrammarVocabulary.UnionAggregateDelegate)
                  group new { State = state, Grammar = fc, GrammarStore = compiler.LexicalSymbolModel.GenerateSymbolstoreVariation(fc) } by new { Grammar = fc, IsEdge = state.IsEdge }).ToDictionary(k => k.Key, v => v.ToArray());
             var stateParam = _getValidSyntaxMethodInternalImpl.Parameters["state"];
             var ruleContext = _getValidSyntaxMethodInternalImpl.Parameters["ruleContext"];
@@ -342,7 +342,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             var getSyntaxMethodImplInvocation = _getValidSyntaxMethodInternalImpl.GetReference().Invoke(parserBuilder._StateImpl.GetReference(), parserBuilder._CurrentContextImpl.GetReference());
             _getValidSyntaxMethodImpl.Return(getSyntaxMethodImplInvocation);
             if (lexicallyAmbiguousModel)
-                getSyntaxMethodImplInvocation.Parameters.Add(IntermediateGateway.TrueValue);
+                getSyntaxMethodImplInvocation.Arguments.Add(IntermediateGateway.TrueValue);
             ITypedLocalMember pushAmbiguityContext = null;
             if (lexicallyAmbiguousModel)
                 pushAmbiguityContext = _getValidSyntaxMethodInternalImpl.Locals.Add(

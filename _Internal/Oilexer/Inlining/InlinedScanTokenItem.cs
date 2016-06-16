@@ -23,6 +23,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
             this.SourceRoot = sourceRoot;
             this.Root = root;
             this.RepeatOptions = source.RepeatOptions;
+            this.SiblingAmbiguity = source.SiblingAmbiguity;
             this.Name = source.Name;
         }
 

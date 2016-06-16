@@ -29,6 +29,10 @@ using AllenCopeland.Abstraction.Slf.Translation;
 using AllenCopeland.Abstraction.Slf.Languages.CSharp.Translation;
 using AllenCopeland.Abstraction.Slf.Ast.Cli;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
+using System.Runtime.Serialization;
+using System.Xml.Linq;
+using System.Xml.Xsl;
+using System.Xml;
 
 #if x86
 using SlotType = System.UInt32;
@@ -45,7 +49,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
     /// Provides an entrypoint and initial decision logic
     /// for the application.
     /// </summary>
-
     public static class OilexerProgram
     {
         private static int longestLineLength = 0;
@@ -54,17 +57,18 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private const string NoSyntax = "-ns";
         private const string NoLogo = "-nl";
         private const string Quiet = "-q";
-        private const string CycleDepth = "-cycledepth:";
         private const string Verbose = "-v";
+        private const string NoObjectModel = "-nom";
+
         private const string StreamAnalysis = "-a:";
-        private const string StreamAnalysisExtension = "-ae:";
-        private const string Export = "-ex:";
+        private const string CycleDepth = "-cycledepth:";
         private const string ExportKind_TraversalHTML = "t-html";
         private const string ExportKind_OilexerTraversalHTML = "ot-html";
         private const string ExportKind_DLL = "dll";
         private const string ExportKind_EXE = "exe";
         private const string ExportKind_CSharp = "cs";
-        private const string NoObjectModel = "-nom";
+        private const string StreamAnalysisExtension = "-ae:";
+        private const string Export = "-ex:";
         private const string Define = "-d:";
         private const string TranslationOrder = "-tlorder:";
         private const string DefineAlt = "-define:";
@@ -224,27 +228,30 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// call site.</param>
         private static void Main(string[] args)
         {
-            SetupTraceListener();
+            var traceListenerToDispose = SetupTraceListener();
             var resultsOfCompile = ProcessArgumentSet(args);
             if (resultsOfCompile != null && traceStream != null && traceStream.CanRead)
             {
                 var fnames = (from e in resultsOfCompile.Builder.Source.Files
                               orderby e.Length descending
                               select e).ToArray();
-                long size;
-                string relativeRoot;
-                GetRelativeRoot(resultsOfCompile.Builder.Source, fnames, fnames.First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
+                long size = GetTotalFileSize(resultsOfCompile.Builder.Source.Files);
+                string relativeRoot = resultsOfCompile.Builder.Source.Files.GetRelativeRoot();
+                //GetRelativeRoot(resultsOfCompile.Builder.Source, fnames, fnames.First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
                 using (traceStream)
                 using (var traceFile = GetTraceStream(relativeRoot))
+                {
+                    traceListenerToDispose.Dispose();
                     traceFile.Write(traceStream.ToArray());
+                }
             }
         }
 
-        private static void SetupTraceListener()
+        private static HtmlTextWriterTraceListener SetupTraceListener()
         {
             Trace.Listeners.Clear();
             traceStream = new MemoryStream();
-            TextWriterTraceListener textStreamer = new TextWriterTraceListener(traceStream);
+            var textStreamer = new HtmlTextWriterTraceListener(traceStream);
             textStreamer.Name = "TextLogger";
             textStreamer.TraceOutputOptions = TraceOptions.None;
 
@@ -254,6 +261,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             Trace.Listeners.Add(textStreamer);
             Trace.Listeners.Add(consoleListener);
             Trace.AutoFlush = true;
+            return textStreamer;
         }
 
         internal static ParserCompilerResults ProcessArgumentSet(string[] args)
@@ -303,6 +311,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                             ConsoleDefines.Add(left, right);
                         }
                         else
+
                             ConsoleDefines.Add(defPart, null);
                     }
                     else if (s.ToLower() == Export_TraversalHTML)   /* -ex:t-html */
@@ -645,7 +654,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             foreach (var directive in ConsoleDefines)
                 parser.Define(directive.Key, directive.Value);
             resultsOfParse = parser.Parse(file);
-            
+            var parseTimes = parser.GetParseTimes().ToArray();
             //foreach (var fName in resultsOfParse.Result.Files)
             //    Console.WriteLine(fName);
             sw.Stop();
@@ -731,7 +740,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     resultsOfBuild.Project != null)
                 {
                     SetAttributes(resultsOfParse, resultsOfBuild);
-                    WriteProject(resultsOfBuild, resultsOfParse, toKinds, extension: "cs", singleFileOutput: singleFileOutput);
+                    var files = WriteProject(resultsOfBuild, resultsOfParse, toKinds, extension: "cs", singleFileOutput: singleFileOutput);
+                    WriteCsharpProject(files, resultsOfBuild, resultsOfParse, toKinds);
                 }
                 else if ((options & ValidOptions.ExportDLL) == ValidOptions.ExportDLL ||
                     (options & ValidOptions.ExportEXE) == ValidOptions.ExportEXE)
@@ -812,6 +822,83 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             }
 
             return resultsOfBuild;
+        }
+
+        private static void WriteCsharpProject(string[] files, ParserCompilerResults resultsOfBuild, IParserResults<IOilexerGrammarFile> resultsOfParse, HashSet<DeclarationTranslationOrder> toKinds)
+        {
+            var fileName = Path.Combine(Path.Combine(resultsOfParse.Result.RelativeRoot, "out"), string.Format("{0}.csproj", resultsOfParse.Result.Options.AssemblyName));
+            var transformationSchema = typeof(OilexerProgram).Assembly.GetManifestResourceStream("AllenCopeland.Abstraction.Slf.Compilers.Oilexer.Transformation.CSharpProjectTransformer.xslt");
+            var xmlDocument =
+                new XDocument(
+                    new XElement("Build", (new object[]
+                                              {
+                                                  GetProjectGuidAttribute(resultsOfParse),
+                                                  GetRootNamespaceAttribute(resultsOfParse),
+                                                  GetAssemblyNameAttribute(resultsOfParse)
+                                              })
+                                          .Concat(
+                                              GetFiles(files, resultsOfBuild, resultsOfParse))
+                                          .ToArray()));
+            var transformer = new XslCompiledTransform();
+            using (var xmlReader = XmlReader.Create(transformationSchema))
+                transformer.Load(xmlReader);
+            using (var streamReader = new StringReader(xmlDocument.ToString()))
+            using (var output = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+            using (var xmlReader = XmlReader.Create(streamReader))
+            {
+                transformer.Transform(xmlReader, new XsltArgumentList(), output);
+                output.Flush();
+            }
+        }
+
+        private static XAttribute GetAssemblyNameAttribute(IParserResults<IOilexerGrammarFile> resultsOfParse)
+        {
+            return new XAttribute(
+                                                                  "AssemblyName", resultsOfParse.Result.Options.AssemblyName);
+        }
+
+        private static XAttribute GetRootNamespaceAttribute(IParserResults<IOilexerGrammarFile> resultsOfParse)
+        {
+            return new XAttribute(
+                "RootNamespace", resultsOfParse.Result.Options.Namespace ?? "OILexer.DefaultNamespace");
+        }
+
+        private static IEnumerable<XElement> GetFiles(string[] files, ParserCompilerResults resultsOfBuild, IParserResults<IOilexerGrammarFile> resultsOfParse)
+        {
+            return from file in files
+                   let fName = GetFileName(file, resultsOfBuild, resultsOfParse)
+                   orderby fName
+                   select new XElement(
+                       "Include",
+                       new XAttribute(
+                           "Include",
+                           fName));
+        }
+
+        private static XAttribute GetProjectGuidAttribute(IParserResults<IOilexerGrammarFile> resultsOfParse)
+        {
+            return new XAttribute(
+                "ProjectGuid",
+                string.Format("{{{0}}}",
+                resultsOfParse.Result.DefinedSymbols.ContainsKey("ProjectGuid")
+                ? resultsOfParse.Result.DefinedSymbols["ProjectGuid"]
+                : Guid.NewGuid().ToString()));
+        }
+
+        private static string GetFileName(string file, ParserCompilerResults resultsOfBuild, IParserResults<IOilexerGrammarFile> resultsOfParse)
+        {
+            file = file.Contains(@"\.\")
+                   ? file.Replace(@"\.\", @"\")
+                   : file;
+            var rr = Path.Combine(resultsOfParse.Result.RelativeRoot, "out");
+            if (file.ToLower().StartsWith(rr))
+                file = 
+                    file.Substring(rr.EndsWith(@"\")
+                        ? rr.Length
+                        : file[rr.Length].ToString() == @"\" 
+                          ? rr.Length + 1
+                          : 0);
+            return file;
         }
 
         private static void DisplayStateMachineDetails(ParserCompilerResults resultsOfBuild, IParserResults<IOilexerGrammarFile> resultsOfParse)
@@ -998,15 +1085,16 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             catch (IOException) { }
             SetAttributes(resultsOfParse, resultsOfBuild);
 
-            long size;
-            string relativeRoot;
             var fnames = (from e in resultsOfParse.Result.Files
                           orderby e.Length descending
                           select e).ToArray();
-            GetRelativeRoot(resultsOfParse.Result, fnames, fnames.First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
+            long size = GetTotalFileSize(fnames);
+            string relativeRoot = fnames.GetRelativeRoot();
+
+            //GetRelativeRoot(resultsOfParse.Result, fnames, fnames.First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
 
             foreach (var tknSet in (from t in resultsOfParse.Result
-                                    where t is InlinedTokenEntry && !(t is IOilexerGrammarnlinedTokenEofEntry)
+                                    where t is InlinedTokenEntry && !(t is OilexerGrammarInlinedTokenEofEntry)
                                     group (InlinedTokenEntry)t by t.FileName))
                 foreach (var tkn in tknSet)
                     WriteDotFile(tkn, relativeRoot, resultsOfParse.Result);
@@ -1038,12 +1126,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             catch (IOException) { }
             SetAttributes(resultsOfParse, resultsOfBuild);
 
-            long size;
-            string relativeRoot;
-            var fnames = (from e in resultsOfParse.Result.Files
-                          orderby e.Length descending
-                          select e).ToArray();
-            GetRelativeRoot(resultsOfParse.Result, fnames, fnames.First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
+            long size = GetTotalFileSize(resultsOfParse.Result.Files);
+            string relativeRoot = resultsOfParse.Result.Files.GetRelativeRoot();
+
             ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> pre = new ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState>();
             var grammar = new GrammarSymbolSet(resultsOfParse.Result);
             List<IOilexerGrammarProductionRuleEntry> forwardReferences = new List<IOilexerGrammarProductionRuleEntry>();
@@ -1139,7 +1224,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             catch (IOException) { }
 
             foreach (var tknSet in (from t in resultsOfParse.Result
-                                    where t is InlinedTokenEntry && !(t is IOilexerGrammarnlinedTokenEofEntry)
+                                    where t is InlinedTokenEntry && !(t is OilexerGrammarInlinedTokenEofEntry)
                                     group (InlinedTokenEntry)t by t.FileName))
                 foreach (var tkn in tknSet)
                     if (dotsFor.Contains(tkn.Name))
@@ -1168,12 +1253,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             catch (IOException) { }
             SetAttributes(resultsOfParse, resultsOfBuild);
 
-            long size;
-            string relativeRoot;
-            var fnames = (from e in resultsOfParse.Result.Files
-                          orderby e.Length descending
-                          select e).ToArray();
-            GetRelativeRoot(resultsOfParse.Result, fnames, fnames.First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
+            long size = GetTotalFileSize(resultsOfParse.Result.Files);
+            string relativeRoot = resultsOfParse.Result.Files.GetRelativeRoot();
+
             var startEntry = resultsOfBuild.StartEntry;
             var seFile = Path.Combine(relativeRoot, startEntry.Name) + ".gv";
             FileStream gvStream = new FileStream(seFile, FileMode.Create, FileAccess.Write, FileShare.Read);
@@ -1188,7 +1270,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 dfa.ReduceDFA();
                 pre._Add(pr, dfa);
             }
-
+            
             bool first = true;
             if (first)
                 first = false;
@@ -1202,15 +1284,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             gvStream.Dispose();
         }
 
-        private static void WriteProject(ParserCompilerResults resultsOfBuild, IParserResults<IOilexerGrammarFile> resultsOfParse, HashSet<DeclarationTranslationOrder> toKinds, IIntermediateCodeTranslatorFormatterProvider formatterProvider = null, string extension = null, bool singleFileOutput = false)
+        private static string[] WriteProject(ParserCompilerResults resultsOfBuild, IParserResults<IOilexerGrammarFile> resultsOfParse, HashSet<DeclarationTranslationOrder> toKinds, IIntermediateCodeTranslatorFormatterProvider formatterProvider = null, string extension = null, bool singleFileOutput = false)
         {
             SetAttributes(resultsOfParse, resultsOfBuild);
-            string relativeRoot;
-            long size;
-            var fnames = (from e in resultsOfParse.Result.Files
-                          orderby e.Length descending
-                          select e).ToArray();
-            GetRelativeRoot(resultsOfParse.Result, fnames, fnames.First().Split(new char[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
+            long size = GetTotalFileSize(resultsOfParse.Result.Files);
+            string relativeRoot = resultsOfParse.Result.Files.GetRelativeRoot();
 
             var options = new IntermediateCodeTranslatorOptions(formatterProvider ?? new DefaultCodeTranslatorFormatterProvider());
             options.AllowPartials = !singleFileOutput;
@@ -1237,7 +1315,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             foreach (var kind in toKinds)
                 options.TranslationOrder.Add(kind);
             var projectTranslator = new CSharpProjectTranslator(options);
-            projectTranslator.WriteProject(resultsOfBuild.Project, Path.Combine(relativeRoot, "out"), "." + extension);
+            options.ShortenFilenames = true;
+            //AddSerializationDetail(resultsOfBuild);
+            return projectTranslator.WriteProject(resultsOfBuild.Project, Path.Combine(relativeRoot, "out"), "." + extension);
             /*
                         var fileOut = string.Format("{0}{1}{2}.{3}", relativeRoot, Path.DirectorySeparatorChar.ToString(), "results", extension);
                         var fileStream = new FileStream(fileOut, FileMode.Create, FileAccess.Write, FileShare.Read);
@@ -1250,6 +1330,36 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         fileStream.Close();
                         fileStream.Dispose();
                          * */
+        }
+
+        private static void AddSerializationDetail(ParserCompilerResults resultsOfBuild)
+        {
+            var exceptionType = typeof(ArgumentException).GetTypeReference(resultsOfBuild.Project.IdentityManager as ICliManager);
+
+            var targetTypes = resultsOfBuild.Project.GetTypes().Where(k => k.Type == TypeKind.Class && k.BaseType != exceptionType && !k.Name.EndsWith("DebuggerProxy", StringComparison.InvariantCultureIgnoreCase)).Cast<IIntermediateClassType>().Where(k => (k.SpecialModifier & SpecialClassModifier.Static) != SpecialClassModifier.Static);
+
+            foreach (var type in targetTypes)
+            {
+                if (!(type.IsGenericConstruct && type.IsGenericDefinition))
+                    resultsOfBuild.Builder.RootRuleBuilder.LanguageRuleRoot.Metadata.Add(new MetadatumDefinitionParameterValueCollection(typeof(KnownTypeAttribute).GetTypeReference((ICliManager)resultsOfBuild.Project.IdentityManager)) { type });
+
+                type.Metadata.Add(new MetadatumDefinitionParameterValueCollection(typeof(DataContractAttribute).GetTypeReference((ICliManager)resultsOfBuild.Project.IdentityManager)) { { "IsReference", true } });
+                var fields = type.Fields.Values.Where(k => !k.IsStatic);
+                if (type == resultsOfBuild.Builder.ParserBuilder.ParserClass)
+                {
+                    var pb = resultsOfBuild.Builder.ParserBuilder;
+                    fields = fields.Except(new[] { pb._CurrentContextImpl, pb._LookAheadDepthsImpl, pb._StateImpl });
+                }
+                else if (type == resultsOfBuild.Builder.CharStreamBuilder.CharStream)
+                {
+                    var csb = resultsOfBuild.Builder.CharStreamBuilder;
+                    fields = fields.Except(new[] { csb.BufferArrayField, csb._StreamReaderImpl, csb.ActualBufferLength, csb.StringCacheImpl });
+                }
+                else if (type == resultsOfBuild.Builder.RootRuleBuilder.LanguageRuleRoot)
+                    type.Metadata.Add(new MetadatumDefinitionParameterValueCollection(typeof(KnownTypeAttribute).GetTypeReference((ICliManager)resultsOfBuild.Project.IdentityManager)) { typeof(List<>).GetTypeReference<IClassType>((ICliManager)resultsOfBuild.Project.IdentityManager).MakeGenericClosure(resultsOfBuild.Builder.CommonSymbolBuilder.ILanguageSymbol) });
+                foreach (var field in fields)
+                    field.Metadata.Add(new MetadatumDefinitionParameterValueCollection(typeof(DataMemberAttribute).GetTypeReference((ICliManager)resultsOfBuild.Project.IdentityManager)));
+            }
         }
 
         private static void WriteDotFile(InlinedTokenEntry tkn, string rootPath, IOilexerGrammarFile source)
@@ -1832,7 +1942,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             //Used for the string noting there were errors.
             const ConsoleColor errorMColor = ConsoleColor.Red;
             //warning color.
-            const ConsoleColor warnColor = ConsoleColor.DarkBlue;
+            const ConsoleColor warnColor = ConsoleColor.DarkYellow;
             //Position Color.
             const ConsoleColor posColor = ConsoleColor.Gray;
 
@@ -1864,9 +1974,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                              orderby ePath.Length descending
                              select ePath).FirstOrDefault();
             string[] parts = partsRoot == null ? new string[0] : partsRoot.Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries);
-            long size;
-            string relativeRoot;
-            GetRelativeRoot(parserResults.Result, filenames, parts, out size, out relativeRoot);
+            long size = GetTotalFileSize(filenames);
+            string relativeRoot = filenames.GetRelativeRoot();
+            //GetRelativeRoot(parserResults.Result, filenames, parts, out size, out relativeRoot);
             if (parts.Length > 0)
                 compilerErrors = GetErrorStream(relativeRoot);
             /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1967,10 +2077,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             {
                 if (sortedMessages.Length == 0)
                 {
-                    GetRelativeRoot(parserResults.Result, parserResults.Result.Files.ToArray(), (from string f in parserResults.Result.Files
-                                                                                                 let ePath = Path.GetDirectoryName(f)
-                                                                                                 orderby ePath.Length descending
-                                                                                                 select ePath).First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
+                    size = GetTotalFileSize(parserResults.Result.Files);
+                    relativeRoot = parserResults.Result.Files.GetRelativeRoot();
+
+                    //GetRelativeRoot(parserResults.Result, parserResults.Result.Files.ToArray(), (from string f in parserResults.Result.Files
+                    //                                                                             let ePath = Path.GetDirectoryName(f)
+                    //                                                                             orderby ePath.Length descending
+                    //                                                                             select ePath).First().Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries), out size, out relativeRoot);
                     compilerErrors = GetErrorStream(relativeRoot);
                 }
                 foreach (var modelError in sortedModelMessages)
@@ -2004,14 +2117,13 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private static BinaryWriter GetTraceStream(string relativeRoot)
         {
-            string compilerTraceFileName = Path.Combine(relativeRoot, "compiler.trace");
+            string compilerTraceFileName = Path.Combine(relativeRoot, "compiler-trace.html");
             var compilerTrace = File.Open(compilerTraceFileName, FileMode.Create, FileAccess.Write);
             return new BinaryWriter(compilerTrace);
         }
         private static void GetRelativeRoot(IOilexerGrammarFile grammarFile, string[] filenames, string[] parts, out long size, out string relativeRoot)
         {
-            size = (from s in grammarFile.Files
-                    select new FileInfo(s).Length).Sum();
+            size = GetTotalFileSize(filenames);
 
             if (size == 0)
             {
@@ -2036,6 +2148,14 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     break;
                 }
             }
+        }
+
+        private static long GetTotalFileSize(IEnumerable<string> fileNames)
+        {
+            long size;
+            size = (from s in fileNames
+                    select new FileInfo(s).Length).Sum();
+            return size;
         }
 
         private static void ShowErrors(IParserResults<IOilexerGrammarFile> iprs)
@@ -2355,10 +2475,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             if (entry is IOilexerGrammarProductionRuleEntry)
             {
                 var pdEntry = (IOilexerGrammarProductionRuleEntry)entry;
-                if (pdEntry.Name == "Test")
-                {
-
-                }
                 DisplaySyntax((IOilexerGrammarProductionRuleEntry)entry, longestName);
             }
             else if (entry is IOilexerGrammarTokenEntry)
@@ -2370,7 +2486,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         {
             var consoleColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkRed;
-            Trace.Write(string.Format("{0} ", nonTerminal.Name));
+            Trace.Write(nonTerminal.Name);
             Console.ForegroundColor = ConsoleColor.DarkGray;
             //Show all of the rule start symbols aligned to the same point.
             Trace.WriteLine(string.Format("{1}::={0}", nonTerminal.IsRuleCollapsePoint ? ">" : string.Empty, ' '.Repeat((longestName + (nonTerminal.IsRuleCollapsePoint ? 0 : 1)) - nonTerminal.Name.Length)));
@@ -2652,12 +2768,14 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private static void DisplaySyntax(ILiteralCharReferenceProductionRuleItem charItem, ref bool startingLine, int depth)
         {
             var consoleColor = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.ForegroundColor = ConsoleColor.Gray;
             if (startingLine)
             {
                 Trace.Write(' '.Repeat((depth + 1) * 4));
                 startingLine = false;
             }
+            if (charItem.Literal.CaseInsensitive)
+                Trace.Write("@");
             Trace.Write(charItem.Literal.Value.ToString().Encode());
             Console.ForegroundColor = consoleColor;
         }
@@ -2665,12 +2783,14 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private static void DisplaySyntax(ILiteralStringReferenceProductionRuleItem stringItem, ref bool startingLine, int depth)
         {
             var consoleColor = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.ForegroundColor = ConsoleColor.Gray;
             if (startingLine)
             {
                 Trace.Write(' '.Repeat((depth + 1) * 4));
                 startingLine = false;
             }
+            if (stringItem.Literal.CaseInsensitive)
+                Trace.Write("@");
             Trace.Write(stringItem.Literal.Value.Encode());
             Console.ForegroundColor = consoleColor;
         }
@@ -2679,7 +2799,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         {
             var consoleColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkMagenta;
-            Trace.Write(string.Format("{0} ", terminal.Name));
+            Trace.Write(terminal.Name);
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Trace.WriteLine(string.Format("{0}:=", ' '.Repeat((longestName + 2) - terminal.Name.Length)));
             Console.ForegroundColor = consoleColor;
@@ -2818,6 +2938,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 Trace.Write(' '.Repeat((depth + 1) * 4));
                 startingLine = false;
             }
+            if (stringItem.CaseInsensitive)
+                Trace.Write("@");
             Trace.Write(stringItem.Value.Encode());
             Console.ForegroundColor = consoleColor;
         }
@@ -2831,6 +2953,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 Trace.Write(' '.Repeat((depth + 1) * 4));
                 startingLine = false;
             }
+            if (charItem.CaseInsensitive)
+                Trace.Write("@");
             Trace.Write(charItem.Value.ToString().Encode());
             Console.ForegroundColor = consoleColor;
         }

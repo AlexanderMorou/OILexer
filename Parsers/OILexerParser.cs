@@ -9,8 +9,10 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
+using System.Diagnostics;
+using AllenCopeland.Abstraction.Utilities.Collections;
 /*---------------------------------------------------------------------\
-| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+| Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
 |----------------------------------------------------------------------|
 | The Abstraction Project's code is provided under a contract-release  |
 | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -30,6 +32,8 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         private int parameterDepth = 0;
         private IDictionary<string, string> definedSymbols = new Dictionary<string, string>();
         private delegate bool SimpleParseDelegate<T>(ref T target);
+        private Dictionary<string, TimeSpan> parseTimes = new Dictionary<string, TimeSpan>();
+        private Dictionary<string, TimeSpan> previousParseTimes = null;
         private bool parseIncludes;
         private bool captureRegions;
         public OilexerParser()
@@ -92,8 +96,13 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 var resultFile = (OilexerGrammarFile)result.Result;
                 resultFile.DefinedSymbols = this.definedSymbols;
             }
-
             return result;
+        }
+
+        public IEnumerable<Tuple<string, TimeSpan>> GetParseTimes()
+        {
+            foreach (var fileName in this.previousParseTimes.Keys.OrderBy(k=>Path.GetFileName(k)))
+                yield return Tuple.Create(fileName, this.previousParseTimes[fileName]);
         }
 
         /// <summary>
@@ -106,6 +115,9 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
         /// <see cref="IOilexerGrammarFile"/>, if successful.</returns>
         public override IParserResults<IOilexerGrammarFile> Parse(Stream s, string fileName)
         {
+            bool startedParseSet = parseTimes.Count == 0;
+            this.parseTimes[fileName] = TimeSpan.Zero;
+            Stopwatch sw = Stopwatch.StartNew();
             int count = includeDirectives.Count;
             bool addedInclude = false;
             base.CurrentTokenizer = new Lexer(s, fileName);
@@ -122,7 +134,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
              * Only remove it if it was added by this call.  Which would be when
              * Count = initial_Count, this should effectively clean out the 
              * parsed/include directive listing.
-             * */
+             * */ 
             if (addedInclude)
                 for (int i = count; i < includeDirectives.Count; i++)
                 {
@@ -131,6 +143,18 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                     includeDirectives.RemoveAt(i--);
                 }
             s.Close();
+            sw.Stop();
+            var myIndex = parseTimes.Keys.GetIndexOf(fileName);
+            if (myIndex == parseTimes.Count - 1)
+                parseTimes[fileName] = sw.Elapsed;
+            else
+                parseTimes[fileName] = sw.Elapsed - parseTimes.Values.Skip(myIndex + 1).Aggregate((a, b) => a + b);
+
+            if (startedParseSet)
+            {
+                previousParseTimes = parseTimes;
+                parseTimes = new Dictionary<string, TimeSpan>();
+            }
             return gf;
         }
 
@@ -280,7 +304,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                     PopAhead();
                                 }
                                 SetMultiLineMode(true);
-                                ParseProductionRule(idOp.Token1, EntryScanMode.Inherited, idOp.Token1.Position, elementsAreChildren, forcedRecognizer);
+                                ParseProductionRule(idOp.Token1, EntryScanMode.Inherited, idOp.Token1.Position, elementsAreChildren, forcedRecognizer, null);
                                 break;
                             //ID :=
                             case OilexerGrammarTokens.OperatorType.ColonEquals:
@@ -393,6 +417,30 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                     }
                                 }
                                 break;
+                            //ID{
+                            case OilexerGrammarTokens.OperatorType.LeftCurlyBrace:
+                                var curlyAhead = PopAhead();
+                                if (curlyAhead.TokenType == OilexerGrammarTokenType.NumberLiteral)
+                                {
+                                    var curlyNumber = curlyAhead as OilexerGrammarTokens.NumberLiteral;
+                                    IOilexerGrammarToken colonColonEq = null;
+                                    if (ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.RightCurlyBrace, true) &&
+                                        ExpectOperator(colonColonEq = PopAhead(), OilexerGrammarTokens.OperatorType.ColonColonEquals, true))
+                                    {
+                                        SetMultiLineMode(true);
+                                        if ((ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken) != null &&
+                                            ot.Type == OilexerGrammarTokens.OperatorType.GreaterThan)
+                                        {
+                                            elementsAreChildren = true;
+                                            PopAhead();
+                                        }
+                                        ParseProductionRule(idOp.Token1, esm, idOp.Token1.Position, elementsAreChildren, forcedRecognizer, curlyNumber.GetCleanValue());
+                                        break;
+                                    }
+                                }
+                                else
+                                    Expect("Number");
+                                break;
                             //ID-
                             case OilexerGrammarTokens.OperatorType.Minus:
                             //ID+
@@ -412,7 +460,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                                 elementsAreChildren = true;
                                                 PopAhead();
                                             }
-                                            ParseProductionRule(idOp.Token1, esm, idOp.Token1.Position, elementsAreChildren, forcedRecognizer);
+                                            ParseProductionRule(idOp.Token1, esm, idOp.Token1.Position, elementsAreChildren, forcedRecognizer, null);
                                             break;
                                         case OilexerGrammarTokens.OperatorType.ColonEquals:
                                             {
@@ -934,7 +982,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                             result.Add(currentPart);
                             goto _ter;
                         default:
-                            Expect("'+', '(', ',' or '>'");
+                            Expect("'+', ':', ',' or '>'");
                             return null;
                     }
                 }
@@ -2221,6 +2269,30 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                                     }
                                 }
                                 break;
+                            //ID{
+                            case OilexerGrammarTokens.OperatorType.LeftCurlyBrace: /* *Must* be a production rule entry, with a k-limit. */
+                                var curlyAhead = PopAhead();
+                                if (curlyAhead.TokenType == OilexerGrammarTokenType.NumberLiteral)
+                                {
+                                    var curlyNumber = curlyAhead as OilexerGrammarTokens.NumberLiteral;
+                                    IOilexerGrammarToken colonColonEq = null;
+                                    if (ExpectOperator(PopAhead(), OilexerGrammarTokens.OperatorType.RightCurlyBrace, true) &&
+                                        ExpectOperator(colonColonEq = PopAhead(), OilexerGrammarTokens.OperatorType.ColonColonEquals, true))
+                                    {
+                                        SetMultiLineMode(true);
+                                        if ((ot = LookAhead(0) as OilexerGrammarTokens.OperatorToken) != null &&
+                                            ot.Type == OilexerGrammarTokens.OperatorType.GreaterThan)
+                                        {
+                                            elementsAreChildren = true;
+                                            PopAhead();
+                                        }
+                                        ParseProductionRule(id, esm, id.Position, elementsAreChildren, preprocessorInserter, container, maxK: curlyNumber.GetCleanValue());
+                                        break;
+                                    }
+                                }
+                                else
+                                    Expect("Number");
+                                break;
                             //ID-
                             case OilexerGrammarTokens.OperatorType.Minus:
                             //ID+
@@ -2885,16 +2957,16 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             return new LiteralCharProductionRuleItem(slt.GetCleanValue(), slt.CaseInsensitive, slt.Column, slt.Line, slt.Position, isFlag, isCounter);
         }
 
-        private void ParseProductionRule(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, bool maxReduce)
+        private void ParseProductionRule(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, bool maxReduce, int? maxK)
         {
-            ParseProductionRule(identifier, scanMode, position, elementsAreChildren, p => this.currentTarget.Result.Add(p), maxReduce: maxReduce);
+            ParseProductionRule(identifier, scanMode, position, elementsAreChildren, p => this.currentTarget.Result.Add(p), maxReduce: maxReduce, maxK: maxK);
         }
-        private void ParseProductionRule(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, Action<IOilexerGrammarEntry> adder, PreprocessorContainer container = PreprocessorContainer.File, bool maxReduce = false)
+        private void ParseProductionRule(OilexerGrammarTokens.IdentifierToken identifier, EntryScanMode scanMode, long position, bool elementsAreChildren, Action<IOilexerGrammarEntry> adder, PreprocessorContainer container = PreprocessorContainer.File, bool maxReduce = false, int? maxK = null)
         {
             long bodyStart = this.StreamPosition;
             IOilexerGrammarProductionRuleEntry ipre = new OilexerGrammarProductionRuleEntry(identifier.Name, scanMode, CurrentTokenizer.FileName, CurrentTokenizer.GetColumnIndex(position), CurrentTokenizer.GetLineIndex(position), position);
             ipre.MaxReduce = maxReduce;
-
+            ipre.LookaheadTokenLimit = maxK;
             ipre.IsRuleCollapsePoint = elementsAreChildren;
             ParseProductionRule(((OilexerGrammarProductionRuleEntry)ipre).BaseCollection, container);
             long bodyEnd = this.StreamPosition;
@@ -3159,12 +3231,25 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
                 }
                 else if (TokenizerLookAhead(0) == '*')
                 {
-                    if (TokenizerLookAhead(1) == '*' &&
-                        item is LiteralStringTokenItem)
+                    if (TokenizerLookAhead(1) == '*' && item is TokenItem)
                     {
-                        item.RepeatOptions = ScannableEntryItemRepeatInfo.MaxReduce;
                         this.PopAhead();
-                        ((LiteralStringTokenItem)(item)).SiblingAmbiguity = true;
+                        ((TokenItem)(item)).SiblingAmbiguity = true;
+                        if (TokenizerLookAhead(0) == '*')
+                        {
+                            item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore | ScannableEntryItemRepeatInfo.MaxReduce;
+                            this.PopAhead();
+                        }
+                    }
+                    else if (TokenizerLookAhead(1) == '*' && item is TokenGroupItem)
+                    {
+                        this.PopAhead();
+                        ((TokenGroupItem)(item)).SiblingAmbiguity = true;
+                        if (TokenizerLookAhead(0) == '*')
+                        {
+                            item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore | ScannableEntryItemRepeatInfo.MaxReduce;
+                            this.PopAhead();
+                        }
                     }
                     else
                     {
@@ -3265,11 +3350,25 @@ namespace AllenCopeland.Abstraction.Slf.Parsers
             }
             else if (TokenizerLookAhead(0) == '*')
             {
-                if (TokenizerLookAhead(1) == '*' &&
-                    item is LiteralStringTokenItem)
+                if (TokenizerLookAhead(1) == '*' && item is TokenItem)
                 {
                     this.PopAhead();
-                    ((LiteralStringTokenItem)(item)).SiblingAmbiguity = true;
+                    ((TokenItem)(item)).SiblingAmbiguity = true;
+                    if (TokenizerLookAhead(0) == '*')
+                    {
+                        item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
+                        this.PopAhead();
+                    }
+                }
+                else if (TokenizerLookAhead(1) == '*' && item is TokenGroupItem)
+                {
+                    this.PopAhead();
+                    ((TokenGroupItem)(item)).SiblingAmbiguity = true;
+                    if (TokenizerLookAhead(0) == '*')
+                    {
+                        item.RepeatOptions = ScannableEntryItemRepeatInfo.ZeroOrMore;
+                        this.PopAhead();
+                    }
                 }
                 else
                 {

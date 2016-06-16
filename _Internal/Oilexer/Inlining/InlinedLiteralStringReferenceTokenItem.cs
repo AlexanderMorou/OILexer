@@ -25,6 +25,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
                 this.Name = source.Name;
             else
                 this.Name = source.Literal.Name;
+            this.SiblingAmbiguity = source.SiblingAmbiguity;
         }
 
         public ILiteralStringReferenceTokenItem Source { get; private set; }

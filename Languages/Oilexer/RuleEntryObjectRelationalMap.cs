@@ -5,7 +5,7 @@ using System.Text;
 using AllenCopeland.Abstraction.Slf.Parsers.Oilexer;
 using AllenCopeland.Abstraction.Utilities.Collections;
 /*---------------------------------------------------------------------\
-| Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+| Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
 |----------------------------------------------------------------------|
 | The Abstraction Project's code is provided under a contract-release  |
 | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -15,6 +15,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
 {
     using RuleTree = KeyedTree<IOilexerGrammarScannableEntry, IOilexerGrammarScannableEntryObjectification>;
     using RuleTreeNode = KeyedTreeNode<IOilexerGrammarScannableEntry, IOilexerGrammarScannableEntryObjectification>;
+    using AllenCopeland.Abstraction.Slf.Ast;
     internal class RuleEntryObjectRelationalMap :
         EntryObjectRelationalMap,
         IRuleEntryObjectRelationalMap
@@ -28,6 +29,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         public RuleEntryObjectRelationalMap(IOilexerGrammarScannableEntry[] implementsSeries, OilexerGrammarFileObjectRelationalMap fileMap, IOilexerGrammarProductionRuleEntry entry)
             : base(implementsSeries, fileMap, entry)
         {
+            this.DebuggerProxyTargets = new List<IIntermediateClassType>();
         }
+
+
+        public IIntermediateClassType DebuggerProxy { get; set; }
+
+        public List<IIntermediateClassType> DebuggerProxyTargets { get; set; }
     }
 }

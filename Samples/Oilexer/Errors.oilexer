@@ -1,3 +1,5 @@
+F<A:Expect=Rule;,a>::=;
+
 #ifndef Lexer
 #include                        "Oilexer.oilexer";
 #elif Lexer == "ToyParser"
@@ -5,8 +7,9 @@
 #endif
 
 ErrorEntry                                 ::=
-    Identifier:Name; 
-    LanguageOperatorToken.ErrorStart  /*=*/
-    String:Message; 
-    LanguageOperatorToken.PartSeparator /*,*/
-    Integer:Number; ';'                      ;
+    Identifier:Name; /*ErrorName*/
+    LanguageOperatorToken.ErrorStart   /*=*/
+    String:Message; /*"Message"*/
+    LanguageOperatorToken.PartSeparator /*,*/  
+    Integer:Number; /*12345/0x12345*/
+    LanguageOperatorToken.Terminal /*;*/     ;

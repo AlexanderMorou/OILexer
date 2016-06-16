@@ -27,6 +27,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             OM::Collection<OilexerGrammarFD::IOilexerGrammarEntry>;
     using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
     using AllenCopeland.Abstraction.Slf.FiniteAutomata;
+    internal enum TokenSourceDerivedFrom
+    {
+        OriginalSources,
+        CaptureItemSources,
+    }
+    internal delegate bool FilterSourcePredicate(ITokenSource sourceItem, TokenSourceDerivedFrom sourcedFrom, FiniteAutomationSourceKind sourceKind);
     /// <summary>
     /// Provides a series of extension methdos for the parser compiler
     /// to operate upon the data sets provided by the grammar description
@@ -518,9 +524,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         public static SyntacticalNFAState BuildNFA(this IProductionRuleSeries series, SyntacticalNFAState root, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
         {
-#if ShortcircuitToFinishLexer
-            return root;
-#else
             SyntacticalNFAState state = root;
             bool first = true;
             foreach (var expression in series)
@@ -557,7 +560,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     edge.SetFinal(source);
             }
             return state;
-#endif
         }
 
         public static SyntacticalNFAState BuildNFA(this IProductionRule rule, IGrammarSymbolSet symbols, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, Dictionary<IProductionRuleSource, IProductionRuleCaptureStructuralItem> replacements)
@@ -718,27 +720,29 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                }
                                return (IEnumerable<ITokenSource>)(new ITokenSource[0]);
                            });
+            if (grouped.Count == 0)
+                return new ITokenSource[0];
             return grouped.Values.Aggregate((a, b) => a.Concat(b));
         }
 
-        public static IEnumerable<IInlinedTokenItem> ObtainEdgeSourceTokenItems(this RegularLanguageDFAState state)
+        public static IEnumerable<IInlinedTokenItem> ObtainEdgeSourceTokenItems(this RegularLanguageDFAState state, FiniteAutomationSourceKind? kind = FiniteAutomationSourceKind.Final, bool includeOwner = false, FilterSourcePredicate filterer = null)
         {
-            return ObtainEdgeSourceTokenItems(state.Sources);
+            return ObtainEdgeSourceTokenItems(state.Sources, kind, includeOwner, filterer);
         }
 
-        public static IEnumerable<IInlinedTokenItem> ObtainEdgeSourceTokenItems(this IEnumerable<Tuple<ITokenSource, FiniteAutomationSourceKind>> sources)
+        public static IEnumerable<IInlinedTokenItem> ObtainEdgeSourceTokenItems(this IEnumerable<Tuple<ITokenSource, FiniteAutomationSourceKind>> sources, FiniteAutomationSourceKind? kind = FiniteAutomationSourceKind.Final, bool includeOwner = false, FilterSourcePredicate filterer = null)
         {
-            var sourceOwners = sources.Where(k => k.Item1 is IOilexerGrammarTokenEntry).Where(k => k.Item2 == FiniteAutomationSourceKind.Final).ToArray();
+            var sourceOwners = sources.Where(k => k.Item1 is IOilexerGrammarTokenEntry || (includeOwner && k.Item1 is IInlinedTokenItem)).Where(k => (kind == null || k.Item2 == kind)).Select(k => k.Item1 is IOilexerGrammarTokenEntry ? k : Tuple.Create((ITokenSource)(((IInlinedTokenItem)k.Item1).Root), k.Item2)).Distinct().ToArray();
             var middletown = 
                 (from s in sources
-                 where (s.Item2 & FiniteAutomationSourceKind.Final) == FiniteAutomationSourceKind.Final
+                 where (kind == null || (s.Item2 & kind) == kind) && (filterer == null || filterer(s.Item1, TokenSourceDerivedFrom.OriginalSources, s.Item2))
                  let isi = s.Item1 as ICaptureTokenStructuralItem
                  let subQuery = from s2 in isi == null ? new ITokenSource[0] : (IEnumerable<ITokenSource>)isi.Sources
                                 select s2
                  from isiElement in subQuery.DefaultIfEmpty()
                  let currentItem = (IInlinedTokenItem)((s.Item1 is IInlinedTokenItem) ? s.Item1 : isiElement)
                  where currentItem != null
-                 where sourceOwners.Any(k => k.Item1 == currentItem.Root && k.Item2 == FiniteAutomationSourceKind.Final)
+                 where sourceOwners.Any(k => k.Item1 == currentItem.Root && (kind == null || (k.Item2 & kind) == kind) && (filterer == null || filterer(k.Item1, TokenSourceDerivedFrom.CaptureItemSources, k.Item2)))
                  select currentItem).ToArray();
             return middletown;
         }
@@ -796,56 +800,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return false;
         }
 
-        public static ProductionRuleProjectionNode GetRuleNodeFromFullSeries(this Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, IOilexerGrammarProductionRuleEntry entry)
+        public static PredictionTreeLeaf GetRuleNodeFromFullSeries(this Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, IOilexerGrammarProductionRuleEntry entry)
         {
-            return fullSeries.First(p => p.Value.Rule == entry).Value.RootNode;
+            return fullSeries.First(p => p.Value.Rule == entry).Value.RootLeaf;
         }
-
-        public static IEnumerable<KeysValuePair<MultikeyedDictionaryKeys<TKey1, TKey2>, TValue>> Filter<TKey1, TKey2, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TValue> dict, TKey1 key1Filter)
-        {
-            return from ksvp in dict
-                   where ksvp.Keys.Key1.Equals(key1Filter)
-                   select ksvp;
-        }
-
-        public static IEnumerable<KeysValuePair<MultikeyedDictionaryKeys<TKey1, TKey2, TKey3>, TValue>> Filter<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter, TKey2 key2Filter)
-        {
-            return from ksvp in dict
-                   where ksvp.Keys.Key1.Equals(key1Filter) &&
-                         ksvp.Keys.Key2.Equals(key2Filter)
-                   select ksvp;
-        }
-
-        public static IEnumerable<KeysValuePair<MultikeyedDictionaryKeys<TKey1, TKey2, TKey3>, TValue>> Filter<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter)
-        {
-            return from ksvp in dict
-                   where ksvp.Keys.Key1.Equals(key1Filter)
-                   select ksvp;
-        }
-
-        public static IDictionary<TKey3, TValue> FilterToDictionary<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter, TKey2 key2Filter)
-        {
-            var result = new Dictionary<TKey3, TValue>();
-            foreach (var ksvp in dict.Filter(key1Filter, key2Filter))
-                result.Add(ksvp.Keys.Key3, ksvp.Value);
-            return result;
-        }
-
-        public static IDictionary<TKey2, TValue> FilterToDictionary<TKey1, TKey2, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TValue> dict, TKey1 key1Filter)
-        {
-            var result = new Dictionary<TKey2, TValue>();
-            foreach (var ksvp in dict.Filter(key1Filter))
-                result.Add(ksvp.Keys.Key2, ksvp.Value);
-            return result;
-        }
-
-        public static IMultikeyedDictionary<TKey2, TKey3, TValue> FilterToDictionary<TKey1, TKey2, TKey3, TValue>(this IMultikeyedDictionary<TKey1, TKey2, TKey3, TValue> dict, TKey1 key1Filter)
-        {
-            var result = new MultikeyedDictionary<TKey2, TKey3, TValue>();
-            foreach (var ksvp in dict.Filter(key1Filter))
-                result.Add(ksvp.Keys.Key2, ksvp.Keys.Key3, ksvp.Value);
-            return result;
-        }
-
     }
 }

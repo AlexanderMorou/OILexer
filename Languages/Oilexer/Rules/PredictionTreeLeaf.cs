@@ -12,23 +12,24 @@ using System.Threading.Tasks;
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
-    public class ProductionRuleProjectionNode :
-        KeyedTree<IOilexerGrammarProductionRuleEntry, IProductionRuleProjectionNodeInfo<ProductionRuleProjectionDPath, ProductionRuleProjectionNode>, ProductionRuleProjectionNode>,
-        IProductionRuleProjectionNode<ProductionRuleProjectionDPath, ProductionRuleProjectionNode>,
+    public class PredictionTreeLeaf :
+        KeyedTree<IOilexerGrammarProductionRuleEntry, PredictionTreeLeafVeins, PredictionTreeLeaf>,
+        IKeyedTreeNode<IOilexerGrammarProductionRuleEntry, PredictionTreeLeafVeins, PredictionTreeLeaf>,
         IProductionRuleSource
     {
-        private HashSet<ProductionRuleProjectionDPath> incoming = new HashSet<ProductionRuleProjectionDPath>();
-        private ControlledDictionary<GrammarVocabulary, List<IProductionRuleProjectionDPathSet<ProductionRuleProjectionDPath, ProductionRuleProjectionNode>>> incomingPaths;
-        private ProductionRuleProjectionNode rootNode;
-        private MultikeyedDictionary<GrammarVocabulary, ProductionRuleProjectionNode, IProductionRuleProjectionDecision> decisionTree = new MultikeyedDictionary<GrammarVocabulary, ProductionRuleProjectionNode, IProductionRuleProjectionDecision>();
-        private MultikeyedDictionary<GrammarVocabulary, int, ProductionRuleProjectionReduction> reductionTree = new MultikeyedDictionary<GrammarVocabulary, int, ProductionRuleProjectionReduction>();
-        private MultikeyedDictionary<GrammarVocabulary, int, List<ProductionRuleProjectionFollow>> followAmbiguities = new MultikeyedDictionary<GrammarVocabulary, int, List<ProductionRuleProjectionFollow>>();
+        private HashSet<PredictionTreeBranch> incoming = new HashSet<PredictionTreeBranch>();
+        private ControlledDictionary<GrammarVocabulary, List<PredictionTree>> incomingPaths;
+        private PredictionTreeLeaf rootNode;
+        private MultikeyedDictionary<GrammarVocabulary, PredictionTreeLeaf, IPredictionTreeDestination> decisionTree = new MultikeyedDictionary<GrammarVocabulary, PredictionTreeLeaf, IPredictionTreeDestination>();
+        //private MultikeyedDictionary<GrammarVocabulary, int, ProductionRuleProjectionReduction> reductionTree = new MultikeyedDictionary<GrammarVocabulary, int, ProductionRuleProjectionReduction>();
+        private MultikeyedDictionary<GrammarVocabulary, int, List<PredictionTreeFollow>> followAmbiguities = new MultikeyedDictionary<GrammarVocabulary, int, List<PredictionTreeFollow>>();
         private int bucketCount = 0;
         private object laBucketLock = new object();
-        private Dictionary<GrammarVocabulary, IProductionRuleProjectionDecision> followFailures = new Dictionary<GrammarVocabulary, IProductionRuleProjectionDecision>();
-        private HashSet<ProductionRuleProjectionDPathSet> ambiguityContexts = new HashSet<ProductionRuleProjectionDPathSet>();
+        private Dictionary<GrammarVocabulary, IPredictionTreeDestination> followFailures = new Dictionary<GrammarVocabulary, IPredictionTreeDestination>();
+        private HashSet<PredictionTree> ambiguityContexts = new HashSet<PredictionTree>();
         private HashSet<ProductionRuleProjectionReductionDetail> steppedAmbiguityContexts = new HashSet<ProductionRuleProjectionReductionDetail>();
-        private HashSet<HashList<HashList<ProductionRuleProjectionNode>>> rootAmbiguityContexts = new HashSet<HashList<HashList<ProductionRuleProjectionNode>>>();
+        private HashSet<HashList<HashList<PredictionTreeLeaf>>> _rootAmbiguityContexts = new HashSet<HashList<HashList<PredictionTreeLeaf>>>();
+        private HashSet<PredictionTree> _predictionReductions = new HashSet<PredictionTree>();
         private bool _hasBeenReduced;
         public bool HasBeenReduced
         {
@@ -50,10 +51,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
         /// <summary>
-        /// Returns/sets the <see cref="IProductionRuleProjectionNodeInfo{TPath, TNode}"/>
+        /// Returns/sets the <see cref="PredictionTreeLeafVeins"/>
         /// instance relative to the current node position.
         /// </summary>
-        public IProductionRuleProjectionNodeInfo<ProductionRuleProjectionDPath, ProductionRuleProjectionNode> Value { get; set; }
+        public PredictionTreeLeafVeins Veins { get; set; }
+
+        PredictionTreeLeafVeins IControlledKeyedTreeNode<IOilexerGrammarProductionRuleEntry, PredictionTreeLeafVeins, PredictionTreeLeaf>.Value { get { return this.Veins; } }
+
+        PredictionTreeLeafVeins IKeyedTreeNode<IOilexerGrammarProductionRuleEntry, PredictionTreeLeafVeins, PredictionTreeLeaf>.Value { get { return this.Veins; } set { this.Veins = value; } }
 
         public IProductionRuleSource TerminalSource
         {
@@ -63,13 +68,13 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public ProductionRuleProjectionNode() { this.PathSets = new HashSet<ProductionRuleProjectionDPathSet>(); }
+        public PredictionTreeLeaf() { this.PathSets = new HashSet<PredictionTree>(); }
 
-        internal void LinkProjections(IDictionary<IOilexerGrammarProductionRuleEntry, ProductionRuleProjectionNode> nodeLookup)
+        internal void LinkProjections(IDictionary<IOilexerGrammarProductionRuleEntry, PredictionTreeLeaf> nodeLookup)
         {
-            if (this.Value == null)
+            if (this.Veins == null)
                 return;
-            var fullCheck = this.Value.OriginalState.OutTransitions.FullCheck;
+            var fullCheck = this.Veins.DFAOriginState.OutTransitions.FullCheck;
             var ruleCheck = fullCheck.GetRuleVariant();
             foreach (var rule in from r in ruleCheck.GetSymbols()
                                  select (IGrammarRuleSymbol)r)
@@ -78,51 +83,49 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 
         public override string ToString()
         {
-            if (this.Value == null ||
-                this.Value.OriginalState == null ||
-                this.Value.Rule == null)
+            if (this.Veins == null ||
+                this.Veins.DFAOriginState == null ||
+                this.Veins.Rule == null)
                 return string.Format("Invalid Object State");
-            if (this.Value.IsRuleNode)
-                return string.Format("Rule Node for {0}", this.Value.Rule.Name);
+            if (this.Veins.IsRuleEntryPoint)
+                return string.Format("Rule Node for {0}", this.Veins.Rule.Name);
             else
-                return string.Format("Rule Sub-Node for {0} at {1}", this.Value.Rule.Name, this.Value.OriginalState.StateValue);
+                return string.Format("Rule Sub-Node for {0} at {1}", this.Veins.Rule.Name, this.Veins.DFAOriginState.StateValue);
         }
 
+        public ParserCompiler Compiler { get; internal set; }
 
-        public IControlledDictionary<GrammarVocabulary, IProductionRuleProjectionDPathSet<ProductionRuleProjectionDPath, ProductionRuleProjectionNode>> LookAhead { get; private set; }
+        public IControlledDictionary<GrammarVocabulary, PredictionTree> LookAhead { get; private set; }
 
         public bool RequiresLookAheadAutomation
         {
             get
             {
-#if ShortcutToFindBug13
-                return false;
-#else
-                return this.Value.OriginalState.OutTransitions.Count > 1 && this.LookAhead.Count > 0 && this.LookAhead.Values.Any(k => k.LookAhead.Count > 0) && this.followAmbiguities != null && this.followAmbiguities.Count == 0;
-#endif
+                //|| this.Keys.Any(k => this.Compiler.RuleDFAStates[k].CanBeEmpty)
+                return this.Veins.DFAOriginState.OutTransitions.Count > 1 && this.LookAhead.Count > 0 && this.LookAhead.Values.Any(k => k.LookAhead.Count > 0) && this.followAmbiguities != null && this.followAmbiguities.Count == 0;
             }
         }
 
-        public SyntacticalDFAState ConstructAdvanceDFA(Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary, ICompilerErrorCollection compilationErrors, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, GrammarSymbolSet symbols)
+        public SyntacticalDFAState ConstructAdvanceDFA(ParserCompiler compiler)//Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary, ICompilerErrorCollection compilationErrors, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> lookup, GrammarSymbolSet symbols)
         {
             SyntacticalNFAState resultNFANode = null;
             /* *
              * Simple for now, but I suspect it'll be more complicated
              * later on to provide sufficient context.
              * */
-            if (this.Value.OriginalState is SyntacticalDFARootState)
-                resultNFANode = new SyntacticalNFARootState(this.Value.Rule, lookup, symbols);
+            if (this.Veins.DFAOriginState is SyntacticalDFARootState)
+                resultNFANode = new SyntacticalNFARootState(this.Veins.Rule, compiler.RuleDFAStates, compiler._GrammarSymbols);
             else
-                resultNFANode = new SyntacticalNFAState(lookup, symbols);
+                resultNFANode = new SyntacticalNFAState(compiler.RuleDFAStates, compiler._GrammarSymbols);
             foreach (var transition in this.LookAhead.Keys)
             {
-                ((ProductionRuleProjectionDPathSet)this.LookAhead[transition])
-                    .BuildNFA(fullSeries, ruleVocabulary, compilationErrors, lookup, symbols);
+                ((PredictionTree)this.LookAhead[transition])
+                    .BuildNFA(compiler);//fullSeries, ruleVocabulary, compilationErrors, lookup, symbols);
             }
             foreach (var transition in this.LookAhead.Keys)
             {
-                ((ProductionRuleProjectionDPathSet)this.LookAhead[transition]).
-                HandleReplFixups(fullSeries, ruleVocabulary, compilationErrors, lookup, symbols);
+                ((PredictionTree)this.LookAhead[transition]).
+                HandleReplFixups(compiler);//fullSeries, ruleVocabulary, compilationErrors, lookup, symbols);
             }
             /* *
              * Transition from the Variable look-ahead table
@@ -130,29 +133,30 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
              * */
             foreach (var transition in this.LookAhead.Keys)
             {
-                var currentSet = (ProductionRuleProjectionDPathSet)this.LookAhead[transition];
-                resultNFANode.MoveTo(transition, currentSet.GetNFAState(lookup, symbols));
+                var currentSet = (PredictionTree)this.LookAhead[transition];
+                resultNFANode.MoveTo(transition, currentSet.GetNFAState(compiler));
             }
             /* *
              * Create a Deterministic automation from the results.
              * */
             resultNFANode.SetInitial(this);
-            return resultNFANode.DeterminateAutomata();
+            return this.DeterministicAutomata = resultNFANode.DeterminateAutomata();
         }
 
         /// <summary>
         /// Constructs the initial look-ahead for the transitions.
         /// </summary>
         /// <remarks></remarks>
-        public void ConstructInitialLookahead(GrammarSymbolSet grammarSymbols, Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary)
+        public void ConstructInitialLookahead(GrammarSymbolSet grammarSymbols, Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary)
         {
             /* *
              * Left-recursive rules will use the relevant rule
              * paths within their projections within a loop to avoid 
              * stack overflow.
              * */
-            bool includeRules = this.RootNode.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None;
-            var result = new ControlledDictionary<GrammarVocabulary, IProductionRuleProjectionDPathSet<ProductionRuleProjectionDPath, ProductionRuleProjectionNode>>();
+
+            bool includeRules = this.RootLeaf.Veins.LeftRecursionType != ProductionRuleLeftRecursionType.None;
+            var result = new ControlledDictionary<GrammarVocabulary, PredictionTree>();
             this.LookAhead = result;
             if (includeRules)
             {
@@ -164,13 +168,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                  * can be switched 'off' to allow for reductions
                  * to function properly.
                  * */
-                foreach (var key in this.Value.Keys)
+
+                foreach (var key in this.Veins.Keys)
                 {
-                    var targets = this.Value[key];
-                    if (targets.Any(k => k.GetRecursionType() != ProductionRuleLeftRecursionType.None && this.RootNode == this))
+                    var targets = this.Veins[key];
+                    if (targets.Any(k => k.GetRecursionType() != ProductionRuleLeftRecursionType.None && this.RootLeaf == this))
                     {
-                        var intersection = key.Intersect(this.Value.OriginalState.OutTransitions.FullCheck);
-                        var reducedRules = key.GetRuleVariant().GetSymbols().Select(k => (IGrammarRuleSymbol)k).Select(k => new { Node = fullSeries.GetRuleNodeFromFullSeries(k.Source), Symbol = k }).Where(k => k.Node.HasBeenReduced || k.Node == k.Node.RootNode && k.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None).Select(k => k.Symbol);
+
+                        var intersection = key.Intersect(this.Veins.DFAOriginState.OutTransitions.FullCheck);
+                        var reducedRules = key.GetRuleVariant().GetSymbols().Select(k => (IGrammarRuleSymbol)k).Select(k => new { Node = fullSeries.GetRuleNodeFromFullSeries(k.Source), Symbol = k }).Where(k => k.Node.HasBeenReduced || k.Node == k.Node.RootLeaf && k.Node.Veins.LeftRecursionType != ProductionRuleLeftRecursionType.None).Select(k => k.Symbol);
                         var ruleVar = new GrammarVocabulary(key.symbols, reducedRules.ToArray());
                         intersection |= (key.GetTokenVariant() | ruleVar);
                         if (!intersection.IsEmpty)
@@ -182,17 +188,25 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
             else
             {
-                foreach (var key in this.Value.Keys.ToArray())
+                foreach (var key in this.Veins.Keys.ToArray())
                     DoReductionAware(fullSeries, result, key);
             }
+
             /* *
              * Lexical ambiguity handling follows after the full transition table is known.
              * */
             SyntacticAnalysisCore.CreateLexicalAmbiguityTransitions(grammarSymbols, result, null, this, fullSeries, ruleVocabulary);
         }
 
+        public IEnumerable<PredictionTree> PointsOfReduction
+        {
+            get
+            {
+                return this._predictionReductions;
+            }
+        }
 
-        private void DoReductionAware(Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, ControlledDictionary<GrammarVocabulary, IProductionRuleProjectionDPathSet<ProductionRuleProjectionDPath, ProductionRuleProjectionNode>> result, GrammarVocabulary key)
+        private void DoReductionAware(Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, ControlledDictionary<GrammarVocabulary, PredictionTree> result, GrammarVocabulary key)
         {
             var tokenVar = key.GetTokenVariant();
             var reducedRules = 
@@ -201,22 +215,22 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 .GetSymbols()
                 .Select(k => (IGrammarRuleSymbol)k)
                 .Select(k => new { Node = fullSeries.GetRuleNodeFromFullSeries(k.Source), Symbol = k })
-                .Where(k => k.Node.HasBeenReduced).Select(k => k.Symbol);// || k.Node == k.Node.RootNode && k.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None && this == this.RootNode
+                .Where(k => k.Node.HasBeenReduced).Select(k => k.Symbol);// || k.Node == k.Node.RootLeaf && k.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None && this == this.RootLeaf
             var ruleVar = new GrammarVocabulary(key.symbols, reducedRules.ToArray());
             if (!tokenVar.IsEmpty)
-                result._Add(tokenVar, this.Value[key]);
+                result._Add(tokenVar, this.Veins[key]);
             if (!ruleVar.IsEmpty)
-                result._Add(ruleVar, this.Value[key]);
+                result._Add(ruleVar, this.Veins[key]);
         }
 
-        internal HashSet<ProductionRuleProjectionDPathSet> PathSets { get; private set; }
+        internal HashSet<PredictionTree> PathSets { get; private set; }
 
         public IOilexerGrammarProductionRuleEntry Rule
         {
-            get { return this.Value.Rule; }
+            get { return this.Veins.Rule; }
         }
 
-        public IEnumerable<ProductionRuleProjectionDPath> IncomingPaths
+        public IEnumerable<PredictionTreeBranch> IncomingPaths
         {
             get
             {
@@ -224,7 +238,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        internal void AddPath(ProductionRuleProjectionDPath path)
+        internal void AddPath(PredictionTreeBranch path)
         {
             lock (incoming)
                 incoming.Add(path);
@@ -232,22 +246,24 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 
         internal void ClearCache()
         {
-            this.ambiguityContexts = new HashSet<ProductionRuleProjectionDPathSet>();
+            this.ambiguityContexts = new HashSet<PredictionTree>();
             this.steppedAmbiguityContexts = new HashSet<ProductionRuleProjectionReductionDetail>();
             this.followFailures.Clear();
-            this.reductionTree.Clear();
-            this.Value.ClearCache();
+            this.Veins.ClearCache();
             this.PathSets.Clear();
+            if (this.LookAhead != null)
+                this.LookAhead = null;
             this.followAmbiguities.Clear();
+            this._predictionReductions.Clear();
         }
 
         internal bool CalculateTerminalAmbiguities(
-            Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> allProjectionNodes,
+            Dictionary<SyntacticalDFAState, PredictionTreeLeaf> allLeaves,
             ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> ruleDFAStates,
             Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleLookup,
             GrammarSymbolSet grammarSymbols)
         {
-            var ambiguities = ObtainTerminalAmbiguities(allProjectionNodes, ruleDFAStates, ruleLookup, grammarSymbols);
+            var ambiguities = ObtainTerminalAmbiguities(allLeaves, ruleDFAStates, ruleLookup, grammarSymbols);
             /* *
              * First step, reduce the ambiguity data provided to us.
              * *
@@ -264,37 +280,42 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                                     {
                                         AmbiguousTransition = ambigKeysValue.Keys.Key1,
                                         TyingPaths = ambigKeysValue.Keys.Key2,
-                                        FollowAmbiguity = new ProductionRuleProjectionFollow(pathSet.Item2, this)//ConstructInitialFollow(this, ambigKeysValue.Keys.Key1, reductionTuple, allProjectionNodes, ruleDFAStates, ruleLookup),
+                                        FollowAmbiguity = new PredictionTreeFollow(pathSet.Item2, this)//ConstructInitialFollow(this, ambigKeysValue.Keys.Key1, reductionTuple, allLeaves, ruleDFAStates, ruleLookup),
                                     }).ToArray();
             foreach (var rewrite in ambiguityRewrite)
             {
-                if (rewrite.FollowAmbiguity.InitialPaths.All(initialPath => initialPath.CurrentNode.Value.OriginalState.IsEdge))
+                if (rewrite.FollowAmbiguity.InitialPaths.All(initialPath => initialPath.CurrentNode.Veins.DFAOriginState.IsEdge))
                     continue;
-                List<ProductionRuleProjectionFollow> currentSet;
+                List<PredictionTreeFollow> currentSet;
                 if (!this.followAmbiguities.TryGetValue(rewrite.AmbiguousTransition, rewrite.TyingPaths, out currentSet))
-                    followAmbiguities.Add(rewrite.AmbiguousTransition, rewrite.TyingPaths, currentSet = new List<ProductionRuleProjectionFollow>());
+                    followAmbiguities.Add(rewrite.AmbiguousTransition, rewrite.TyingPaths, currentSet = new List<PredictionTreeFollow>());
                 currentSet.Add(rewrite.FollowAmbiguity);
             }
             return followAmbiguities.Count > 0;
         }
 
-        internal MultikeyedDictionary<GrammarVocabulary, int, List<Tuple<Tuple<int[], ProductionRuleProjectionDPathSet>[], int[]>>> ObtainTerminalAmbiguities(
-            Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, 
+        internal MultikeyedDictionary<GrammarVocabulary, int, List<Tuple<Tuple<int[], PredictionTree>[], int[]>>> ObtainTerminalAmbiguities(
+            Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, 
             ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> ruleDFAs,
             Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleLookup,
             GrammarSymbolSet grammarSymbols)
         {
-            if (!this.Value.OriginalState.IsEdge)
-                return new MultikeyedDictionary<GrammarVocabulary, int, List<Tuple<Tuple<int[], ProductionRuleProjectionDPathSet>[], int[]>>>();
-            var tempDictionary = new MultikeyedDictionary<ProductionRuleProjectionDPath, GrammarVocabulary, Tuple<int[], ProductionRuleProjectionDPathSet>>();
+            if (!this.Veins.DFAOriginState.IsEdge)
+                return new MultikeyedDictionary<GrammarVocabulary, int, List<Tuple<Tuple<int[], PredictionTree>[], int[]>>>();
+            var tempDictionary = new MultikeyedDictionary<PredictionTreeBranch, GrammarVocabulary, Tuple<int[], PredictionTree>>();
             var rootNode = fullSeries[ruleDFAs[this.Rule]];
-            var currentIncoming = new List<ProductionRuleProjectionDPath>(rootNode.incoming);
-            var totalIncoming = new HashSet<ProductionRuleProjectionDPath>();
-            Dictionary<ProductionRuleProjectionDPathSet, ProductionRuleProjectionDPathSet> uniqueSet = new Dictionary<ProductionRuleProjectionDPathSet, ProductionRuleProjectionDPathSet>();
+            var currentIncoming = new List<PredictionTreeBranch>(rootNode.incoming);
+            var reductions = rootNode.PointsOfReduction.ToArray();
+            if (reductions.Length > 0)
+            {
+                
+            }
+            var totalIncoming = new HashSet<PredictionTreeBranch>();
+            Dictionary<PredictionTree, PredictionTree> uniqueSet = new Dictionary<PredictionTree, PredictionTree>();
             foreach (var path in currentIncoming)
             {
-                var transitionTableResult = new FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, ProductionRuleProjectionDPath>>();
-                var masterPathChop = new ProductionRuleProjectionDPath(path.Take(path.Depth).Concat(new[] { this }).ToArray(), path.Depth, false, false);
+                var transitionTableResult = new FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, PredictionTreeBranch>>();
+                var masterPathChop = new PredictionTreeBranch(path.Take(path.Depth).Concat(new[] { this }).ToArray(), path.Depth, false, false);
 
                 masterPathChop.SetDeviations(path.GetDeviationsUpTo(path.Depth));
                 ObtainTerminalAmbiguitiesOnPath(masterPathChop, fullSeries, ruleDFAs, ruleLookup, transitionTableResult, grammarSymbols);
@@ -309,7 +330,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                          group entry.Item1 by entry.Item2).ToDictionary(k => k.Key, v => v.ToArray());
                     //int minDepth;
                     //var uniqueCurrent = GetUniqueDPathSet(uniqueSet, transitionTableResult, transition, epDepthLookup);
-                    //var subPath = new ProductionRuleProjectionDPath(path.Skip(minDepth).ToList(), path.Depth - minDepth, minDepth: path.MinDepth);
+                    //var subPath = new PredictionTreeBranch(path.Skip(minDepth).ToList(), path.Depth - minDepth, minDepth: path.MinDepth);
                     tempDictionary.TryAdd(path, transition, Tuple.Create((from epDepth in transitionTableResult[transition]
                                                                           select epDepth.Item1).ToArray(), GetFollowDPathSet(transitionTableResult, transition, epDepthLookup)));
                 }
@@ -330,9 +351,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                                let value = regrouping[key]
                                let kRewrite = from r in value
                                               select r.Set
-                               let commonalities = ProductionRuleProjectionDPathSet.GetCompoundRightSideSimilarities(kRewrite)
+                               let commonalities = PredictionTree.GetCompoundRightSideSimilarities(kRewrite)
                                select new { Commonalities = commonalities, Transition = key }).ToDictionary(k => k.Transition, v => v.Commonalities);
-            var resultDictionary = new MultikeyedDictionary<GrammarVocabulary, int, List<Tuple<Tuple<int[], ProductionRuleProjectionDPathSet>[], int[]>>>();
+            var resultDictionary = new MultikeyedDictionary<GrammarVocabulary, int, List<Tuple<Tuple<int[], PredictionTree>[], int[]>>>();
 
             /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \
              * Once we're done, we need to rebuild the paths with the MinDepth set to  *
@@ -358,28 +379,28 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         }
 
 
-        private ProductionRuleProjectionDPathSet GetFollowDPathSet(FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, ProductionRuleProjectionDPath>> transitionTableResult, GrammarVocabulary transition, Dictionary<ProductionRuleProjectionDPath, int[]> epDepthLookup)
+        private PredictionTree GetFollowDPathSet(FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, PredictionTreeBranch>> transitionTableResult, GrammarVocabulary transition, Dictionary<PredictionTreeBranch, int[]> epDepthLookup)
         {
             //var minMinDepth = (from deviationPath in transitionTableResult[transition]
             //                   select deviationPath.Item2.MinDepth).Min();
             //minDepth = minMinDepth;
-            //epDepthLookup = epDepthLookup.ToDictionary(dps => new ProductionRuleProjectionDPath(dps.Key.Skip(minMinDepth).ToList(), dps.Key.Depth - minMinDepth, minDepth: dps.Key.MinDepth - minMinDepth), dps => dps.Value);
-            var result = ProductionRuleProjectionDPathSet.GetPathSet(transition, epDepthLookup.Keys.ToList(), this, ProductionRuleProjectionType.FollowAmbiguity, PredictionDerivedFrom.LookAhead_FollowPrediction);
+            //epDepthLookup = epDepthLookup.ToDictionary(dps => new PredictionTreeBranch(dps.Key.Skip(minMinDepth).ToList(), dps.Key.Depth - minMinDepth, minDepth: dps.Key.MinDepth - minMinDepth), dps => dps.Value);
+            var result = PredictionTree.GetPathSet(transition, epDepthLookup.Keys.ToList(), this, ProductionRuleProjectionType.FollowAmbiguity, PredictionDerivedFrom.LookAhead_FollowPrediction);
             result.SetFollowEpsilonData(provider => epDepthLookup[provider]);
             return result;
         }
 
         private void ObtainTerminalAmbiguitiesOnPath(
-            ProductionRuleProjectionDPath sourceMasterPath, 
-            Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, 
+            PredictionTreeBranch sourceMasterPath, 
+            Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, 
             ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> ruleDFAs,
             Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleLookup,
-            FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, ProductionRuleProjectionDPath>> transitionTableResult,
+            FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, PredictionTreeBranch>> transitionTableResult,
             GrammarSymbolSet grammarSymbols)
         {
             var ambiguousSymbols = grammarSymbols.AmbiguousSymbols.ToList();
-            Stack<Tuple<int, ProductionRuleProjectionDPath>> toProcess = new Stack<Tuple<int, ProductionRuleProjectionDPath>>();
-            var fullCheck = this.Value.Keys.Aggregate(GrammarVocabulary.UnionAggregateDelegate);
+            Stack<Tuple<int, PredictionTreeBranch>> toProcess = new Stack<Tuple<int, PredictionTreeBranch>>();
+            var fullCheck = this.Veins.Keys.Aggregate(GrammarVocabulary.UnionAggregateDelegate);
             /* * * * * * * * * * * * * * * * * * * * * * * * * *  * *\
              * Kick things off with the master path, this is derived *
              * from the incoming states from the parent rule.        *
@@ -387,8 +408,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             toProcess.Push(Tuple.Create(0, sourceMasterPath));
             //foreach (var transition in this.Value.Keys)
             //    foreach (var target in this.Value[transition])
-            //        toProcess.Push(new ProductionRuleProjectionDPath(sourceMasterPath.Take(sourceMasterPath.Depth).Concat(target).ToList(), sourceMasterPath.Depth, true, false, sourceMasterPath.GetDeviationsUpTo(sourceMasterPath.Depth)));
-            HashSet<ProductionRuleProjectionDPath> seen = new HashSet<ProductionRuleProjectionDPath>();
+            //        toProcess.Push(new PredictionTreeBranch(sourceMasterPath.Take(sourceMasterPath.Depth).Concat(target).ToList(), sourceMasterPath.Depth, true, false, sourceMasterPath.GetDeviationsUpTo(sourceMasterPath.Depth)));
+            HashSet<PredictionTreeBranch> seen = new HashSet<PredictionTreeBranch>();
 
             while (toProcess.Count > 0)
             {
@@ -396,14 +417,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                 var currentPath = currentPathTuple.Item2;
                 if (currentPath.Depth == 0)
                     continue;
-                if (currentPath.CurrentNode.Value.Keys.Aggregate(GrammarVocabulary.UnionAggregateDelegate).Intersect(fullCheck).IsEmpty)
+                if (currentPath.CurrentNode.Veins.Keys.Aggregate(GrammarVocabulary.UnionAggregateDelegate).Intersect(fullCheck).IsEmpty)
                     continue;
                 /* *
                  * Walk up the tree one level into the state that 
                  * follows the current rule in whatever the current
                  * calling rule might be.
                  * */
-                var incomingTransitions = currentPath.FollowTransition(fullSeries, ruleLookup[currentPath.CurrentNode.Value.Rule], ruleLookup, true, false, true, true);
+                var incomingTransitions = currentPath.FollowTransition(fullSeries, ruleLookup[currentPath.CurrentNode.Veins.Rule], ruleLookup, true, false, true, true);
                 /* *
                  * Aggregate the transitions from our previously 
                  * calculated LL(1) look-ahead information.
@@ -472,14 +493,14 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        private static IEnumerable<ProductionRuleProjectionDPath> PushIntersection(
-            ProductionRuleProjectionDPath sourceMasterPath, 
-            FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, ProductionRuleProjectionDPath>> transitionTableResult, 
-            Stack<Tuple<int, ProductionRuleProjectionDPath>> toProcess,
-            HashSet<ProductionRuleProjectionDPath> seen, 
-            Tuple<int, ProductionRuleProjectionDPath> currentPathTuple, 
-            ProductionRuleProjectionDPath currentPath, 
-            ProductionRuleProjectionDPath path, 
+        private static IEnumerable<PredictionTreeBranch> PushIntersection(
+            PredictionTreeBranch sourceMasterPath, 
+            FiniteAutomataMultiTargetTransitionTable<GrammarVocabulary, Tuple<int, PredictionTreeBranch>> transitionTableResult, 
+            Stack<Tuple<int, PredictionTreeBranch>> toProcess,
+            HashSet<PredictionTreeBranch> seen, 
+            Tuple<int, PredictionTreeBranch> currentPathTuple, 
+            PredictionTreeBranch currentPath, 
+            PredictionTreeBranch path, 
             GrammarVocabulary intersection,
             GrammarVocabulary transitionKey = null)
         {
@@ -487,16 +508,16 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
              * Construct the transition table with the matching *
              * paths.                                           *
              * * * * * * * * * * * * * * * * * * * * * * * * * */
-            var intersectingCurrent = from key in currentPath.CurrentNode.Value.Keys
+            var intersectingCurrent = from key in currentPath.CurrentNode.Veins.Keys
                                       let intersect = key.Intersect(intersection)
                                       where !intersect.IsEmpty
-                                      let subPathSet = currentPath.CurrentNode.Value[key]
+                                      let subPathSet = currentPath.CurrentNode.Veins[key]
                                       from subPath in subPathSet.UnalteredOriginals
-                                      let rPath = new ProductionRuleProjectionDPath(sourceMasterPath.Take(currentPath.Depth).Concat(subPath).ToList(), currentPath.Depth + subPath.Depth, true, false, currentPath.GetDeviationsUpTo(currentPath.Depth), minDepth: currentPath.Depth)
+                                      let rPath = new PredictionTreeBranch(sourceMasterPath.Take(currentPath.Depth).Concat(subPath).ToList(), currentPath.Depth + subPath.Depth, true, false, currentPath.GetDeviationsUpTo(currentPath.Depth), minDepth: currentPath.Depth)
                                       where rPath.Valid
                                       select rPath;
-            var set = new List<Tuple<int, ProductionRuleProjectionDPath>>(from ip in intersectingCurrent
-                                                                          select Tuple.Create(currentPathTuple.Item1, ip)) { Tuple.Create(currentPathTuple.Item1 + 1, new ProductionRuleProjectionDPath(path.baseList, path.Depth, false, false, minDepth: path.Depth)) };
+            var set = new List<Tuple<int, PredictionTreeBranch>>(from ip in intersectingCurrent
+                                                                          select Tuple.Create(currentPathTuple.Item1, ip)) { Tuple.Create(currentPathTuple.Item1 + 1, new PredictionTreeBranch(path.baseList, path.Depth, false, false, minDepth: path.Depth)) };
             var distinctNodeArray = (from element in set
                                      select element.Item2).Distinct().ToArray();
             foreach (var element in distinctNodeArray)
@@ -509,15 +530,15 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
              * Further ambiguities might result in additional look- *
              * ahead being necessary.                               *
              * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-            if (seen.Add(path) && path.CurrentNode.Value.OriginalState.IsEdge)
+            if (seen.Add(path) && path.CurrentNode.Veins.DFAOriginState.IsEdge)
                 toProcess.Push(Tuple.Create(currentPathTuple.Item1 + 1, path));
         }
         private class TerminalTailSource :
             IProductionRuleSource
         {
-            private readonly ProductionRuleProjectionNode parent;
+            private readonly PredictionTreeLeaf parent;
 
-            public TerminalTailSource(ProductionRuleProjectionNode parent)
+            public TerminalTailSource(PredictionTreeLeaf parent)
             {
                 this.parent = parent;
             }
@@ -527,7 +548,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public ProductionRuleProjectionNode RootNode
+        public PredictionTreeLeaf RootLeaf
         {
             get
             {
@@ -539,68 +560,46 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public IProductionRuleProjectionDecision SetDecisionFor(GrammarVocabulary rootTransitionKey, ProductionRuleProjectionNode targetStateNode)
+        public IPredictionTreeDestination SetDecisionFor(GrammarVocabulary rootTransitionKey, PredictionTreeLeaf targetStateNode)
         {
             Debug.Assert(rootTransitionKey != null, "Error, the root transition key to make a decision was invalid!");
-            IProductionRuleProjectionDecision result;
+            IPredictionTreeDestination result;
             if (targetStateNode != null)
             {
-                
+
                 if (!this.decisionTree.TryGetValue(rootTransitionKey, targetStateNode, out result))
-                    this.decisionTree.Add(rootTransitionKey, targetStateNode, result = new ProductionRuleProjectionDecision() { DecidingFactor = rootTransitionKey, Target = targetStateNode });
+                {
+                    this.decisionTree.Add(rootTransitionKey, targetStateNode, result = new PredictionTreeDestination() { DecidingFactor = rootTransitionKey, Target = targetStateNode });
+                }
             }
             else
             {
                 if (!this.followFailures.TryGetValue(rootTransitionKey, out result))
-                    this.followFailures.Add(rootTransitionKey, result = new ProductionRuleProjectionFollowFailure(this) { DecidingFactor = rootTransitionKey });
+                    this.followFailures.Add(rootTransitionKey, result = new PredictionTreeFollowCaller(this) { DecidingFactor = rootTransitionKey });
             }
             return result;
         }
 
-        public ProductionRuleProjectionReduction SetReductionOn(GrammarVocabulary reducedRule, int deviationLevel, Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries)
+        public ProductionRuleProjectionReduction SetReductionOn(GrammarVocabulary reducedRule, int deviationLevel, Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries)
         {
             Debug.Assert(reducedRule != null, "Error, the root transition key to make a reduction was invalid!");
-            ProductionRuleProjectionReduction result;
             var vocabSymbol = reducedRule.GetSymbols()[0];
             var ruleVocabSymbol = vocabSymbol as IGrammarRuleSymbol;
             if (ruleVocabSymbol != null)
             {
-                var rootNode = fullSeries.GetRuleNodeFromFullSeries(ruleVocabSymbol.Source);//fullSeries.Where(k => k.Key is SyntacticalDFARootState && ((SyntacticalDFARootState)(k.Key)).Entry == ruleVocabSymbol.Source).Single().Key;
-                rootNode.HasBeenReduced = true;
+                var rootNode = fullSeries.GetRuleNodeFromFullSeries(ruleVocabSymbol.Source);
+                if (!rootNode.HasBeenReduced)
+                    rootNode.HasBeenReduced = true;
             }
-            lock (this.reductionTree)
-                if (!this.reductionTree.TryGetValue(reducedRule, deviationLevel, out result))
-                    this.reductionTree.Add(reducedRule, deviationLevel, result = new ProductionRuleProjectionReduction() { ReducedRule = reducedRule, LookAheadDepth = deviationLevel, Rule = this.RootNode.Rule });
-            return result;
+            return new ProductionRuleProjectionReduction() { ReducedRule = reducedRule, LookAheadDepth = deviationLevel, Rule = this.RootLeaf.Rule };
         }
-
-        internal int BucketCount
-        {
-            get
-            {
-                lock (this.laBucketLock)
-                    return this.bucketCount;
-            }
-            set
-            {
-                lock (this.laBucketLock)
-                    this.bucketCount = value;
-            }
-        }
-
-        public int GetNewLookAheadBucket()
-        {
-            lock (this.laBucketLock)
-                return ++this.bucketCount;
-        }
-
 
         /// <summary>
-        /// Returns the <see cref="ProductionRuleProjectionFollow"/>
+        /// Returns the <see cref="PredictionTreeFollow"/>
         /// which denotes the series of edge paths from the call chain 
         /// that originated the parent rule.
         /// </summary>
-        public IEnumerable<ProductionRuleProjectionFollow> FollowAmbiguities
+        public IEnumerable<PredictionTreeFollow> FollowAmbiguities
         {
             get
             {
@@ -614,12 +613,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// Denotes an ambiguous context which identifies the current node as consistent within the ambiguity.  
         /// </summary>
         /// <param name="ambiguityContext">
-        /// The <see cref="ProductionRuleProjectionDPathSet"/> which represents the ambiguous context, or the 'paths' from which the rule of the current node
+        /// The <see cref="PredictionTree"/> which represents the ambiguous context, or the 'paths' from which the rule of the current node
         /// was entered.</param>
         /// <remarks>
         /// A reduction on the rule of the node will take place, the ambiguous context needs identified so follow-based ambiguities can be isolated and handled.
         /// </remarks>
-        public void DenoteReductionPoint(ProductionRuleProjectionDPathSet ambiguityContext)
+        public void DenoteReductionPoint(PredictionTree ambiguityContext)
         {
             lock (this.ambiguityContexts)
                 this.ambiguityContexts.Add(ambiguityContext);
@@ -629,12 +628,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// Denotes an ambiguous context which identifies the current node as consistent within the ambiguity.  
         /// </summary>
         /// <param name="ambiguityContext">
-        /// The <see cref="ProductionRuleProjectionDPathSet"/> which represents the ambiguous context, or the 'paths' from which the rule of the current node
+        /// The <see cref="PredictionTree"/> which represents the ambiguous context, or the 'paths' from which the rule of the current node
         /// was entered.</param>
         /// <remarks>
         /// A reduction on the rule of the node will take place, the ambiguous context needs identified so follow-based ambiguities can be isolated and handled.
         /// </remarks>
-        public void DenoteReductionPoint(ProductionRuleProjectionDPathSet ambiguityContext, ProductionRuleProjectionDPathSet declarationContext)
+        public void DenoteReductionPoint(PredictionTree ambiguityContext, PredictionTree declarationContext)
         {
             var entry = new ProductionRuleProjectionReductionDetail { Entrypoint = declarationContext, ReductionPoint = ambiguityContext };
             lock (this.steppedAmbiguityContexts)
@@ -642,17 +641,19 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             AddRootReduction(declarationContext);
         }
 
-        private void AddRootReduction(ProductionRuleProjectionDPathSet entry)
+        private void AddRootReduction(PredictionTree entry)
         {
-            var currentSet = new HashList<HashList<ProductionRuleProjectionNode>>();
-            lock (this.RootNode.rootAmbiguityContexts)
+            var currentSet = new HashList<HashList<PredictionTreeLeaf>>();
+            lock (this.RootLeaf._rootAmbiguityContexts)
             {
+                this.Compiler.DenoteReduction(this.Rule);
                 foreach (var path in entry)
                 {
-                    var currentItem = new HashList<ProductionRuleProjectionNode>(path.Skip(path.MinDepth).Take(path.Depth - (path.MinDepth - 1)));
+                    var currentItem = new HashList<PredictionTreeLeaf>(path.Skip(path.MinDepth).Take(path.Depth - (path.MinDepth - 1)));
                     currentSet.Add(currentItem);
                 }
-                this.RootNode.rootAmbiguityContexts.Add(currentSet);
+                this.RootLeaf._rootAmbiguityContexts.Add(currentSet);
+                this.RootLeaf._predictionReductions.Add(entry);
             }
         }
 
@@ -663,12 +664,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         /// Used to generate possible additional state-machines for follow ambiguity resolution.  Specifically when a prediction path reduces
         /// a given rule, but is itself further ambiguous upon what follows the reduced rule.
         /// </remarks>
-        public HashSet<ProductionRuleProjectionDPathSet> AmbiguousReduceContexts { get { return this.ambiguityContexts; } }
+        public HashSet<PredictionTree> AmbiguousReduceContexts { get { return this.ambiguityContexts; } }
         /// <summary>
         /// Returns the <see cref="IEnumerable{T}"/> which denotes the ambiguous contexts which have consumed input in order to get to the reduction point.
         /// </summary>
         public HashSet<ProductionRuleProjectionReductionDetail> AmbiguousReduceSteppedContexts { get { return this.steppedAmbiguityContexts; } }
-        public HashSet<HashList<HashList<ProductionRuleProjectionNode>>> RootAmbiguityContexts { get { return this.rootAmbiguityContexts; } }
+        public HashSet<HashList<HashList<PredictionTreeLeaf>>> RootAmbiguityContexts { get { return this._rootAmbiguityContexts; } }
 
         internal void DenoteLexicalAmbiguity(IGrammarAmbiguousSymbol ambiguity)
         {
@@ -704,11 +705,34 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                             yield return ambiguity;
             }
         }
+
+        public SyntacticalDFAState DeterministicAutomata { get; private set; }
     }
 
     public class ProductionRuleProjectionReductionDetail
     {
-        public ProductionRuleProjectionDPathSet Entrypoint { get; set; }
-        public ProductionRuleProjectionDPathSet ReductionPoint { get; set; }
+        public PredictionTree Entrypoint { get; set; }
+        public PredictionTree ReductionPoint { get; set; }
+    }
+
+    public class ProductionRuleProjectionNodeSetComparer :
+        IEqualityComparer<IEnumerable<PredictionTreeLeaf>>
+    {
+        public static readonly ProductionRuleProjectionNodeSetComparer Singleton = new ProductionRuleProjectionNodeSetComparer();
+
+
+        public bool Equals(IEnumerable<PredictionTreeLeaf> x, IEnumerable<PredictionTreeLeaf> y)
+        {
+            if (x == null)
+                return y == null;
+            else if (y == null)
+                return false;
+            return x.SequenceEqual(y);
+        }
+
+        public int GetHashCode(IEnumerable<PredictionTreeLeaf> obj)
+        {
+            return obj.Count();
+        }
     }
 }

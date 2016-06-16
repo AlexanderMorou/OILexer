@@ -25,7 +25,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
         public static InlinedTokenEntry Inline(IOilexerGrammarTokenEntry entry, IOilexerGrammarFile file)
         {
             if (entry is IOilexerGrammarTokenEofEntry)
-                return new IOilexerGrammarnlinedTokenEofEntry((IOilexerGrammarTokenEofEntry)entry);
+                return new OilexerGrammarInlinedTokenEofEntry((IOilexerGrammarTokenEofEntry)entry);
             else
                 return new InlinedTokenEntry(entry, file);
         }

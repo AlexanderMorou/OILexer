@@ -17,5 +17,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         public GrammarVocabulary ReducedRule { get; set; }
 
         public IOilexerGrammarProductionRuleEntry Rule { get; internal set; }
+
+        public PredictionTree BranchPoint { get; set; }
+
+        public PredictionTree ReducePoint { get; set; }
     }
 }

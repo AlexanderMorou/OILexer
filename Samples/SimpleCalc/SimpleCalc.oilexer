@@ -8,6 +8,14 @@
 #Namespace "AllenCopeland.Abstraction.Slf.Languages.SimpleCalc";
 
 Expression ::=>
+    RelationalExp |
+    QueryExpression;
+
+RelationalExpRecursive ::=
+    RelationalExp:Left; ('<' | '>' | ">=" | "<="):Operator; AddExp:Right;;
+
+RelationalExp ::=>
+    RelationalExpRecursive |
     AddExp;
 
 AddExp ::=>
@@ -31,16 +39,65 @@ MultExpRecursive ::=
     ('*'|'/'|'%'):Operator;
     PrimExp:Right;;
 
-PrimExp ::=>
-    Identifier |
-    Number     |
-    GroupExp   ;
+NonCastPrimExp   ::=>
+    GroupExp        |
+    NonGroupPrimExp ;
+
+NonGroupPrimExp ::=>
+    ComplexName     |
+    InvocationExpression |
+    MemberAccessExpression;
+
+ComplexNameAccessor ::=
+    (ComplexNameAccessor:Left; '.')? ComplexName:Right;;
+
+ComplexName ::=
+    Identifier:Name;
+    (
+        '<'
+            ComplexNameAccessor:Parameters;
+            (
+                ','
+                ComplexNameAccessor:Parameters;
+            )*
+        '>'
+    )?;
+
+InvocationExpressionCallSite ::=
+  NonGroupPrimExp              |
+  CastExp                      ;
+
+LiteralPrimExp ::=>
+    Number | String;
+
+NonLiteralPrimExp ::=>
+    NonCastPrimExp  |
+    CastExp         ;
+
+MemberAccessExpression ::=
+    PrimExp:Previous; '.' NonGroupPrimExp:Current;;
+
+PrimExp              ::=>
+    NonLiteralPrimExp   |
+    LiteralPrimExp      ;
+
+InvocationExpression    ::=
+    InvocationExpressionCallSite:CallSite; '(' Parameters:Params;? ')';
+
+Parameters          ::=
+    Parameter:Items; (',' Parameter:Items;)*;
+
+Parameter           ::=>
+    Expression;
+
+CastExp       ::=
+    '(' Identifier:Type; ')' Expression:Target;;
 
 Identifier :=
     [A-Za-z_] [A-Za-z0-9_]*;
 
 Number :=
-    [0-9]+('.'[0-9])? (@'e' ('+'|'-')? [0-9]+)?;
+    [0-9]+('.'[0-9]+)? (@'e' ('+'|'-')? [0-9]+)?;
 
 Whitespace :=*
     (' '|'\t')+;
@@ -51,5 +108,138 @@ Newline :=*
 
 Operators :=
     '+':Add; | '-':Subtract; | '*':Multiply; | '/':Divide; | '%':Modulus; |
-    '(':LP;  | ')':RP;                                                    ;
+    '(':LP;  | ')':RP; | '<':LessThan; | '>':GreaterThan; | ">=":GreaterThanOrEqualTo; |
+    "<=":LessThanOrEqualTo; | ',':Comma; | '=':Assignment; | '.':MemberSeparator;;
+
+
+String                                          :=
+    EscapableString$                             |
+    MultilineString                              ;
+
+EscapableString                                 :=
+    '"' StringChar* '"'                          ;
+
+MultilineString                                 :=
+    '@':IsMultiline;flag=true;
+        ('"' ('"' '"' | [^"])* '"')$             ;
+
+StringChar                                      :=
+    CommonEscapes                                |
+    StringEscape                                 |
+    [^"\\\r\n]                                   ;
+
+StringEscape                                    :=
+    '\\' '"'                                     ;
+
+CommonEscapes                                   :=
+    '\\' ('f' /* Form Feed */                    |
+          'v' /* Vertical Tab */                 |
+          't' /* Horizontal Tab */               |
+          'r' /* Carriage Return */              |
+          'n' /* New line */                     |
+          'b' /* Backspace */                    |
+          '0' /* Null Char */                    |
+          '\\' /* Backslash Escape */            |
+          HexEscape /* Hexadecimal Escape */     |
+          OctEscape /* Octal Escape */)          ;
+
+OctEscape                                       :=
+    OctalChar{3}                                 ;
+
+OctalChar                                       :=
+    [0-7]                                        ;
+
+HexChar                                         :=
+    [0-9A-Fa-f]                                  ;
+
+HexEscape                                       :=
+    HexLongEscape                                |
+    HexByteEscape                                |
+    HexShortEscape                               ;
+
+HexByteEscape                                   :=
+    'x' HexChar{2}                               ;
+
+HexShortEscape                                  :=
+    'u' HexChar{4}                               ;
+
+HexLongEscape                                   :=
+    'U' HexChar{8}                               ;
+
+QueryExpression                           ::=
+    FromClause:SourceSelector;
+    QueryBody:Body;                         ;
+
+FromClause                                ::=
+    "from" ComplexNameAccessor:RangeType;? 
+    Identifier:RangeName; "in"
+    Expression:Source;                      ;
+
+QueryBody                                 ::=
+    QueryBodyClause:Clauses;*
+    SelectOrGroupClause:Selection;
+    QueryContinuation:Next;?                ;
+
+QueryBodyClause                          ::=>
+    FromClause                              |
+    LetClause                               |
+    WhereClause                             |
+    JoinClause                              |
+    OrderByClause                           ;
+
+LetClause                                 ::=
+    "let" Identifier:RangeName; '='
+    Expression:Value;                       ;
+
+WhereClause                               ::=
+    "where" 
+    Expression:Condition;                   ;
+
+JoinClause                                ::=
+    "join" ComplexNameAccessor:RangeType;? 
+    Identifier:RangeName; "in"
+    Expression:Source; "on"
+    Expression:ConditionLeft; "equals"
+    Expression:ConditionRight;
+    ("into" Identifier:RangeTarget;)?       ;
+
+OrderByClause                             ::=
+    "orderby" 
+    Ordering:Orderings; (',' Ordering:Orderings;)*;
+
+Ordering                                  ::=
+    Expression:OrderSelector; 
+    ("ascending" | "descending"):Direction;?;
+
+SelectOrGroupClause                      ::=>
+    SelectClause                            |
+    GroupClause                             ;
+
+SelectClause                              ::=
+    "select" Expression:Selection;          ;
+
+GroupClause                               ::=
+    "group" Expression:Selection; "by"
+    Expression:Key;                         ;
+
+QueryContinuation                         ::=
+    "into" Identifier:RangeTarget; 
+    QueryBody:Body;                         ;
+
+LinqKeywords>Identifier                    :=
+             "ascending":Ascending;         |
+                    "by":By;                |
+            "descending":Descending;        |
+                  "from":From;              |
+                "equals":Equals;            |
+                  "into":Into;              |
+                  "join":Join;              |
+                   "let":Let;               |
+                 "group":Group;             |
+               "orderby":OrderBy;           |
+                "select":Select;            |
+                 "where":Where;             |
+                    "on":On;                |
+                    "in":In;                ;
+
 

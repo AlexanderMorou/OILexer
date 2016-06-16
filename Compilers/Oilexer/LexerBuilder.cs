@@ -22,6 +22,8 @@ using AllenCopeland.Abstraction.Slf.Languages.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules;
 using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining;
 using AllenCopeland.Abstraction.Slf.Ast.Cli;
+using AllenCopeland.Abstraction.Slf._Internal.Oilexer.Captures;
+using AllenCopeland.Abstraction.Slf.FiniteAutomata;
 
 namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 {
@@ -54,6 +56,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private IIntermediateClassFieldMember _lexerParserFieldReference;
         private IIntermediateClassPropertyMember _lexerParserReferenceImpl;
         private IIntermediateCliManager _identityManager;
+        private ITypedLocalMember _ruleAmbiguityIdentity;
+        private bool _anyTokenTermAmbiguous;
 
         public Tuple<IIntermediateInterfaceType, IIntermediateClassType, IIntermediateMethodMember, TokenStreamBuilder> Build(Tuple<ParserCompiler, ParserBuilder, IIntermediateAssembly, TokenSymbolBuilder, bool, GenericSymbolStreamBuilder, RegularLanguageDFAState> input)
         {
@@ -68,8 +72,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             if (ScannerNested)
             {
                 var nameLeftDiff = _compiler.Source.Options.LexerName.LeftDiff(_compiler.Source.Options.ParserName);
-
-                this.lexerClass = this._parserBuilder.ParserClass.Parts.Add().Classes.Add(_compiler.Source.Options.LexerName.Substring(nameLeftDiff));
+                string lexerName = "Scanner";
+                if (nameLeftDiff != _compiler.Source.Options.LexerName.Length)
+                    lexerName = _compiler.Source.Options.LexerName.Substring(nameLeftDiff);
+                this.lexerClass = this._parserBuilder.ParserClass.Parts.Add().Classes.Add(lexerName);
             }
             else
                 this.lexerClass = this._initialAssembly.DefaultNamespace.Parts.Add().Classes.Add(_compiler.Source.Options.LexerName);
@@ -356,6 +362,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                                      where state == this._lexerCore ||
                                            transitionCount > 1
                                      select state).ToArray();
+            this._anyTokenTermAmbiguous = this._lexerCore.ObtainEdges()
+                                                         .Any(k => k.Sources.Where(j => SourceIsAmbiguous(j))
+                                                                            .Any());
 
             var result = this.LexerClass.Methods.Add(new TypedName("NextToken", this.Compiler.TokenSymbolBuilder.ILanguageToken));
             /* The state of _ntExitLADepth also denotes whether we've hit a termianl edge. */
@@ -370,6 +379,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 #endif
 #endif
             const int negativeOne = -1;
+            this._ruleAmbiguityIdentity = result.Locals.Add(new TypedName("ruleAmbiguityIdentity", this.Compiler.LexicalSymbolModel.ValidSymbols));
+            if (this._anyTokenTermAmbiguous)
+                result.Add(this._ruleAmbiguityIdentity.GetDeclarationStatement());
             this._ntExitLADepth = result.Locals.Add(new TypedName("exitLADepth", RuntimeCoreType.Int32, this._initialAssembly.IdentityManager), negativeOne.ToPrimitive());
             this._ntCurrentLADepth = result.Locals.Add(new TypedName("currentLADepth", RuntimeCoreType.Int32, this._initialAssembly.IdentityManager), this.PositionImpl.Subtract(1).Cast(this._identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
             this._ntExitState = result.Locals.Add(new TypedName("exitState", buildStateType, this._initialAssembly.IdentityManager), negativeOne.ToPrimitive());
@@ -390,7 +402,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 {
                     ILabelStatement r;
                     if (!globalUnicodeGraphs.TryGetValue(g, out r))
-                        globalUnicodeGraphs.Add(g, r = GenerateUnicodeGraph(result, g, _multitargetLookup, decisionPoint, "UnicodeGraph_{0}", globalUnicodeGraphs.Count + 1, true));
+                        globalUnicodeGraphs.Add(g, r = GenerateUnicodeGraph(result, g, _multitargetLookup, decisionPoint/*, null, null*/, "UnicodeGraph_{0}", globalUnicodeGraphs.Count + 1, true));
                     return r;
                 };
             foreach (var topLevelState in _multitargetLookup.Values)
@@ -406,10 +418,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             result.Add(decisionPoint);
             var exitLength = result.Locals.Add(new TypedName("exitLength", _ntExitLADepth.LocalType), _ntExitLADepth.Subtract(this.PositionImpl).Add(1).Cast(_identityManager.ObtainTypeReference(RuntimeCoreType.Int32)));
             var lexerAmbiguityIdentity = result.Locals.Add(new TypedName("lexerAmbiguityIdentity", this.Compiler.LexicalSymbolModel.ValidSymbols));
-            var ruleAmbiguityIdentity = result.Locals.Add(new TypedName("ruleAmbiguityIdentity", this.Compiler.LexicalSymbolModel.ValidSymbols));
             var resultIdentity = result.Locals.Add(new TypedName("resultIdentity", this.Compiler.LexicalSymbolModel.IdentityEnum), this._compiler.LexicalSymbolModel.NoIdentityField.GetReference());
             lexerAmbiguityIdentity.AutoDeclare =
-             ruleAmbiguityIdentity.AutoDeclare =
+             this._ruleAmbiguityIdentity.AutoDeclare =
                     resultIdentity.AutoDeclare =
                         exitLength.AutoDeclare = false;//Ensure it shows up at the end like we want it to.
             var resultIdentityLocalDef = result.DefineLocal(resultIdentity);
@@ -460,6 +471,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 IIntermediateClassPropertyMember lexerAmbiguityEdgeProperty = null;
                 IGrammarAmbiguousSymbol[] ambiguities = new IGrammarAmbiguousSymbol[0];
                 GrammarVocabulary ambiguityVocab = null;
+                GrammarVocabulary skippableVocab = new GrammarVocabulary(this.Compiler._GrammarSymbols, this.Compiler._GrammarSymbols.TokenSymbols.Where(k => k.Source.Unhinged).ToArray());
                 if (vocabulary.TrueCount > 1)
                 {
                     string lexerClassFullName = this.ScannerNested ? string.Format("{0}.{1}", ((IClassType)this.LexerClass.Parent).Name, this.LexerClass.Name) : this.LexerClass.Name;
@@ -473,6 +485,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     multipleTargetEdges = true;
                     if (ambiguities.Length > 0)
                     {
+                        //var skippable = skippableVocab ^ (skippableVocab & (vocabulary | ambiguityVocab));
                         lexerEdgeProperty = this.GrammarVocabularyModel.GenerateSymbolstoreVariation(vocabulary | ambiguityVocab, "LexerEdge", string.Format("Denotes an ambiguous edge of the @s:{0}; which represents multiple possible terminals due to ambiguity.", lexerClassFullName), string.Format("Represents an ambiguous edge of the grammar, for the following terminal symbols: {0}", vocabulary));
                         lexerAmbiguityEdgeProperty = this.GrammarVocabularyModel.GenerateSymbolstoreVariation(ambiguityVocab, "LexerAmbiguityEdge", string.Format("Denotes an ambiguous edge of the @s:{0}; which outlines the specifics of the ambiguity.", lexerClassFullName), string.Format("Represents an ambiguous edge of the grammar, for the following terminal symbols: {0}", vocabulary));
                     }
@@ -484,15 +497,20 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 currentCaseElement.Comment(string.Format("Edge for: {{ {0} }}{2}{1}", vocabulary, ambiguities.Length > 0 ? string.Format("\r\n\tAmbiguityContext: {0}", ambiguityVocab) : string.Empty, prefilterVocabulary != null ? string.Format(", precedence obviated terminals: {0}", prefilterVocabulary) : string.Empty));
                 if (ambiguities.Length > 0 || vocabulary.TrueCount > 1)
                 {
-                    currentCaseElement.Assign(ruleAmbiguityIdentity.GetReference(), this.Compiler.ExtensionsBuilder.GetValidSyntaxMethod.GetReference(this.LexerParserImpl.GetReference()).Invoke());
-                    currentCaseElement.Assign(lexerAmbiguityIdentity.GetReference(), lexerEdgeProperty.GetReference().BitwiseAnd(ruleAmbiguityIdentity));
+                    var skippable = (skippableVocab & (vocabulary | ambiguityVocab));
+
+                    var skippableEdge = skippable.IsEmpty ? null : this.GrammarVocabularyModel.GenerateSymbolstoreVariation(skippable, "SkippableEdge");
+                    currentCaseElement.Assign(this._ruleAmbiguityIdentity.GetReference(), this.Compiler.ExtensionsBuilder.GetValidSyntaxMethod.GetReference(this.LexerParserImpl.GetReference()).Invoke());
+                    currentCaseElement.Assign(lexerAmbiguityIdentity.GetReference(), (INaryOperandExpression)lexerEdgeProperty.GetReference().BitwiseAnd(this._ruleAmbiguityIdentity));
                     if (ambiguities.Length > 0)
                     {
                         var ambiguityCheck = currentCaseElement.If(lexerAmbiguityIdentity.GetReference().GetProperty("HasAmbiguity"));
                         ambiguityCheck.Assign(resultIdentity.GetReference(), lexerAmbiguityIdentity.BitwiseAnd(lexerAmbiguityEdgeProperty).Cast(resultIdentity.LocalType));
                         ambiguityCheck.CreateNext();
                         ambiguityCheck.Next.Assign(resultIdentity.GetReference(), lexerAmbiguityIdentity.GetReference().Cast(resultIdentity.LocalType));
-
+                        if (!skippable.IsEmpty)
+                            currentCaseElement.If(resultIdentity.EqualTo(this.Compiler.LexicalSymbolModel.NoIdentityField))
+                                .Assign(resultIdentity, skippableEdge.GetReference().Cast(resultIdentity.LocalType));
                     }
                     else
                     {
@@ -500,6 +518,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                         var variableVariants =
                             symbols.Where(k => !(k is IGrammarConstantEntrySymbol || k is IGrammarConstantItemSymbol)).ToArray();
                         var fixedVariants = symbols.Except(variableVariants).ToArray();
+
+                        if (!skippable.IsEmpty)
+                            currentCaseElement.If(resultIdentity.EqualTo(this.Compiler.LexicalSymbolModel.NoIdentityField))
+                                .Assign(resultIdentity, skippableEdge.GetReference().Cast(resultIdentity.LocalType));
                         if (fixedVariants.Length == 0 || variableVariants.Length == 0)
                         {
                             if (fixedVariants.Length > 0)
@@ -561,7 +583,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     //We needed these locals to ensure we had a proper identity to refer to.  
                     //The determinism of ambiguous vs unambiguous could've been handled separately, but that's a future task.
                     result.AddAfter(resultIdentityLocalDef, lexerAmbiguityIdentity.GetDeclarationStatement());
-                    result.AddAfter(resultIdentityLocalDef, ruleAmbiguityIdentity.GetDeclarationStatement());
+                    if (!this._anyTokenTermAmbiguous)
+                        result.AddAfter(resultIdentityLocalDef, this._ruleAmbiguityIdentity.GetDeclarationStatement());
                     /* ToDo: Write code here to handle ambiguous states. */
                     result.AddAfter(decisionPoint, new CommentStatement(result,
 @"There are ambiguities within this grammar.
@@ -570,7 +593,8 @@ Due to this, the parser's state will be necessary in identifying the specific am
                     break;
                 case RegularLanguageAmbiguityState.AmbiguousButDeterministic:
                     result.AddAfter(resultIdentityLocalDef, lexerAmbiguityIdentity.GetDeclarationStatement());
-                    result.AddAfter(resultIdentityLocalDef, ruleAmbiguityIdentity.GetDeclarationStatement());
+                    if (!this._anyTokenTermAmbiguous)
+                        result.AddAfter(resultIdentityLocalDef, this._ruleAmbiguityIdentity.GetDeclarationStatement());
                     result.AddAfter(decisionPoint, new CommentStatement(result,
 @"You'll notice some states have multiple identities on them, these have been analyzed and it appears as though none of them appear ambiguously within the result grammar.
 -
@@ -596,6 +620,17 @@ Due to this, the parser's state will be necessary in identifying the specific id
             return (IIntermediateClassMethodMember)result;
         }
 
+        private static bool SourceIsAmbiguous(Tuple<ITokenSource, FiniteAutomata.FiniteAutomationSourceKind> j)
+        {
+            var literalTokenSource = j.Item1 as ITokenItem;
+            var structuralItem = j.Item1 as ICaptureTokenLiteralStructuralItem;
+            if (literalTokenSource != null && literalTokenSource.SiblingAmbiguity)
+                return (j.Item2 & FiniteAutomationSourceKind.Final) == FiniteAutomationSourceKind.Final;
+            else if (structuralItem != null && structuralItem.Sources.Where(k => k.SiblingAmbiguity).Any())
+                return (j.Item2 & FiniteAutomationSourceKind.Final) == FiniteAutomationSourceKind.Final;
+            return false;
+        }
+
         public GrammarVocabularyModelBuilder GrammarVocabularyModel { get { return this.Compiler.LexicalSymbolModel; } }
 
         private Tuple<ISwitchCaseBlockStatement, IEnumerable<RegularLanguageDFAState>> GetGroupDFAState(IEnumerable<RegularLanguageDFAState> series, ISwitchStatement owningSwitch)
@@ -617,16 +652,56 @@ Due to this, the parser's state will be necessary in identifying the specific id
                     });
         }
 
-        private void GenerateNextTokenState(Stack<Tuple<RegularLanguageDFAState, IBlockStatementParent, RegularLanguageDFAStateJumpData>> toInsert, IBlockStatementParent parentTarget, RegularLanguageDFAState dfaState, ILabelStatement decisionPoint, Func<IUnicodeTargetGraph, ILabelStatement> graphLabeler)
+        private void GenerateNextTokenState(
+            Stack<Tuple<RegularLanguageDFAState, IBlockStatementParent, RegularLanguageDFAStateJumpData>> toInsert,
+            IBlockStatementParent parentTarget,
+            RegularLanguageDFAState dfaState,
+            ILabelStatement decisionPoint,
+            Func<IUnicodeTargetGraph, ILabelStatement> graphLabeler)
         {
             if (!this._visited.Add(dfaState))
                 return;
             var sources = (from src in dfaState.Sources
                            group src by src.Item2).ToDictionary(k => k.Key, v => v.GetActualTokenSources().ToArray()).Where(kvp => kvp.Value.Length > 0).ToDictionary(k => k.Key, v => v.Value);
-            foreach (var k in sources.Keys)
-                parentTarget.Comment(string.Format("{0} - {1}", k, string.Join<object>(", ", sources[k].Select(j => j is IOilexerGrammarTokenEntry ? ((InlinedTokenEntry)(j)).ToLocationDetails(this.Compiler.Source) : ((IInlinedTokenItem)(j)).ToLocationDetails(this.Compiler.Source)).Distinct())));
+            foreach (var k in sources.Keys.Where(k => k == FiniteAutomata.FiniteAutomationSourceKind.Final && sources[k].Any(j => IsTokenSourceGoodForEmission(j))))
+                parentTarget.Comment(string.Format("{0} - {1}",
+                    k,
+                    string.Join<object>(
+                        Environment.NewLine,
+                        sources[k]
+                        .Where(j => IsTokenSourceGoodForEmission(j))
+                        .Select((j, i) =>
+                        {
+                            var entry = j as InlinedTokenEntry;
+                            string inner = string.Empty;
+                            if (entry != null)
+                            {
+                                inner = entry.ToLocationDetails(this.Compiler.Source);
+                            }
+                            else
+                            {
+                                var item = j as IInlinedTokenItem;
+                                inner = string.Format("{0}.{1}", ((IInlinedTokenItem)(j)).Root.Name, ((IInlinedTokenItem)(j)).ToLocationDetails(this.Compiler.Source));
+                            }
+                            return string.Format("{0}{1}", i == 0 ? string.Empty : new string(' ', string.Format("{0} - ", k).Length), inner).Replace(" ", "\xA0");
+                        })
+                        )));
             if (!(dfaState is RegularLanguageDFARootState))
                 parentTarget.Assign(_ntCurrentState.GetReference(), dfaState.StateValue.ToPrimitive());
+            /*
+            GrammarVocabulary edgeVocabulary = GrammarVocabulary.NullInst;
+
+            ITokenSource[] edgeSources = new ITokenSource[0];
+            if (dfaState.IsEdge && this._anyTokenTermAmbiguous && dfaState.Sources.Any(p => SourceIsAmbiguous(p)))
+            {
+                /* Need to add in predicate for ObtainEdgeSourceTokenItems to filter out items which are not ambiguous with their neighbours
+                 * Right now it yields all edge. *//*
+                var edgeActualSources = dfaState.ObtainEdgeSourceTokenItems(null, false, IsValidSourceForTerminatalEdgeDetection).FilterSourceTokenItems(this.Compiler.GrammarSymbols).ToArray();
+                var edgeSymbols = this.Compiler._GrammarSymbols.SymbolsFromSources(edgeActualSources);
+                edgeSources = GetEdgeSources(dfaState.Sources).Select(k => k.Item1).ToArray();
+
+                edgeVocabulary = new GrammarVocabulary(this.Compiler.GrammarSymbols, edgeSymbols.ToArray());
+            }*/
             if (dfaState.IsEdge)
             {
                 parentTarget.Assign(_ntExitState.GetReference(), _ntCurrentState.GetReference());
@@ -638,12 +713,14 @@ Due to this, the parser's state will be necessary in identifying the specific id
                 parentTarget.GoTo(decisionPoint);
             var dfaTransitionTable = dfaState.BuildUnicodeGraph();
             bool useGlobalUnicodeGraph =
+                //edgeVocabulary.IsEmpty &&
                 dfaTransitionTable.UnicodeGraph.Values
                     .All(k => this._multitargetLookup.ContainsKey(k.Target));
             bool needCharSwitch = dfaTransitionTable.Count > 0;
             bool needUnicodeCategorySwitch = dfaTransitionTable.UnicodeGraph.Count > 0;
             if (useGlobalUnicodeGraph)
                 HandleGlobalUnicodeGraphInsertion(dfaTransitionTable, graphLabeler);
+
             if (dfaTransitionTable != null && (dfaTransitionTable.Count > 0 || (dfaTransitionTable.UnicodeGraph != null && dfaTransitionTable.UnicodeGraph.Count > 0)))
             {
                 var dfaHandlingMechanisms = ParserCompilerExtensions.DetermineStateHandlingTypes(this._multitargetLookup, dfaTransitionTable);
@@ -703,7 +780,7 @@ Due to this, the parser's state will be necessary in identifying the specific id
                                 }
                             }
                             ISwitchCaseBlockStatement currentCase = charSwitch.Case(switchExpressions.ToArray());
-                            HandleTargetJumpCondition(toInsert, this._multitargetLookup, decisionPoint, dfaHandlingMechanisms, localData, currentCase, target, graphLabeler);
+                            HandleTargetJumpCondition(toInsert, this._multitargetLookup, decisionPoint, dfaHandlingMechanisms, localData, currentCase, target, graphLabeler/*, edgeSources, edgeVocabulary*/);
                         }
                         defaultCase = charSwitch.Case(true);
                         if (checkNeedsIf)
@@ -720,7 +797,17 @@ Due to this, the parser's state will be necessary in identifying the specific id
                             var charIfData = switchConditions[target].PairsForIf;
                             var charIfBlock = charIfParent.If(BuildRegularLanguageSetIfCondition(charIfData));
                             charIfParent = charIfBlock;
-                            HandleTargetJumpCondition(toInsert, this._multitargetLookup, decisionPoint, dfaHandlingMechanisms, localData, charIfParent, target, graphLabeler);
+                            HandleTargetJumpCondition(
+                                toInsert, 
+                                this._multitargetLookup, 
+                                decisionPoint, 
+                                dfaHandlingMechanisms, 
+                                localData, 
+                                charIfParent, 
+                                target, 
+                                graphLabeler/*,
+                                edgeSources,
+                                edgeVocabulary*/);
                             unicodeSwitchParent = charIfParent = charIfBlock.Next;
                         }
                     }
@@ -730,7 +817,7 @@ Due to this, the parser's state will be necessary in identifying the specific id
                     if (useGlobalUnicodeGraph)
                         unicodeSwitchParent.GoTo(graphLabeler(dfaTransitionTable.UnicodeGraph));
                     else
-                        GenerateUnicodeGraph(unicodeSwitchParent, dfaTransitionTable.UnicodeGraph, localData, decisionPoint);
+                        GenerateUnicodeGraph(unicodeSwitchParent, dfaTransitionTable.UnicodeGraph, localData, decisionPoint/*, edgeSources, edgeVocabulary*/);
                 }
                 else
                     unicodeSwitchParent.GoTo(decisionPoint);
@@ -741,6 +828,31 @@ Due to this, the parser's state will be necessary in identifying the specific id
                 }
                 this._secondaryLookups.Add(parentTarget, localData);
             }
+        }
+
+        private static bool IsValidSourceForTerminatalEdgeDetection(ITokenSource item, TokenSourceDerivedFrom whichSource, FiniteAutomationSourceKind sourceKind)
+        {
+            if (whichSource == TokenSourceDerivedFrom.OriginalSources)
+            {
+                if (item is ITokenItem && ((ITokenItem)(item)).SiblingAmbiguity)
+                    return true;
+                else if (item is ITokenItem)
+                    return (sourceKind & FiniteAutomationSourceKind.Final) == FiniteAutomationSourceKind.Final;
+                return true;
+            }
+            else if (item is ITokenItem && ((ITokenItem)(item)).SiblingAmbiguity)
+                return true;
+            return (sourceKind & FiniteAutomationSourceKind.Final) == FiniteAutomationSourceKind.Final;
+        }
+
+        private static IEnumerable<Tuple<ITokenSource, FiniteAutomationSourceKind>> GetEdgeSources(IEnumerable<Tuple<ITokenSource, FiniteAutomationSourceKind>> sources)
+        {
+            return sources.Where(k => (k.Item1 is ITokenItem || k.Item1 is ICaptureTokenStructuralItem) && ((k.Item2 & FiniteAutomationSourceKind.Final) == FiniteAutomationSourceKind.Final));
+        }
+
+        private static bool IsTokenSourceGoodForEmission(ITokenSource j)
+        {
+            return ((j is IOilexerGrammarTokenEntry) && ((InlinedTokenEntry)j).CaptureKind != RegularCaptureType.ContextfulTransducer) || j is IInlinedTokenItem && ((IInlinedTokenItem)(j)).Root.CaptureKind == RegularCaptureType.ContextfulTransducer;
         }
 
         private static void HandleStatementInjections(IBlockStatementParent parentTarget, Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> lookupData)
@@ -786,7 +898,16 @@ Due to this, the parser's state will be necessary in identifying the specific id
                 }
         }
 
-        private ILabelStatement GenerateUnicodeGraph(IBlockStatementParent target, IUnicodeTargetGraph graph, Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> jumpData, ILabelStatement decisionPoint, string pattern = null, int patternCount = -1, bool defineLabel = false)
+        private ILabelStatement GenerateUnicodeGraph(
+            IBlockStatementParent target,
+            IUnicodeTargetGraph graph,
+            Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> jumpData,
+            ILabelStatement decisionPoint, 
+            /*ITokenSource[] edgeSources, 
+            GrammarVocabulary edgeVocabulary, */
+            string pattern = null,
+            int patternCount = -1,
+            bool defineLabel = false)
         {
             ILabelStatement result = null;
             if (defineLabel)
@@ -807,6 +928,7 @@ Due to this, the parser's state will be necessary in identifying the specific id
 
             foreach (var targetState in graph.Keys)
             {
+
                 var currentGraphTarget = graph[targetState];
                 List<IUnicodeTargetCategory> fullCategories = new List<IUnicodeTargetCategory>();
                 List<IUnicodeTargetPartialCategory> partialCategories = new List<IUnicodeTargetPartialCategory>();
@@ -821,6 +943,7 @@ Due to this, the parser's state will be necessary in identifying the specific id
 
                 foreach (var category in fullCategories)
                     fullCategory.Cases.Add(typeof(UnicodeCategory).GetTypeExpression((ICliManager)this._initialAssembly.IdentityManager).GetField(category.TargetedCategory.ToString()));
+                //CheckEdgeAmbiguity(decisionPoint, fullCategory, targetState, edgeSources, edgeVocabulary);
                 fullCategory.GoTo(targetStateLabel);
 
                 foreach (var category in partialCategories)
@@ -828,6 +951,7 @@ Due to this, the parser's state will be necessary in identifying the specific id
                     IExpression finalExpression = ObtainNegativeAssertion(category.NegativeAssertion);
                     var currentCategory = unicodeSwitch.Case(typeof(UnicodeCategory).GetTypeExpression((ICliManager)this._initialAssembly.IdentityManager).GetField(category.TargetedCategory.ToString()));
                     var currentCondition = currentCategory.If(finalExpression);
+                    //CheckEdgeAmbiguity(decisionPoint, currentCondition, targetState, edgeSources, edgeVocabulary);
                     currentCondition.GoTo(targetStateLabel);
                     currentCategory.GoTo(decisionPoint);
                 }
@@ -888,8 +1012,20 @@ Due to this, the parser's state will be necessary in identifying the specific id
             dfaTransitionTable.UnicodeGraph = collectiveGraph;
         }
 
-        private void HandleTargetJumpCondition(Stack<Tuple<RegularLanguageDFAState, IBlockStatementParent, RegularLanguageDFAStateJumpData>> toInsert, Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> multitargetLookup, ILabelStatement decisionPoint, Dictionary<RegularLanguageDFAState, RegularLanguageDFAHandlingType> dfaHandlingMechanisms, Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> localData, IBlockStatementParent targetOfInsertion, RegularLanguageDFAState target, Func<IUnicodeTargetGraph, ILabelStatement> graphLabeler)
+        private void HandleTargetJumpCondition(
+            Stack<Tuple<RegularLanguageDFAState, IBlockStatementParent, RegularLanguageDFAStateJumpData>> toInsert,
+            Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> multitargetLookup,
+            ILabelStatement decisionPoint,
+            Dictionary<RegularLanguageDFAState, RegularLanguageDFAHandlingType> dfaHandlingMechanisms,
+            Dictionary<RegularLanguageDFAState, RegularLanguageDFAStateJumpData> localData,
+            IBlockStatementParent targetOfInsertion,
+            RegularLanguageDFAState target,
+            Func<IUnicodeTargetGraph, ILabelStatement> graphLabeler/*,
+            ITokenSource[] edgeSources,
+            GrammarVocabulary edgeVocabulary*/)
         {
+            /*if (edgeVocabulary != null && !edgeVocabulary.IsEmpty)
+                CheckEdgeAmbiguity(decisionPoint, targetOfInsertion, target, edgeSources, edgeVocabulary);*/
             switch (dfaHandlingMechanisms[target])
             {
                 case RegularLanguageDFAHandlingType.Inline:
@@ -907,6 +1043,32 @@ Due to this, the parser's state will be necessary in identifying the specific id
                     SwitchOrIfAssertionFailure();
                     break;
             }
+        }
+
+        private void CheckEdgeAmbiguity(ILabelStatement decisionPoint, IBlockStatementParent targetOfInsertion, RegularLanguageDFAState target, ITokenSource[] edgeSources, GrammarVocabulary edgeVocabulary)
+        {
+            if (edgeSources == null)
+                return;
+            var edgeSymbols = GetVocabAmbiguitySymbols(edgeVocabulary);
+            var targetEdgeSources = target.ObtainEdgeSourceTokenItems(null, false).FilterSourceTokenItems(this.Compiler.GrammarSymbols).ToArray();
+            var symbols = this.Compiler._GrammarSymbols.SymbolsFromSources(targetEdgeSources);
+            var vocabulary = new GrammarVocabulary(this.Compiler.GrammarSymbols, symbols.ToArray());
+            var symmDiff = edgeVocabulary.SymmetricDifference(vocabulary);
+            var targetSources = GetEdgeSources(target.Sources).Select(k => k.Item1).ToArray();
+            var edgeDiff = edgeSources.Except(targetSources).Count();
+            if (!symmDiff.IsEmpty && edgeDiff > 0)
+            {
+                string lexerClassFullName = this.ScannerNested ? string.Format("{0}.{1}", ((IClassType)this.LexerClass.Parent).Name, this.LexerClass.Name) : this.LexerClass.Name;
+                var lexerDropoffProperty = this.GrammarVocabularyModel.GenerateSymbolstoreVariation(edgeVocabulary & vocabulary, "LexerEdgeDropoff", string.Format("Denotes an ambiguous edge of the @s:{0}; which represents multiple possible ambiguous terminals due to ambiguity.", lexerClassFullName), string.Format("Represents an ambiguous edge of the grammar, for the following terminal symbols: {0}", vocabulary));
+                targetOfInsertion.Assign(this._ruleAmbiguityIdentity.GetReference(), this.Compiler.ExtensionsBuilder.GetValidSyntaxMethod.GetReference(this.LexerParserImpl.GetReference()).Invoke());
+                targetOfInsertion.If(this.Compiler.LexicalSymbolModel.IsEmptyImpl.GetReference(new ParenthesizedExpression(this._ruleAmbiguityIdentity.BitwiseAnd(lexerDropoffProperty))))
+                    .GoTo(decisionPoint);
+            }
+        }
+
+        private static ITokenItem[] GetVocabAmbiguitySymbols(GrammarVocabulary edgeVocabulary)
+        {
+            return edgeVocabulary.GetSymbols().Where(k => k is ITokenItem).Cast<ITokenItem>().Where(k => k.SiblingAmbiguity).ToArray();
         }
 
         private static void SwitchOrIfAssertionFailure()

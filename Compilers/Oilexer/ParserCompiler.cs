@@ -42,7 +42,7 @@ using SlotType = System.UInt32;
 #endif
 
 /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -64,10 +64,11 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         internal const string ErrorCaptureName = "__Errors";
         internal const string HasErrorsCaptureName = "__HasError";
         internal static bool ReductionSignalTriggered = false;
-        private CharStreamClass _bitStream;
         private VariableTokenBaseBuilder _variableTokenBaseBuilder;
 
+
         private Dictionary<IGrammarAmbiguousSymbol, GrammarVocabularyAmbiguitySymbolBreakdown> _ambiguityBreakdowns = new Dictionary<IGrammarAmbiguousSymbol, GrammarVocabularyAmbiguitySymbolBreakdown>();
+        private ParseResultsBuilder _parseResultsBuilder;
         private ExtensionsBuilder _extensionsBuilder;
         private CommonSymbolBuilder _commonSymbolBuilder;
         private StackContextBuilder _stackContextBuilder;
@@ -92,6 +93,8 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 return this._ambiguityBreakdowns;
             }
         }
+
+        public ParseResultsBuilder ParseResultsBuilder { get { return this._parseResultsBuilder; } }
 
         /// <summary>
         /// Returns a series of <see cref="ICompilerErrorCollection"/> instances
@@ -174,6 +177,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         private bool buildObjectModel;
 
         public ParserCompiler(IOilexerGrammarFile source, List<string> streamAnalysisFiles, bool buildObjectModel, bool expandTemplates)
+            : this()
         {
             this.RuleDFAStates = new ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState>();
             Initialize(source, streamAnalysisFiles, buildObjectModel, expandTemplates);
@@ -187,6 +191,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         protected ParserCompiler()
         {
+            this.ReducedRules = new HashSet<IOilexerGrammarProductionRuleEntry>();
         }
 
 
@@ -241,15 +246,15 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             var result = new SyntacticalNFARootState[rules.Length];
             int i = 0;
             var translatedRules =
-                from OilexerGrammarProductionRuleEntry rule in rules
-                select new
-                    {
-                        Rule = rule,
-                        Index = i++,
-                        CaptureStructure = rule.CaptureStructure = ProductionRuleStructuralExtractionCore.BuildStructureFor(rule, this.Source),
-                        StructureReplacements = ProductionRuleStructuralExtractionCore.ObtainReplacements(rule.captureStructure)
-                    };
-            translatedRules.ToArray()
+                (from OilexerGrammarProductionRuleEntry rule in rules
+                 select new
+                     {
+                         Rule = rule,
+                         Index = i++,
+                         CaptureStructure = rule.CaptureStructure = ProductionRuleStructuralExtractionCore.BuildStructureFor(rule, this.Source),
+                         StructureReplacements = ProductionRuleStructuralExtractionCore.ObtainReplacements(rule.captureStructure)
+                     }).ToArray();
+            translatedRules
 #if ParallelProcessing
                 /* Auto-formatting fix. */
                 .AsParallel()
@@ -260,7 +265,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 #endif
                     /* Auto-formatting fix. */
 
-            result[ruleInfo.Index] = (SyntacticalNFARootState)ruleInfo.Rule.BuildNFA(new SyntacticalNFARootState(ruleInfo.Rule, this.RuleDFAStates, symbols), symbols, RuleDFAStates, ruleInfo.StructureReplacements));
+                result[ruleInfo.Index] = (SyntacticalNFARootState)ruleInfo.Rule.BuildNFA(new SyntacticalNFARootState(ruleInfo.Rule, this.RuleDFAStates, symbols), symbols, RuleDFAStates, ruleInfo.StructureReplacements));
             for (i = 0; i < result.Length; i++)
             {
                 var current = result[i];
@@ -343,6 +348,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                     allRuleAdapters.Add(rule.Entry, key.Key, key.Value);
                 }
             }
+
             /* * * * * * * * * * * * * * * * * *\
              * Light-weight read-only wrapper.  *
              * * * * * * * * * * * * * * * * * */
@@ -364,7 +370,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
              * Adapters were implemented after this phase.      *
              * Hence the disconnect.                            *
              * * * * * * * * * * * * * * * * * * * * * * * * * */
-            this._allProjectionNodes = SyntacticAnalysisCore.ConstructRemainingNodes(_ruleProjectionNodes);
+            this._allProjectionNodes = SyntacticAnalysisCore.ConstructRemainingNodes(_ruleProjectionNodes, this);
         }
 
         private void ProjectLookaheadInitial()
@@ -390,17 +396,14 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
              * Use caution when using cycle depths > 5, the memory        *
              * requirements skyrocket beyond this point (exponential.)    *
              * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#if ShortcutToFindBug13
-            return;
-#endif
+            this.RuleGrammarLookup =
+                (from rule in this.RuleDFAStates.Keys
+                 select new { Rule = rule, GrammarVocabulary = new GrammarVocabulary(this.GrammarSymbols, this.GrammarSymbols.First(k => (k is IGrammarRuleSymbol) && ((IGrammarRuleSymbol)k).Source == rule)) }).ToDictionary(k => k.Rule, v => v.GrammarVocabulary);
             SyntacticAnalysisCore.PerformLookAheadProjection(this._allProjectionNodes, this.RuleGrammarLookup, this.CycleDepth);/* OILexer command line arg: -cycledepth:int */
         }
 
         private void ProjectLookaheadExpanded()
         {
-            this.RuleGrammarLookup =
-                (from rule in this.RuleDFAStates.Keys
-                 select new { Rule = rule, GrammarVocabulary = new GrammarVocabulary(this.GrammarSymbols, this.GrammarSymbols.First(k => (k is IGrammarRuleSymbol) && ((IGrammarRuleSymbol)k).Source == rule)) }).ToDictionary(k => k.Rule, v => v.GrammarVocabulary);
 
             /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
              * Flesh out the forest further, noting transitions interna-  *
@@ -577,6 +580,10 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                  * Tokens are deterministic machines which 
                  * cannot be recursive nor call other token
                  * parse methods.
+                 * *
+                 * This inlining process simplifies the overall analysis done on any given token.
+                 * *
+                 * The imported tokens are akin to 'fragments' in another popular tool.
                  * */
                 bool inlineSuccess = false;
                 compilerPhases.Add(ParserCompilerPhase.InliningTokens, () =>
@@ -632,6 +639,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                             node.ClearCache();
                         ReductionSignalTriggered = false;
                         phaseIndex = keys.IndexOf(ParserCompilerPhase.ProjectLookaheadInitial) - 1;
+                        /* Go back one, if we have reductions it can greatly change the face of the result behavior. */
                         return ACTION_SKIP;
                     }
 
@@ -738,14 +746,14 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private ParserCompilerPhase phase;
         private bool expandTemplates;
-        private Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> _allProjectionNodes;
-        private Dictionary<IOilexerGrammarProductionRuleEntry, ProductionRuleProjectionNode> _ruleProjectionNodes;
+        private Dictionary<SyntacticalDFAState, PredictionTreeLeaf> _allProjectionNodes;
+        private Dictionary<IOilexerGrammarProductionRuleEntry, PredictionTreeLeaf> _ruleProjectionNodes;
         private ParserBuilder _parserBuilder;
         private TokenSymbolBuilder _tokenSymbolBuilder;
         private InlinedTokenEntry _coreLexer;
         private IIntermediateClassType _parserClass;
 
-        internal Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> AllProjectionNodes
+        internal Dictionary<SyntacticalDFAState, PredictionTreeLeaf> AllProjectionNodes
         {
             get
             {
@@ -986,154 +994,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this.ParserBuilder.BuildParser();
         }
 
-        private void OriginalParseMethod()
-        {
-#if ShortcircuitToFinishLexer
-            return;
-#else
-
-            /* *
-             * When walking the context stack of what is being parsed
-             * there must be a temporary variable allocated
-             * to handle the current depth of the context.
-             * If, for example, you wanted to check if it was:
-             * MemberName(80)::…::[NameSpaceOrTypeName]
-             * To check the context, you would need to:
-             * int depth = context.Depth;
-             * ...
-             * if (depth >= k && context[k] == RuleStates.MemberNameAt80 &&
-             *                   context[…] == RuleStates.SimpleNameStart &&
-             *                   context[0] == RuleStates.NameSpaceOrTypeNameStart)
-             *     ...
-             * *
-             * These special callouts will ONLY show up if, and only if,
-             * the edge state is the result of an ambiguity.
-             * *
-             * Further care needs taken when the rule is a part of an 
-             * ambiguity between multiple possible parse paths.
-             * *
-             * It gets especially hairy when the edge state ties with the
-             * parent state, and the projection is being done from within an
-             * ambiguity!
-             * *
-             * This is why the right-hand-side of the states are compared
-             * when the edge state is ambiguous with its callers.
-             * It's very likely that the ambiguity will all refer to
-             * the same edge states within the language, causing little issue.
-             * */
-
-
-            /* *
-             * Rules which are ambiguous edge states are handled
-             * through the follow ambiguities, because the
-             * state itself is part of the path set that initiates
-             * the state machine.  This will yield a machine that will
-             * resolve the ambiguity itself.
-             * *
-             * Follow ambiguities have to answer two questions:
-             *  1. Whether the origin of the transition is the original
-             *     node.
-             *  2. Whether the advance will yield a syntax error.
-             *     a. In the case that it does, it must not advance
-             *        and allow the parent to consume the input.
-             *     b. In the other case, it will consume the input
-             *        still allowing the parent context to continue.
-             * */
-
-
-            Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember> parseMethods = new Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember>();
-
-            Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember> predictMethods = new Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember>();
-
-            Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember> followPredictMethods = new Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember>();
-
-            foreach (var rule in from rule in this.RuleDFAStates.Keys
-                                 orderby rule.Name
-                                 select rule)
-            {
-                var adapter = this.RuleAdapters[rule];
-                var parseMethod = adapter.AssociatedContext.ParseMethod = CreateRuleParseMethod(rule, _parserClass);
-                parseMethod.AccessLevel = AccessLevelModifiers.Public;
-                parseMethods.Add(adapter, parseMethod);
-            }
-
-            int predictIndex = 0;
-            foreach (var advMachine in this.AdvanceMachines.Keys)
-            {
-                var machine = this.AdvanceMachines[advMachine];
-                var predictMethod = CreatePredictParseMethod(advMachine, ++predictIndex);
-                predictMethod.AccessLevel = AccessLevelModifiers.Private;
-                predictMethods.Add(machine, predictMethod);
-            }
-            predictIndex = 0;
-            foreach (var followAmbiguityNode in FollowAmbiguousNodes)
-                foreach (var followAmbiguity in followAmbiguityNode.FollowAmbiguities)
-                {
-                    if (!followPredictMethods.ContainsKey(followAmbiguity.Adapter))
-                    {
-                        var predictMethod = CreateFollowPredictParseMethod(followAmbiguity, ++predictIndex);
-                        predictMethod.AccessLevel = AccessLevelModifiers.Private;
-                        followPredictMethods.Add(followAmbiguity.Adapter, predictMethod);
-                    }
-                }
-
-#if ParallelProcessing
-            Parallel.ForEach(parseMethods.Keys, rootAdapter =>
-#else
-            foreach (var rootAdapter in parseMethods.Keys)
-#endif
-            {
-                var method = parseMethods[rootAdapter];
-                foreach (var adapter in from s in rootAdapter.AssociatedContext.StateAdapterLookup.Values
-                                        orderby s.AssociatedState.StateValue
-                                        select s)
-                    EmitRuleParseState(adapter, method, predictMethods, followPredictMethods);
-                method.Return(IntermediateGateway.NullValue);
-#if ParallelProcessing
-            });
-#else
-            }
-#endif
-
-#if ParallelProcessing
-            Parallel.ForEach(this.AdvanceMachines.Keys, rootAdapterState =>
-#else
-            foreach (var rootAdapterState in this.AdvanceMachines.Keys)
-#endif
-            {
-                var rootAdapter = this.AdvanceMachines[rootAdapterState];
-                var method = predictMethods[rootAdapter];
-                foreach (var adapter in from s in rootAdapter.AssociatedContext.StateAdapterLookup.Values
-                                        orderby s.AssociatedState.StateValue
-                                        select s)
-                    EmitRulePredictState(adapter, method, parseMethods);
-                method.Return(IntermediateGateway.NumberZero);
-#if ParallelProcessing
-            });
-#else
-            }
-#endif
-
-#if ParallelProcessing
-            Parallel.ForEach(followPredictMethods.Keys, rootAdapter =>
-#else
-            foreach (var rootAdapter in followPredictMethods.Keys)
-#endif
-            {
-                var method = followPredictMethods[rootAdapter];
-                foreach (var adapter in from s in rootAdapter.AssociatedContext.StateAdapterLookup.Values
-                                        orderby s.AssociatedState.StateValue
-                                        select s)
-                    EmitRulePredictFollowState(adapter, method, parseMethods);
-                method.Return(IntermediateGateway.NumberZero);
-#if ParallelProcessing
-            });
-#else
-            }
-#endif
-#endif
-        }
-
         private void HandleAmbiguitiesAndLexerCore(IIntermediateAssembly resultAssembly)
         {
             this._GrammarSymbols.PruneUnusedAmbiguities(this.CompilationErrors, this);
@@ -1149,6 +1009,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 currentAmbiguityBreakdown.ValidIdentity = this.LexicalSymbolModel.GetValidSymbolField(ambiguity);
             }
             this._relationalModelMapping.ConnectConstructs(this.RuleDFAStates);
+            this._parseResultsBuilder.Build2();
             this.ParserBuilder.Build2();
             this.ErrorContextBuilder.Build2();
             this.TokenStreamBuilder.Build2();
@@ -1159,6 +1020,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this.ParserBuilder.Build3();
             this.RuleSymbolBuilder.Build2();
             this.ExtensionsBuilder.Build(this, this._parserBuilder, (IIntermediateCliManager)resultAssembly.IdentityManager);
+            this.ParserBuilder.Build4();
             this.ParserBuilder.LexerBuilder.Build2();
             this.RootRuleBuilder.Build2();
             this.TokenStreamBuilder.Build3();
@@ -1172,6 +1034,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             foreach (var rule in this.Source.GetRules())
                 this.RuleDetail[rule].Symbol = this._GrammarSymbols.GetSymbolFromEntry(rule);
             this._relationalModelMapping.BuildPrimaryMembers((IIntermediateCliManager)resultAssembly.IdentityManager);
+
         }
 
         private void CreateProjectionStateMachines()
@@ -1187,12 +1050,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
 
         private void CreateFollowProjectionsAndMachines()
         {
-#if ShortcutToFindBug13
-            return;
-#endif
             this.FollowAmbiguousNodes = SyntacticAnalysisCore.PerformEdgePredictions(this, _allProjectionNodes, RuleDFAStates, RuleGrammarLookup, this._GrammarSymbols, this.CompilationErrors).ToArray();
 
-            this._FollowAdapters = new MultikeyedDictionary<ProductionRuleProjectionNode, ProductionRuleProjectionFollow, SyntacticalDFAState, ProductionRuleProjectionAdapter>();
+            this._FollowAdapters = new MultikeyedDictionary<PredictionTreeLeaf, PredictionTreeFollow, SyntacticalDFAState, PredictionTreeDFAdapter>();
             foreach (var node in FollowAmbiguousNodes)
                 foreach (var followAmbiguity in node.FollowAmbiguities)
                     foreach (var adapter in followAmbiguity.Adapter.All)
@@ -1220,6 +1080,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this._parserBuilder             = new ParserBuilder           ();
             this._tokenSymbolBuilder        = new TokenSymbolBuilder      ();
             this._extensionsBuilder         = new ExtensionsBuilder       ();
+            this._parseResultsBuilder      = new ParseResultsBuilder    ();
             this._symbolStoreBuilder        = new SymbolStoreBuilder      ();
             this._charStreamBuilder         = new CharStreamBuilder       ();
             this._charStreamSegmentBuilder  = new CharStreamSegmentBuilder();
@@ -1241,7 +1102,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             this._rootRuleBuilder           .Build(new Tuple<ParserCompiler, RuleSymbolBuilder            , IIntermediateAssembly> (this, this._ruleSymbolBuilder    , resultAssembly));
             this._tokenSymbolBuilder        .Build(new Tuple<ParserCompiler, CommonSymbolBuilder          , IIntermediateAssembly> (this, this._commonSymbolBuilder  , resultAssembly));
             this._errorContextBuilder       .Build();
-
+            this._parseResultsBuilder      .Build(Tuple.Create(this, resultAssembly));
             this._relationalModelMapping   = new OilexerGrammarFileObjectRelationalMap(this.Source, this.RuleDFAStates, resultAssembly, this._rootRuleBuilder);
             if (this.CompilationErrors.HasErrors)
                 return;
@@ -1260,7 +1121,7 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return targetType.Methods.Add(new TypedName("Parse{0}", methodResultType, entry.Name));
         }
 
-        private static List<ProductionRuleProjectionDPathSet> GetAdapterDPathSets<TAdapter, TAdapterContext>(TAdapter adapter)
+        private static List<PredictionTree> GetAdapterDPathSets<TAdapter, TAdapterContext>(TAdapter adapter)
             where TAdapter :
                 DFAAdapter<GrammarVocabulary, SyntacticalNFAState, SyntacticalDFAState, IProductionRuleSource, TAdapter, TAdapterContext>,
                 new()
@@ -1268,19 +1129,19 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
                 new()
         {
             return (from    s in adapter.AssociatedState.Sources
-                    where   s.Item1 is ProductionRuleProjectionDPathSet
-                    let     dps = (ProductionRuleProjectionDPathSet)s.Item1
+                    where   s.Item1 is PredictionTree
+                    let     dps = (PredictionTree)s.Item1
                     select  dps).ToList();
         }
 
-        private IEnumerable<IProductionRuleProjectionDecision> GetAdapterDecisions(ProductionRuleProjectionAdapter adapter)
+        private IEnumerable<IPredictionTreeDestination> GetAdapterDecisions(PredictionTreeDFAdapter adapter)
         {
             return (from    source in adapter.AssociatedState.Sources
-                    where   source.Item1 is IProductionRuleProjectionDecision
-                    select (IProductionRuleProjectionDecision)source.Item1);
+                    where   source.Item1 is IPredictionTreeDestination
+                    select (IPredictionTreeDestination)source.Item1);
         }
 
-        private static Tuple<List<string>, List<ProductionRuleProjectionDPath>> GetAdapterDPathSets(ProductionRuleNormalAdapter adapter)
+        private static Tuple<List<string>, List<PredictionTreeBranch>> GetAdapterDPathSets(ProductionRuleNormalAdapter adapter)
         {
             var initialSet = GetAdapterDPathSets<ProductionRuleNormalAdapter, ProductionRuleNormalContext>(adapter);
             var distinctPaths = (from   pSet in initialSet
@@ -1292,9 +1153,9 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return Tuple.Create(distinctTransitions, distinctPaths);
         }
 
-        private static Tuple<List<string>, List<ProductionRuleProjectionDPath>> GetAdapterDPathSets(ProductionRuleProjectionAdapter adapter)
+        private static Tuple<List<string>, List<PredictionTreeBranch>> GetAdapterDPathSets(PredictionTreeDFAdapter adapter)
         {
-            var initialSet = GetAdapterDPathSets<ProductionRuleProjectionAdapter, ProductionRuleProjectionContext>(adapter);
+            var initialSet = GetAdapterDPathSets<PredictionTreeDFAdapter, PredictionTreeDFAContext>(adapter);
             var distinctPaths = (from   pSet in initialSet
                                  from   p in pSet
                                  select p).Distinct().ToList();
@@ -1304,261 +1165,6 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
             return Tuple.Create(distinctTransitions, distinctPaths);
         }
 
-        #region To Refactor - High Priority
-
-        private void EmitRulePredictFollowState(ProductionRuleProjectionAdapter adapter, ITopBlockStatement target, Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember> parseMethods)
-        {
-            /* *
-             * How a Loopback impacts a follow look-ahead prediction:
-             * If a state contains a DPathSet which targets a transition
-             * which is *also* within the previously passed path sets,
-             * the previous node is a valid exit point because we're only
-             * interested in whether accepting the first instance is valid.
-             * */
-            StringBuilder sb = new StringBuilder();
-            var currentAdapterSets =
-                GetAdapterDPathSets<ProductionRuleProjectionAdapter, ProductionRuleProjectionContext>(adapter);
-            sb.AppendFormat("{0}tate {1}", adapter.AssociatedState.IsEdge ? "Edge s" : "S", adapter.AssociatedState.StateValue);
-            foreach (var transition in adapter.OutgoingTransitions.Keys)
-            {
-                sb.AppendLine();
-                var targetAdapter = adapter.OutgoingTransitions[transition];
-                var targetAdapterSets = GetAdapterDPathSets<ProductionRuleProjectionAdapter, ProductionRuleProjectionContext>(targetAdapter);
-                sb.AppendFormat("\t[{0}]->{1}", transition, targetAdapter.AssociatedState.StateValue);
-                if (targetAdapterSets.Any(targetPathSet => currentAdapterSets.Any(currentPathSet => currentPathSet.GetCurrentPathSets().Any(currentPreviousPathSet => currentPreviousPathSet.Equals(targetPathSet)))))
-                {
-                    sb.Append(" -- Loop Back Detection: Valid to continue.");
-                    /* Loop Back */
-                }
-
-            }
-            var pathSetData = GetAdapterDPathSets(adapter);
-            if (pathSetData.Item1.Count > 0 && adapter.AssociatedState.OutTransitions.Count > 0)
-            {
-#if EmitTransitionDetails
-                sb.AppendLine();
-                sb.Append("Transitions:");
-                foreach (var pathSet in pathSetData.Item1)
-                {
-                    sb.AppendLine();
-                    sb.AppendFormat("\t{0}", pathSet);
-                }
-                sb.AppendLine();
-                sb.Append("Paths:");
-                foreach (var path in pathSetData.Item2)
-                {
-                    sb.AppendLine();
-                    sb.AppendFormat("\t{0}", path);
-                }
-#endif
-                if (adapter.AssociatedState.IsEdge)
-                {
-                    var decisions = GetAdapterDecisions(adapter).ToList();
-                    if (decisions.Count > 0)
-                    {
-                        sb.AppendLine();
-                        sb.Append("Decisions:");
-                        foreach (var decision in decisions)
-                        {
-                            sb.AppendLine();
-                            if (decision is ProductionRuleProjectionDecision)
-                                sb.AppendFormat("\tWhen no alt exists {0}->{1}", decision.DecidingFactor, ((ProductionRuleProjectionDecision)decision).Target.Value.OriginalState.StateValue);
-                            else if (decision is ProductionRuleProjectionFollowFailure)
-                                sb.Append("\tWhen no alt exists no transition should occur, yield 0.");
-                        }
-                    }
-                }
-            }
-            else if (adapter.AssociatedState.OutTransitions.Count == 0)
-            {
-                var decisions = GetAdapterDecisions(adapter).ToList();
-                if (decisions.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.Append("Decisions:");
-                    foreach (var decision in decisions)
-                    {
-                        sb.AppendLine();
-                        if (decision is ProductionRuleProjectionDecision)
-                            sb.AppendFormat("\t{0}->{1}", decision.DecidingFactor, ((ProductionRuleProjectionDecision)decision).Target.Value.OriginalState.StateValue);
-                        else if (decision is ProductionRuleProjectionFollowFailure)
-                            sb.Append("\tNo transition should occur, yield 0.");
-                    }
-                }
-            }
-            target.Comment(sb.ToString());
-        }
-
-        private void EmitRulePredictState(ProductionRuleProjectionAdapter adapter, ITopBlockStatement target, Dictionary<ProductionRuleNormalAdapter, IIntermediateClassMethodMember> parseMethods)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendFormat("{0}tate {1}", adapter.AssociatedState.IsEdge ? "Edge s" : "S", adapter.AssociatedState.StateValue);
-            foreach (var transition in adapter.OutgoingTransitions.Keys)
-            {
-                sb.AppendLine();
-                var targetAdapter = adapter.OutgoingTransitions[transition];
-                sb.AppendFormat("\t[{0}]->{1}", transition, targetAdapter.AssociatedState.StateValue);
-            }
-            var pathSetData = GetAdapterDPathSets(adapter);
-            if (pathSetData.Item1.Count > 0 && adapter.AssociatedState.OutTransitions.Count > 0)
-            {
-#if EmitTransitionDetails
-                sb.AppendLine();
-                sb.Append("Transitions:");
-                foreach (var pathSet in pathSetData.Item1)
-                {
-                    sb.AppendLine();
-                    sb.AppendFormat("\t{0}", pathSet);
-                }
-                sb.AppendLine();
-                sb.Append("Paths:");
-                foreach (var path in pathSetData.Item2)
-                {
-                    sb.AppendLine();
-                    sb.AppendFormat("\t{0}", path);
-                }
-#endif
-                if (adapter.AssociatedState.IsEdge)
-                {
-                    var decisions = GetAdapterDecisions(adapter).ToList();
-                    if (decisions.Count > 0)
-                    {
-                        sb.AppendLine();
-                        sb.Append("Decisions:");
-                        foreach (var decision in decisions)
-                        {
-                            sb.AppendLine();
-                            if (decision is ProductionRuleProjectionDecision)
-                                sb.AppendFormat("\tWhen no alt exists {0}->{1}", decision.DecidingFactor, ((ProductionRuleProjectionDecision)decision).Target.Value.OriginalState.StateValue);
-                        }
-                    }
-                }
-
-            }
-            else if (adapter.AssociatedState.OutTransitions.Count == 0)
-            {
-                var decisions = GetAdapterDecisions(adapter).ToList();
-                if (decisions.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.Append("Decisions:");
-                    foreach (var decision in decisions)
-                    {
-                        sb.AppendLine();
-                        if (decision is ProductionRuleProjectionDecision)
-                            sb.AppendFormat("\t{0}->{1}", decision.DecidingFactor, ((ProductionRuleProjectionDecision)decision).Target.Value.OriginalState.StateValue);
-                    }
-                }
-            }
-            target.Comment(sb.ToString());
-        }
-
-        private void EmitRuleParseState(ProductionRuleNormalAdapter stateAdapter, ITopBlockStatement target, Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember> predictMethods, Dictionary<ProductionRuleProjectionAdapter, IIntermediateClassMethodMember> followPredictMethods)
-        {
-            string zeroFormat = new string('0', stateAdapter.AssociatedContext.StateAdapterLookup.Keys.Max(k => k.StateValue).ToString().Length);
-            if (stateAdapter.AssociatedContext.RequiresProjection)
-            {
-                var node = this.AllProjectionNodes[stateAdapter.AssociatedState];
-                var adapter = this.AdvanceMachines[node];
-                var parseMethod = predictMethods[adapter];
-                var currentSwitch = target.Switch(parseMethod.GetReference().Invoke().RightComment(string.Format("State {0}", stateAdapter.AssociatedState.StateValue)));
-                foreach (var targetTransition in stateAdapter.OutgoingTransitions.Keys)
-                {
-                    ProductionRuleNormalAdapter targetAdapter = stateAdapter.OutgoingTransitions[targetTransition];
-                    var currentStateCase = currentSwitch.Case(targetAdapter.AssociatedState.StateValue.ToPrimitive());
-                    currentStateCase.Comment(string.Format("On {0}->{1}", targetTransition, targetAdapter.AssociatedState.StateValue));
-                    currentStateCase.Break();
-                }
-            }
-            else if (stateAdapter.AssociatedContext.RequiresFollowProjection)
-            {
-                var follows = stateAdapter.AssociatedContext.Node.FollowAmbiguities.ToArray();
-                if (follows.Length == 1)
-                {
-                    var predictMethod = followPredictMethods[follows[0].Adapter];
-                    var currentSwitch = target.Switch(predictMethod.GetReference().Invoke().RightComment("State {0}", stateAdapter.AssociatedState.StateValue));
-                }
-                else
-                    target.Comment(string.Format("ToDo: Add code here to predict based off of {0} variations.", stateAdapter.AssociatedContext.Node.FollowAmbiguities.Count()));
-            }
-            else
-            {
-                var node = this.AllProjectionNodes[stateAdapter.AssociatedState];
-                bool isEdge = stateAdapter.AssociatedState.IsEdge;
-                StringBuilder sb = new StringBuilder();
-                sb.AppendFormat("{0}tate {1}", stateAdapter.AssociatedState.IsEdge ? "Edge s" : "S", stateAdapter.AssociatedState.StateValue);
-                foreach (var transition in stateAdapter.OutgoingTransitions.Keys)
-                {
-                    sb.AppendLine();
-                    var targetAdapter = stateAdapter.OutgoingTransitions[transition];
-                    sb.AppendFormat("\t[{0}]->{1}", transition, targetAdapter.AssociatedState.StateValue);
-                }
-#if EmitTransitionDetails
-                var pathSetData = GetAdapterDPathSets(stateAdapter);
-                if (pathSetData.Item1.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.Append("Transitions:");
-                    foreach (var pathSet in pathSetData.Item1)
-                    {
-                        sb.AppendLine();
-                        sb.AppendFormat("\t{0}", pathSet);
-                    }
-                    foreach (var path in pathSetData.Item2)
-                    {
-                        sb.AppendLine();
-                        sb.AppendFormat("\t{0}", path);
-                    }
-                }
-                if (stateAdapter.AssociatedState.Sources.Count() > 0)
-                {
-                    sb.AppendLine();
-                    sb.Append("Sources:");
-                    int sourceIndex = 0;
-                    foreach (var source in stateAdapter.AssociatedState.Sources)
-                    {
-                        sb.AppendLine();
-                        sb.AppendFormat("\t{0} - {1}", ++sourceIndex, source);
-                    }
-                }
-#endif
-
-                target.Comment(sb.ToString());
-            }
-        }
-
-        private IIntermediateClassMethodMember CreateFollowPredictParseMethod(ProductionRuleProjectionFollow follow, int predictIndex)
-        {
-            var normalAdapter = this.AllRuleAdapters[follow.Rule, follow.EdgeNode.Value.OriginalState];
-            var parseMethod = normalAdapter.AssociatedContext.ParseMethod;
-            var parseParent = parseMethod.Parent;
-
-#if x86
-            var returnType = parseParent.IdentityManager.ObtainTypeReference(RuntimeCoreType.UInt32);
-#elif x64
-            var returnType = parseParent.IdentityManager.ObtainTypeReference(RuntimeCoreType.UInt64);
-#endif
-            return parseParent.Methods.Add(new TypedName("Predict{0}OnFollowing{1}", returnType, predictIndex, normalAdapter.AssociatedContext.Node.Rule.Name));
-        }
-
-        private IIntermediateClassMethodMember CreatePredictParseMethod(ProductionRuleProjectionNode projectionPoint, int predictIndex)
-        {
-            var normalAdapter = this.AllRuleAdapters[projectionPoint.Rule, projectionPoint.Value.OriginalState];
-            var parseMethod = normalAdapter.AssociatedContext.ParseMethod;
-            var parseParent = parseMethod.Parent;
-#if x86
-            var returnType = parseParent.IdentityManager.ObtainTypeReference(RuntimeCoreType.UInt32);
-#elif x64
-            var returnType = parseParent.IdentityManager.ObtainTypeReference(RuntimeCoreType.UInt64);
-#endif
-
-            if (normalAdapter.AssociatedContext.Node.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None)
-                return parseParent.Methods.Add(new TypedName("Predict{0}On{1}", returnType, predictIndex, normalAdapter.AssociatedContext.Node.Rule.Name), new TypedNameSeries(new TypedName("recursive", parseParent.IdentityManager.ObtainTypeReference(RuntimeCoreType.Boolean))));
-            else
-                return parseParent.Methods.Add(new TypedName("Predict{0}On{1}", returnType, predictIndex, normalAdapter.AssociatedContext.Node.Rule.Name));
-        }
-
-        #endregion
 
         /// <summary>
         /// Returns/sets the <see cref="Int32"/> value denoting the maximum value of 
@@ -1571,14 +1177,14 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         /// automata lookups which outline the structure for predicting a non 
         /// LL(1) decision point within a lexer.
         /// </summary>
-        internal Dictionary<ProductionRuleProjectionNode, ProductionRuleProjectionAdapter> AdvanceMachines { get; set; }
+        internal Dictionary<PredictionTreeLeaf, PredictionTreeDFAdapter> AdvanceMachines { get; set; }
 
         /// <summary>
         /// Returns the <see cref="Dictionary{TKey, TValue}"/> of deterministic
-        /// automata lookups in reverse to the <see cref="ProductionRuleProjectionNode"/> 
+        /// automata lookups in reverse to the <see cref="PredictionTreeLeaf"/> 
         /// from which the machine was derived.
         /// </summary>
-        internal Dictionary<ProductionRuleProjectionAdapter, ProductionRuleProjectionNode> AdvanceMachinesReverse { get; set; }
+        internal Dictionary<PredictionTreeDFAdapter, PredictionTreeLeaf> AdvanceMachinesReverse{ get; set; }
 
         /// <summary>
         /// Returns the <see cref="Dictionary{TKey, TValue}"/> lookup of
@@ -1601,35 +1207,31 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         public GrammarVocabularyModelBuilder LexicalSymbolModel { get; private set; }
 
         /// <summary>
-        /// Returns the <see cref="IEnumerable{T}"/> of <see cref="ProductionRuleProjectionNode"/>
+        /// Returns the <see cref="IEnumerable{T}"/> of <see cref="PredictionTreeLeaf"/>
         /// elements that denote ambiguous edge states of a language's non-terminals
         /// relative to the paths that were taken to reach a given rule.
         /// </summary>
         /// <remarks>
-        /// Refer to: <seealso cref="ProductionRuleProjectionNode.FollowAmbiguities"/> for more
+        /// Refer to: <seealso cref="PredictionTreeLeaf.FollowAmbiguities"/> for more
         /// information.
         /// </remarks>
-        public ProductionRuleProjectionNode[] FollowAmbiguousNodes { get; set; }
-        private IReadonlyMultikeyedDictionary<ProductionRuleProjectionNode, ProductionRuleProjectionFollow, SyntacticalDFAState, ProductionRuleProjectionAdapter> _followAdapters;
+        public PredictionTreeLeaf[] FollowAmbiguousNodes { get; set; }
+        private IReadonlyMultikeyedDictionary<PredictionTreeLeaf, PredictionTreeFollow, SyntacticalDFAState, PredictionTreeDFAdapter> _followAdapters;
         public GrammarVocabularyModelBuilder SyntacticalSymbolModel { get; private set; }
         private CharStreamBuilder _charStreamBuilder;
         private CharStreamSegmentBuilder _charStreamSegmentBuilder;
         private IIntermediateStructType _mkdKeysValuePair;
         private Oilexer.FixedTokenBaseBuilder _fixedTokenBaseBuilder;
         private bool _linkedProjectionNodes;
-        public IReadonlyMultikeyedDictionary<ProductionRuleProjectionNode, ProductionRuleProjectionFollow, SyntacticalDFAState, ProductionRuleProjectionAdapter> FollowAdapters
+        public IReadonlyMultikeyedDictionary<PredictionTreeLeaf, PredictionTreeFollow, SyntacticalDFAState, PredictionTreeDFAdapter> FollowAdapters
         {
             get {
                 if (_FollowAdapters == null)
-#if ShortcutToFindBug13
-                    return this._followAdapters = new ReadonlyMultikeyedDictionary<ProductionRuleProjectionNode, ProductionRuleProjectionFollow, SyntacticalDFAState, ProductionRuleProjectionAdapter>(new MultikeyedDictionary<ProductionRuleProjectionNode, ProductionRuleProjectionFollow, SyntacticalDFAState, ProductionRuleProjectionAdapter>());
-#else
                     return null;
-#endif
-                return this._followAdapters ?? (this._followAdapters = new ReadonlyMultikeyedDictionary<ProductionRuleProjectionNode, ProductionRuleProjectionFollow, SyntacticalDFAState, ProductionRuleProjectionAdapter>(_FollowAdapters));
+                return this._followAdapters ?? (this._followAdapters = new ReadonlyMultikeyedDictionary<PredictionTreeLeaf, PredictionTreeFollow, SyntacticalDFAState, PredictionTreeDFAdapter>(_FollowAdapters));
             }
         }
-        private MultikeyedDictionary<ProductionRuleProjectionNode, ProductionRuleProjectionFollow, SyntacticalDFAState, ProductionRuleProjectionAdapter> _FollowAdapters { get; set; }
+        private MultikeyedDictionary<PredictionTreeLeaf, PredictionTreeFollow, SyntacticalDFAState, PredictionTreeDFAdapter> _FollowAdapters { get; set; }
 
 
         public SymbolStoreBuilder SymbolStoreBuilder { get { return this._symbolStoreBuilder; } }
@@ -1667,5 +1269,12 @@ namespace AllenCopeland.Abstraction.Slf.Compilers.Oilexer
         public bool scaffoldingBuilt { get; set; }
 
         public IIntermediateAssembly ResultVsixAssembly { get; set; }
+
+        public HashSet<IOilexerGrammarProductionRuleEntry> ReducedRules { get; private set; }
+
+        internal void DenoteReduction(IOilexerGrammarProductionRuleEntry rule)
+        {
+            this.ReducedRules.Add(rule);
+        }
     }
 }

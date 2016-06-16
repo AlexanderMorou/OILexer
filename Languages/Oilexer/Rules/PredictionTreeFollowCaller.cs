@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
-    public class ProductionRuleProjectionFollowFailure :
-        IProductionRuleProjectionDecision
+    public class PredictionTreeFollowCaller :
+        IPredictionTreeDestination
     {
-        public ProductionRuleProjectionFollowFailure(ProductionRuleProjectionNode followNode)
+        public PredictionTreeFollowCaller(PredictionTreeLeaf followNode)
         {
             this.Node = followNode;
         }
@@ -22,7 +22,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public ProductionRuleProjectionNode Node { get; private set; }
+        public PredictionTreeLeaf Node { get; private set; }
 
         public GrammarVocabulary DecidingFactor { get; internal set; }
     }

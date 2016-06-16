@@ -1,0 +1,3 @@
+@echo Compiling T*y# Grammar...
+@OILexer.exe -v "Samples\ToySharp\ToySharp.oilexer" -ex:dots -nom
+@pause

@@ -1,8 +1,8 @@
 #ifndef Lexer
 #include                        "Oilexer.oilexer";
 
-GDFile                                     ::=
-    Entry:Items;*                            ;
+File                                       ::=
+    Entry:Items;* EOF                        ;
 #elif Lexer == "ToyParser"
 #include                       "Language.oilexer";
 #endif

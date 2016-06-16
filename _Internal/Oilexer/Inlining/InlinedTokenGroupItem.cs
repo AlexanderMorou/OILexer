@@ -23,6 +23,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer.Inlining
             this.Root = root;
             this.RepeatOptions = source.RepeatOptions;
             this.Name = source.Name;
+            this.SiblingAmbiguity = source.SiblingAmbiguity;
         }
         public ITokenGroupItem Source { get; private set; }
 

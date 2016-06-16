@@ -8,47 +8,47 @@ using System.Threading.Tasks;
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
-    public class ProductionRuleProjectionContext
+    public class PredictionTreeDFAContext
     {
-        private ProductionRuleProjectionNode node;
-        private ProductionRuleProjectionAdapter rootAdapter;
-        private ProductionRuleProjectionDPath[] recursiveBranches;
+        private PredictionTreeLeaf node;
+        private PredictionTreeDFAdapter rootAdapter;
+        private PredictionTreeBranch[] recursiveBranches;
         private bool gotDecision;
-        private ProductionRuleProjectionDecision decision;
+        private PredictionTreeDestination decision;
         private bool gotReduction;
 
-        private Dictionary<ProductionRuleProjectionContext, ProductionRuleLookAheadBucket> automationBuckets;
-        private Dictionary<ProductionRuleLookAheadBucket, List<ProductionRuleProjectionContext>> locallyDefinedBuckets;
-        private Dictionary<ProductionRuleLookAheadBucket, ProductionRuleProjectionContext> referencedBuckets;
+        private Dictionary<PredictionTreeDFAContext, ProductionRuleLookAheadBucket> automationBuckets;
+        private Dictionary<ProductionRuleLookAheadBucket, List<PredictionTreeDFAContext>> locallyDefinedBuckets;
+        private Dictionary<ProductionRuleLookAheadBucket, PredictionTreeDFAContext> referencedBuckets;
         private Dictionary<ProductionRuleLookAheadBucket, int> bucketUseCount = new Dictionary<ProductionRuleLookAheadBucket, int>();
         private ProductionRuleProjectionReduction reduction;
-        private ProductionRuleProjectionNode rootNode;
+        private PredictionTreeLeaf rootNode;
         private bool? _isLeftRecursive;
-        public ProductionRuleProjectionAdapter Adapter { get; internal set; }
+        public PredictionTreeDFAdapter Adapter { get; internal set; }
 
-        public ProductionRuleProjectionAdapter RootAdapter { get { return this.rootAdapter; } }
+        public PredictionTreeDFAdapter RootAdapter { get { return this.rootAdapter; } }
 
         public bool IsRuleNode
         {
             get
             {
-                return this.rootNode.Value.OriginalState is SyntacticalDFARootState;
+                return this.rootNode.Veins.DFAOriginState is SyntacticalDFARootState;
             }
         }
 
         /// <summary>
         /// Returns the <see cref="ParserCompiler"/> which was 
-        /// responsible for creating this <see cref="ProductionRuleProjectionContext"/>.
+        /// responsible for creating this <see cref="PredictionTreeDFAContext"/>.
         /// </summary>
         public ParserCompiler AssociatedCompiler { get; internal set; }
 
-        internal void Connect(ProductionRuleProjectionAdapter adapter, ParserCompiler compiler)
+        internal void Connect(PredictionTreeDFAdapter adapter, ParserCompiler compiler)
         {
             this.Adapter = adapter;
             this.AssociatedCompiler = compiler;
         }
 
-        internal void PostConnect(ProductionRuleProjectionNode rootNode, ProductionRuleProjectionAdapter rootAdapter)
+        internal void PostConnect(PredictionTreeLeaf rootNode, PredictionTreeDFAdapter rootAdapter)
         {
             this.rootNode = rootNode;
             this.rootAdapter = rootAdapter;
@@ -58,7 +58,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         {
             get
             {
-                return this.rootNode.Value.LeftRecursionType != ProductionRuleLeftRecursionType.None;
+                return this.rootNode.Veins.LeftRecursionType != ProductionRuleLeftRecursionType.None;
             }
         }
 
@@ -75,7 +75,30 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        internal IEnumerable<ProductionRuleProjectionDPath> RecursiveBranches
+        public bool RequiresLeftRecursiveCaution
+        {
+            get
+            {
+                if (!this.IsLeftRecursiveProjection)
+                    return false;
+                if (this.LeftRecursiveType == ProductionRuleLeftRecursionType.Direct)
+                    return true;
+                else
+                    return (from tr in this.rootNode.Veins.DFAOriginState.OutTransitions.FullCheck.SymbolicBreakdown(this.AssociatedCompiler).Rules.Values
+                            where tr.Leaf.Veins.DFAOriginState.OutTransitions.Count == 1
+                            from inPath in this.rootNode.IncomingPaths
+                            where inPath.Contains(tr.Leaf)
+                            let index = inPath.IndexOf(tr.Leaf)
+                            let myIndex = inPath.IndexOf(this.rootNode)
+                            where index < inPath.Depth && index < myIndex
+                            where inPath.GetDeviationAt(index) == 0
+                            select 1).Any();
+            }
+        }
+
+        public bool RequiresInnerRecursionSwap { get; set; }
+
+        internal IEnumerable<PredictionTreeBranch> RecursiveBranches
         {
             get
             {
@@ -86,7 +109,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        private IEnumerable<ProductionRuleProjectionDPath> ConnectRecursiveBranches()
+        private IEnumerable<PredictionTreeBranch> ConnectRecursiveBranches()
         {
             if (this.rootAdapter.AssociatedContext != this)
                 yield break;
@@ -96,7 +119,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                         yield return path;
         }
 
-        internal ProductionRuleProjectionDecision Decision
+        internal PredictionTreeDestination Decision
         {
             get
             {
@@ -105,12 +128,12 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        private ProductionRuleProjectionDecision ConnectDecision()
+        private PredictionTreeDestination ConnectDecision()
         {
             this.gotDecision = true;
-            var decisionNode = this.Adapter.AssociatedState.Sources.FirstOrDefault(k => k.Item1 is ProductionRuleProjectionDecision);
+            var decisionNode = this.Adapter.AssociatedState.Sources.FirstOrDefault(k => k.Item1 is PredictionTreeDestination);
             if (decisionNode != null)
-                return (ProductionRuleProjectionDecision)decisionNode.Item1;
+                return (PredictionTreeDestination)decisionNode.Item1;
             return null;
         }
 
@@ -131,10 +154,10 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        internal ProductionRuleLookAheadBucket CreateBucket(ProductionRuleProjectionContext bucketOwner)
+        internal ProductionRuleLookAheadBucket CreateBucket(PredictionTreeDFAContext bucketOwner)
         {
             if (this.automationBuckets == null)
-                this.automationBuckets = new Dictionary<ProductionRuleProjectionContext, ProductionRuleLookAheadBucket>();
+                this.automationBuckets = new Dictionary<PredictionTreeDFAContext, ProductionRuleLookAheadBucket>();
             ProductionRuleLookAheadBucket result;
             if (!this.automationBuckets.TryGetValue(bucketOwner, out result))
                 this.automationBuckets.Add(bucketOwner, result = new ProductionRuleLookAheadBucket() { Owner = bucketOwner, BucketID = this.automationBuckets.Count + 1 });
@@ -144,23 +167,23 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             return result;
         }
 
-        internal void DefineBucketOnTarget(ProductionRuleProjectionContext bucketReferencer)
+        internal void DefineBucketOnTarget(PredictionTreeDFAContext bucketReferencer)
         {
             if (this.locallyDefinedBuckets == null)
-                this.locallyDefinedBuckets = new Dictionary<ProductionRuleLookAheadBucket, List<ProductionRuleProjectionContext>>();
+                this.locallyDefinedBuckets = new Dictionary<ProductionRuleLookAheadBucket, List<PredictionTreeDFAContext>>();
             var bucket = this.RootAdapter.AssociatedContext.CreateBucket(this);
-            List<ProductionRuleProjectionContext> sourcesWhichUseBucket;
+            List<PredictionTreeDFAContext> sourcesWhichUseBucket;
             if (!this.locallyDefinedBuckets.TryGetValue(bucket, out sourcesWhichUseBucket))
-                this.locallyDefinedBuckets.Add(bucket, sourcesWhichUseBucket = new List<ProductionRuleProjectionContext>());
+                this.locallyDefinedBuckets.Add(bucket, sourcesWhichUseBucket = new List<PredictionTreeDFAContext>());
             if (!sourcesWhichUseBucket.Contains(bucketReferencer))
                 sourcesWhichUseBucket.Add(bucketReferencer);
             bucketReferencer.ReferenceBucketFromTarget(this, bucket);
         }
 
-        internal void ReferenceBucketFromTarget(ProductionRuleProjectionContext context, ProductionRuleLookAheadBucket bucket)
+        internal void ReferenceBucketFromTarget(PredictionTreeDFAContext context, ProductionRuleLookAheadBucket bucket)
         {
             if (this.referencedBuckets == null)
-                this.referencedBuckets = new Dictionary<ProductionRuleLookAheadBucket, ProductionRuleProjectionContext>();
+                this.referencedBuckets = new Dictionary<ProductionRuleLookAheadBucket, PredictionTreeDFAContext>();
             if (!this.referencedBuckets.ContainsKey(bucket))
                 this.referencedBuckets.Add(bucket, context);
         }
@@ -171,7 +194,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get
             {
                 if (this.RootAdapter.AssociatedContext.automationBuckets == null)
-                    this.RootAdapter.AssociatedContext.automationBuckets = new Dictionary<ProductionRuleProjectionContext, ProductionRuleLookAheadBucket>();
+                    this.RootAdapter.AssociatedContext.automationBuckets = new Dictionary<PredictionTreeDFAContext, ProductionRuleLookAheadBucket>();
                 foreach (var bucket in this.RootAdapter.AssociatedContext.automationBuckets.Values)
                     yield return bucket;
             }
@@ -181,7 +204,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             get
             {
                 if (this.referencedBuckets == null)
-                    referencedBuckets = new Dictionary<ProductionRuleLookAheadBucket, ProductionRuleProjectionContext>();
+                    referencedBuckets = new Dictionary<ProductionRuleLookAheadBucket, PredictionTreeDFAContext>();
                 foreach (var bucket in referencedBuckets.Keys)
                     yield return bucket;
             }
@@ -196,7 +219,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
         }
 
-        public ControlledDictionary<SyntacticalDFAState, ProductionRuleProjectionAdapter> StateAdapterLookup { get; set; }
+        public ControlledDictionary<SyntacticalDFAState, PredictionTreeDFAdapter> StateAdapterLookup { get; set; }
 
         private bool _IsLeftRecursiveProjectionInternal
         {
@@ -221,14 +244,20 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                               from s in targetState.Sources
                               select s).ToArray();
             return (from s in aggSources
-                    let decision = s.Item1 as ProductionRuleProjectionDecision
+                    let decision = s.Item1 as PredictionTreeDestination
                     where decision != null
                     let symbolicDecision = decision.DecidingFactor.SymbolicBreakdown(this.AssociatedCompiler)
                     where symbolicDecision.Rules.Count > 0
                     let firstRule = symbolicDecision.Rules.Values.First()
                     let decisiveAdapter = this.AssociatedCompiler.AllRuleAdapters[firstRule.Rule, firstRule.DFAState]
-                    where decisiveAdapter.AssociatedContext.Node.ContainsKey(rootNode.Rule)
+                    where decisiveAdapter.AssociatedContext.Leaf.ContainsKey(rootNode.Rule)
                     select 1).Any();
         }
+    }
+
+    public enum LeftRecursionHandling
+    {
+        NonGreedyMechanism,//nonGreedy
+        AvoidanceMechanism,//includeRuleContext
     }
 }

@@ -16,9 +16,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer
         IOilexerGrammarTokenEofEntry
     {
         internal OilexerGrammarTokenEofEntry(IOilexerGrammarTokenEntry[] tokens)
-            : base("EndOFile", new TokenExpressionSeries(new ITokenExpression[0], 0, 0, 0, "OilexerGrammarTokenEOFEntry.cs"), EntryScanMode.Inherited, "OilexerGrammarTokenEOFEntry.cs", 0, 0, 0, false, tokens, false)
+            : base("EndOfFile", new TokenExpressionSeries(new ITokenExpression[0], 0, 0, 0, "OilexerGrammarTokenEOFEntry.cs"), EntryScanMode.Inherited, "OilexerGrammarTokenEOFEntry.cs", 0, 0, 0, false, tokens, false)
         {
-            
         }
     }
 }

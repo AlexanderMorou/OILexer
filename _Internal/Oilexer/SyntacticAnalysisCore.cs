@@ -17,40 +17,37 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 {
     internal static partial class SyntacticAnalysisCore
     {
-        public static Dictionary<IOilexerGrammarProductionRuleEntry, ProductionRuleProjectionNode> ConstructProjectionNodes(ParserCompiler compiler)
+        public static Dictionary<IOilexerGrammarProductionRuleEntry, PredictionTreeLeaf> ConstructProjectionNodes(ParserCompiler compiler)
         {
             /* *
              * Constructs a lookup table for OilexerGrammarProductionRuleEntry->
-             * ProductionRuleProjectionNode.
+             * PredictionTreeLeaf.
              * *
              * This lookup is used in further steps to isolate firstSeries-sets,
              * follow sets, predict sets, and the ambiguity
              * isolation that might result.
              * */
-            var result = new Dictionary<IOilexerGrammarProductionRuleEntry, ProductionRuleProjectionNode>();
+            var result = new Dictionary<IOilexerGrammarProductionRuleEntry, PredictionTreeLeaf>();
 
             foreach (var rule in compiler.RuleDFAStates.Keys)
             {
-                ProductionRuleProjectionNode current = new ProductionRuleProjectionNode();
-                current.Value = new ProductionRuleProjectionNodeInfo(current, compiler.RuleDFAStates[rule], rule);
+                PredictionTreeLeaf current = new PredictionTreeLeaf() { Compiler = compiler };
+                current.Veins = new PredictionTreeLeafVeins(current, compiler.RuleDFAStates[rule], rule);
                 result.Add(rule, current);
             }
             return result;
         }
 
-        public static Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> ConstructRemainingNodes(Dictionary<IOilexerGrammarProductionRuleEntry, ProductionRuleProjectionNode> rootNodes)
+        public static Dictionary<SyntacticalDFAState, PredictionTreeLeaf> ConstructRemainingNodes(Dictionary<IOilexerGrammarProductionRuleEntry, PredictionTreeLeaf> rootLeaves, ParserCompiler compiler)
         {
             /* *
-             * This constructs the remaining nodes for firstSeries/follow/predict 
-             * projection.
-             * *
-             * The notion of 'projection' is used due to the lack of a single
-             * firstSeries table being generated, this affects all possible outcomes
-             * and yields an optimal set of resolution paths.
+             * This constructs the remaining leaves for firstSeries/follow/predict 
+             * parse trees.  The full set of trees within a given grammar's machine 
+             * make up a parse forest.
              * */
-            var result = (from r in rootNodes.Keys
-                          let node = rootNodes[r]
-                          select new { Node = node, State = node.Value.OriginalState }).ToDictionary(k => k.State, v => v.Node);
+            var result = (from r in rootLeaves.Keys
+                          let node = rootLeaves[r]
+                          select new { Node = node, State = node.Veins.DFAOriginState }).ToDictionary(k => k.State, v => v.Node);
             foreach (var rootState in (from rS in result.Keys
                                        select (SyntacticalDFARootState)rS).ToArray())
             {
@@ -61,9 +58,9 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     currentSubstates.Remove(rootState);
                 foreach (var subState in currentSubstates)
                 {
-                    var currentNode = new ProductionRuleProjectionNode();
-                    currentNode.Value = new ProductionRuleProjectionNodeInfo(currentNode, subState, rootState.Entry);
-                    currentNode.RootNode = rootNodes[rootState.Entry];
+                    var currentNode = new PredictionTreeLeaf() { Compiler = compiler };
+                    currentNode.Veins = new PredictionTreeLeafVeins(currentNode, subState, rootState.Entry);
+                    currentNode.RootLeaf = rootLeaves[rootState.Entry];
                     result.Add(subState, currentNode);
                 }
             }
@@ -76,12 +73,12 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
              * */
             return (from kvp in result
                     let node = kvp.Value
-                    orderby node.Value.Rule.Name,
+                    orderby node.Veins.Rule.Name,
                             kvp.Key.StateValue
                     select kvp).ToDictionary(k => k.Key, v => v.Value);
         }
 
-        public static void ConstructProjectionLinks(Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, ProductionRuleProjectionNode> ruleSeries)
+        public static void ConstructProjectionLinks(Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, PredictionTreeLeaf> ruleSeries)
         {
             /* *
              * Link the projections up, for every state
@@ -98,23 +95,23 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
         /// Performs look-ahead analysis on the projection nodes.
         /// </summary>
         /// <param name="fullSeries">The <see cref="Dictionary{TKey, TValue}"/> of
-        /// <see cref="SyntacticalDFAState"/> to <see cref="ProductionRuleProjectionNode"/> associations.</param>
+        /// <see cref="SyntacticalDFAState"/> to <see cref="PredictionTreeLeaf"/> associations.</param>
         /// <remarks>
         /// The look-up table is used to handle transitory movements from
         /// state->state in the event that more than one state is required in look-ahead analysis.
         /// </remarks>
-        public static void PerformLookAheadProjection(Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary, int cycleDepth)
+        public static void PerformLookAheadProjection(Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary, int cycleDepth)
         {
             /* *
-             * Construct a series of stacks used to delegate the
+             * Construct a series of predictionTreeStacks used to delegate the
              * construction of the path data.
              * */
             int pCount = Environment.ProcessorCount;
-            var ruleNodes = (from node in fullSeries.Values
+            var ruleLeafs = (from node in fullSeries.Values
                              group node by node.Rule).ToDictionary(k => k.Key, v => v.ToList());
-            var ruleSetIDs = (from index in 0.RangeTo(ruleNodes.Count)
+            var ruleSetIDs = (from index in 0.RangeTo(ruleLeafs.Count)
                               let pIndex = index % pCount
-                              let ruleNodeKVP = ruleNodes.ElementAt(index)
+                              let ruleNodeKVP = ruleLeafs.ElementAt(index)
                               let rule = ruleNodeKVP.Key
                               group rule by pIndex).ToDictionary(k => k.Key, v => v.ToList());
             object acLock = new object();
@@ -127,12 +124,11 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 #endif
                 {
                     foreach (var rule in ruleSetID)
-                        foreach (var node in ruleNodes[rule])
-                            node.Value.ConstructInitialLookAheadProjection(i, cycleDepth);
-#if ParallelProcessing
-                });
-#else
+                        foreach (var leaf in ruleLeafs[rule])
+                            leaf.Veins.ConstructInitialLookAheadProjection(i, cycleDepth);
                 }
+#if ParallelProcessing
+                );
 #endif
             }
         /* *
@@ -144,26 +140,25 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
         ChangeOccurred:
             bool anyChange = false;
 #if ParallelProcessing
-            Parallel.ForEach(ruleSetIDs.Values, ruleSetID =>
+            Parallel.ForEach(
+                ruleSetIDs.Values,
+                ruleSetID =>
 #else
             foreach (var ruleSetID in ruleSetIDs.Values)
 #endif
             {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
                 foreach (var rule in ruleSetID)
                 {
-                    foreach (var node in ruleNodes[rule])
+                    foreach (var leaf in ruleLeafs[rule])
                     {
-                        if (node.Value.ConstructEpsilonLookAheadProjection(fullSeries, ruleVocabulary, cycleDepth))
-                            lock (acLock)
-                                anyChange = true;
+                        if (leaf.Veins.ConstructEpsilonLookAheadProjection(fullSeries, ruleVocabulary, cycleDepth))
+                            anyChange = true;
                     }
                 }
-#if ParallelProcessing
-            });
-#else
             }
+#if ParallelProcessing
+            //
+            );
 #endif
             if (anyChange)
                 goto ChangeOccurred;
@@ -171,35 +166,35 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             GC.WaitForPendingFinalizers();
         }
 
-        public static void PerformExpandedLookAheadProjection(Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleLookup, ICompilerErrorCollection compilationErrors, GrammarSymbolSet grammarSymbols)
+        public static void PerformExpandedLookAheadProjection(Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleLookup, ICompilerErrorCollection compilationErrors, GrammarSymbolSet grammarSymbols)
         {
-#if ShortcutToFindBug13
-            return;
+#if ShowStackReductionProgress
+            Console.Clear();
 #endif
             /* *
              * The progressive look-ahead method, this should be rewritten
-             * to break down the work into rule-sized stacks that can allow
+             * to break down the work into rule-sized predictionTreeStacks that can allow
              * the default Parallel library to delegate more effectively.
              * */
-            Dictionary<int, Stack<ProductionRuleProjectionDPathSet>> processorStacks = new Dictionary<int, Stack<ProductionRuleProjectionDPathSet>>();
-            int pCount = fullSeries.Count < 100 ? 1 : Environment.ProcessorCount;//(int)Math.Pow(Environment.ProcessorCount, 2);
+            Dictionary<int, Stack<PredictionTree>> processorStacks = new Dictionary<int, Stack<PredictionTree>>();
+            //int pCount = fullSeries.Count < 100 ? 1 : Environment.ProcessorCount;//(int)Math.Pow(Environment.ProcessorCount, 2);
             var advanceCount = new Dictionary<int, int>();
+            var previousCounts = new Dictionary<int, int>();
             var currentFrozen = new Dictionary<int, IOilexerGrammarProductionRuleEntry>();
-            foreach (var processor in 0.RangeTo(pCount))
+            int rCount = fullSeries.Count;
+            foreach (var processor in 0.RangeTo(fullSeries.Count))
             {
-                processorStacks.Add(processor, new Stack<ProductionRuleProjectionDPathSet>());
+                processorStacks.Add(processor, new Stack<PredictionTree>());
                 advanceCount.Add(processor, 0);
                 currentFrozen.Add(processor, null);
             }
             int seriesIndex = 0;
-            Dictionary<IOilexerGrammarProductionRuleEntry, List<ProductionRuleProjectionDPathSet>> uniqueElements = (from r in ruleLookup.Keys
-                                                                                                       select new { Rule = r, Set = new List<ProductionRuleProjectionDPathSet>() }).ToDictionary(k => k.Rule, v => v.Set);
-            //fullSeries.Values.OnAll(series =>
+            //int offset = 0;
             foreach (var ruleSeries in fullSeries)
             {
                 var series = ruleSeries.Value;
-                int currentStackIndex = seriesIndex++ % pCount;
-                Stack<ProductionRuleProjectionDPathSet> toAdvance = processorStacks[currentStackIndex];
+                int currentStackIndex = seriesIndex++ % rCount;
+                Stack<PredictionTree> treesToAdvance = processorStacks[currentStackIndex];
                 series.ConstructInitialLookahead(grammarSymbols, fullSeries, ruleLookup);
                 /* * * * * * * * * * * * * * * * * * * * * * * * * * *\
                  * Assume that we need to disambiguate all states     *
@@ -212,148 +207,109 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                  * down to know if it's necessary, so just use it     *
                  * as its own proof.                                  *
                  * * * * * * * * * * * * * * * * * * * * * * * * * * **/
+                if (series.Veins.DFAOriginState.OutTransitions.Count <= 1)
+                    continue;
                 foreach (var key in series.LookAhead.Keys)
-                    toAdvance.Push((ProductionRuleProjectionDPathSet)series.LookAhead[key]);
+                    treesToAdvance.Push((PredictionTree)series.LookAhead[key]);
             }
+            var stacksWithTreesToProcess = processorStacks.Values.Where(k => k.Count > 0).ToArray();
+            processorStacks.Clear();
+            for (int i = 0; i < stacksWithTreesToProcess.Length; i++)
+                processorStacks.Add(i, stacksWithTreesToProcess[i]);
             //**/);
             /* *
              * This needs rewritten immediately!
              * */
 #if ShowStackReductionProgress
             object conLock = new object();
-            PrintStackStates(processorStacks, true);
+            int stackPrintCount = 0;
+            PrintStackStates(processorStacks, previousCounts, true);
 #endif
             object processorStacksLock = new object();
+#if ShowStackReductionProgress
+            DateTime lastPassTime = DateTime.Now;
+#endif
 #if ParallelProcessing
             Parallel.ForEach(processorStacks, indexAndtoAdvance =>
 #else
             foreach (var indexAndtoAdvance in processorStacks)
 #endif
-            //foreach (var toAdvance in processorStacks.Values)
-            //processorStacks.Values.OnAll(toAdvance =>
             {
                 var toAdvance = indexAndtoAdvance.Value;
 #if ShowStackReductionProgress
-                DateTime lastPassTime = DateTime.Now;
-#endif
-#if ParallelProcessing
-#if ShowStackReductionProgress
                 int stepCount = 0;
-#endif
-            Reprocess:
 #endif
                 while (toAdvance.Count > 0)
                 {
+#if ShowStackReductionProgress
+                    bool clearedAndOrPrinted = false;
+#endif
                     lock (compilationErrors)
                         if (compilationErrors.HasErrors)
                             return;
 #if ShowStackReductionProgress
-                    if ((DateTime.Now - lastPassTime).TotalMilliseconds > 250)
-                        lock (conLock)
-                            PrintStackStates(processorStacks, false);
-#endif
-                    ProductionRuleProjectionDPathSet current = null;
+                    if ((DateTime.Now - lastPassTime).TotalMilliseconds > 1250)
+                    {
 #if ParallelProcessing
-                    lock (toAdvance)
-                        lock (currentFrozen)
+                        lock (conLock)
                         {
 #endif
-                            /* *
-                             * Caused by reallocation.
-                             * */
-                            if (toAdvance.Count == 0)
-                                break;
-                            current = toAdvance.Pop();
-                            currentFrozen[indexAndtoAdvance.Key] = current.Rule;
+                            stackPrintCount++;
+                            if (stackPrintCount % 15 == 0)
+                                Console.Clear();
+                            PrintStackStates(processorStacks, previousCounts, stackPrintCount % 15 == 0);
+                            clearedAndOrPrinted = true;
 #if ParallelProcessing
+                            lastPassTime = DateTime.Now;
                         }
 #endif
-                    var totalStates = uniqueElements[current.Root.Value.Rule];
+                    }
+#endif
+                    PredictionTree current = null;
+                    /* *
+                     * Caused by reallocation.
+                     * */
+                    if (toAdvance.Count == 0)
+                        break;
+                    current = toAdvance.Pop();
 #if ShowStackReductionProgress
 #if ParallelProcessing
                     lock (conLock)
-                        if (stepCount++ % 50 == 0)
 #endif
-                            PrintStackStates(processorStacks, false);
-#endif
-
-                    current.Advance(fullSeries, ruleLookup, compilationErrors, grammarSymbols);
-                    foreach (var element in current.LookAhead.Keys.ToArray())
+                    if (!clearedAndOrPrinted && stepCount++ % 15 == 0)
                     {
-                        ProductionRuleProjectionDPathSet currentElement = (ProductionRuleProjectionDPathSet)current.LookAhead[element];
-                        ProductionRuleProjectionDPathSet targetExistingPath;
-#if ParallelProcessing
-                        lock (toAdvance)
-                            lock (totalStates)
-#endif
-                                targetExistingPath = (ProductionRuleProjectionDPathSet)totalStates.FirstOrDefault(state => state.Equals(currentElement));
-                        if (targetExistingPath == null)
-                            PushAndAdvance(advanceCount, indexAndtoAdvance, toAdvance, totalStates, currentElement);
-                        else
-                        {
-                            var left = currentElement.GetCurrentPathSets().Cast<ProductionRuleProjectionDPathSet>().ToArray();
-                            var right = targetExistingPath.GetCurrentPathSets().Cast<ProductionRuleProjectionDPathSet>().ToArray();
-                            if (left.Length == right.Length)
-                            {
-                                var allEqual = (from index in 0.RangeTo(left.Length)
-                                                let leftElement = left[index]
-                                                let rightElement = right[index]
-                                                select Tuple.Create(leftElement, rightElement)).All(k => k.Item1.Equals(k.Item2));
-                                /* *
-                                 * If two states yield an identical layout, replace
-                                 * one with the original because it has already
-                                 * been processed.
-                                 * */
-                                if (allEqual)
-                                    current.ReplaceLookahead(element, targetExistingPath);
-                                else
-                                    PushAndAdvance(advanceCount, indexAndtoAdvance, toAdvance, totalStates, currentElement);
-                            }
-                            else
-                                PushAndAdvance(advanceCount, indexAndtoAdvance, toAdvance, totalStates, currentElement);
-                        }
+                        stackPrintCount++;
+                        if (stackPrintCount % 15 == 0)
+                            Console.Clear();
+                        PrintStackStates(processorStacks, previousCounts, stackPrintCount % 15 == 0);
                     }
-#if ParallelProcessing
-                    lock (toAdvance)
-                        lock (currentFrozen)
 #endif
-                            currentFrozen[indexAndtoAdvance.Key] = null;
+                    current.Advance(fullSeries, ruleLookup, compilationErrors, grammarSymbols);
+                    foreach (var currentElement in current.GetAndClearAdvanceSet())
+                        PushAndAdvance(advanceCount, indexAndtoAdvance, toAdvance, /*totalStates, */currentElement);
 #if ShowStackReductionProgress
                     lastPassTime = DateTime.Now;
 #endif
                 }
 #if ShowStackReductionProgress
-                lock (conLock)
-                    PrintStackStates(processorStacks, true);
+            lock (conLock)
+                PrintStackStates(processorStacks, previousCounts, true);
 #endif
 #if ParallelProcessing
-            RecheckReallocate:
-
-                int reallocateResult = Reallocate(processorStacks, indexAndtoAdvance.Key, toAdvance, currentFrozen, processorStacksLock);
-                if (reallocateResult == 1)
-                {
-#if ShowStackReductionProgress
-                    lock (conLock)
-                        PrintStackStates(processorStacks, true);
-#endif
-                    goto Reprocess;
-                }
-                else if (reallocateResult == -1)
-                    goto RecheckReallocate;
             });
 #else
             }
 #endif
         }
 
-        private static KeyValuePair<int, Stack<ProductionRuleProjectionDPathSet>> PushAndAdvance(Dictionary<int, int> advanceCount, KeyValuePair<int, Stack<ProductionRuleProjectionDPathSet>> indexAndtoAdvance, Stack<ProductionRuleProjectionDPathSet> toAdvance, List<ProductionRuleProjectionDPathSet> totalStates, ProductionRuleProjectionDPathSet currentElement)
+        private static KeyValuePair<int, Stack<PredictionTree>> PushAndAdvance(Dictionary<int, int> advanceCount, KeyValuePair<int, Stack<PredictionTree>> indexAndtoAdvance, Stack<PredictionTree> toAdvance, /*List<PredictionTree> totalStates, */PredictionTree currentElement)
         {
 #if ParallelProcessing
             lock (toAdvance)
-                lock (totalStates)
+                //lock (totalStates)
                 {
 #endif
-                    PushIt(toAdvance, totalStates, currentElement);
+                    PushIt(toAdvance, /*totalStates, */currentElement);
 #if ParallelProcessing
                     lock (advanceCount)
 #endif
@@ -363,224 +319,101 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 #endif
             return indexAndtoAdvance;
         }
-#if ParallelProcessing
 
-        private static int Reallocate(Dictionary<int, Stack<ProductionRuleProjectionDPathSet>> processorStacks, int currentStack, Stack<ProductionRuleProjectionDPathSet> toAdvance, Dictionary<int, IOilexerGrammarProductionRuleEntry> currentFrozen, object processorStacksLock)
-        {
-            /* *
-             * Lock all the relevant stacks.
-             * */
-            var timer = DateTime.Now;
-            Dictionary<int, IOilexerGrammarProductionRuleEntry> currentFrozenCopy;
-            lock (processorStacksLock)
-            {
-                foreach (int index in processorStacks.Keys)
-                    Monitor.Enter(processorStacks[index]);
-                lock (currentFrozen)
-                    currentFrozenCopy = new Dictionary<int, IOilexerGrammarProductionRuleEntry>(currentFrozen);
-                bool allNull = currentFrozenCopy.All(k => k.Value == null);
-                bool allEmpty = processorStacks.Values.Select(k => k.Count).Sum() == 0;
-                if (allNull)
-                    return allEmpty ? 0 : -1;
-                try
-                {
-                    int currentFullCount = 0;
-                    int activeStacks = 0;
-                    /* *
-                     * Count the number of active stacks,
-                     * the current stack and others that might be
-                     * sleeping aren't relevant to the count.
-                     * *
-                     * Current inactive thread is considered below.
-                     * */
-                    foreach (int index in processorStacks.Keys)
-                    {
-                        if (index == currentStack)
-                            continue;
-                        int currentCount = processorStacks[index].Count;
-                        currentFullCount += currentCount;
-                        if (currentCount > 0)
-                            activeStacks++;
-                    }
-                    /* *
-                     * Small sets can finish on their own.
-                     * *
-                     * No need to complicate it more than 
-                     * necessary.
-                     * */
-                    if (currentFullCount < 100)
-                        return 0;
-                    Stack<ProductionRuleProjectionDPathSet> buffer = new Stack<ProductionRuleProjectionDPathSet>();
-
-                    /* *
-                     * The current stack wasn't considered in this, because
-                     * it is known to be empty.
-                     * */
-                    int countPerStack = currentFullCount / (activeStacks + 1);
-
-                    /* *
-                     * We're done!
-                     * */
-                    if (currentFullCount == 0)
-                        return 0;
-                    /* *
-                     * The number of elements isn't a multiple of the stacks
-                     * present.
-                     * *
-                     * In this case, we'll instruct the thread to sleep.
-                     * Unless it took a long time to do portions above.
-                     * */
-                    if (countPerStack == 0)
-                    {
-                        /* *
-                         * Unless... the processing time is high enough
-                         * that continuing the sleep/reallocate cycle is
-                         * an effort of futility.
-                         * */
-                        if ((DateTime.Now - timer).TotalMilliseconds > 1000)
-                            return 0;
-                        else
-                            return -1;
-                    }
-                    /* *
-                     * Iterate through the stacks and pull out the ones
-                     * which have too many elements.
-                     * */
-                    bool allSameRule = false;
-                    var ruleCounts = (from elementSet in processorStacks.Values
-                                      from element in elementSet
-                                      group element by element.Rule).ToDictionary(k => k.Key, v => v.Count());
-                    var ruleCounts2 = 0;
-                    foreach (int index in processorStacks.Keys)
-                    {
-                        if (index == currentStack)
-                            continue;
-                        var stack = processorStacks[index];
-                        if (stack.Count == 0)
-                            continue;
-                        var currentFrozenRule = currentFrozenCopy[index];
-                        Stack<ProductionRuleProjectionDPathSet> frozenElements = new Stack<ProductionRuleProjectionDPathSet>(from s in stack
-                                                                                                                             where s.Rule == currentFrozenRule || currentFrozenRule == null
-                                                                                                                             select s);
-
-                        Stack<ProductionRuleProjectionDPathSet> remainder = new Stack<ProductionRuleProjectionDPathSet>(stack.Except(frozenElements));
-                        ruleCounts2 += frozenElements.Count;
-                        while (remainder.Count + frozenElements.Count > countPerStack && remainder.Count > 0)
-                        {
-                            var peekRule = remainder.Count > 0 ? remainder.Peek().Rule : null;
-                            var currentRuleElements = new Stack<ProductionRuleProjectionDPathSet>(from s in remainder
-                                                                                                  where s.Rule == peekRule
-                                                                                                  select s);
-                            remainder = new Stack<ProductionRuleProjectionDPathSet>(remainder.Except(currentRuleElements));
-                            while (currentRuleElements.Count > 0)
-                                buffer.Push(currentRuleElements.Pop());
-                        }
-                        stack.Clear();
-                        if (ruleCounts2 == currentFullCount)
-                            allSameRule = true;
-                        while (remainder.Count > 0)
-                            stack.Push(remainder.Pop());
-                        while (frozenElements.Count > 0)
-                            stack.Push(frozenElements.Pop());
-                    }
-                    /* *
-                     * We ignore stacks which are all the same rule,
-                     * so if all stacks are focusing on a single rule
-                     * each, we can't segment them due to the single-threaded
-                     * nature of the methods being called.
-                     * *
-                     * Once we put them in differing stacks, the isolation
-                     * breaks down and we get 'chaos'.
-                     * */
-                    if (allSameRule)
-                        return 0;
-                    if (buffer.Count == 0)
-                    {
-                        /* *
-                         * Yield when taking too long.
-                         * *
-                         * The stacks that are still going
-                         * will finish on their own.
-                         * */
-                        if ((DateTime.Now - timer).TotalMilliseconds > 1000)
-                            return 0;
-                        else
-                            return -1;
-                    }
-
-                    foreach (int index in processorStacks.Keys)
-                    {
-                        var stack = processorStacks[index];
-                        if (stack.Count != 0 || index == currentStack)
-                        {
-                        rePeek:
-                            var peekRule = buffer.Peek().Rule;
-                            if (stack.Count + ruleCounts[peekRule] < countPerStack)
-                            {
-                                while (buffer.Count > 0 && buffer.Peek().Rule == peekRule)
-                                    stack.Push(buffer.Pop());
-                                if (buffer.Count == 0)
-                                    break;
-                                goto rePeek;
-                            }
-                        }
-                    }
-                    if (buffer.Count > 0)
-                    {
-                        var stack = processorStacks[currentStack];
-                        while (buffer.Count > 0)
-                            stack.Push(buffer.Pop());
-                    }
-                    if ((DateTime.Now - timer).TotalMilliseconds > 1000)
-                        /* *
-                         * If it's taking this long to redistribute
-                         * resources, exit stage left.
-                         * */
-                        return 0;
-                    else
-                        return 1;
-                }
-                finally
-                {
-                    foreach (int index in processorStacks.Keys)
-                        Monitor.Exit(processorStacks[index]);
-                }
-            }
-        }
-#endif
 #if ShowStackReductionProgress
-        private static void PrintStackStates(Dictionary<int, Stack<ProductionRuleProjectionDPathSet>> stacks, bool fullPrint)
+        private static void PrintStackStates(Dictionary<int, Stack<PredictionTree>> predictionTreeStacks, Dictionary<int, int> previousCounts, bool fullPrint)
         {
+            const int totalWidth = 40;
+            const int width = totalWidth - 2 - 5;
+            const int ruleNameWidth = width - 7;
+            const int ellipsesWidth = 3;
             if (fullPrint)
             {
-                Console.Clear();
-                foreach (var indexStackPair in stacks)
-                    if (indexStackPair.Value.Count == 0)
-                        Console.WriteLine("Stack {0} count:  *  ", indexStackPair.Key, indexStackPair.Value.Count);
+                int columnIndex = 0;
+                int rowIndex = 0;
+                bool inSkipMode = false;
+                foreach (var indexStackPair in predictionTreeStacks)
+                {
+                    if (previousCounts.ContainsKey(indexStackPair.Key) && previousCounts[indexStackPair.Key] == 0)
+                        continue;
+                    if (inSkipMode)
+                        goto assignCount;
+                    if ((rowIndex+1) % (Console.WindowHeight) == 0)
+                    {
+                        columnIndex++;
+                        rowIndex = 0;
+                        if (((columnIndex + 1) * totalWidth) > Console.WindowWidth)
+                        {
+                            inSkipMode = true;
+                            goto assignCount;
+                        }
+                    }
+                    Console.CursorTop = rowIndex;
+                    Console.CursorLeft = columnIndex * totalWidth;
+                    string ruleName = null;
+                    if (indexStackPair.Value.Count > 0)
+                    {
+                        ruleName = indexStackPair.Value.Peek().Rule.Name;
+                        if (ruleName.Length > ruleNameWidth)
+                        {
+                            var left = ruleName.Substring(0, (ruleNameWidth-ellipsesWidth) / 2 + (ruleNameWidth-ellipsesWidth) % 2);
+                            var right = ruleName.Substring(ruleName.Length - (ruleNameWidth - ellipsesWidth) / 2);
+                            ruleName = string.Format("{0}...{1}", left,right);
+                        }
+                        else if (ruleName.Length < ruleNameWidth)
+                            ruleName = ruleName.PadRight(ruleNameWidth);
+                        ruleName = string.Format("{0} ({1:000})", ruleName, indexStackPair.Value.Peek().Root.Veins.DFAOriginState.StateValue);
+                    }
                     else
-                        Console.WriteLine("Stack {0} count: {1:0000}", indexStackPair.Key, indexStackPair.Value.Count);
-
+                        ruleName = "Stack {0:000} count   ";
+                    
+                    if (indexStackPair.Value.Count == 0)
+                        Console.WriteLine("Stack {0:000} count:  *  ", indexStackPair.Key);
+                    else
+                        Console.WriteLine("{0}: {1:0000}", ruleName, indexStackPair.Value.Count);
+                    rowIndex++;
+                assignCount:
+                    previousCounts[indexStackPair.Key] = indexStackPair.Value.Count;
+                }
+                
             }
             else
             {
                 Console.CursorTop = 0;
-                foreach (var indexStackPair in stacks)
+                int columnIndex = 0;
+                int rowIndex = 0;
+                foreach (var indexStackPair in predictionTreeStacks)
                 {
-
-                    int lineLength = string.Format("Stack {0} count: ", indexStackPair.Key).Length;
-                    Console.CursorLeft = lineLength;
-                    if (indexStackPair.Value.Count == 0)
-                        Console.WriteLine(" *  ");
-                    else
-                        Console.WriteLine("{0:0000}", indexStackPair.Value.Count);
+                    if (previousCounts.ContainsKey(indexStackPair.Key) && previousCounts[indexStackPair.Key] == 0 && indexStackPair.Value.Count == 0)
+                        continue;
+                    int lineLength = ruleNameWidth + 8;
+                    if ((rowIndex + 1) % (Console.WindowHeight)== 0)
+                    {
+                        columnIndex++;
+                        rowIndex = 0;
+                        if (((columnIndex + 1) * totalWidth) > Console.WindowWidth)
+                            break;
+                    }
+                    //Console.CursorLeft = lineLength;
+                    if (previousCounts[indexStackPair.Key] != indexStackPair.Value.Count)
+                    {
+                        Console.CursorTop = rowIndex;
+                        Console.CursorLeft = columnIndex * totalWidth + lineLength;
+                        previousCounts[indexStackPair.Key] = indexStackPair.Value.Count;
+                        if (indexStackPair.Value.Count == 0)
+                            Console.WriteLine(" *  ");
+                        else
+                            Console.WriteLine("{0:0000}", indexStackPair.Value.Count);
+                    }
+                    rowIndex++;
                 }
             }
         }
 #endif
-        private static void PushIt(Stack<ProductionRuleProjectionDPathSet> toAdvance, List<ProductionRuleProjectionDPathSet> totalStates, ProductionRuleProjectionDPathSet currentElement)
+        private static void PushIt(Stack<PredictionTree> toAdvance, /*List<PredictionTree> totalStates, */PredictionTree currentElement)
         {
             toAdvance.Push(currentElement);
-            totalStates.Add(currentElement);
+            //totalStates.Add(currentElement);
         }
 
         public static IEnumerable<IEnumerable<T>> Split<T>(IEnumerable<T> series, Func<T, bool> splitPredicate, bool removeEmpty = true)
@@ -600,13 +433,13 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             yield break;
         }
 
-        public static Dictionary<ProductionRuleProjectionNode, ProductionRuleProjectionAdapter> ConstructLookAheadProjections(ParserCompiler compiler, Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> dfaLookup, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary, GrammarSymbolSet symbols, ICompilerErrorCollection compilationErrors, ref int maxDFAState)
+        public static Dictionary<PredictionTreeLeaf, PredictionTreeDFAdapter> ConstructLookAheadProjections(ParserCompiler compiler, Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> dfaLookup, Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary, GrammarSymbolSet symbols, ICompilerErrorCollection compilationErrors, ref int maxDFAState)
         {
-            Dictionary<int, List<ProductionRuleProjectionNode>> processorNodes = null;
+            Dictionary<int, List<PredictionTreeLeaf>> processorNodes = null;
             int pCount = Math.Min(Environment.ProcessorCount, fullSeries.Count);
             var ruleBreakdown =
                 (from f in fullSeries
-                 group f.Value by f.Value.Value.Rule).ToDictionary(k => k.Key, v => v.ToArray());
+                 group f.Value by f.Value.Veins.Rule).ToDictionary(k => k.Key, v => v.ToArray());
             processorNodes =
                 (from index in 0.RangeTo(ruleBreakdown.Count)
                  let key = ruleBreakdown.Keys.ElementAt(index)
@@ -616,7 +449,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                  group node by pIndex).ToDictionary(k => k.Key, v => v.ToList());
             var processorAutomationSets =
                 (from index in 0.RangeTo(pCount)
-                 select new { Dictionary = new Dictionary<ProductionRuleProjectionNode, SyntacticalDFAState>(), Index = index }).ToDictionary(k => k.Index, v => v.Dictionary);
+                 select new { Dictionary = new Dictionary<PredictionTreeLeaf, SyntacticalDFAState>(), Index = index }).ToDictionary(k => k.Index, v => v.Dictionary);
             /* *
              * Can't pass a by-reference parameter into a
              * closure due to the hoisting that occurs during
@@ -647,7 +480,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                 {
                     if (!node.RequiresLookAheadAutomation)
                         continue;
-                    var dfa = node.ConstructAdvanceDFA(fullSeries, ruleVocabulary, compilationErrors, dfaLookup, symbols);
+                    var dfa = node.ConstructAdvanceDFA(compiler);//fullSeries, ruleVocabulary, compilationErrors, dfaLookup, symbols);
                     dfa.ReduceDFA(false, PredictionDFAReductionComparer);
                     lock (locker)
                     {
@@ -665,18 +498,18 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             maxDFAState = locker.State;
             var subResult = (from set in processorAutomationSets.Values
                              from kvp in set
-                             orderby kvp.Key.Value.Rule.Name,
-                                     kvp.Key.Value.OriginalState.StateValue
+                             orderby kvp.Key.Veins.Rule.Name,
+                                     kvp.Key.Veins.DFAOriginState.StateValue
                              select kvp).ToDictionary(k => k.Key, v => v.Value);
             var subResultReverse = subResult.ToDictionary(k => k.Value, v => v.Key);
-            var toReplace = new Dictionary<ProductionRuleProjectionNode, SyntacticalDFAState>();
+            var toReplace = new Dictionary<PredictionTreeLeaf, SyntacticalDFAState>();
             foreach (var leftKey in subResult.Keys)
             {
                 if (toReplace.ContainsKey(leftKey))
                     continue;
                 foreach (var rightKey in subResult.Keys.Except(toReplace.Keys))
                 {
-                    if (rightKey.RootNode != leftKey.RootNode)
+                    if (rightKey.RootLeaf != leftKey.RootLeaf)
                         continue;
                     if (object.ReferenceEquals(leftKey, rightKey))
                         continue;
@@ -692,15 +525,15 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 
             foreach (var key in toReplace.Keys)
                 subResult[key] = toReplace[key];
-            Dictionary<SyntacticalDFAState, ProductionRuleProjectionAdapter> currentDict = null;
+            Dictionary<SyntacticalDFAState, PredictionTreeDFAdapter> currentDict = null;
             var result = (from r in subResult
-                          let currentSet = currentDict = new Dictionary<SyntacticalDFAState, ProductionRuleProjectionAdapter>()
-                          select new { Node = r.Key, Adapter = ProductionRuleProjectionAdapter.Adapt(r.Value, ref currentDict, compiler), Dictionary = currentDict }).ToDictionary(k => k.Node, v => new { Adapter = v.Adapter, Dictionary = v.Dictionary });
+                          let currentSet = currentDict = new Dictionary<SyntacticalDFAState, PredictionTreeDFAdapter>()
+                          select new { Node = r.Key, Adapter = PredictionTreeDFAdapter.Adapt(r.Value, ref currentDict, compiler), Dictionary = currentDict }).ToDictionary(k => k.Node, v => new { Adapter = v.Adapter, Dictionary = v.Dictionary });
             foreach (var rootNode in result.Keys)
             {
                 currentDict = result[rootNode].Dictionary;
                 var rootAdapter = result[rootNode].Adapter;
-                rootAdapter.AssociatedContext.StateAdapterLookup = new ControlledDictionary<SyntacticalDFAState, ProductionRuleProjectionAdapter>(currentDict);
+                rootAdapter.AssociatedContext.StateAdapterLookup = new ControlledDictionary<SyntacticalDFAState, PredictionTreeDFAdapter>(currentDict);
                 foreach (var state in currentDict.Keys)
                 {
                     var adapter = currentDict[state];
@@ -710,7 +543,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             return result.ToDictionary(k => k.Key, v => v.Value.Adapter);
         }
 
-        public static void AnalyzeDFARepetitions(ProductionRuleProjectionContext[] targetContexts, Dictionary<ProductionRuleProjectionNode, ProductionRuleProjectionAdapter> lookup)
+        public static void AnalyzeDFARepetitions(PredictionTreeDFAContext[] targetContexts, Dictionary<PredictionTreeLeaf, PredictionTreeDFAdapter> lookup)
         {
             /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
              * Repetition points need noted within the deterministic  *
@@ -729,8 +562,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             //var groupings = (from targetContext in targetContexts
             //                 let sourceQuery = (from sourceInfo in targetContext.Adapter.AssociatedState.Sources
             //                                    let source = sourceInfo.Item1
-            //                                    where source is ProductionRuleProjectionDPathSet
-            //                                    select (ProductionRuleProjectionDPathSet)source).ToList()
+            //                                    where source is PredictionTree
+            //                                    select (PredictionTree)source).ToList()
             //                 where sourceQuery.Count > 0
             //                 from transitionKey in targetContext.Adapter.OutgoingTransitions.Keys
             //                 let transitionTarget = targetContext.Adapter.OutgoingTransitions[transitionKey]
@@ -742,7 +575,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             //                  * entry look-ahead depth.                                            *
             //                  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
             //                 where !(transitionTarget.AssociatedState.IsEdge && transitionTarget.AssociatedState.OutTransitions.Count == 0)
-            //                 group new { PathSeries = new HashSet<ProductionRuleProjectionDPathSet>(sourceQuery), Owner = targetContext } by transitionTarget).ToDictionary(k => k.Key, v => v.ToArray());
+            //                 group new { PathSeries = new HashSet<PredictionTree>(sourceQuery), Owner = targetContext } by transitionTarget).ToDictionary(k => k.Key, v => v.ToArray());
             //foreach (var transitionTarget in groupings.Keys)
             //    foreach (var grouping in groupings[transitionTarget])
             //        transitionTarget.AssociatedContext.DefineBucketOnTarget(grouping.Owner);
@@ -818,7 +651,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                 leftDepths.SequenceEqual(rightDepths);
         }
 
-        private static List<int> GetPathSetSeriesDistinctDepths(ProductionRuleProjectionDPathSet[] pathSetSeries)
+        private static List<int> GetPathSetSeriesDistinctDepths(PredictionTree[] pathSetSeries)
         {
             return (from pathSet in pathSetSeries
                     let length = GetDPathSetTokenDepth(pathSet)
@@ -826,9 +659,9 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     select length).Distinct().ToList();
         }
 
-        private static int GetDPathSetTokenDepth(ProductionRuleProjectionDPathSet set)
+        private static int GetDPathSetTokenDepth(PredictionTree set)
         {
-            var series = set.GetCurrentPathSets().ToArray();
+            var series = set.GetCurrentPathSets();
             int result = 0;
             if (set.Discriminator.IsEmpty)
                 result--;
@@ -842,11 +675,11 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             return result;
         }
 
-        private static ProductionRuleProjectionDPathSet[] GetSourceSetDPathSets(IEnumerable<IProductionRuleSource> leftSources)
+        private static PredictionTree[] GetSourceSetDPathSets(IEnumerable<IProductionRuleSource> leftSources)
         {
             return (from l in leftSources
-                    where l is ProductionRuleProjectionDPathSet
-                    select (ProductionRuleProjectionDPathSet)l).ToArray();
+                    where l is PredictionTree
+                    select (PredictionTree)l).ToArray();
         }
 
         static Func<SyntacticalDFAState, SyntacticalDFAState, bool> PredictionDFAReductionComparer =
@@ -873,8 +706,8 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     {
                         if (!right.OutTransitions.ContainsKey(leftTransition))
                             return false;
-                        if (right.OutTransitions[leftTransition] != left.OutTransitions[leftTransition])
-                            return false;
+                        //if (right.OutTransitions[leftTransition] != left.OutTransitions[leftTransition])
+                        //    return false;
                     }
                     return SourcesAndTransitionsAreEquivalent(leftSources, rightSources) && SourcesAreEquivalent(leftSources, rightSources);
                 }
@@ -885,12 +718,12 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
         {
             return leftSources.All(leftSet =>
             {
-                var leftSource = leftSet as ProductionRuleProjectionDPathSet;
+                var leftSource = leftSet as PredictionTree;
                 if (leftSource == null)
                     return rightSources.Contains(leftSet);
                 foreach (var rightSet in rightSources)
                 {
-                    var rightSource = rightSet as ProductionRuleProjectionDPathSet;
+                    var rightSource = rightSet as PredictionTree;
                     if (rightSource == null)
                         continue;
                     if (leftSource.ReductionType == rightSource.ReductionType)
@@ -920,7 +753,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             });
         }
 
-        //private static bool CheckBucketCompatibility(ProductionRuleProjectionDPathSet leftSource, ProductionRuleProjectionDPathSet rightSource)
+        //private static bool CheckBucketCompatibility(PredictionTree leftSource, PredictionTree rightSource)
         //{
         //    /* *
         //     * Bucket compatibility isn't relevant when:
@@ -945,9 +778,9 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             public int State { get { return this.state; } set { this.state = value; } }
         }
 
-        internal static IEnumerable<ProductionRuleProjectionNode> PerformEdgePredictions(
+        internal static IEnumerable<PredictionTreeLeaf> PerformEdgePredictions(
             ParserCompiler parserCompiler, Dictionary<SyntacticalDFAState, 
-            ProductionRuleProjectionNode> allProjectionNodes, 
+            PredictionTreeLeaf> allProjectionNodes, 
             ControlledDictionary<IOilexerGrammarProductionRuleEntry, SyntacticalDFARootState> ruleDFAStates, 
             Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleGrammarLookup,
             GrammarSymbolSet grammarSymbolSet,
@@ -959,7 +792,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                                        where edge.OutTransitions.Count > 0
                                        let edgeNode = allProjectionNodes[edge]
                                        group new { Rule = rule, EdgeNode = edgeNode } by rule).ToDictionary(k => k.Key, v => v.ToArray());
-            var ambiguousNodes = new List<ProductionRuleProjectionNode>();
+            var ambiguousNodes = new List<PredictionTreeLeaf>();
 
             foreach (var rule in possibleAmbiguities.Keys)
             {
@@ -968,20 +801,20 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     if (possibleAmbiguity.EdgeNode.CalculateTerminalAmbiguities(allProjectionNodes, ruleDFAStates, ruleGrammarLookup, grammarSymbolSet))
                         ambiguousNodes.Add(possibleAmbiguity.EdgeNode);
             }
-            //Stack<ProductionRuleProjectionDPathSet> toProcess = new Stack<ProductionRuleProjectionDPathSet>();
-            MultikeyedDictionary<GrammarVocabulary, ProductionRuleProjectionDPathSet, Tuple<Stack<ProductionRuleProjectionDPathSet>, List<ProductionRuleProjectionDPathSet>>> processStacks =
-                new MultikeyedDictionary<GrammarVocabulary, ProductionRuleProjectionDPathSet, Tuple<Stack<ProductionRuleProjectionDPathSet>, List<ProductionRuleProjectionDPathSet>>>();
+            //Stack<PredictionTree> toProcess = new Stack<PredictionTree>();
+            var processStacks = new MultikeyedDictionary<GrammarVocabulary, PredictionTree, Tuple<Stack<PredictionTree>, List<PredictionTree>>>();
 
             foreach (var node in ambiguousNodes)
             {
 
                 foreach (var follow in node.FollowAmbiguities)
                 {
-                    processStacks.TryAdd(follow.InitialPaths.Discriminator, follow.InitialPaths, Tuple.Create(new Stack<ProductionRuleProjectionDPathSet>(new[] { follow.InitialPaths }), new List<ProductionRuleProjectionDPathSet>()));
+                    processStacks.TryAdd(follow.InitialPaths.Discriminator, follow.InitialPaths, Tuple.Create(new Stack<PredictionTree>(new[] { follow.InitialPaths }), new List<PredictionTree>()));
                 }
             }
+            ;
             //toProcess.Push(follow.InitialPaths);
-            var mergeSets = new List<Tuple<ProductionRuleProjectionFollow, ProductionRuleProjectionFollow>>();
+            //var mergeSets = new List<Tuple<PredictionTreeFollow, PredictionTreeFollow>>();
             /*
              * To reinsert the relevant elements, see 
              * 'CalculateTerminalAmbiguities' referenced above.
@@ -989,7 +822,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                 foreach (var follow in node.FollowAmbiguities)
                     foreach (var path in follow.InitialPaths)
                         if (ambiguousNodes.Contains(path[0]))
-                            foreach (var followAmbiguity in path[0].RootNode.GetAllFollowAmbiguities(allProjectionNodes))
+                            foreach (var followAmbiguity in path[0].RootLeaf.GetAllFollowAmbiguities(allLeaves))
                                 if (followAmbiguity.InitialPaths.Discriminator.Equals(follow.InitialPaths.Discriminator))
                                     mergeSets.Add(Tuple.Create(follow, followAmbiguity));
             /**/
@@ -999,38 +832,96 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
              * themselves be ambiguous against the initial target set of
              * transitions.
              * */
+        repeatProcess:
+            /* We break down future work into a new multiple key dictionary to ensure largely multi-threaded environments can take advantage of that fact.
+             * I found that in not doing so, it would pair off into small sets that would spin around a handfull of threads versus utilizing all it could.*/
+            object locker = new object();
+            var newProcessStacks = new MultikeyedDictionary<GrammarVocabulary, PredictionTree, Tuple<Stack<PredictionTree>, List<PredictionTree>>>();
 #if ParallelProcessing
             Parallel.ForEach(processStacks, ksvp =>
 #else
             foreach (var ksvp in processStacks)
 #endif
             {
+                var kqau = processStacks;
                 var toProcessAndProcessed = ksvp.Value;
                 var alreadyProcessed = toProcessAndProcessed.Item2;
                 var toProcess = toProcessAndProcessed.Item1;
+                var nextProcess = new Dictionary<GrammarVocabulary, Tuple<Stack<PredictionTree>, List<PredictionTree>>>();
                 while (toProcess.Count > 0)
                 {
                     var current = toProcess.Pop();
                     current.Advance(allProjectionNodes, ruleGrammarLookup, compilerErrorCollection, grammarSymbolSet);
                     foreach (var transition in current.LookAhead.Keys.ToArray())
                     {
-                        var currentTarget = (ProductionRuleProjectionDPathSet)current.LookAhead[transition];
+                        Tuple<Stack<PredictionTree>, List<PredictionTree>> currentNextSet;
+                        Stack<PredictionTree> currentNextStack;
+                        if (!nextProcess.TryGetValue(transition, out currentNextSet))
+                            nextProcess.Add(transition, currentNextSet = Tuple.Create(currentNextStack = new Stack<PredictionTree>(), alreadyProcessed));
+                        else
+                            currentNextStack = currentNextSet.Item1;
+                        var currentTarget = (PredictionTree)current.LookAhead[transition];
+                        bool lockTaken = false;
+                        Monitor.Enter(alreadyProcessed, ref lockTaken);
                         var currentAlternate = alreadyProcessed.FirstOrDefault(k => k.Equals(currentTarget));
                         if (!alreadyProcessed.Contains(currentTarget))
                         {
-                            toProcess.Push(currentTarget);
                             alreadyProcessed.Add(currentTarget);
+                            if (lockTaken)
+                                Monitor.Exit(alreadyProcessed);
+                            currentNextStack.Push(currentTarget);
                         }
                         else if (currentAlternate != null && !object.ReferenceEquals(currentAlternate, currentTarget))
+                        {
+                            if (lockTaken)
+                                Monitor.Exit(alreadyProcessed);
                             current.ReplaceLookahead(transition, currentAlternate);
+                        }
+                        else if (lockTaken)
+                            Monitor.Exit(alreadyProcessed);
+                    }
+                }
+                foreach (var key in nextProcess.Keys)
+                {
+                    Tuple<Stack<PredictionTree>, List<PredictionTree>> currentProcess;
+                    var nextCurrentProcess = nextProcess[key];
+                    if (!newProcessStacks.TryGetValue(key, ksvp.Keys.Key2, out currentProcess))
+                        newProcessStacks.Add(key, ksvp.Keys.Key2, nextCurrentProcess);
+                    else
+                    {
+                        if (!object.ReferenceEquals(currentProcess.Item2, nextCurrentProcess.Item2))
+                        {
+                            bool lockTaken1 = false,
+                                 lockTaken2 = false;
+                            Monitor.Enter(currentProcess.Item2, ref lockTaken1);
+                            Monitor.Enter(nextCurrentProcess.Item2, ref lockTaken2);
+                            var limitSet = new HashSet<PredictionTree>(currentProcess.Item2.Concat(nextCurrentProcess.Item2));
+                            if (lockTaken2)
+                                Monitor.Exit(nextCurrentProcess.Item2);
+                            currentProcess.Item2.Clear();
+                            currentProcess.Item2.AddRange(limitSet);
+                            if (lockTaken1)
+                                Monitor.Exit(currentProcess.Item2);
+                            Monitor.Enter(nextCurrentProcess.Item2, ref lockTaken2);
+                            nextCurrentProcess.Item2.Clear();
+                            nextCurrentProcess.Item2.AddRange(limitSet);
+                            if (lockTaken2)
+                                Monitor.Exit(nextCurrentProcess);
+                        }
+                        foreach (var element in nextCurrentProcess.Item1)
+                            currentProcess.Item1.Push(element);
                     }
                 }
             }
 #if ParallelProcessing
                 /* Auto indentation fix */
-            );
+             );
 #endif
-
+            if (newProcessStacks.Count > 0)
+            {
+                processStacks = newProcessStacks;
+                goto repeatProcess;
+            }
             StateLocker slock = new StateLocker() { State = parserCompiler.ParserMaxState };
 
             //Parallel.ForEach(ambiguousNodes, ambiguousNode =>
@@ -1038,12 +929,12 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
             {
                 foreach (var follow in ambiguousNode.FollowAmbiguities.ToArray())
                 {
-                    follow.BuildNFA(allProjectionNodes, ruleDFAStates, ruleGrammarLookup, (GrammarSymbolSet)grammarSymbolSet, compilerErrorCollection);
+                    follow.BuildNFA(parserCompiler);// allLeaves, ruleDFAStates, ruleGrammarLookup, (GrammarSymbolSet)grammarSymbolSet, compilerErrorCollection);
                     follow.DeterminateAutomata();
                     follow.ReduceAutomata(false, PredictionDFAReductionComparer);
                 }
             }//);*/
-            var toReplace = new Dictionary<ProductionRuleProjectionFollow, ProductionRuleProjectionFollow>();
+            var toReplace = new Dictionary<PredictionTreeFollow, PredictionTreeFollow>();
             foreach (var ambiguousNode in ambiguousNodes)
             {
                 foreach (var leftKey in ambiguousNode.FollowAmbiguities)
@@ -1120,10 +1011,10 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
 
         public static void CreateLexicalAmbiguityTransitions(
             GrammarSymbolSet grammarSymbols, 
-            ControlledDictionary<GrammarVocabulary, IProductionRuleProjectionDPathSet<ProductionRuleProjectionDPath, ProductionRuleProjectionNode>> la, 
-            ProductionRuleProjectionDPathSet previous,
-            ProductionRuleProjectionNode root,
-            Dictionary<SyntacticalDFAState, ProductionRuleProjectionNode> fullSeries, 
+            ControlledDictionary<GrammarVocabulary, PredictionTree> la, 
+            PredictionTree previous,
+            PredictionTreeLeaf root,
+            Dictionary<SyntacticalDFAState, PredictionTreeLeaf> fullSeries, 
             Dictionary<IOilexerGrammarProductionRuleEntry, GrammarVocabulary> ruleVocabulary)
         {
             GrammarVocabulary fullSet = la.Keys.DefaultIfEmpty().Aggregate(GrammarVocabulary.UnionAggregateDelegate);
@@ -1161,7 +1052,7 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                         overlap |= ambiguity.AmbiguityKey;
                         continue;
                     }
-                    ProductionRuleProjectionDPathSet ambiguityPathSet = ProductionRuleProjectionDPathSet.GetPathSet(ambiguityVocabulary, lookaheadPathSets, root, ProductionRuleProjectionType.LookAhead, PredictionDerivedFrom.LookAhead_AmbiguityCast);
+                    PredictionTree ambiguityPathSet = PredictionTree.GetPathSet(ambiguityVocabulary, lookaheadPathSets, root, ProductionRuleProjectionType.LookAhead, PredictionDerivedFrom.LookAhead_AmbiguityCast);
                     var distinctNodeArray = (from path in ambiguityPathSet
                                              select path.CurrentNode).Distinct().ToArray();
                     foreach (var node in distinctNodeArray)
@@ -1170,12 +1061,11 @@ namespace AllenCopeland.Abstraction.Slf._Internal.Oilexer
                     
                     ambiguityPathSet.Previous = previous;
                     ambiguityPathSet.CheckReductionState(fullSeries, ruleVocabulary);
-                    ambiguityPathSet.ProcessCommonSymbol();
+                    //ambiguityPathSet.ProcessCommonSymbol(fullSeries, ruleVocabulary);
                     ambiguity.Occurrences++;
                     overlap |= ambiguity.AmbiguityKey;
                 }
             }
         }
-
     }
 }

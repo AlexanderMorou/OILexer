@@ -43,7 +43,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\Abstraction\Build\x64\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;WINDOWS, x64</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;WIDOWS, x64</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -94,6 +94,27 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile Condition=" '$(Configuration)' == 'Release' ">Allen Copeland.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>..\Abstraction\Build\Any-Cpu\Release\</OutputPath>
+    <DefineConstants>TRACE;WINDOWS, x86</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <WarningsAsErrors>67,162,168,219</WarningsAsErrors>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\Abstraction\Build\Any-Cpu\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;WINDOWS, x86, PROCESS_STATES, PLATFORM_ANY</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <!--<PropertyGroup>
     <ManifestCertificateThumbprint>F339962AFC98AE6F79839F2CE3820E18B65D05BA</ManifestCertificateThumbprint>
   </PropertyGroup>-->
@@ -111,9 +132,9 @@
     </ApplicationIcon>
   </PropertyGroup>-->
   <!--<PropertyGroup />-->
-  <PropertyGroup>
+  <!--<PropertyGroup>
     <Win32Resource>\Projects\Code\C#\OILexer\Resources\OILexer.res</Win32Resource>
-  </PropertyGroup>
+  </PropertyGroup>-->
   <!--<PropertyGroup />-->
   <ItemGroup>
     <Reference Include="System" />
@@ -121,6 +142,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -137,47 +159,51 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)' == 'Abstraction'">
-    <ProjectReference Include="..\Abstraction\SLF\Ecma-335 Abstract Syntax Tree\Ecma-335 Abstract Syntax Tree.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Ecma-335 Abstract Syntax Tree\Ecma-335 Abstract Syntax Tree.csproj">
       <Project>{961977fe-07e8-40dd-a738-db8dce6cc482}</Project>
       <Name>Ecma-335 Abstract Syntax Tree</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Ast\Abstract Syntax Tree.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\Utilities\Numerics\Numerics.csproj">
+      <Project>{ee0bb74e-bcaa-4797-87b0-4d67124f74e6}</Project>
+      <Name>Numerics</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Ast\Abstract Syntax Tree.csproj">
       <Project>{02607dc2-e98b-43ae-b906-fe151a70a68d}</Project>
       <Name>Abstract Syntax Tree</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Compilers\Abstraction Compiler Services\Abstraction Compiler Services.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Compilers\Abstraction Compiler Services\Abstraction Compiler Services.csproj">
       <Project>{df6044a9-ae48-4ac2-a170-eb839bb0058c}</Project>
       <Name>Abstraction Compiler Services</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Languages\CSharp\CSharp.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Languages\CSharp\CSharp.csproj">
       <Project>{a5e27b08-e854-40d5-b88b-0f10d1ca64af}</Project>
       <Name>CSharp</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\Metadata\Metadata Library\Metadata Library.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\Metadata\Metadata Library\Metadata Library.csproj">
       <Project>{a94a88da-2500-4372-a433-a07ac3bfa05f}</Project>
       <Name>Metadata Library</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\TypeSystems\Abstract\TypeSystem Abstract.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\TypeSystems\Abstract\TypeSystem Abstract.csproj">
       <Project>{161eaa8c-20c6-4b82-925a-4b8b112910ab}</Project>
       <Name>TypeSystem Abstract</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\SLF\TypeSystems\Ecma-335 Common Type System\Ecma-335 Common Type System.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\SLF\TypeSystems\Ecma-335 Common Type System\Ecma-335 Common Type System.csproj">
       <Project>{d455d4ff-54fd-431e-bd27-43da130a0faa}</Project>
       <Name>Ecma-335 Common Type System</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\Utilities\Common\Common Utilities.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\Utilities\Common\Common Utilities.csproj">
       <Project>{b449e1f5-149c-4f47-bbfc-a82eee96471a}</Project>
       <Name>Common Utilities</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Abstraction\Utilities\FiniteAutomation\Finite Automation.csproj">
+    <ProjectReference Include="..\AbstractionProject\Libraries\Utilities\FiniteAutomation\Finite Automation.csproj">
       <Project>{ecc67b87-6eba-4f40-baae-fe838ff8afa3}</Project>
       <Name>Finite Automation</Name>
       <Private>False</Private>
@@ -221,6 +247,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Release\_abs.util.common.dll</HintPath>
     </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x86\Release\_abs.util.numerics.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Debug|x86'">
     <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
@@ -258,6 +288,10 @@
     <Reference Include="_abs.util.common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x86\Debug\_abs.util.common.dll</HintPath>
+    </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x86\Debug\_abs.util.numerics.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Release|x64'">
@@ -298,6 +332,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Release\_abs.util.common.dll</HintPath>
     </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1622f8f6d7e5122e, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x64\Release\_abs.util.numerics.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(SolutionName)|$(Configuration)|$(Platform)' == 'OILexer|Debug|x64'">
     <Reference Include="_abs.slf.ast, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
@@ -336,16 +374,117 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Abstraction\Build\x64\Debug\_abs.util.common.dll</HintPath>
     </Reference>
+    <Reference Include="_abs.util.numerics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=, processorArchitecture=x64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Abstraction\Build\x64\Debug\_abs.util.numerics.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HtmlTextWriterTraceListener.cs" />
     <Compile Include="OilexerProgram.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReadOnlyWrapper.cs" />
     <None Include="app.config" />
+    <None Include="Generate Dots ToySharp.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Samples\CommandLine\CommandLineArguments.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\ComplexCalc\ComplexCalc.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Attributes.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Expressions\AnonymousExpressions.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Expressions\Array.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Expressions\Expressions.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Expressions\LINQ.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Expressions\Math.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Expressions\TypeExpressions.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Lexical Grammar\Keywords.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Lexical Grammar\LexicalGrammar.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Lexical Grammar\Literals.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Lexical Grammar\OperatorsOrPunctuators.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Members\Fields.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Members\LocalVariables.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Members\Members.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Members\Methods.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Members\Parameters.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Namespaces.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Oilexer.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Statements\Selection.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Statements\Statements.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Templates\ExpressionTemplates.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Templates\Templates.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Types\Structures.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Types\Interfaces.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Types\Delegates.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Types\Classes.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Types\Enumerations.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Types\Types.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Oilexer.Next\Usings.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\OilexerCommandLine\OilexerCommandLine.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Oilexer\Errors.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -360,7 +499,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Oilexer\Preprocessor.oilexer">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Samples\Oilexer\Rules.oilexer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -385,6 +524,27 @@
     </None>
     <None Include="Samples\SimpleCalc\SimpleCalc.oilexer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\SLR\SLR.oilexer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\TypeIdentifier\TypeIdentifier.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\WIP\Simple2.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\WIP\Simple1.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Youtube Sample\Calculator.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Youtube Sample\Youtube.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\Youtube Sample\YoutubeLanguage.oilexer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -420,10 +580,15 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="gearico.ico" />
-    <None Include="Resources\Evermor-Design-Galaxian-Gear.ico" />
+    <Folder Include="Resources\" />
+    <Folder Include="Samples\Oilexer.Next\Language\" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Transformation\CSharpProjectTransformer.xslt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ToDo.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

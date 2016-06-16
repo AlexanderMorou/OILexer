@@ -107,7 +107,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             if (symbols == null)
                 throw new ArgumentNullException("symbols");
             if (element == null)
-                throw new ArgumentNullException("genericGroup");
+                throw new ArgumentNullException("element");
             NullCheck(symbols);
             int index = symbols.IndexOf(element);
             BitArray values = new BitArray(1);
@@ -395,14 +395,24 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
     {
         public ParserCompiler Compiler { get; set; }
         public IGrammarRuleSymbol Symbol { get; set; }
-        public IOilexerGrammarProductionRuleEntry Rule { get { return this.DFAState.Entry; } }
+        public OilexerGrammarProductionRuleEntry Rule { get { return (OilexerGrammarProductionRuleEntry)this.DFAState.Entry; } }
         public IIntermediateEnumFieldMember Identity { get { return this.Compiler.SyntacticalSymbolModel.GetIdentitySymbolField(this.Symbol); } }
         public IIntermediateEnumFieldMember ValidIdentity { get { return this.Compiler.SyntacticalSymbolModel.GetValidSymbolField(this.Symbol); } }
         public IIntermediateClassMethodMember ParseMethod { get { return this.Compiler.ParserBuilder.GetEntryParseMethod(this.Rule); } }
+        public IIntermediateClassMethodMember PredictMethod { get { return this.ProjectionAdapter == null ? null : this.Compiler.ParserBuilder.GetProjectionPredictMethod(this.ProjectionAdapter); } }
         public IIntermediateClassMethodMember InternalParseMethod { get { return this.Compiler.ParserBuilder.GetEntryInternalParseMethod(this.Rule); } }
         public SyntacticalDFARootState DFAState { get; set; }
         public ProductionRuleNormalAdapter NormalAdapter { get { return this.Compiler.AllRuleAdapters[this.Rule, this.DFAState]; } }
-        public ProductionRuleProjectionNode Node { get { return this.Compiler.AllProjectionNodes[this.DFAState]; } }
+        public PredictionTreeDFAdapter ProjectionAdapter
+        {
+            get
+            {
+                if (NormalAdapter.AssociatedContext.RequiresProjection)
+                    return this.Compiler.AdvanceMachines[Leaf];
+                return null;
+            }
+        }
+        public PredictionTreeLeaf Leaf { get { return this.Compiler.AllProjectionNodes[this.DFAState]; } }
         public IRuleEntryObjectRelationalMap ObjectModelDetails { get; set; }
         public IIntermediateInterfaceType RelativeInterface { get { return ObjectModelDetails.ImplementationDetails.Value.RelativeInterface; } }
         public IIntermediateClassType Class { get { return ObjectModelDetails.ImplementationDetails.Value.Class; } }

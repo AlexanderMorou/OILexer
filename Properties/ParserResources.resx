@@ -219,7 +219,7 @@
     <value>Duplicate entry detected: '{0}' is defined multiple times.</value>
   </data>
   <data name="GrammarCompilerErrors_DuplicateEntryReference" xml:space="preserve">
-    <value>'{0}' Duplicate, see above multiple definition error above.</value>
+    <value>'{0}' Duplicate, see multiple definition error above.</value>
   </data>
   <data name="GrammarCompilerErrors_AmbiguousPathDetected" xml:space="preserve">
     <value>The compiler detected a sequence of tokens which yielded an ambiguity: Multiple states entered a terminal point with no more look-ahead available.  See error details written to file.</value>

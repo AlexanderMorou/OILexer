@@ -8,7 +8,7 @@ using AllenCopeland.Abstraction.Slf._Internal.Oilexer;
 using AllenCopeland.Abstraction.Slf.Compilers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -36,6 +36,7 @@ namespace AllenCopeland.Abstraction.Slf.Parsers.Oilexer
             internal CharacterRangeToken(bool inverted, char[] singleTons, Tuple<char, char>[] rangeSet, UnicodeCategory[] letterCategories, int length, int line, int column, long position)
                 : base(line, column, position)
             {
+
                 this.ranges = RegularLanguageSet.GetRegularLanguageSet(inverted, singleTons, rangeSet, letterCategories);
                 this.length = length;
                 this.inverted = inverted;

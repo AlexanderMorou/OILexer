@@ -33,6 +33,8 @@ using System.IO;
 using AllenCopeland.Abstraction.Slf.Abstract.Members;
 using AllenCopeland.Abstraction.Slf.Compilers.Oilexer;
 using AllenCopeland.Abstraction.Slf.Ast.Cli;
+using AllenCopeland.Abstraction.Slf.Languages.Oilexer.Properties;
+using AllenCopeland.Abstraction.Slf.Ast.Statements;
 
 namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 {
@@ -58,7 +60,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
         private OilexerGrammarFile sourceOrigin;
         private ParserCompiler _compiler;
         private IGrammarSymbol[][] symbolChunks;
-
+        private IIntermediateStructIndexerMember hasSymbolIndexer;
         private IIntermediateStructPropertyMember[] validSymbolProperties;
         //private IIntermediateEnumType symbolStoreVariations;
         private string _contextualName;
@@ -228,6 +230,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
              * */
             ConstructSymbolStoreSingletons(symbolChunks, validEnums, validNones, this._compiler.SymbolStoreBuilder.Singletons, validSymbols);
 
+
+
             this.hasAnyLookup = new ControlledDictionary<IOilexerGrammarTokenEntry, IIntermediateStructPropertyMember>(ObtainHasAnySet(validEnums, validNones, validSymbols));
 
             CreateIsEmptyProperty(symbolChunks, validNones, validSymbols);
@@ -238,25 +242,41 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             {
                 this.MultipleIdentitiesIdentityField = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(GetUniqueEnumFieldName("MultipleIdentities", this._compiler.SymbolStoreBuilder.Identities));
                 this.MultipleIdentitiesIdentityField.SummaryText = "Represents the identity when performing identity determination that multiple identities are possible at the current juncture, and an assertion should fail.";
-                CreateValidToIdentityOperator(symbolChunks, validSymbols);
                 this.StreamAccessOutOfSequence = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(GrammarVocabularyModelBuilder.GetUniqueEnumFieldName("StreamAccessOutOfSequence", this._compiler.SymbolStoreBuilder.Identities));
                 StreamAccessOutOfSequence.SummaryText = "This is an identity that is yielded from the SymbolStream when the stream is accessed beyond one past the expected value.";
                 StreamAccessOutOfSequence.RemarksText = "It's important to request a single symbol at a time, in order, as the parser progresses because ambiguities in the grammar are handled deterministically by the parsers state.  Going out of sequence could yield an incorrect parse.";
             }
+            CreateValidToIdentityOperator(symbolChunks, validSymbols);
 
             return validSymbols;
         }
 
         private void CreateValidToIdentityOperator(IGrammarSymbol[][] symbolChunks, IIntermediateStructType validSymbols)
         {
-            var conversionMethod = validSymbols.TypeCoercions.Add(TypeConversionRequirement.Explicit, TypeConversionDirection.FromContainingType, this.IdentityEnum);
-            conversionMethod.Incoming.Name = string.Format("valid{0}", this._contextualName);
-            var resultLocal = conversionMethod.Locals.Add(new TypedName("result", IdentityEnum), this.NoIdentityField.GetReference());
+            this.hasSymbolIndexer = validSymbols.Indexers.Add(
+                new TypedName(
+                    ParserResources.IndexerName, 
+                    RuntimeCoreType.Boolean,
+                    validSymbols.IdentityManager), 
+                new TypedNameSeries(
+                    this.IdentityEnum.WithName("identity")), true, false);
+            this.hasSymbolIndexer.AccessLevel = AccessLevelModifiers.Public;
+            var identityLocal = this.hasSymbolIndexer.Parameters["identity"];
+            var implicitCoercion = validSymbols.TypeCoercions.Add(TypeConversionRequirement.Implicit, TypeConversionDirection.ToContainingType, this.IdentityEnum);
+            var implicitSwitch = implicitCoercion.Switch(implicitCoercion.Incoming.GetReference());
+            var explicitCoercion = this.addNoneAndMultipleIdentities ? validSymbols.TypeCoercions.Add(TypeConversionRequirement.Explicit, TypeConversionDirection.FromContainingType, this.IdentityEnum) : null;
+            if (addNoneAndMultipleIdentities)
+                explicitCoercion.Incoming.Name = string.Format("valid{0}", this._contextualName);
+            implicitCoercion.Incoming.Name = string.Format("valid{0}", this._contextualName);
+            var resultLocal = this.addNoneAndMultipleIdentities ? explicitCoercion.Locals.Add(new TypedName("result", IdentityEnum), this.NoIdentityField.GetReference()) : null;
             var slotTypeReference = ((ICliManager)this.Project.IdentityManager).ObtainTypeReference(typeof(SlotType));
+            var createInstanceExpression = validSymbols.GetNewExpression();
+            var thisSwitch = this.hasSymbolIndexer.GetMethod.Switch(identityLocal.GetReference());
             for (int symbolChunkIndex = 0; symbolChunkIndex < symbolChunks.Length; symbolChunkIndex++)
             {
                 var symbolChunk = symbolChunks[symbolChunkIndex];
                 var currentSlot = this.validSymbolProperties[symbolChunkIndex];
+                
                 /* if (result == {GrammarName}Symbols.None) { //P1
                  *     if (this.ValidSymbols{symbolChunkIndex} != {GrammarName}ValidSymbolSet{symbolChunkIndex}.None{UniqueNoneIndex?}) { //P2
                  *     ...
@@ -266,28 +286,50 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                  * {
                  *     result = {GrammarName}Symbols.Multiple{UniqueMultipleIndex?};
                  * }*/
-
-                var P1 = resultLocal.GetReference().EqualTo(NoIdentityField);
-                var P2 = currentSlot.GetReference(conversionMethod.Incoming.GetReference()).InequalTo(this.validSymbolsEnumNones[symbolChunkIndex]);
-                var P3 = resultLocal.GetReference().InequalTo(MultipleIdentitiesIdentityField);
-                var slotNecessaryCheckLevel1 = conversionMethod.If(P1);
-                slotNecessaryCheckLevel1.CreateNext(P3.LogicalAnd(P2));//P3
-                var slotNecessaryNextCheck = slotNecessaryCheckLevel1.Next;
-                var slotNecessaryCheck = slotNecessaryCheckLevel1.If(P2);
-                var slotSwitch = slotNecessaryCheck.Switch(currentSlot.GetReference(conversionMethod.Incoming.GetReference()));
-                slotNecessaryNextCheck.Assign(resultLocal, MultipleIdentitiesIdentityField);
+                ISwitchStatement slotSwitch = null;
+                if (this.addNoneAndMultipleIdentities)
+                {
+                    var P1 = resultLocal.GetReference().EqualTo(NoIdentityField);
+                    var P2 = currentSlot.GetReference(explicitCoercion.Incoming.GetReference()).InequalTo(this.validSymbolsEnumNones[symbolChunkIndex]);
+                    var P3 = resultLocal.GetReference().InequalTo(MultipleIdentitiesIdentityField);
+                    var slotNecessaryCheckLevel1 = explicitCoercion.If(P1);
+                    slotNecessaryCheckLevel1.CreateNext(P3.LogicalAnd(P2));//P3
+                    var slotNecessaryNextCheck = slotNecessaryCheckLevel1.Next;
+                    var slotNecessaryCheck = slotNecessaryCheckLevel1.If(P2);
+                    slotSwitch = slotNecessaryCheck.Switch(currentSlot.GetReference(explicitCoercion.Incoming.GetReference()));
+                    slotNecessaryNextCheck.Assign(resultLocal, MultipleIdentitiesIdentityField);
+                }
                 for (int symbolIndex = 0; symbolIndex < symbolChunk.Length; symbolIndex++)
                 {
                     var currentSymbol = symbolChunk[symbolIndex];
-                    var currentIdentityCase = slotSwitch.Case(this.validSymbolLookup[currentSymbol].GetReference());
-                    currentIdentityCase.Assign(resultLocal, this.identitySymbolLookup[currentSymbol]);
+                    var currentImplicitCase = implicitSwitch.Case(this.identitySymbolLookup[currentSymbol].GetReference());
+                    var currentThisCase = thisSwitch.Case(this.identitySymbolLookup[currentSymbol].GetReference());
+                    currentThisCase.Return(currentSlot.BitwiseAnd(this.validSymbolLookup[currentSymbol]).EqualTo(this.validSymbolLookup[currentSymbol]));
+                    var currentCreateInstanceExpression = validSymbols.GetNewExpression();
+                    for (int symbolChunkIndex2 = 0; symbolChunkIndex2 < this.symbolChunks.Length; symbolChunkIndex2++)
+                        if (symbolChunkIndex2 != symbolChunkIndex)
+                            currentCreateInstanceExpression.Arguments.Add(this.validSymbolsEnumNones[symbolChunkIndex2].GetReference());
+                        else
+                            currentCreateInstanceExpression.Arguments.Add(this.validSymbolLookup[currentSymbol].GetReference());
+                    currentImplicitCase.Return(currentCreateInstanceExpression);
+                    if (this.addNoneAndMultipleIdentities)
+                    {
+                        var currentIdentityCase = slotSwitch.Case(this.validSymbolLookup[currentSymbol].GetReference());
+                        currentIdentityCase.Assign(resultLocal, this.identitySymbolLookup[currentSymbol]);
+                    }
                 }
-                var defaultBlock = slotSwitch.Case(true);
-                if (symbolChunkIndex == 0)
-                    defaultBlock.Comment("It isn't one of the defined identities, so it must be multiple identities.");
-                defaultBlock.Assign(resultLocal, MultipleIdentitiesIdentityField);
+                if (this.addNoneAndMultipleIdentities)
+                {
+                    var defaultBlock = slotSwitch.Case(true);
+                    if (symbolChunkIndex == 0)
+                        defaultBlock.Comment("It isn't one of the defined identities, so it must be multiple identities.");
+                    defaultBlock.Assign(resultLocal, MultipleIdentitiesIdentityField);
+                }
             }
-            conversionMethod.Return(resultLocal.GetReference());
+            thisSwitch.Case(true).Return(IntermediateGateway.FalseValue);
+            implicitCoercion.Return(createInstanceExpression);
+            if (this.addNoneAndMultipleIdentities)
+                explicitCoercion.Return(resultLocal.GetReference());
         }
 
         public static string GetUniqueEnumFieldName(string baseName, IIntermediateEnumType targetEnum)
@@ -316,9 +358,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                     {
                         var currentNone = validNones[secondChunkIndex];
                         if (secondChunkIndex == symbolChunkIndex)
-                            creationExpression.Parameters.Add(validField.GetReference());
+                            creationExpression.Arguments.Add(validField.GetReference());
                         else
-                            creationExpression.Parameters.Add(validNones[secondChunkIndex].GetReference());
+                            creationExpression.Arguments.Add(validNones[secondChunkIndex].GetReference());
                     }
                     var currentSingleton = singletons.Fields.Add(new TypedName(identityField.Name, validSymbols), creationExpression);
                     currentSingleton.AccessLevel = AccessLevelModifiers.Public;
@@ -346,9 +388,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             for (int symbolChunkIndex = 0; symbolChunkIndex < symbolChunks.Length; symbolChunkIndex++)
             {
                 if (symbolChunkIndex % 2 == 0)
-                    orCreation.Parameters.Add(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.LeftSide.GetReference().LeftNewLine()).BitwiseOr(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.RightSide.GetReference())));
+                    orCreation.Arguments.Add(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.LeftSide.GetReference().LeftNewLine()).BitwiseOr(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.RightSide.GetReference())));
                 else
-                    orCreation.Parameters.Add(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.LeftSide.GetReference()).BitwiseOr(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.RightSide.GetReference())));
+                    orCreation.Arguments.Add(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.LeftSide.GetReference()).BitwiseOr(validSymbolProperties[symbolChunkIndex].GetReference(orBinaryOp.RightSide.GetReference())));
             }
             orBinaryOp.Return(orCreation);
             var andBinaryOp = validSymbols.BinaryOperatorCoercions.Add(CoercibleBinaryOperators.BitwiseAnd, validSymbols);
@@ -357,9 +399,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             for (int symbolChunkIndex = 0; symbolChunkIndex < symbolChunks.Length; symbolChunkIndex++)
             {
                 if (symbolChunkIndex % 2 == 0)
-                    andCreation.Parameters.Add(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.LeftSide.GetReference().LeftNewLine()).BitwiseAnd(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.RightSide.GetReference())));
+                    andCreation.Arguments.Add(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.LeftSide.GetReference().LeftNewLine()).BitwiseAnd(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.RightSide.GetReference())));
                 else
-                    andCreation.Parameters.Add(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.LeftSide.GetReference()).BitwiseAnd(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.RightSide.GetReference())));
+                    andCreation.Arguments.Add(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.LeftSide.GetReference()).BitwiseAnd(validSymbolProperties[symbolChunkIndex].GetReference(andBinaryOp.RightSide.GetReference())));
             }
             andBinaryOp.Return(andCreation);
             var exclusiveOrBinaryOp = validSymbols.BinaryOperatorCoercions.Add(CoercibleBinaryOperators.ExclusiveOr, validSymbols);
@@ -369,9 +411,9 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             for (int symbolChunkIndex = 0; symbolChunkIndex < symbolChunks.Length; symbolChunkIndex++)
             {
                 if (symbolChunkIndex % 2 == 0)
-                    exclusiveOrCreation.Parameters.Add(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.LeftSide.GetReference().LeftNewLine()).BitwiseXOr(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.RightSide.GetReference())));
+                    exclusiveOrCreation.Arguments.Add(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.LeftSide.GetReference().LeftNewLine()).BitwiseXOr(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.RightSide.GetReference())));
                 else
-                    exclusiveOrCreation.Parameters.Add(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.LeftSide.GetReference()).BitwiseXOr(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.RightSide.GetReference())));
+                    exclusiveOrCreation.Arguments.Add(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.LeftSide.GetReference()).BitwiseXOr(validSymbolProperties[symbolChunkIndex].GetReference(exclusiveOrBinaryOp.RightSide.GetReference())));
             }
 
             exclusiveOrBinaryOp.Return(exclusiveOrCreation);
@@ -431,6 +473,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             isEmptyProp.AccessLevel = AccessLevelModifiers.Public;
 
             isEmptyProp.GetMethod.Return(isEmptyBooleanCheck);
+            this.IsEmptyImpl = isEmptyProp;
         }
         private class ReferenceGroupField<TSymbol>
         {
@@ -526,9 +569,19 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                     hasAmbiguityName = string.Format("HasAmbiguity{0}", ++hrnIndex);
                 hasAmbiguities = BuildHasAny(validEnums, validNones, validSymbols, ambiguousSymbols, hasAmbiguityName, "Ambiguities");
             }
-            var toStringMethod = validSymbols.Parts.Add().Methods.Add(new TypedName("ToString", RuntimeCoreType.String, validSymbols.IdentityManager));
-            toStringMethod.AccessLevel = AccessLevelModifiers.Public;
-            toStringMethod.IsOverride = true;
+            var toStringMethodOverride =
+                validSymbols.Parts.Add().Methods.Add(
+                    new TypedName("ToString", RuntimeCoreType.String, validSymbols.IdentityManager));
+            var toStringMethod =
+                toStringMethodOverride.Parent.Methods.Add(
+                    new TypedName("ToString", RuntimeCoreType.String, validSymbols.IdentityManager),
+                    new TypedNameSeries(
+                        new TypedName("includeMajor", RuntimeCoreType.Boolean, validSymbols.IdentityManager)));
+            var includeMajor = toStringMethod.Parameters["includeMajor"];
+            toStringMethodOverride.IsOverride = true;
+            toStringMethodOverride.AccessLevel  = 
+                toStringMethod.AccessLevel      = AccessLevelModifiers.Public;
+            toStringMethodOverride.Return(toStringMethod.GetReference().Invoke(IntermediateGateway.TrueValue));
             var toStringBuilder = toStringMethod.Locals.Add(new TypedName("resultBuilder", validSymbols.IdentityManager.ObtainTypeReference(validSymbols.IdentityManager.ObtainTypeReference(RuntimeCoreType.RootType).Assembly.UniqueIdentifier.GetTypeIdentifier(typeof(StringBuilder).Namespace, typeof(StringBuilder).Name))));
 
             toStringBuilder.InitializationExpression = toStringBuilder.LocalType.GetNewExpression();
@@ -536,33 +589,37 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             var firstMajorLocal = toStringMethod.Locals.Add(new TypedName("firstMajor", RuntimeCoreType.Boolean, validSymbols.IdentityManager), IntermediateGateway.TrueValue);
             bool first = true;
             if (constSymbols.Length > 0)
-                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasConstTokens, "Constant Tokens", symbol => symbol.Source.Name, constSymbols);
+                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasConstTokens, "Constant Tokens", symbol => symbol.Source.Name, constSymbols, includeMajor);
             foreach (var tokenEntry in allLiteralSetTokens.Keys)
-                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasLiteralItemLookup[tokenEntry], tokenEntry.Name, symbol => string.Format("'{0}'", symbol.SourceItem.Value), allLiteralSetTokens[tokenEntry]);
+                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasLiteralItemLookup[tokenEntry], tokenEntry.Name, symbol => string.Format("'{0}'", symbol.SourceItem.Value), allLiteralSetTokens[tokenEntry], includeMajor);
             if (variableTokenSymbols.Length > 0)
-                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasVariableTokens, "Variable Tokens", symbol => symbol.Source.Name, variableTokenSymbols);
+                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasVariableTokens, "Variable Tokens", symbol => symbol.Source.Name, variableTokenSymbols, includeMajor);
             if (ruleSymbols.Length > 0)
-                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasRules, "Rules", symbol => symbol.Source.Name, ruleSymbols);
+                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasRules, "Rules", symbol => symbol.Source.Name, ruleSymbols, includeMajor);
             if (ambiguousSymbols.Length > 0)
-                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasAmbiguities, "Ambiguities", symbol => symbol.ToString(), ambiguousSymbols);
+                first = BuildSectionToString(validEnums, validNones, toStringMethod, toStringBuilder, firstLocal, firstMajorLocal, first, hasAmbiguities, "Ambiguities", symbol => symbol.ToString(), ambiguousSymbols, includeMajor);
             toStringMethod.Return(toStringBuilder.GetReference().GetMethod("ToString").Invoke());
             return hasLiteralItemLookup;
         }
 
-        private bool BuildSectionToString<TSymbol>(IIntermediateEnumType[] validEnums, IIntermediateEnumFieldMember[] validNones, IIntermediateStructMethodMember toStringMethod, ITypedLocalMember toStringBuilder, ITypedLocalMember firstLocal, ITypedLocalMember firstMajorLocal, bool first, IIntermediateStructPropertyMember currentProp, string currentSetName, Func<TSymbol, string> elementStringer, TSymbol[] symbols)
+        private bool BuildSectionToString<TSymbol>(IIntermediateEnumType[] validEnums, IIntermediateEnumFieldMember[] validNones, IIntermediateStructMethodMember toStringMethod, ITypedLocalMember toStringBuilder, ITypedLocalMember firstLocal, ITypedLocalMember firstMajorLocal, bool first, IIntermediateStructPropertyMember currentProp, string currentSetName, Func<TSymbol, string> elementStringer, TSymbol[] symbols, IParameterMember includeMajor)
             where TSymbol :
                 IGrammarSymbol
         {
             var currentIfCondition = toStringMethod.If(currentProp.GetReference());
             var crossSection = CreateCrossSection(validEnums, validNones, symbols);
+            var includeMajorCheck = currentIfCondition.If(includeMajor.GetReference());
+            bool wasFirst = first;
             if (first)
             {
                 first = false;
-                currentIfCondition.Assign(firstMajorLocal, IntermediateGateway.FalseValue);
+                includeMajorCheck
+                    .Assign(firstMajorLocal, IntermediateGateway.FalseValue);
             }
             else
             {
-                var firstStatement = currentIfCondition.If(firstMajorLocal.GetReference());
+                
+                var firstStatement = includeMajorCheck.If(firstMajorLocal.GetReference());
                 firstStatement.Assign(firstMajorLocal, IntermediateGateway.FalseValue);
                 firstStatement.CreateNext();
                 firstStatement.Next.Assign(firstLocal, IntermediateGateway.TrueValue);
@@ -570,7 +627,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
             if (symbols.Length > 1)
             {
-                currentIfCondition.Call(toStringBuilder.GetReference().GetMethod("Append").Invoke(string.Format("{0} [", currentSetName).ToPrimitive()));
+                includeMajorCheck.Call(toStringBuilder.GetReference().GetMethod("Append").Invoke(string.Format("{0} [", currentSetName).ToPrimitive()));
                 foreach (var sectionKey in crossSection.Keys)
                 {
                     var sectionElements = crossSection[sectionKey];
@@ -580,12 +637,24 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
                         GetToStringSingleSectionBody<TSymbol>(toStringBuilder, firstLocal, elementStringer,
                             currentIfCondition.If(GetSubGroupComparisonExpression(sectionKey, sectionElements, currentSetName)), sectionKey, sectionElements);
                 }
-                currentIfCondition.Call(toStringBuilder.GetReference().GetMethod("Append").Invoke("]".ToPrimitive()));
+                currentIfCondition.If(includeMajor.GetReference())
+                    .Call(toStringBuilder.GetReference().GetMethod("Append").Invoke("]".ToPrimitive()));
             }
             else
             {
                 var firstItem = crossSection.Values.First().First();
-                currentIfCondition.Call(toStringBuilder.GetReference().GetMethod("Append").Invoke(string.Format("{0} [{1}]", currentSetName, elementStringer(firstItem.Symbol)).ToPrimitive()));
+                includeMajorCheck.Call(toStringBuilder.GetReference().GetMethod("Append").Invoke(string.Format("{0} [{1}]", currentSetName, elementStringer(firstItem.Symbol)).ToPrimitive()));
+                includeMajorCheck.CreateNext();
+                if (wasFirst)
+                    includeMajorCheck.Next.Assign(firstLocal, IntermediateGateway.FalseValue);
+                else
+                {
+                    var firstCheck = includeMajorCheck.Next.If(firstLocal.GetReference());
+                    firstCheck.Assign(firstLocal, IntermediateGateway.FalseValue);
+                    firstCheck.CreateNext();
+                    firstCheck.Next.Call(toStringBuilder.GetReference().GetMethod("Append").Invoke(", ".ToPrimitive()));
+                }
+                includeMajorCheck.Next.Call(toStringBuilder.GetReference().GetMethod("Append").Invoke(elementStringer(firstItem.Symbol).ToPrimitive()));
             }
             return first;
         }
@@ -784,10 +853,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
              * The other represents the identity of that symbol,
              * for use within a symbol matcher.
              * */
+
             if (ruleSymbol != null)
             {
-                validSymbolEnumMember = currentEnum.Fields.Add(string.Format("{0}{1}{2}", SourceOrigin.Options.RulePrefix, ruleSymbol.ElementName, SourceOrigin.Options.RuleSuffix), (SlotType)Math.Pow(2, symbolIndex));
-                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(string.Format("{0}{1}{2}", SourceOrigin.Options.RulePrefix, ruleSymbol.ElementName, SourceOrigin.Options.RuleSuffix));
+                validSymbolEnumMember = currentEnum.Fields.Add(GetFieldName(string.Format("{0}{1}{2}", SourceOrigin.Options.RulePrefix, ruleSymbol.ElementName, SourceOrigin.Options.RuleSuffix), currentEnum), (SlotType)Math.Pow(2, symbolIndex));
+                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(GetFieldName(string.Format("{0}{1}{2}", SourceOrigin.Options.RulePrefix, ruleSymbol.ElementName, SourceOrigin.Options.RuleSuffix), this._compiler.SymbolStoreBuilder.Identities));
                 identitySymbolEnumMember.SummaryText = string.Format("The symbol represents the @s:I{0}; rule from the {1}{2}.", identitySymbolEnumMember.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
                 identitySymbolEnumMember.RemarksText = string.Format("'.{0}' at: line {1}, column {2}", ruleSymbol.Source.FileName.Substring(SourceOrigin.RelativeRoot.Length), ruleSymbol.Source.Line, ruleSymbol.Source.Column);
                 validSymbolEnumMember.SummaryText = string.Format("The set of valid symbols includes the @s:I{0}; rule from the {1}{2}.", identitySymbolEnumMember.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
@@ -795,8 +865,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
             else if (tokenSymbol != null)
             {
-                validSymbolEnumMember = currentEnum.Fields.Add(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, tokenSymbol.ElementName, SourceOrigin.Options.TokenSuffix), (SlotType)Math.Pow(2, symbolIndex));
-                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, tokenSymbol.ElementName, SourceOrigin.Options.TokenSuffix));
+                validSymbolEnumMember = currentEnum.Fields.Add(GetFieldName(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, tokenSymbol.ElementName, SourceOrigin.Options.TokenSuffix), currentEnum), (SlotType)Math.Pow(2, symbolIndex));
+                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(GetFieldName(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, tokenSymbol.ElementName, SourceOrigin.Options.TokenSuffix), this._compiler.SymbolStoreBuilder.Identities));
                 identitySymbolEnumMember.SummaryText = string.Format("The symbol represents the {0} token from the {1}{2}.", identitySymbolEnumMember.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
                 identitySymbolEnumMember.RemarksText = string.Format("'.{0}' at: line {1}, column {2}", tokenSymbol.Source.FileName.Substring(SourceOrigin.RelativeRoot.Length), tokenSymbol.Source.Line, tokenSymbol.Source.Column);
                 validSymbolEnumMember.SummaryText = string.Format("The set of valid symbols includes the {0} token from the {1}{2}.", identitySymbolEnumMember.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
@@ -804,8 +874,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
             else if (constSymbol != null)
             {
-                validSymbolEnumMember = currentEnum.Fields.Add(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, constSymbol.ElementName, SourceOrigin.Options.TokenSuffix), (SlotType)Math.Pow(2, symbolIndex));
-                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, constSymbol.ElementName, SourceOrigin.Options.TokenSuffix));
+                validSymbolEnumMember = currentEnum.Fields.Add(GetFieldName(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, constSymbol.ElementName, SourceOrigin.Options.TokenSuffix), currentEnum), (SlotType)Math.Pow(2, symbolIndex));
+                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(GetFieldName(string.Format("{0}{1}{2}", SourceOrigin.Options.TokenPrefix, constSymbol.ElementName, SourceOrigin.Options.TokenSuffix), this._compiler.SymbolStoreBuilder.Identities));
                 identitySymbolEnumMember.SummaryText = string.Format("The symbol represents the {0} token from the {1}{2}.", identitySymbolEnumMember.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
                 validSymbolEnumMember.SummaryText = string.Format("The set of valid symbols includes the {0} token from the {1}{2}.", identitySymbolEnumMember.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
                 if (!(constSymbol.Source is IOilexerGrammarTokenEofEntry))
@@ -818,8 +888,8 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
             else if (literalSymbol != null)
             {
-                validSymbolEnumMember = currentEnum.Fields.Add(string.Format("{0}{1}{2}_{3}", SourceOrigin.Options.TokenPrefix, literalSymbol.Source.Name, SourceOrigin.Options.TokenSuffix, literalSymbol.SourceItem.Name), (SlotType)Math.Pow(2, symbolIndex));
-                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(string.Format("{0}{1}{2}_{3}", SourceOrigin.Options.TokenPrefix, literalSymbol.Source.Name, SourceOrigin.Options.TokenSuffix, literalSymbol.SourceItem.Name));
+                validSymbolEnumMember = currentEnum.Fields.Add(GetFieldName(string.Format("{0}{1}{2}_{3}", SourceOrigin.Options.TokenPrefix, literalSymbol.Source.Name, SourceOrigin.Options.TokenSuffix, literalSymbol.SourceItem.Name), currentEnum), (SlotType)Math.Pow(2, symbolIndex));
+                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(GetFieldName(string.Format("{0}{1}{2}_{3}", SourceOrigin.Options.TokenPrefix, literalSymbol.Source.Name, SourceOrigin.Options.TokenSuffix, literalSymbol.SourceItem.Name), this._compiler.SymbolStoreBuilder.Identities));
                 identitySymbolEnumMember.SummaryText = string.Format("The symbol represents the '{0}' {1} token from the {2}{3}.", literalSymbol.SourceItem.Name, literalSymbol.Source.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
                 identitySymbolEnumMember.RemarksText = string.Format("@para;'.{0}' at: line {1}, column {2}.@/para;@para;Original Definition:\r\n\t{3}@/para;", literalSymbol.Source.FileName.Substring(SourceOrigin.RelativeRoot.Length), literalSymbol.SourceItem.Line, literalSymbol.SourceItem.Column, literalSymbol.SourceItem);
                 validSymbolEnumMember.SummaryText = string.Format("The set of valid symbols includes the '{0}' {1} token from the {2}{3}.", literalSymbol.SourceItem.Name, literalSymbol.Source.Name, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
@@ -827,11 +897,20 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
             }
             else if (ambiguousSymbol != null)
             {
-                validSymbolEnumMember = currentEnum.Fields.Add(ambiguousSymbol.ElementName, (SlotType)Math.Pow(2, symbolIndex));
-                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(ambiguousSymbol.ElementName);
+                validSymbolEnumMember = currentEnum.Fields.Add(GetFieldName(ambiguousSymbol.ElementName, currentEnum), (SlotType)Math.Pow(2, symbolIndex));
+                identitySymbolEnumMember = this._compiler.SymbolStoreBuilder.Identities.Fields.Add(GetFieldName(ambiguousSymbol.ElementName, this._compiler.SymbolStoreBuilder.Identities));
                 identitySymbolEnumMember.SummaryText = string.Format("The symbol represents the an ambiguity between the following tokens: '{0}' from the {1}{2}.", ambiguousSymbol.AmbiguityKey, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
                 validSymbolEnumMember.SummaryText = string.Format("The set of valid symbols includes an ambiguity of the following tokens: {0} from the {1}{2}.", ambiguousSymbol.AmbiguityKey, SourceOrigin.Options.GrammarName, tailLanguage ? string.Empty : " language");
             }
+        }
+
+        private static string GetFieldName(string baseName, IIntermediateEnumType type)
+        {
+            var baseIdentity = TypeSystemIdentifiers.GetMemberIdentifier(baseName);
+            int offset = 0;
+            while(type.Fields.ContainsKey(baseIdentity))
+                baseIdentity = TypeSystemIdentifiers.GetMemberIdentifier(string.Format("{0}{1}", baseName, ++offset));
+            return baseIdentity.Name;
         }
 
         /// <summary>
@@ -911,5 +990,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Rules
 
 
         public IIntermediateEnumFieldMember StreamAccessOutOfSequence { get; set; }
+
+        public IIntermediateStructPropertyMember IsEmptyImpl { get; private set; }
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AllenCopeland.Abstraction.Utilities.Collections;
  /*---------------------------------------------------------------------\
- | Copyright © 2008-2015 Allen C. [Alexander Morou] Copeland Jr.        |
+ | Copyright © 2008-2016 Allen C. [Alexander Morou] Copeland Jr.        |
  |----------------------------------------------------------------------|
  | The Abstraction Project's code is provided under a contract-release  |
  | basis.  DO NOT DISTRIBUTE and do not use beyond the contract terms.  |
@@ -40,6 +40,7 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
         /// Data member for <see cref="RepeatOptions"/>.
         /// </summary>
         private ScannableEntryItemRepeatInfo repeatOptions;
+        private bool siblingAmbiguity;
 
         public TokenGroupItem(string fileName, ITokenExpression[] items, int column, int line, long position)
         {
@@ -64,6 +65,11 @@ namespace AllenCopeland.Abstraction.Slf.Languages.Oilexer.Tokens
             prgi.repeatOptions = this.repeatOptions;
             prgi.name = this.name;
             return prgi;
+        }
+        public bool SiblingAmbiguity
+        {
+            get { return this.siblingAmbiguity; }
+            internal set { this.siblingAmbiguity = value; }
         }
 
         //#region ITokenItem Members

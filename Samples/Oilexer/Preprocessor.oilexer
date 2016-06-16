@@ -20,7 +20,7 @@ PreprocessorThrowDirective                 ::=
     @"#throw" Identifier:ErrorName; 
     (
         LanguageOperatorToken.PartSeparator
-        Identifier:Argument;
+        Identifier:Arguments;
     )* ';'                                   ;
 
 PreprocessorReturnDirective                ::=
@@ -70,15 +70,52 @@ PreprocessorDefineNameExpression           ::=
 
 PreprocessorTerminalDirective             ::=>
     PreprocessorStringTerminalDirective      |
-    PreprocessorIdentifierTerminalDirective  ;
+    PreprocessorIdentifierTerminalDirective  |
+    PreprocessorGuidTerminalDirective        |
+    PreprocessorCultureCallout               ;
 
 PreprocessorStringTerminalDirective        ::=
-    StringTerminalKind:Kind; 
-        String:Value; ';'                    ;
+    (
+        @"#include"                          |
+        @"#root"                             |
+        @"#assemblyname"                     |
+        @"#lexername"                        |
+        @"#grammarname"                      |
+        @"#parsername"                       |
+        @"#tokenprefix"                      |
+        @"#tokensuffix"                      |
+        @"#ruleprefix"                       |
+        @"#rulesuffix"                       |
+        @"#namespace"
+    ):Kind; 
+    String:Value; ';'                        ;
+
+PreprocessorGuidTerminalDirective          ::=
+    (
+     @"#projectguid":ProjectGuid;            |
+        @"#vsixguid":VsixGuid;
+    ):Kind;
+    GuidString:Guid; ';'                     ;
 
 PreprocessorIdentifierTerminalDirective    ::=
-    StringTerminalKind:Kind;
-        Identifier:Value; ';'                ;
+    (
+        @"#include"                          |
+        @"#root"                             |
+        @"#assemblyname"                     |
+        @"#lexername"                        |
+        @"#grammarname"                      |
+        @"#parsername"                       |
+        @"#tokenprefix"                      |
+        @"#tokensuffix"                      |
+        @"#ruleprefix"                       |
+        @"#rulesuffix"                       |
+        @"#namespace"
+    ):Kind; 
+    Identifier:Value; ';'                    ;
+
+PreprocessorCultureCallout                 ::=
+    LanguageCultureCallout 
+    CultureIdentifier:Culture; ';'           ;
 
 PreprocessorIfDirective                   ::=>
     PreprocessorIfConditionDirective         |
@@ -87,8 +124,8 @@ PreprocessorIfDirective                   ::=>
 
 PreprocessorIfConditionDirective           ::=
     @"#if" PreprocessorIfConditionLogicalOrExp:Condition;
-    Entry:Items;*$
-    (PreprocessorElseDirective:Next;)?$       
+    Entry:Items;* 
+    (PreprocessorElseDirective:Next;)?        
     @"#endif"                                 ;
 
 PreprocessorIfDefinedDirective             ::=
@@ -128,25 +165,28 @@ PreprocessorElseIfNotDefinedDirective      ::=
     Entry:Items;*
     (PreprocessorElseDirective:Next;)?       ;
 
-PreprocessorIfConditionLogicalOrExp        ::=
+PreprocessorIfConditionLogicalOrExp        ::=>
     BinaryOperationExpression<
         PreprocessorIfConditionLogicalOrExp, 
-            "||", 
+            "||",
         PreprocessorIfConditionLogicalAndExp, 
+        PreprocessorIfConditionLogicalOrRecursiveExp,
         Left>;
 
-PreprocessorIfConditionLogicalAndExp       ::=
+PreprocessorIfConditionLogicalAndExp       ::=>
     BinaryOperationExpression<
         PreprocessorIfConditionLogicalAndExp, 
             "&&", 
         PreprocessorIfConditionEqualityExp, 
+        PreprocessorIfConditionLogicalAndRecursiveExp,
         Left>;
 
-PreprocessorIfConditionEqualityExp         ::=
+PreprocessorIfConditionEqualityExp         ::=>
     BinaryOperationExpression<
         PreprocessorIfConditionEqualityExp, 
             ("=="|"!="):Operator;, 
         PreprocessorIfConditionPrimaryExp, 
+        PreprocessorIfConditionEqualityRecursiveExp,
         Left>;
 
 PreprocessorIfConditionPrimaryExp         ::=>
@@ -156,18 +196,20 @@ PreprocessorIfConditionPrimaryExp         ::=>
     Char                                     |
     Identifier                               ;
 
-PreprocessorIfDefConditionLogicalOrExp     ::=
+PreprocessorIfDefConditionLogicalOrExp     ::=>
     BinaryOperationExpression<
         PreprocessorIfDefConditionLogicalOrExp, 
             "||", 
         PreprocessorIfDefConditionLogicalAndExp, 
+        PreprocessorIfDefConditionLogicalOrRecursiveExp,
         Left>;
 
-PreprocessorIfDefConditionLogicalAndExp    ::=
+PreprocessorIfDefConditionLogicalAndExp    ::=>
     BinaryOperationExpression<
         PreprocessorIfDefConditionLogicalAndExp, 
             "&&", 
-        PreprocessorIfDefConditionPrimaryExp, 
+        PreprocessorIfDefConditionPrimaryExp,
+        PreprocessorIfDefConditionLogicalAndRecursiveExp,
         Left>;
 
 PreprocessorIfDefConditionPrimaryExp      ::=>
